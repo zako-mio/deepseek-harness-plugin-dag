@@ -1,0 +1,202 @@
+{
+  "route": "R4-settings-input-ui",
+  "scope": "设置与输入 UI 13 插件",
+  "plugins": [
+    {
+      "id": "dsh-client-ui-settings",
+      "name": "@deepseek-ai/dsh-client-ui-settings",
+      "implementation": "Settings 域基础插件：browser 半注册 ctx.settingsScope 服务（SettingsScopeBinder，settings-scope.ts:227-232），定义 settings 表面规范 slot 契约（contract/slots.ts:53-88：settings.section/plugins.tab/onboarding/general.item）。host 半为空 apply。不依赖任何 ui-* 呈现包，任意偏好拥有者经 ctx.settingsScope.bind 读写 Host settings 命名空间（api.settings.mutate）。",
+      "provides": ["ctx.settingsScope (SettingsScopeBinder 服务)", "settings 规范 slot 契约 (settings.section / settings.plugins.tab / settings.onboarding / settings.general.item 等类型声明)"],
+      "depends_on": [
+        {"plugin_id": "dsh-settings", "mechanism": "E1", "evidence": "packages/client/ui-settings/package.json:55 (peerDep dsh-settings)", "purpose": "Settings 命名空间类型与 wire 契约来源"},
+        {"plugin_id": "dsh-client-runtime", "mechanism": "E1", "evidence": "packages/client/ui-settings/src/client/settings-scope.ts:16-17 (import createSnapshotStore from runtime/client)", "purpose": "SnapshotStore/uSES 状态基建"},
+        {"plugin_id": "dsh-api-remotes", "mechanism": "E2", "evidence": "packages/client/ui-settings/src/client/settings-scope.ts:121 (api.settings.mutate 远程调用)", "purpose": "settings 命名空间读写走 Host wire"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-client-ui-settings-general", "evidence": "packages/client/ui-settings-general/src/client/index.ts:17,57 (type-only import + inject slots/locale/connection)", "purpose": "消费 settingsScope 声明与 slot 类型，注册 sidebar.settings 外壳"},
+        {"plugin_id": "dsh-client-ui-settings-models", "evidence": "packages/client/ui-settings-models/src/client/index.ts:13,59 (type-only import + inject)", "purpose": "向 settings.section 注册 models 页"},
+        {"plugin_id": "dsh-client-ui-settings-plugin-inventory", "evidence": "packages/client/ui-settings-plugin-inventory/src/client/index.ts:5,23", "purpose": "向 settings.plugins.tab 注册只读清单 tab"},
+        {"plugin_id": "dsh-client-ui-settings-plugins", "evidence": "packages/client/ui-settings-plugins/src/client/index.ts:18,51,62-64 (inject settingsScope 并 bind 三张卡片命名空间)", "purpose": "settingsScope.bind 绑定 bash/agent-loop/web-search 命名空间"},
+        {"plugin_id": "dsh-client-ui-permission-presets", "evidence": "packages/client/ui-permission-presets/src/client/index.ts:20,46,140", "purpose": "向 settings.general.item 注册权限默认行"},
+        {"plugin_id": "dsh-client-ui-agent-preset", "evidence": "packages/client/ui-agent-preset/src/client/index.ts:21,49,207-223", "purpose": "注册 settings.general.item 行与 settings.section agent-presets 页"}
+      ]
+    },
+    {
+      "id": "dsh-client-ui-settings-general",
+      "name": "@deepseek-ai/dsh-client-ui-settings-general",
+      "implementation": "Settings 外壳与 ownerless 拷贝：注册 sidebar.settings occupant（SettingsRoot）并声明 settings.trigger/header/action/close/section/onboarding 子槽（index.ts:142-153），注册 General section（settings.section id=general，:170-177）、触发/头部 chrome、SettingsDocumentAction 本地文档、settings 字典。host 半注册 ui-onboarding 持久命名空间（src/index.ts:21-26）。",
+      "provides": ["sidebar.settings occupant (SettingsRoot)", "settings.trigger / settings.header / settings.close / settings.action / settings.section(general) / settings.onboarding 槽注册", "settings 字典命名空间", "ui-onboarding Host 设置命名空间 (welcomeNoticeVersion)"],
+      "depends_on": [
+        {"plugin_id": "dsh-client-ui-settings", "mechanism": "E1", "evidence": "packages/client/ui-settings-general/src/client/index.ts:17 (type-only import), :57 (inject slots), :98 (ctx.slots.getVersion('settings.section'))", "purpose": "消费 settings slot 契约声明与 slots 注册器"},
+        {"plugin_id": "dsh-settings", "mechanism": "E1", "evidence": "packages/client/ui-settings-general/src/index.ts:5,21-26 (settingsNamespace + ctx.inject(['settings']) + settings.register)", "purpose": "注册 ui-onboarding 命名空间 schema"},
+        {"plugin_id": "dsh-client-ui-sidebar", "mechanism": "E1", "evidence": "packages/client/ui-settings-general/package.json:62 (peerDep ui-sidebar), src/client/index.ts:142 (ctx.slots.inject('sidebar.settings'))", "purpose": "占用 sidebar 提供的 settings 洞"},
+        {"plugin_id": "dsh-client-connection", "mechanism": "E2", "evidence": "packages/client/ui-settings-general/src/client/index.ts:71-74 (connection.isLoopback + SettingsDocumentStore(connection.api))", "purpose": "本地文档 store 依赖 connection.api"},
+        {"plugin_id": "dsh-client-ui-layout", "mechanism": "E1", "evidence": "packages/client/ui-settings/src/client/index.ts:8 (注释：shell 依赖 ui-sidebar 会经 ui-layout/ui-theme 形成环，故 shell 归属本包)", "purpose": "说明壳归因避免引用环"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-client-ui-permission-presets", "evidence": "packages/client/ui-permission-presets/src/client/index.ts:140 (settings.general.item 注册)", "purpose": "向 General 页注入权限默认行"},
+        {"plugin_id": "dsh-client-ui-agent-preset", "evidence": "packages/client/ui-agent-preset/src/client/index.ts:207-223 (settings.general.item + settings.section)", "purpose": "向 General 页注入 agent preset 默认行与独立 section"}
+      ]
+    },
+    {
+      "id": "dsh-client-ui-settings-models",
+      "name": "@deepseek-ai/dsh-client-ui-settings-models",
+      "implementation": "Models 设置页与产品 onboarding：注册 settings.section id=models order=10（ModelsSection，index.ts:118-124），settings.onboarding welcome-notice(order=-100) 与 deepseek-official(order=0) 两个对话框。ModelsSettingsStore/WelcomeNoticeStore 经 connection.api 读写 Host settings/credentials；订阅 settings/document-updated、credentials/updated、llm/adapters-updated 推送失效（:107-113）。",
+      "provides": ["settings.section 'models' 注册", "settings.onboarding 'welcome-notice' / 'deepseek-official' 注册", "settings.models 字典命名空间", "ModelsSettingsStore / WelcomeNoticeStore (connection.api 上)"],
+      "depends_on": [
+        {"plugin_id": "dsh-client-ui-settings", "mechanism": "E1", "evidence": "packages/client/ui-settings-models/src/client/index.ts:13 (type-only import), :118 (slots.inject('settings.section'))", "purpose": "settings.section 槽声明与 settingsScope 契约"},
+        {"plugin_id": "dsh-client-connection", "mechanism": "E2", "evidence": "packages/client/ui-settings-models/src/client/index.ts:70-71 (connection.api 构造 store)", "purpose": "settings/credentials 远程调用载体"},
+        {"plugin_id": "dsh-api-remotes", "mechanism": "E2", "evidence": "packages/client/ui-settings-models/src/client/index.ts:107-113 (ctx.remote.$on 推送失效事件)", "purpose": "订阅 settings/credentials/adapters 失效事件"},
+        {"plugin_id": "dsh-settings", "mechanism": "E1", "evidence": "packages/client/ui-settings-models/src/client/index.ts:28 (WELCOME_NOTICE_SETTINGS_NAMESPACE 引用 onboarding-copy)", "purpose": "welcome 版本命名空间对应 host 注册"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-client-ui-agent-preset", "evidence": "packages/client/ui-agent-preset/src/client/index.ts:214-215 (注释：agent-presets section order=20 排在 Models 之后)", "purpose": "同 settings.section 导航顺序关联"}
+      ]
+    },
+    {
+      "id": "dsh-client-ui-settings-plugin-inventory",
+      "name": "@deepseek-ai/dsh-client-ui-settings-plugin-inventory",
+      "implementation": "只读插件清单 tab：注册 settings.plugins.tab id=all order=10（index.ts:39-46），list 闭包调 ctx.remote.pluginInventory.list() RPC 拉取当前 Loader 条目投影（:30-36），渲染 PluginInventorySettingsTab。inject 含 remote.pluginInventory 生成 Remote 面。",
+      "provides": ["settings.plugins.tab 'all' 注册 (PluginInventorySettingsTab)", "settings.pluginInventory 字典命名空间"],
+      "depends_on": [
+        {"plugin_id": "dsh-client-ui-settings", "mechanism": "E1", "evidence": "packages/client/ui-settings-plugin-inventory/src/client/index.ts:5 (type-only import), :39 (slots.inject('settings.plugins.tab'))", "purpose": "settings.plugins.tab 槽声明"},
+        {"plugin_id": "dsh-host-plugin-inventory", "mechanism": "E2", "evidence": "packages/client/ui-settings-plugin-inventory/src/client/index.ts:31 (ctx.remote.pluginInventory.list())", "purpose": "只读 Loader 条目投影 Remote"},
+        {"plugin_id": "dsh-api-remotes", "mechanism": "E1", "evidence": "packages/client/ui-settings-plugin-inventory/package.json:35 (dsh.client inject api-remotes)", "purpose": "remote 面与转发事件键"}
+      ],
+      "dependents": []
+    },
+    {
+      "id": "dsh-client-ui-settings-plugins",
+      "name": "@deepseek-ai/dsh-client-ui-settings-plugins",
+      "implementation": "插件配置 section：注册 settings.section id=plugins order=15（index.ts:111-119），其 configurable tab(order=0) 声明 settings.plugin.item 槽并渲染三张 host-plane 卡片 bash/agent-loop/web-search（:123-157）。每卡经 ctx.settingsScope.bind 绑定各自命名空间；订阅 credentials/updated 使 webSearch 刷新凭据（:70）。",
+      "provides": ["settings.section 'plugins' 注册 (PluginsSettingsSection)", "settings.plugins.tab 'configurable' + settings.plugin.item 槽", "BashCard / AgentLoopCard / WebSearchCard 三卡片"],
+      "depends_on": [
+        {"plugin_id": "dsh-client-ui-settings", "mechanism": "E1", "evidence": "packages/client/ui-settings-plugins/src/client/index.ts:18 (type-only), :51 (inject settingsScope), :62-64 (ctx.settingsScope.bind)", "purpose": "settings.section 槽声明 + 命名空间 scope 服务"},
+        {"plugin_id": "dsh-client-connection", "mechanism": "E2", "evidence": "packages/client/ui-settings-plugins/src/client/index.ts:58 (ctx.get('connection').api)", "purpose": "webSearch 卡凭据/校验远程调用"},
+        {"plugin_id": "dsh-api-remotes", "mechanism": "E2", "evidence": "packages/client/ui-settings-plugins/src/client/index.ts:70 (ctx.remote.$on('credentials/updated'))", "purpose": "凭据推送失效事件"},
+        {"plugin_id": "dsh-client-locale", "mechanism": "E1", "evidence": "packages/client/ui-settings-plugins/src/client/index.ts:14,60 (type-only + locale.register)", "purpose": "settings.plugins 字典"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-client-ui-settings-plugin-inventory", "evidence": "packages/client/ui-settings-plugin-inventory/src/client/index.ts:39-46 (向 settings.plugins.tab 注册 'all' tab)", "purpose": "在 Plugins section 内作为第二个 tab 并排"}
+      ]
+    },
+    {
+      "id": "dsh-client-ui-input-trigger",
+      "name": "@deepseek-ai/dsh-client-ui-input-trigger",
+      "implementation": "'/' | '@' 输入管线核心：browser 半注册 InputTriggerService（ctx.inputTriggers）——source 注册表 + 每会话 controller 解析（service.ts:28-100，registerSource/sessionOf）。MenuView 自注册进 conversation.input.overlay 槽（slash-menu，order=0，按 sessionId 解析 controller）。inject ['sessions','locale']。契约在 contract.ts，source 仅经 ctx.inputTriggers.registerSource 接入。",
+      "provides": ["ctx.inputTriggers (InputTriggerService)", "conversation.input.overlay 'slash-menu' 槽注册 (MenuView)", "InputTriggerSource / TriggerChar 类型契约 (types.ts / contract.ts)", "slash.menu 字典"],
+      "depends_on": [
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/client/ui-input-trigger/src/client/service.ts:29,80-82 (static inject ['sessions'] + sessions.scopeOf)", "purpose": "按会话 scope 解析 controller"},
+        {"plugin_id": "dsh-client-runtime", "mechanism": "E1", "evidence": "packages/client/ui-input-trigger/src/client/index.ts:48 (inject sessions/locale), service.ts:10 (ClientContext/ISessions 类型)", "purpose": "client 运行时上下文与会话面"},
+        {"plugin_id": "dsh-client-locale", "mechanism": "E1", "evidence": "packages/client/ui-input-trigger/src/client/index.ts:57 (locale.register MENU_NS)", "purpose": "候选菜单本地化"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-client-ui-commands", "evidence": "packages/client/ui-commands/src/client/index.ts:48 (inject inputTriggers), service.ts:140-148 (inputTriggers.registerSource '/' 命令源)", "purpose": "命令源作为 '/' 子类 source 注册，consumed-token/claim 契约"},
+        {"plugin_id": "dsh-client-ui-skill", "evidence": "packages/client/ui-skill/src/client/index.ts:57,185 (inject inputTriggers + registerSource 注册 '/' skill 源)", "purpose": "技能引用源接入管线"},
+        {"plugin_id": "dsh-client-ui-subagent", "evidence": "packages/client/ui-subagent/src/client/index.ts:41,97 (inject inputTriggers + registerSource 注册 '@' 源)", "purpose": "子代理引用源接入管线"},
+        {"plugin_id": "dsh-client-ui-model-selection", "evidence": "packages/client/ui-model-selection/package.json:56 (peerDep ui-input-trigger)", "purpose": "SelectOption/ClientSessionContext 类型共享"}
+      ]
+    },
+    {
+      "id": "dsh-client-ui-commands",
+      "name": "@deepseek-ai/dsh-client-ui-commands",
+      "implementation": "命令表面：CommandUiRuntime（ctx.commandUi）——capability 键控的全局目录缓存（CommandDirectory，commands.list RPC，service.ts:132-137）、'/' 命令 source（:140-148）、client 贡献注册表与 /host 命令装饰（register/decorate，:164-192）、每会话 popupSelect controller（popupFor，:202-224）。PopupSelectView 注册进 conversation.input.overlay（command-popup，order=1）。dispatch 决策表:菜单/空格/回车三列（:265-329）。",
+      "provides": ["ctx.commandUi (CommandUiRuntime)", "'/' source 'command' (目录缓存 + 模糊匹配 + 三列决策)", "popupSelect 注册表 (contribution/decorate) 与 PopupSelectView", "conversation.input.overlay 'command-popup' 槽", "command 字典"],
+      "depends_on": [
+        {"plugin_id": "dsh-client-ui-input-trigger", "mechanism": "E2", "evidence": "packages/client/ui-commands/src/client/index.ts:48 (inject inputTriggers), service.ts:138-148 (ctx.get('inputTriggers') + registerSource + matchSpace/matchEnter)", "purpose": "作为 '/' 子类 source 注册并消费 claim/consume-token 契约"},
+        {"plugin_id": "dsh-commands", "mechanism": "E2", "evidence": "packages/client/ui-commands/src/client/service.ts:134-136 (ctx.remote.commands.list), :149 (commands/change 失效), package.json:60 (peerDep)", "purpose": "Host 命令目录与执行 wire"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/client/ui-commands/src/client/service.ts:121,203 (static inject sessions + sessions.scopeOf)", "purpose": "每会话 popup controller 与目录键"},
+        {"plugin_id": "dsh-client-ui-conversation", "mechanism": "E1", "evidence": "packages/client/ui-commands/src/client/index.ts:12 (type-only import conversation.input.overlay 声明)", "purpose": "overlay 槽声明 typecheck"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-client-ui-model-selection", "evidence": "packages/client/ui-model-selection/src/client/index.ts:122-150 (command.register /model popupSelect 贡献)", "purpose": "注册 /model 命令 UI 贡献"},
+        {"plugin_id": "dsh-client-ui-permission-presets", "evidence": "packages/client/ui-permission-presets/src/client/index.ts:148-169 (command.decorate /permission)", "purpose": "装饰 host /permission 命令为 popupSelect"},
+        {"plugin_id": "dsh-client-ui-plan", "evidence": "packages/client/ui-plan/src/client/index.ts:58 (ctx.remote.commands.execute '/plan off')", "purpose": "经命令通道退出 plan 模式"}
+      ]
+    },
+    {
+      "id": "dsh-client-ui-skill",
+      "name": "@deepseek-ai/dsh-client-ui-skill",
+      "implementation": "技能引用源：注册 '/' source name=skill order=2（index.ts:133-178,185），候选来自 skill.list RPC 按会话缓存（session-keyed catalog fetch，单 flight，:70-115），pick 落字面 /name （plain-text-reference）。注册 tool.call.toolview keyed 'skill' 的 SkillRow（:65-68）。agent-preset/selected 失效单键、connection/reset 全清（:182-183）。",
+      "provides": ["'/' source 'skill' (InputTriggerSource)", "tool.call.toolview key='skill' 工具行 (SkillRow)", "skill 字典 + 会话键控目录缓存"],
+      "depends_on": [
+        {"plugin_id": "dsh-client-ui-input-trigger", "mechanism": "E1", "evidence": "packages/client/ui-skill/src/client/index.ts:35,57,185 (类型 import + inject inputTriggers + registerSource)", "purpose": "注册 '/' 引用源并消费 lexicon/subscribeLexicon 契约"},
+        {"plugin_id": "dsh-skill", "mechanism": "E2", "evidence": "packages/client/ui-skill/src/client/index.ts:70,97 (connection.api.skills.list RPC)", "purpose": "技能目录 Remote 列表"},
+        {"plugin_id": "dsh-client-ui-tool", "mechanism": "E1", "evidence": "packages/client/ui-skill/src/client/index.ts:65 (slots.inject('tool.call.toolview'))", "purpose": "keyed 工具行槽声明"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/client/ui-skill/src/client/index.ts:92 (sessions.subagentAddress 判定代理子会话跳过)", "purpose": "会话身份判定与键控缓存"},
+        {"plugin_id": "dsh-tool-skill", "mechanism": "E2", "evidence": "packages/client/ui-skill/src/client/index.ts:9-12 (注释：host pre-step 边界识别 /name 注入渲染 body)", "purpose": "host 侧技能加载器消费 pick 字面"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-client-ui-input-trigger", "evidence": "packages/client/ui-skill/src/client/index.ts:185 (registerSource 生命周期)", "purpose": "作为管线 source 被菜单消费"}
+      ]
+    },
+    {
+      "id": "dsh-client-ui-subagent",
+      "name": "@deepseek-ai/dsh-client-ui-subagent",
+      "implementation": "子代理引用源：注册 '@' source name=subagent（index.ts:70-95,97），候选从 sessions.list 快照过滤 running 子会话（零 RPC，:61-69），pick 落字面 @label。另注册 conversation.session.header.actions 的 subagent-catalog 按钮（:110-119）与 conversation.composer 的 SubagentReadOnlyComposer（priority=-10，one-shot/parent-offline 接管，:120-128,44-53）。",
+      "provides": ["'@' source 'subagent' (InputTriggerSource + codec)", "conversation.session.header.actions 'subagent-catalog' 槽", "conversation.composer 'SubagentReadOnlyComposer' (select 接管)", "subagent 字典"],
+      "depends_on": [
+        {"plugin_id": "dsh-client-ui-input-trigger", "mechanism": "E1", "evidence": "packages/client/ui-subagent/src/client/index.ts:18,41,97 (类型 import + inject + registerSource)", "purpose": "注册 '@' 引用源"},
+        {"plugin_id": "dsh-subagent", "mechanism": "E1", "evidence": "packages/client/ui-subagent/package.json:60 (peerDep dsh-subagent)", "purpose": "SubagentAddress 与子代理语义类型"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/client/ui-subagent/src/client/index.ts:61-69,100-108 (sessions.list / openSubagent / refreshSubagents / setSubagentCatalogOpen)", "purpose": "子会话候选源与导航动作"},
+        {"plugin_id": "dsh-client-ui-conversation", "mechanism": "E1", "evidence": "packages/client/ui-subagent/src/client/index.ts:17,110-127 (ComposerChainProps 类型 + header.actions/composer 槽)", "purpose": "会话头与 composer 槽声明"}
+      ],
+      "dependents": []
+    },
+    {
+      "id": "dsh-client-ui-plan",
+      "name": "@deepseek-ai/dsh-client-ui-plan",
+      "implementation": "Composer plan seat：注册 conversation.input.plan 槽的 PlanChip（index.ts:52-64），经 useProjection('plan') 读 plan-mode 会话投影决定显隐（PlanModeControl.tsx:20,32-34），退出时 ctx.remote.commands.execute(sessionId, '/plan off')（index.ts:58-62）。host 半注释明确 plan 行为本体归 dsh-plan-mode（src/index.ts:5-7）。",
+      "provides": ["conversation.input.plan 槽 'PlanChip' 注册", "plan 字典"],
+      "depends_on": [
+        {"plugin_id": "dsh-plan-mode", "mechanism": "E1", "evidence": "packages/client/ui-plan/src/client/index.ts:17 (type-only import plan SessionProjectionMap), PlanModeControl.tsx:20 (useProjection('plan'))", "purpose": "plan 投影会话值决定 chip 显隐（web 下 plan-mode 被 disabled 仍取投影）"},
+        {"plugin_id": "dsh-commands", "mechanism": "E2", "evidence": "packages/client/ui-plan/src/client/index.ts:58 (ctx.remote.commands.execute)", "purpose": "执行 /plan off 命令通道"},
+        {"plugin_id": "dsh-client-ui-conversation", "mechanism": "E1", "evidence": "packages/client/ui-plan/src/client/index.ts:13 (type-only import input.plan seat)", "purpose": "composer plan 槽声明"}
+      ],
+      "dependents": []
+    },
+    {
+      "id": "dsh-client-ui-model-selection",
+      "name": "@deepseek-ai/dsh-client-ui-model-selection",
+      "implementation": "模型选择双入口共享每会话 ModelDirectory：注册 ModelDirectoryResolver（ctx.modelDirectories，service.ts:34-47）与 /model popupSelect 贡献（command.register，index.ts:122-151）、conversation.input.model seat（:154-175）。目录经 session.models RPC 加载、session.selectModel 提交（directory.ts:67,98-105），Host 报告当前选择为唯一事实；向 composer 发布 routable=false 输入封锁（service.ts:88-103）。",
+      "provides": ["ctx.modelDirectories (ModelDirectoryResolver)", "/model popupSelect 命令贡献", "conversation.input.model seat (ModelSelect)", "model 字典"],
+      "depends_on": [
+        {"plugin_id": "dsh-client-ui-commands", "mechanism": "E2", "evidence": "packages/client/ui-model-selection/src/client/index.ts:100,122-150 (inject commandUi + command.register)", "purpose": "popupSelect 贡献注册"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/client/ui-model-selection/src/client/service.ts:35,73-75,80 (inject sessions + sessions.scope + subagentAddress)", "purpose": "会话目录键与可用性判定"},
+        {"plugin_id": "dsh-api-remotes", "mechanism": "E2", "evidence": "packages/client/ui-model-selection/src/client/directory.ts:67,98-105 (session.models / session.selectModel RPC)", "purpose": "模型目录加载与选择提交"},
+        {"plugin_id": "dsh-client-connection", "mechanism": "E2", "evidence": "packages/client/ui-model-selection/src/client/service.ts:76 (connection.api.sessions)", "purpose": "会话 wire 面"},
+        {"plugin_id": "dsh-client-ui-conversation", "mechanism": "E1", "evidence": "packages/client/ui-model-selection/src/client/index.ts:19 (type-only import input.model seat)", "purpose": "composer model 槽声明"}
+      ],
+      "dependents": []
+    },
+    {
+      "id": "dsh-client-ui-permission-presets",
+      "name": "@deepseek-ai/dsh-client-ui-permission-presets",
+      "implementation": "权限 preset 双面：注册 /permission popupSelect 装饰（command.decorate，index.ts:148-169），选项读会话 permissions 投影 faceOf('permissions')（:51-53），pick 提交 '/permission <preset>' 命令；Full access 行带确认门。另注册 settings.general.item 的 PermissionRow 写新会话默认 preset（:140-146），经 PermissionPresetSettingsController 读写 host Settings API（settings-store.ts:19 PERMISSION_SETTINGS_NS='permission'）。",
+      "provides": ["/permission popupSelect 装饰", "settings.general.item 'permission' 行 (PermissionRow)", "permission.access / settings.permission 字典"],
+      "depends_on": [
+        {"plugin_id": "dsh-client-ui-commands", "mechanism": "E2", "evidence": "packages/client/ui-permission-presets/src/client/index.ts:46,84,148 (inject commandUi + command.decorate)", "purpose": "popupSelect 装饰注册"},
+        {"plugin_id": "dsh-permission-presets", "mechanism": "E2", "evidence": "packages/client/ui-permission-presets/src/client/index.ts:27,52 (PermissionSelect 类型 + session.projections.faceOf('permissions'))", "purpose": "permissions 会话投影提供选项/当前值"},
+        {"plugin_id": "dsh-client-ui-settings", "mechanism": "E1", "evidence": "packages/client/ui-permission-presets/src/client/index.ts:20 (type-only import), :140 (slots.inject('settings.general.item'))", "purpose": "General 行槽声明"},
+        {"plugin_id": "dsh-settings", "mechanism": "E2", "evidence": "packages/client/ui-permission-presets/src/client/settings-store.ts:19,43,100 (PERMISSION_SETTINGS_NS + api.settings 读写)", "purpose": "默认 preset 持久化"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/client/ui-permission-presets/src/client/index.ts:110-111 (sessions.binding + session.command)", "purpose": "会话绑定与命令执行"}
+      ],
+      "dependents": []
+    },
+    {
+      "id": "dsh-client-ui-agent-preset",
+      "name": "@deepseek-ai/dsh-client-ui-agent-preset",
+      "implementation": "Agent preset 四面体：settings.general.item AgentPresetRow 默认值（index.ts:207-213）、conversation.hero.agentPreset 新会话 chip（:165-169）、header 只读 label（:170-177）、settings.section 'agent-presets' 名录管理/复制/删除/默认 + composition 编辑器（:216-223）。控制器 AgentPresetSettingsController/SectionController/SeatController 经 connection.api 读写 host agent-presets 设置命名空间（settings-store.ts:14 AGENT_PRESET_SETTINGS_NS='agent-presets', :43 writeDefaultPreset）；订阅 settings/document-updated 与 agent-preset/selected 事件。",
+      "provides": ["settings.general.item 'agent-preset' 行", "conversation.hero.agentPreset chip (AgentPresetSeat)", "conversation.session.header.actions 'agent-preset' label", "settings.section 'agent-presets' (AgentPresetSection 名录/编辑器)"],
+      "depends_on": [
+        {"plugin_id": "dsh-client-ui-settings", "mechanism": "E1", "evidence": "packages/client/ui-agent-preset/src/client/index.ts:21,49,207-223 (type-only import + settings.general.item/settings.section 注册)", "purpose": "Settings 槽声明与命名空间 scope"},
+        {"plugin_id": "dsh-agent-presets", "mechanism": "E2", "evidence": "packages/client/ui-agent-preset/src/client/settings-store.ts:43 (api.settings.update AGENT_PRESET_SETTINGS_NS), cordis.patch.yml:420-424 (agent-presets host 行 default: standard)", "purpose": "host 名录 roster 与默认 preset 持久化"},
+        {"plugin_id": "dsh-client-connection", "mechanism": "E2", "evidence": "packages/client/ui-agent-preset/src/client/index.ts:56-57,103 (connection.api 构造控制器)", "purpose": "设置/名录远程调用载体"},
+        {"plugin_id": "dsh-client-ui-conversation", "mechanism": "E1", "evidence": "packages/client/ui-agent-preset/src/client/index.ts:102,165-177 (inject conversation/sessions/workspaces + hero/header 槽)", "purpose": "新会话 chip、header label 槽与 session flow"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/client/ui-agent-preset/src/client/index.ts:105-115 (sessions.list 快照 + noteAgentPreset)", "purpose": "会话行 preset 折入与选中回写"},
+        {"plugin_id": "dsh-workspace", "mechanism": "E2", "evidence": "packages/client/ui-agent-preset/src/client/index.ts:102,163 (inject workspaces + workspaces.startSession)", "purpose": "创作后落新会话"}
+      ],
+      "dependents": []
+    }
+  ]
+}

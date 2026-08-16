@@ -1,0 +1,251 @@
+{
+  "meta": {
+    "mission": "deepseek-harness 插件级 DAG 依赖链分析 — 第一层核心集",
+    "repo": "D:\\Opencode_Download\\Mission-file\\2026-08\\0814-deepseek-harness源码解析\\01-source-clone",
+    "commit": "47f9438",
+    "created_at": "2026-08-16",
+    "scope": "bundle/base/cordis.patch.yml 装配的全部插件（核心集，76 个唯一包）",
+    "analysis_dimensions": [
+      "D1 实现逻辑: 该插件以什么逻辑实现了什么功能(apply/服务/工具/事件/schema)",
+      "D2 依赖拼接: 入边=依赖哪些插件的哪些功能; 出边=被哪些插件依赖"
+    ],
+    "dependency_evidence": [
+      "E1 编译依赖: package.json peerDependencies + src import 语句",
+      "E2 运行时依赖: ctx.xxx 服务注入 / ctx.get() / ctx.on() 事件订阅",
+      "E3 组合依赖: cordis.patch.yml 装配位置与行配置"
+    ],
+    "grouping": "24 组（运行时框架/类型契约/核心服务/LLM域/执行域/交互域/状态域/治理域）",
+    "interactive_dag": "cytoscape.js 缩放联动三级(组→插件→内部) + 点击跳转; demo 先行后铺开"
+  },
+  "groups": [
+    {
+      "id": "G01",
+      "name": "运行时框架",
+      "plugins": [
+        {"id": "cordis-plugin-timer", "name": "@deepseek-ai/cordis-plugin-timer", "path": "vendor/timer", "ts_count": 2},
+        {"id": "cordis-plugin-hmr", "name": "@deepseek-ai/cordis-plugin-hmr", "path": "vendor/hmr", "ts_count": 2}
+      ]
+    },
+    {
+      "id": "G02",
+      "name": "类型契约",
+      "plugins": [
+        {"id": "dsh-typert-registry", "name": "@deepseek-ai/dsh-typert-registry", "path": "packages/typert/registry", "ts_count": 5},
+        {"id": "dsh-typert-loader", "name": "@deepseek-ai/dsh-typert-loader", "path": "packages/typert/loader", "ts_count": 2},
+        {"id": "dsh-api-gateway", "name": "@deepseek-ai/dsh-api-gateway", "path": "packages/api/gateway", "ts_count": 4}
+      ]
+    },
+    {
+      "id": "G03",
+      "name": "核心服务",
+      "plugins": [
+        {"id": "dsh-session", "name": "@deepseek-ai/dsh-session", "path": "packages/core/session", "ts_count": 10},
+        {"id": "dsh-agent", "name": "@deepseek-ai/dsh-agent", "path": "packages/core/agent", "ts_count": 8},
+        {"id": "dsh-agent-loop", "name": "@deepseek-ai/dsh-agent-loop", "path": "packages/core/agent-loop", "ts_count": 6},
+        {"id": "dsh-agent-default-model", "name": "@deepseek-ai/dsh-agent-default-model", "path": "packages/core/agent-default-model", "ts_count": 2},
+        {"id": "dsh-system-prompt", "name": "@deepseek-ai/dsh-system-prompt", "path": "packages/core/system-prompt", "ts_count": 2},
+        {"id": "dsh-tools", "name": "@deepseek-ai/dsh-tools", "path": "packages/core/tools", "ts_count": 10}
+      ]
+    },
+    {
+      "id": "G04",
+      "name": "LLM核心",
+      "plugins": [
+        {"id": "dsh-llm", "name": "@deepseek-ai/dsh-llm", "path": "packages/llm/llm", "ts_count": 14}
+      ]
+    },
+    {
+      "id": "G05",
+      "name": "LLM适配",
+      "plugins": [
+        {"id": "dsh-llm-deepseek", "name": "@deepseek-ai/dsh-llm-deepseek", "path": "packages/llm/llm-deepseek", "ts_count": 7},
+        {"id": "dsh-llm-pi-ai", "name": "@deepseek-ai/dsh-llm-pi-ai", "path": "packages/llm/llm-pi-ai", "ts_count": 10}
+      ]
+    },
+    {
+      "id": "G06",
+      "name": "LLM治理",
+      "plugins": [
+        {"id": "dsh-llm-retry", "name": "@deepseek-ai/dsh-llm-retry", "path": "packages/llm/llm-retry", "ts_count": 5},
+        {"id": "dsh-token-meter", "name": "@deepseek-ai/dsh-token-meter", "path": "packages/llm/token-meter", "ts_count": 10}
+      ]
+    },
+    {
+      "id": "G07",
+      "name": "会话持久化",
+      "plugins": [
+        {"id": "dsh-session-persistence-jsonl", "name": "@deepseek-ai/dsh-session-persistence-jsonl", "path": "packages/session/session-persistence-jsonl", "ts_count": 7},
+        {"id": "dsh-session-query-sqlite", "name": "@deepseek-ai/dsh-session-query-sqlite", "path": "packages/session-query/session-query-sqlite", "ts_count": 4},
+        {"id": "dsh-session-checkpoint-policy", "name": "@deepseek-ai/dsh-session-checkpoint-policy", "path": "packages/session/session-checkpoint-policy", "ts_count": 2},
+        {"id": "dsh-session-telemetry-otel", "name": "@deepseek-ai/dsh-session-telemetry-otel", "path": "packages/session/session-telemetry-otel", "ts_count": 2}
+      ]
+    },
+    {
+      "id": "G08",
+      "name": "会话展示",
+      "plugins": [
+        {"id": "dsh-session-title", "name": "@deepseek-ai/dsh-session-title", "path": "packages/session/session-title", "ts_count": 5},
+        {"id": "dsh-session-title-first-prompt-llm", "name": "@deepseek-ai/dsh-session-title-first-prompt-llm", "path": "packages/session/session-title-first-prompt-llm", "ts_count": 2},
+        {"id": "dsh-session-projection", "name": "@deepseek-ai/dsh-session-projection", "path": "packages/session/session-projection", "ts_count": 3},
+        {"id": "dsh-user-questions", "name": "@deepseek-ai/dsh-user-questions", "path": "packages/interaction/user-questions", "ts_count": 3}
+      ]
+    },
+    {
+      "id": "G09",
+      "name": "审批权限",
+      "plugins": [
+        {"id": "dsh-user-approval", "name": "@deepseek-ai/dsh-user-approval", "path": "packages/interaction/user-approval", "ts_count": 3},
+        {"id": "dsh-permission-presets", "name": "@deepseek-ai/dsh-permission-presets", "path": "packages/interaction/permission-presets", "ts_count": 4}
+      ]
+    },
+    {
+      "id": "G10",
+      "name": "命令交互",
+      "plugins": [
+        {"id": "dsh-commands", "name": "@deepseek-ai/dsh-commands", "path": "packages/interaction/commands", "ts_count": 4},
+        {"id": "dsh-command-feedback", "name": "@deepseek-ai/dsh-command-feedback", "path": "packages/feedback/command-feedback", "ts_count": 2},
+        {"id": "dsh-command-goal", "name": "@deepseek-ai/dsh-command-goal", "path": "packages/goal/command-goal", "ts_count": 2},
+        {"id": "dsh-command-compact", "name": "@deepseek-ai/dsh-command-compact", "path": "packages/compaction/command-compact", "ts_count": 2}
+      ]
+    },
+    {
+      "id": "G11",
+      "name": "凭据设置",
+      "plugins": [
+        {"id": "dsh-credentials-local", "name": "@deepseek-ai/dsh-credentials-local", "path": "packages/credentials/credentials-local", "ts_count": 2},
+        {"id": "dsh-settings-file", "name": "@deepseek-ai/dsh-settings-file", "path": "packages/settings/settings-file", "ts_count": 2}
+      ]
+    },
+    {
+      "id": "G12",
+      "name": "附件",
+      "plugins": [
+        {"id": "dsh-attachment-local", "name": "@deepseek-ai/dsh-attachment-local", "path": "packages/attachment/attachment-local", "ts_count": 4}
+      ]
+    },
+    {
+      "id": "G13",
+      "name": "文件系统",
+      "plugins": [
+        {"id": "dsh-fs-sandbox", "name": "@deepseek-ai/dsh-fs-sandbox", "path": "packages/fs/fs-sandbox", "ts_count": 3},
+        {"id": "dsh-tool-fs", "name": "@deepseek-ai/dsh-tool-fs", "path": "packages/fs/tool-fs", "ts_count": 12},
+        {"id": "dsh-tool-fs-search", "name": "@deepseek-ai/dsh-tool-fs-search", "path": "packages/fs/tool-fs-search", "ts_count": 8},
+        {"id": "dsh-tool-str-replace-editor", "name": "@deepseek-ai/dsh-tool-str-replace-editor", "path": "packages/fs/tool-str-replace-editor", "ts_count": 2},
+        {"id": "dsh-fs-observation-policy", "name": "@deepseek-ai/dsh-fs-observation-policy", "path": "packages/fs/fs-observation-policy", "ts_count": 3}
+      ]
+    },
+    {
+      "id": "G14",
+      "name": "Shell工具",
+      "plugins": [
+        {"id": "dsh-tool-bash", "name": "@deepseek-ai/dsh-tool-bash", "path": "packages/shell/tool-bash", "ts_count": 4},
+        {"id": "dsh-tool-pwsh", "name": "@deepseek-ai/dsh-tool-pwsh", "path": "packages/shell/tool-pwsh", "ts_count": 4},
+        {"id": "dsh-shell-env", "name": "@deepseek-ai/dsh-shell-env", "path": "packages/shell/shell-env", "ts_count": 2}
+      ]
+    },
+    {
+      "id": "G15",
+      "name": "沙箱执行",
+      "plugins": [
+        {"id": "dsh-sandbox-local", "name": "@deepseek-ai/dsh-sandbox-local", "path": "packages/sandbox/sandbox-local", "ts_count": 3},
+        {"id": "dsh-sandbox-policy", "name": "@deepseek-ai/dsh-sandbox-policy", "path": "packages/sandbox/sandbox-policy", "ts_count": 3},
+        {"id": "dsh-subprocess-local", "name": "@deepseek-ai/dsh-subprocess-local", "path": "packages/subprocess/subprocess-local", "ts_count": 5},
+        {"id": "dsh-bash-sandbox", "name": "@deepseek-ai/dsh-bash-sandbox", "path": "packages/shell/bash-sandbox", "ts_count": 3},
+        {"id": "dsh-pwsh-sandbox", "name": "@deepseek-ai/dsh-pwsh-sandbox", "path": "packages/shell/pwsh-sandbox", "ts_count": 3}
+      ]
+    },
+    {
+      "id": "G16",
+      "name": "作业",
+      "plugins": [
+        {"id": "dsh-jobs-local", "name": "@deepseek-ai/dsh-jobs-local", "path": "packages/jobs/jobs-local", "ts_count": 2},
+        {"id": "dsh-tool-jobs", "name": "@deepseek-ai/dsh-tool-jobs", "path": "packages/jobs/tool-jobs", "ts_count": 2}
+      ]
+    },
+    {
+      "id": "G17",
+      "name": "目标计划",
+      "plugins": [
+        {"id": "dsh-goal", "name": "@deepseek-ai/dsh-goal", "path": "packages/goal/goal", "ts_count": 7},
+        {"id": "dsh-goal-round-driver", "name": "@deepseek-ai/dsh-goal-round-driver", "path": "packages/goal/goal-round-driver", "ts_count": 3},
+        {"id": "dsh-tool-goal", "name": "@deepseek-ai/dsh-tool-goal", "path": "packages/goal/tool-goal", "ts_count": 4},
+        {"id": "dsh-plan-mode", "name": "@deepseek-ai/dsh-plan-mode", "path": "packages/plan/plan-mode", "ts_count": 4}
+      ]
+    },
+    {
+      "id": "G18",
+      "name": "技能",
+      "plugins": [
+        {"id": "dsh-skill", "name": "@deepseek-ai/dsh-skill", "path": "packages/skill/skill", "ts_count": 2},
+        {"id": "dsh-skill-filesystem", "name": "@deepseek-ai/dsh-skill-filesystem", "path": "packages/skill/skill-filesystem", "ts_count": 2},
+        {"id": "dsh-skill-badge", "name": "@deepseek-ai/dsh-skill-badge", "path": "packages/skill/skill-badge", "ts_count": 2},
+        {"id": "dsh-tool-skill", "name": "@deepseek-ai/dsh-tool-skill", "path": "packages/skill/tool-skill", "ts_count": 2}
+      ]
+    },
+    {
+      "id": "G19",
+      "name": "子代理",
+      "plugins": [
+        {"id": "dsh-subagent", "name": "@deepseek-ai/dsh-subagent", "path": "packages/subagent/subagent", "ts_count": 18},
+        {"id": "dsh-subagent-spawn-in-process", "name": "@deepseek-ai/dsh-subagent-spawn-in-process", "path": "packages/subagent/subagent-spawn-in-process", "ts_count": 2},
+        {"id": "dsh-subagent-fork-in-process", "name": "@deepseek-ai/dsh-subagent-fork-in-process", "path": "packages/subagent/subagent-fork-in-process", "ts_count": 2},
+        {"id": "dsh-tool-subagent", "name": "@deepseek-ai/dsh-tool-subagent", "path": "packages/subagent/tool-subagent", "ts_count": 2},
+        {"id": "dsh-tool-subagent-control", "name": "@deepseek-ai/dsh-tool-subagent-control", "path": "packages/subagent/tool-subagent-control", "ts_count": 3},
+        {"id": "dsh-tool-subagent-report", "name": "@deepseek-ai/dsh-tool-subagent-report", "path": "packages/subagent/tool-subagent-report", "ts_count": 2}
+      ]
+    },
+    {
+      "id": "G20",
+      "name": "工作流",
+      "plugins": [
+        {"id": "dsh-workflow-worker-thread", "name": "@deepseek-ai/dsh-workflow-worker-thread", "path": "packages/workflow/workflow-worker-thread", "ts_count": 10},
+        {"id": "dsh-tool-workflow", "name": "@deepseek-ai/dsh-tool-workflow", "path": "packages/workflow/tool-workflow", "ts_count": 3},
+        {"id": "dsh-tool-ralph", "name": "@deepseek-ai/dsh-tool-ralph", "path": "packages/workflow/tool-ralph", "ts_count": 2}
+      ]
+    },
+    {
+      "id": "G21",
+      "name": "上下文治理",
+      "plugins": [
+        {"id": "dsh-compaction-basic", "name": "@deepseek-ai/dsh-compaction-basic", "path": "packages/compaction/compaction-basic", "ts_count": 6},
+        {"id": "dsh-compaction-tool-result-pruner", "name": "@deepseek-ai/dsh-compaction-tool-result-pruner", "path": "packages/compaction/compaction-tool-result-pruner", "ts_count": 4},
+        {"id": "dsh-spill-local", "name": "@deepseek-ai/dsh-spill-local", "path": "packages/spill/spill-local", "ts_count": 3},
+        {"id": "dsh-spill-policy", "name": "@deepseek-ai/dsh-spill-policy", "path": "packages/spill/spill-policy", "ts_count": 3}
+      ]
+    },
+    {
+      "id": "G22",
+      "name": "上下文注入",
+      "plugins": [
+        {"id": "dsh-agent-instructions", "name": "@deepseek-ai/dsh-agent-instructions", "path": "packages/context/agent-instructions", "ts_count": 7}
+      ]
+    },
+    {
+      "id": "G23",
+      "name": "工具守卫",
+      "plugins": [
+        {"id": "dsh-tool-call-timeout-policy", "name": "@deepseek-ai/dsh-tool-call-timeout-policy", "path": "packages/guard/timeout-policy", "ts_count": 2},
+        {"id": "dsh-repeat-tool-reminder", "name": "@deepseek-ai/dsh-repeat-tool-reminder", "path": "packages/guard/repeat-tool-reminder", "ts_count": 2},
+        {"id": "dsh-tool-todo", "name": "@deepseek-ai/dsh-tool-todo", "path": "packages/todo/tool-todo", "ts_count": 4}
+      ]
+    },
+    {
+      "id": "G24",
+      "name": "Web搜索",
+      "plugins": [
+        {"id": "dsh-web", "name": "@deepseek-ai/dsh-web", "path": "packages/web/web", "ts_count": 3},
+        {"id": "dsh-web-search-deepseek", "name": "@deepseek-ai/dsh-web-search-deepseek", "path": "packages/web/web-search-deepseek", "ts_count": 4},
+        {"id": "dsh-tool-web", "name": "@deepseek-ai/dsh-tool-web", "path": "packages/web/tool-web", "ts_count": 5}
+      ]
+    }
+  ],
+  "plugin_count": 76,
+  "group_count": 24,
+  "patch_rows": {
+    "source": "packages/bundle/base/cordis.patch.yml",
+    "total_name_lines": 78,
+    "duplicate": ["dsh-tool-subagent x2 (line 314,325)"],
+    "subpath_entry": ["dsh-tool-subagent-control/list-agents (line 311, 同一包子入口)"],
+    "unique_packages": 76
+  }
+}

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DAG 交互图 Demo — 缩放联动细粒度 + 点击跳转验证</title>
+<style>
+  :root { --bg:#0f1117; --panel:#161a22; --border:#2a2f3a; --text:#e6e8ee; --dim:#9aa3b2; --accent:#4f8cff; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; }
+  header { padding:14px 22px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  header h1 { font-size:17px; font-weight:600; }
+  header .badge { background:#20324f; color:#7fb0ff; padding:3px 10px; border-radius:20px; font-size:12px; }
+  .hint { color:var(--dim); font-size:12px; }
+  #wrap { display:flex; height:calc(100vh - 56px); }
+  #graph { flex:1; background:var(--bg); }
+  #side { width:320px; border-left:1px solid var(--border); padding:16px; overflow:auto; }
+  #side h2 { font-size:14px; margin-bottom:10px; color:var(--dim); }
+  #side .row { padding:8px 10px; border:1px solid var(--border); border-radius:8px; margin-bottom:8px; font-size:13px; }
+  #side .row b { color:var(--accent); }
+  #side .row .dim { color:var(--dim); font-size:12px; }
+  #zoominfo { position:fixed; bottom:16px; left:22px; background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:8px 14px; font-size:12px; color:var(--dim); z-index:9; }
+  #zoominfo b { color:var(--text); }
+</style>
+</head>
+<body>
+<header>
+  <h1>DeepSeek Harness · 插件 DAG 交互图 <span class="badge">Demo v0.1</span></h1>
+  <span class="hint">滚轮缩放，按住拖拽平移；缩放级别联动细粒度：<b>放大显示插件节点 · 缩小折叠为组</b>。点击节点跳转插件页。</span>
+</header>
+<div id="wrap">
+  <div id="graph"></div>
+  <div id="side">
+    <h2>图例 / 说明</h2>
+    <div class="row"><b>组节点</b><br><span class="dim">一级组（G01..G24），缩小到一定程度自动显示</span></div>
+    <div class="row"><b>插件节点</b><br><span class="dim">二级细粒度，放大后显示，点击跳转插件页</span></div>
+    <div class="row"><b>依赖边</b><br><span class="dim">A → B 表示 A 依赖 B（B 是被依赖方/前驱）</span></div>
+    <h2 style="margin-top:18px;">当前缩放</h2>
+    <div class="row" id="curzoom">k = 1.00 · 模式：插件级</div>
+  </div>
+</div>
+<div id="zoominfo">缩放级别 <b id="zval">1.00</b> · 模式 <b id="zmode">plugin</b> · 节点 <b id="zcount">0</b></div>
+
+<script src="vendor/cytoscape.min.js"></script>
+<script src="vendor/cytoscape-dagre.min.js"></script>
+<script>
+// ---- 样本数据：真实核心集链路（llm → agent-loop → tools → tool-fs → fs-observation-policy）----
+const DEMO_PLUGINS = [
+  { id:'dsh-llm',             group:'G04', label:'dsh-llm',        layer:0 },
+  { id:'dsh-session',         group:'G03', label:'dsh-session',    layer:1 },
+  { id:'dsh-agent',           group:'G03', label:'dsh-agent',      layer:2 },
+  { id:'dsh-tools',           group:'G03', label:'dsh-tools',      layer:4 },
+  { id:'dsh-system-prompt',   group:'G03', label:'dsh-system-prompt', layer:1 },
+  { id:'dsh-agent-loop',      group:'G03', label:'dsh-agent-loop', layer:5 },
+  { id:'dsh-tool-fs',         group:'G13', label:'dsh-tool-fs',    layer:5 },
+  { id:'dsh-fs-observation-policy', group:'G13', label:'fs-observation', layer:2 },
+  { id:'dsh-tool-bash',       group:'G14', label:'dsh-tool-bash',  layer:6 },
+  { id:'dsh-sandbox-policy',  group:'G15', label:'dsh-sandbox-policy', layer:3 },
+];
+const DEMO_EDGES = [
+  ['dsh-session','dsh-llm'],
+  ['dsh-agent','dsh-session'],
+  ['dsh-agent','dsh-llm'],
+  ['dsh-agent','dsh-system-prompt'],
+  ['dsh-tools','dsh-system-prompt'],
+  ['dsh-tools','dsh-session'],
+  ['dsh-tools','dsh-agent'],
+  ['dsh-agent-loop','dsh-agent'],
+  ['dsh-agent-loop','dsh-session'],
+  ['dsh-agent-loop','dsh-llm'],
+  ['dsh-agent-loop','dsh-tools'],
+  ['dsh-tool-fs','dsh-tools'],
+  ['dsh-tool-fs','dsh-fs-observation-policy'],
+  ['dsh-tool-fs','dsh-sandbox-policy'],
+  ['dsh-tool-bash','dsh-sandbox-policy'],
+  ['dsh-sandbox-policy','dsh-session'],
+];
+const GROUPS = {
+  'G03': { name:'核心服务', color:'#4f8cff' },
+  'G04': { name:'LLM核心', color:'#7b61ff' },
+  'G13': { name:'文件系统', color:'#2fb98a' },
+  'G14': { name:'Shell工具', color:'#e8933b' },
+  'G15': { name:'沙箱执行', color:'#e05563' },
+};
+
+const zoomLevels = {
+  plugin: { min: 1.0, label:'插件级' },   // k >= 1.0 显示插件节点
+  group:  { max: 1.0, label:'组级' },     // k < 1.0 折叠为组
+};
+
+// 依赖边: A->B 表示 A 依赖 B => 边从 A 指向 B (B 是前驱, 在左侧)
+function edgesFrom(edges){ return edges.map(([s,t]) => ({ data:{ id:`${s}->${t}`, source:s, target:t } })); }
+
+function buildElements(mode){
+  if (mode === 'plugin'){
+    const nodes = DEMO_PLUGINS.map(p => ({
+      data:{ id:p.id, label:p.label, kind:'plugin', group:p.group },
+      classes:'plugin'
+    }));
+    return { nodes, edges: edgesFrom(DEMO_EDGES) };
+  }
+  // group 模式：按 group 折叠
+  const gids = [...new Set(DEMO_PLUGINS.map(p => p.group))];
+  const nodes = gids.map(g => ({
+    data:{ id:'grp-'+g, label: GROUPS[g] ? GROUPS[g].name : g, kind:'group', group:g },
+    classes:'group'
+  }));
+  // 组间边：若 u 组某插件依赖 v 组某插件，则组间建边
+  const gedges = [];
+  for (const [s,t] of DEMO_EDGES){
+    const gs = DEMO_PLUGINS.find(p=>p.id===s)?.group;
+    const gt = DEMO_PLUGINS.find(p=>p.id===t)?.group;
+    if (gs && gt && gs !== gt){
+      const key = `grp-${gs}->grp-${gt}`;
+      if (!gedges.find(e=>e.data.id===key)) gedge({ data:{ id:key, source:'grp-'+gs, target:'grp-'+gt } });
+    }
+  }
+  function gedge(x){ gedges.push(x); }
+  return { nodes, edges: gedges };
+}
+
+const cy = cytoscape({
+  container: document.getElementById('graph'),
+  elements: buildElements('plugin'),
+  style: [
+    { selector:'node', style:{ label:'data(label)', 'text-valign':'center','text-halign':'center', color:'#fff', 'font-size':10 } },
+    { selector:'node.plugin', style:{ 'background-color':'#2b3550','border-width':2,'border-color':'#4f8cff','width':52,'height':30, shape:'round-rectangle' } },
+    { selector:'node.group', style:{ 'background-color':'#243040','border-width':3,'border-color':'#e8933b','width':110,'height':44,'font-size':13,'text-wrap':'wrap' } },
+    { selector:'edge', style:{ 'curve-style':'bezier','target-arrow-shape':'triangle','arrow-scale':0.8,'line-color':'#4a5265','target-arrow-color':'#4a5265','width':1.2 } }
+  ],
+  layout: { name:'dagre', rankDir:'LR', nodeSep:40, rankSep:70, padding:40 },
+  wheelSensitivity: 0.25,
+  minZoom: 0.3,
+  maxZoom: 3.5,
+});
+
+function modeFromZoom(k){
+  return k >= 1.0 ? 'plugin' : 'group';
+}
+
+function updateVisibility(mode){
+  if (mode === 'plugin'){
+    cy.elements().style('display','element');
+  } else {
+    // 组模式：只显示组节点与组间边
+    cy.$('node.plugin').style('display','none');
+    cy.$('node.group').style('display','element');
+    cy.$('edge').style('display','element'); // 组间边保留（demo 简化：全部边显示）
+  }
+}
+
+function refresh(){
+  const k = cy.zoom();
+  const mode = modeFromZoom(k);
+  document.getElementById('zval').textContent = k.toFixed(2);
+  document.getElementById('zmode').textContent = mode === 'plugin' ? '插件级' : '组级';
+  document.getElementById('zcount').textContent = cy.nodes().length;
+  document.getElementById('curzoom').innerHTML = `k = ${k.toFixed(2)} · 模式：${mode === 'plugin' ? '插件级' : '组级'}`;
+  // 模式切换时重建元素
+  const cur = cy.nodes().first().data('kind');
+  if ((mode === 'plugin' && cur !== 'plugin') || (mode === 'group' && cur === 'plugin')){
+    cy.elements().remove();
+    const els = buildElements(mode);
+    cy.add(els.nodes);
+    cy.add(els.edges);
+    cy.layout({ name:'dagre', rankDir:'LR', nodeSep:40, rankSep:70, padding:40 }).run();
+    cy.fit(undefined, 40);
+  }
+  updateVisibility(mode);
+}
+
+cy.on('zoom', refresh);
+cy.on('pan', () => {
+  document.getElementById('zval').textContent = cy.zoom().toFixed(2);
+});
+cy.on('tap', 'node', (evt) => {
+  const n = evt.target;
+  const id = n.data('id');
+  if (n.data('kind') === 'plugin'){
+    // 点击插件节点 → 跳转对应插件页（demo: 无真实页，alert 提示）
+    alert(`[Demo] 跳转插件页: ${id}\n正式版将打开 02-plugin-pages/${id}.html`);
+  } else {
+    alert(`[Demo] 组节点: ${n.data('label')}\n正式版将展开该组或跳转组索引页`);
+  }
+});
+
+refresh();
+</script>
+</body>
+</html>

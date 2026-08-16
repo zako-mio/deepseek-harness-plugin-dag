@@ -1,0 +1,230 @@
+{
+  "route": "R2-execution",
+  "scope": "执行域(文件系统/Shell/沙箱/子进程) 13 插件",
+  "plugins": [
+    {
+      "id": "dsh-fs-sandbox",
+      "name": "@deepseek-ai/dsh-fs-sandbox",
+      "implementation": "以 SandboxedFileSystem 类(继承 LocalFileSystem)提供沙箱强制的 ctx.fs 后端:对 writeText/editText 两个变更操作做 per-call 策略围栏(checkedTarget)——read-only 拒绝所有变更,workspace-write 重新 canonicalize 后以 isPathUnder 判定目标位于 writableRoots 内并返回新鲜 target 防 TOCTOU,danger-full-access 放行;拒绝抛 FS_SANDBOX_DENIED。读取不设防。",
+      "provides": ["ctx.fs 服务(SandboxedFileSystem,替代 dsh-fs-local)", "ctx.fs.sandboxMode 能力事实", "fs-sandbox-invariant 伴生插件"],
+      "depends_on": [
+        {"plugin_id": "dsh-fs-local", "mechanism": "E1", "evidence": "packages/fs/fs-sandbox/package.json:36; packages/fs/fs-sandbox/src/index.ts:34", "purpose": "继承 LocalFileSystem 全部 I/O 原语"},
+        {"plugin_id": "dsh-sandbox-policy", "mechanism": "E2", "evidence": "packages/fs/fs-sandbox/src/index.ts:60,127,65", "purpose": "static inject sandboxPolicy;默认模式取自 defaultMode"},
+        {"plugin_id": "dsh-sandbox", "mechanism": "E1", "evidence": "packages/fs/fs-sandbox/src/index.ts:38", "purpose": "writableRoots 与 bash 侧同源"},
+        {"plugin_id": "dsh-fs", "mechanism": "E1", "evidence": "packages/fs/fs-sandbox/src/index.ts:36-37", "purpose": "复用 FsError/FS_SANDBOX_DENIED"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/fs/fs-sandbox/src/invariant.ts:15", "purpose": "inject invariants 注册伴生插件"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-tool-fs", "evidence": "packages/fs/tool-fs/src/index.ts:22,76", "purpose": "消费 ctx.fs.sandboxMode 能力事实"},
+        {"plugin_id": "dsh-tool-str-replace-editor", "evidence": "packages/fs/tool-str-replace-editor/src/index.ts:69-72,494", "purpose": "MutationPolicy 依据 sandboxMode"}
+      ]
+    },
+    {
+      "id": "dsh-tool-fs",
+      "name": "@deepseek-ai/dsh-tool-fs",
+      "implementation": "模型面向的文件系统工具套件:apply() 经 ctx.tools.register 注册 read/write/edit 工具(read 附带流式大文件/窗口渲染/观察事件,write/edit 通过 FsSandboxController 解析 per-call 沙箱策略、经 ctx.waterfall 取 fs/write-intent|fs/edit-intent 守卫并 emit fs/observed);read_image 仅在 ctx.inject(['attachments']) 挂载时注册;每工具同时注册 ctx.systemPrompt.section 引导文本。",
+      "provides": ["ctx.tools 注册 read/write/edit/read_image(条件)", "fs/observed 事件发射", "fs/write-intent、fs/edit-intent waterfall 触发点", "ctx.systemPrompt section: tool:read/write/edit"],
+      "depends_on": [
+        {"plugin_id": "dsh-tools", "mechanism": "E2", "evidence": "packages/fs/tool-fs/src/index.ts:22; write.ts:69", "purpose": "工具注册管线"},
+        {"plugin_id": "dsh-fs", "mechanism": "E2", "evidence": "packages/fs/tool-fs/src/index.ts:22; write.ts:114", "purpose": "ctx.fs 全部 I/O"},
+        {"plugin_id": "dsh-sandbox-policy", "mechanism": "E2", "evidence": "packages/fs/tool-fs/src/sandbox.ts:46-49,89", "purpose": "per-call 策略解析"},
+        {"plugin_id": "dsh-user-approval", "mechanism": "E2", "evidence": "packages/fs/tool-fs/src/sandbox.ts:100", "purpose": "approveEscalation 的 approver 通道"},
+        {"plugin_id": "dsh-fs-observation-policy", "mechanism": "E2", "evidence": "packages/fs/tool-fs/src/write.ts:111,122", "purpose": "fs/* 事件槽的监听方"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/fs/tool-fs/src/session-cwd.ts:24", "purpose": "解析会话 cwd"},
+        {"plugin_id": "dsh-attachment", "mechanism": "E2", "evidence": "packages/fs/tool-fs/src/index.ts:70", "purpose": "read_image 条件挂载"},
+        {"plugin_id": "dsh-llm", "mechanism": "E2", "evidence": "packages/fs/tool-fs/src/read-image.ts:68,72", "purpose": "read_image 能力门控"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-agent-instructions", "evidence": "packages/context/agent-instructions/tests/agent-instructions.e2e.ts:18", "purpose": "组合装配与 e2e"},
+        {"plugin_id": "dsh-subagent-in-process-driver", "evidence": "packages/subagent/subagent-in-process-driver/tests/inheritance.spec.ts:18", "purpose": "子代理沙箱继承测试"}
+      ]
+    },
+    {
+      "id": "dsh-tool-fs-search",
+      "name": "@deepseek-ai/dsh-tool-fs-search",
+      "implementation": "模型面向的 glob/grep 发现工具套件,基于 @vscode/ripgrep:apply() 注册两工具,执行经 ctx.subprocess.spawn() 以固定 argv 模板直接运行,无 shell 层;runRipgrep 完成 stdout 预算/退出码分类,超限结果经 ctx.get('spillStore') 尽力保存并附 recovery 提示;tools/post-execute 监听在 top-level 直接调用时替换投影以携带 spill 引用。",
+      "provides": ["ctx.tools 注册 glob、grep", "tools/post-execute 监听(spill 投影)", "ctx.systemPrompt section: tool:glob/grep", "SEARCH_* 错误词汇"],
+      "depends_on": [
+        {"plugin_id": "dsh-tools", "mechanism": "E2", "evidence": "packages/fs/tool-fs-search/src/index.ts:70; glob.ts:359,361", "purpose": "工具注册与 post-execute 瀑布"},
+        {"plugin_id": "dsh-subprocess", "mechanism": "E2", "evidence": "packages/fs/tool-fs-search/src/search-core.ts:227", "purpose": "spawn 执行 rg"},
+        {"plugin_id": "dsh-output-retention", "mechanism": "E1", "evidence": "packages/fs/tool-fs-search/src/search-core.ts:25-26", "purpose": "ItemRetainer/TextRetainer 限流"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/fs/tool-fs-search/src/search-core.ts:223,377", "purpose": "会话 cwd 作 rg workdir"},
+        {"plugin_id": "dsh-spill", "mechanism": "E2", "evidence": "packages/fs/tool-fs-search/src/search-core.ts:382,394", "purpose": "ctx.get('spillStore') 超限保存"},
+        {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "packages/fs/tool-fs-search/src/index.ts:31", "purpose": "MAX_TIMER_DELAY_MS"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-tool-fs", "evidence": "packages/fs/tool-fs/src/read.ts:73", "purpose": "同族工具,read 提供被搜索文件读取"}
+      ]
+    },
+    {
+      "id": "dsh-tool-str-replace-editor",
+      "name": "@deepseek-ai/dsh-tool-str-replace-editor",
+      "implementation": "注册单一 str_replace_editor 工具(view/create/str_replace/insert 四命令):view 经 ctx.fs.readText/listDir 输出 cat -n 风格内容;create/str_replace/insert 经 MutationPolicy 解析 sandboxPolicy、ctx.waterfall 取 fs/write-intent|fs/edit-intent 守卫、writeText 带 replaceIfVersion/createIfAbsent 提交,str_replace 要求 old_str 唯一匹配;denial 映射为 [sandbox:] 标记。",
+      "provides": ["ctx.tools 注册 str_replace_editor", "fs/observed 发射、fs/write-intent|fs/edit-intent 触发"],
+      "depends_on": [
+        {"plugin_id": "dsh-tools", "mechanism": "E2", "evidence": "packages/fs/tool-str-replace-editor/src/index.ts:494,422", "purpose": "工具注册管线"},
+        {"plugin_id": "dsh-fs", "mechanism": "E2", "evidence": "packages/fs/tool-str-replace-editor/src/index.ts:494,97,106,234", "purpose": "全部文件 I/O 经 ctx.fs"},
+        {"plugin_id": "dsh-sandbox-policy", "mechanism": "E2", "evidence": "packages/fs/tool-str-replace-editor/src/index.ts:69-72,76", "purpose": "MutationPolicy per-call 模式"},
+        {"plugin_id": "dsh-fs-observation-policy", "mechanism": "E2", "evidence": "packages/fs/tool-str-replace-editor/src/index.ts:252,284,337", "purpose": "写/编辑前守卫与观察记录"},
+        {"plugin_id": "dsh-sandbox", "mechanism": "E1", "evidence": "packages/fs/tool-str-replace-editor/src/index.ts:11-12", "purpose": "sandboxDenialMarker 映射"}
+      ],
+      "dependents": []
+    },
+    {
+      "id": "dsh-fs-observation-policy",
+      "name": "@deepseek-ai/dsh-fs-observation-policy",
+      "implementation": "纯事件型文件观察策略(不注册任何服务):apply() 建立 ObservedStateGate,以 WeakMap<owner(session), Map<targetKey, FsObservation>> 记录观察;通过 ctx.on 订阅三个 fs/* 事件——fs/write-intent 决策、fs/edit-intent 决策、fs/observed 记录。无此插件时工具退化为无条件变更。",
+      "provides": ["fs/write-intent、fs/edit-intent 瀑布单槽决策监听", "fs/observed 监听(会话级观察状态)", "FS_NOT_OBSERVED/FS_NOT_FOUND 守卫语义"],
+      "depends_on": [
+        {"plugin_id": "dsh-fs", "mechanism": "E1", "evidence": "packages/fs/fs-observation-policy/src/index.ts:11-12", "purpose": "复用 FsError/FsObservation 类型"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/fs/fs-observation-policy/src/index.ts:40", "purpose": "owner 从 actor.agent.session 派生"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/fs/fs-observation-policy/src/invariant.ts:15", "purpose": "invariant 伴生插件"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-tool-fs", "evidence": "packages/fs/tool-fs/src/write.ts:111,122", "purpose": "消费 fs/* 事件槽"},
+        {"plugin_id": "dsh-tool-str-replace-editor", "evidence": "packages/fs/tool-str-replace-editor/src/index.ts:253,284,337", "purpose": "消费同一事件槽"},
+        {"plugin_id": "dsh-skill-filesystem", "evidence": "packages/skill/skill-filesystem/src/index.ts:139-142", "purpose": "监听 fs/observed 失效 skill 缓存"}
+      ]
+    },
+    {
+      "id": "dsh-tool-bash",
+      "name": "@deepseek-ai/dsh-tool-bash",
+      "implementation": "模型面向 bash 工具:apply() 注册 bash 工具,execute 先 validateEscalationArgs、解析 standingPolicy,带 sandbox_permissions 则经 ctx.get('approval') 走 approveEscalation,resolveWorkdir(会话 cwd),收集 ctx.shellEnv.collect 的 DSH_* 环境,前台 ctx.shell.run / 后台 ctx.jobs.start;结果含 sandbox 事实。",
+      "provides": ["ctx.tools 注册 bash", "ctx.jobs 后台任务注册(kind: 'bash')", "ctx.systemPrompt section: tool:bash"],
+      "depends_on": [
+        {"plugin_id": "dsh-tools", "mechanism": "E2", "evidence": "packages/shell/tool-bash/src/index.ts:31,242", "purpose": "工具注册管线"},
+        {"plugin_id": "dsh-shell", "mechanism": "E2", "evidence": "packages/shell/tool-bash/src/index.ts:380-383", "purpose": "ctx.shell 执行 seam"},
+        {"plugin_id": "dsh-sandbox-policy", "mechanism": "E2", "evidence": "packages/shell/tool-bash/src/index.ts:194,200", "purpose": "standing policy 解析"},
+        {"plugin_id": "dsh-user-approval", "mechanism": "E2", "evidence": "packages/shell/tool-bash/src/index.ts:226", "purpose": "升级批准通道"},
+        {"plugin_id": "dsh-shell-env", "mechanism": "E2", "evidence": "packages/shell/tool-bash/src/index.ts:31,341", "purpose": "收集 DSH_* 环境"},
+        {"plugin_id": "dsh-jobs", "mechanism": "E2", "evidence": "packages/shell/tool-bash/src/index.ts:354-365", "purpose": "后台任务注册"},
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/shell/tool-bash/src/index.ts:17,149", "purpose": "Agent 类型与 job owner"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-agent-spine-demo", "evidence": "packages/examples/agent-spine-demo/src/index.ts:31", "purpose": "默认 agent spine 装配"},
+        {"plugin_id": "dsh-subagent-spawn-in-process", "evidence": "packages/subagent/subagent-spawn-in-process/tests/harness.ts:8", "purpose": "组合测试"}
+      ]
+    },
+    {
+      "id": "dsh-tool-pwsh",
+      "name": "@deepseek-ai/dsh-tool-pwsh",
+      "implementation": "tool-bash 的 PowerShell 对偶:注册 pwsh 工具,逐调用镜像 bash 的 validate/escalation/standingPolicy/resolveWorkdir/shellEnv 收集/前台后台执行;升级经 ctx.get('approval'),后台经 ctx.jobs.start(kind:'pwsh');额外 declare module 扩展 dsh-jobs 的 JobKindMap 增加 pwsh kind。",
+      "provides": ["ctx.tools 注册 pwsh", "dsh-jobs 模块声明扩展(JobKindMap.pwsh)", "ctx.jobs 后台任务(kind: 'pwsh')", "ctx.systemPrompt section: tool:pwsh"],
+      "depends_on": [
+        {"plugin_id": "dsh-tools", "mechanism": "E2", "evidence": "packages/shell/tool-pwsh/src/index.ts:49,252", "purpose": "工具注册管线"},
+        {"plugin_id": "dsh-shell", "mechanism": "E2", "evidence": "packages/shell/tool-pwsh/src/index.ts:397-400", "purpose": "ctx.shell 执行 seam"},
+        {"plugin_id": "dsh-shell-env", "mechanism": "E2", "evidence": "packages/shell/tool-pwsh/src/index.ts:49,363", "purpose": "收集 DSH_* 环境"},
+        {"plugin_id": "dsh-sandbox-policy", "mechanism": "E2", "evidence": "packages/shell/tool-pwsh/src/index.ts:200,207", "purpose": "standing policy"},
+        {"plugin_id": "dsh-jobs", "mechanism": "E2", "evidence": "packages/shell/tool-pwsh/src/index.ts:42-46,371-383", "purpose": "后台任务注册"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-terminal-bash", "evidence": "packages/terminal/terminal-bash/src/index.ts:25", "purpose": "共享 sandboxPolicy 折叠"}
+      ]
+    },
+    {
+      "id": "dsh-shell-env",
+      "name": "@deepseek-ai/dsh-shell-env",
+      "implementation": "工具无关的受信 DSH_* shell 环境注册表:ShellEnvRegistry extends Service 注册为 ctx.shellEnv,collect(execution) 重建每次调用的环境快照(内置 DSH_HOME/DSH_SHELL/DSH_SESSION_ID + 各 contributor);register(contributor) 校验键格式/保留键/重复所有权并以 ctx.effect 提供 fiber 级注销;apply() 内置 session-persistence contributor。",
+      "provides": ["ctx.shellEnv 服务(ShellEnvRegistry)", "内置 DSH_HOME、DSH_SHELL、DSH_SESSION_ID", "session-persistence contributor(DSH_SESSION_JSONL)"],
+      "depends_on": [
+        {"plugin_id": "dsh-shell", "mechanism": "E1", "evidence": "packages/shell/shell-env/src/index.ts:13-14", "purpose": "DSH_ENV_PREFIX 常量"},
+        {"plugin_id": "dsh-home-paths", "mechanism": "E1", "evidence": "packages/shell/shell-env/src/index.ts:15", "purpose": "resolveDshHome"},
+        {"plugin_id": "dsh-session-persistence", "mechanism": "E2", "evidence": "packages/shell/shell-env/src/index.ts:213", "purpose": "DSH_SESSION_JSONL 变量"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/shell/shell-env/src/index.ts:158", "purpose": "会话 id 注入 DSH_SESSION_ID"},
+        {"plugin_id": "dsh-tools", "mechanism": "E1", "evidence": "packages/shell/shell-env/src/index.ts:16", "purpose": "ToolExecution 类型"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-tool-bash", "evidence": "packages/shell/tool-bash/src/index.ts:31,341", "purpose": "bash 工具收集环境"},
+        {"plugin_id": "dsh-tool-pwsh", "evidence": "packages/shell/tool-pwsh/src/index.ts:49,363", "purpose": "pwsh 工具收集环境"}
+      ]
+    },
+    {
+      "id": "dsh-sandbox-local",
+      "name": "@deepseek-ai/dsh-sandbox-local",
+      "implementation": "本地进程沙箱 provider(LocalSandboxProvider extends SandboxProvider):按平台链选择 runner——linux 先 bwrap 后 landlock、darwin seatbelt、win32 windows-acl,功能探测仲裁;confine(argv, policy) 返回包裹 argv+enforcement+denialSignatures;windows-acl rung 拥有写授权:每 workspace 常驻 ACE+每会话私有临时目录 ACE。",
+      "provides": ["ctx.sandbox 服务(LocalSandboxProvider: confine())", "runner 链选择/功能探测", "windows-acl 写授权物化"],
+      "depends_on": [
+        {"plugin_id": "dsh-sandbox", "mechanism": "E1", "evidence": "packages/sandbox/sandbox-local/src/index.ts:37-38", "purpose": "继承 SandboxProvider 抽象"},
+        {"plugin_id": "dsh-sandbox-windows-acl", "mechanism": "E1", "evidence": "packages/sandbox/sandbox-local/src/index.ts:40", "purpose": "AclWriteGrant 实现 win32"},
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/sandbox/sandbox-local/src/index.ts:39", "purpose": "SessionId 会话隔离键"},
+        {"plugin_id": "dsh-node-addon-landlock-run", "mechanism": "E1", "evidence": "packages/sandbox/sandbox-local/src/index.ts:28-33", "purpose": "Landlock launcher"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/sandbox/sandbox-local/src/index.ts:36", "purpose": "assertNever"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-bash-sandbox", "evidence": "packages/shell/bash-sandbox/src/index.ts:45,178", "purpose": "bash 执行器消费 confine"},
+        {"plugin_id": "dsh-pwsh-sandbox", "evidence": "packages/shell/pwsh-sandbox/src/index.ts:53,184", "purpose": "pwsh 执行器消费 confine"}
+      ]
+    },
+    {
+      "id": "dsh-sandbox-policy",
+      "name": "@deepseek-ai/dsh-sandbox-policy",
+      "implementation": "沙箱策略中枢(SandboxPolicyService extends Service,注册 ctx.sandboxPolicy):部署默认模式(read-only fail-safe)+ per-session 解析——resolve({session}) 合并 approved override > 会话 sandbox/mode 事件折叠 > 部署默认;会话级 mode 切换以 setSandboxMode 写 sandbox/mode 日志事件;另经 ctx.inject(['systemPrompt']) 提供 sandbox:policy 动态上下文段落。",
+      "provides": ["ctx.sandboxPolicy 服务", "sandbox/mode 会话事件 + setSandboxMode/effectiveSandboxMode", "ctx.systemPrompt context: sandbox:policy"],
+      "depends_on": [
+        {"plugin_id": "dsh-sandbox", "mechanism": "E1", "evidence": "packages/sandbox/sandbox-policy/src/index.ts:25", "purpose": "SandboxMode 类型"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/sandbox/sandbox-policy/src/index.ts:26,139-150; session-mode.ts:70", "purpose": "会话事件日志作模式折叠存储"},
+        {"plugin_id": "dsh-system-prompt", "mechanism": "E2", "evidence": "packages/sandbox/sandbox-policy/src/index.ts:112-123", "purpose": "策略投影进运行时上下文"},
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/sandbox/sandbox-policy/src/index.ts:24", "purpose": "类型依赖"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/sandbox/sandbox-policy/src/invariant.ts:13", "purpose": "invariant"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-fs-sandbox", "evidence": "packages/fs/fs-sandbox/src/index.ts:60,127", "purpose": "fs 围栏 per-call 策略"},
+        {"plugin_id": "dsh-bash-sandbox", "evidence": "packages/shell/bash-sandbox/src/index.ts:45,71", "purpose": "bash 执行器"},
+        {"plugin_id": "dsh-pwsh-sandbox", "evidence": "packages/shell/pwsh-sandbox/src/index.ts:53,79", "purpose": "pwsh 执行器"},
+        {"plugin_id": "dsh-tool-fs", "evidence": "packages/fs/tool-fs/src/sandbox.ts:46-49", "purpose": "工具层策略解析"},
+        {"plugin_id": "dsh-tool-bash", "evidence": "packages/shell/tool-bash/src/index.ts:194,200", "purpose": "bash 工具"},
+        {"plugin_id": "dsh-tool-str-replace-editor", "evidence": "packages/fs/tool-str-replace-editor/src/index.ts:69-72", "purpose": "MutationPolicy"},
+        {"plugin_id": "dsh-permission-presets", "evidence": "packages/interaction/permission-presets/src/index.ts:18,386-387", "purpose": "权限预设写穿 sandbox/mode"}
+      ]
+    },
+    {
+      "id": "dsh-subprocess-local",
+      "name": "@deepseek-ai/dsh-subprocess-local",
+      "implementation": "子进程 seam 的本地实现(LocalSubprocessRuntime extends SubprocessRuntime):spawn() 创建 detached 进程树(Windows 经 taskkill /T),OutputCollector 做每流内存尾部保留+溢出 spill 文件,childEnv 清洗父环境,spawnTerminal 经 node-pty 提供 PTY 句柄。",
+      "provides": ["ctx.subprocess 服务", "输出采集(spill 文件)/环境清洗/进程树终止"],
+      "depends_on": [
+        {"plugin_id": "dsh-subprocess", "mechanism": "E1", "evidence": "packages/subprocess/subprocess-local/src/index.ts:17", "purpose": "继承 SubprocessRuntime 抽象"},
+        {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "packages/subprocess/subprocess-local/src/spawn.ts:18", "purpose": "MAX_TIMER_DELAY_MS"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/subprocess/subprocess-local/src/invariant.ts:15", "purpose": "invariant"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-tool-fs-search", "evidence": "packages/fs/tool-fs-search/src/search-core.ts:227", "purpose": "glob/grep 经 subprocess"},
+        {"plugin_id": "dsh-bash-sandbox", "evidence": "packages/shell/bash-sandbox/src/index.ts:45", "purpose": "bash 执行器进程基板"},
+        {"plugin_id": "dsh-pwsh-sandbox", "evidence": "packages/shell/pwsh-sandbox/package.json:49", "purpose": "pwsh 执行器进程基板"},
+        {"plugin_id": "dsh-lsp-stdio", "evidence": "packages/lsp/lsp-stdio/tests/provider.spec.ts:6", "purpose": "LSP 宿主进程"}
+      ]
+    },
+    {
+      "id": "dsh-bash-sandbox",
+      "name": "@deepseek-ai/dsh-bash-sandbox",
+      "implementation": "沙箱消费型 bash 执行器(SandboxBashExecutor extends LocalBashExecutor,注册 ctx.shell 替代本地执行器):每条命令经 ctx.sandbox.confine(['bash','-c',command], policy) 包裹;resolve() 把 per-call sandboxPolicy 印入 spec;runner 失败抛 SANDBOX_UNAVAILABLE,settlement 按 denialSignatures 分类 denied 并附 enforcement 事实。",
+      "provides": ["ctx.shell 服务(SandboxBashExecutor)", "ctx.shell.sandboxMode 能力事实", "result.sandbox 事实"],
+      "depends_on": [
+        {"plugin_id": "dsh-bash-local", "mechanism": "E3", "evidence": "packages/shell/bash-sandbox/src/index.ts:24", "purpose": "继承本地 bash 执行器"},
+        {"plugin_id": "dsh-sandbox-local", "mechanism": "E2", "evidence": "packages/shell/bash-sandbox/src/index.ts:45,178", "purpose": "ctx.sandbox.confine"},
+        {"plugin_id": "dsh-sandbox-policy", "mechanism": "E2", "evidence": "packages/shell/bash-sandbox/src/index.ts:45,71", "purpose": "默认模式事实"},
+        {"plugin_id": "dsh-subprocess", "mechanism": "E2", "evidence": "packages/shell/bash-sandbox/src/index.ts:45", "purpose": "进程基板"},
+        {"plugin_id": "dsh-shell", "mechanism": "E1", "evidence": "packages/shell/bash-sandbox/src/index.ts:12", "purpose": "ShellExecRequest 契约"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-tool-bash", "evidence": "packages/shell/tool-bash/src/index.ts:192-197", "purpose": "工具层按 sandboxMode 决定升级"},
+        {"plugin_id": "dsh-agent-spine-demo", "evidence": "packages/examples/agent-spine-demo/package.json:66", "purpose": "spine 部署选择沙箱型执行器"}
+      ]
+    },
+    {
+      "id": "dsh-pwsh-sandbox",
+      "name": "@deepseek-ai/dsh-pwsh-sandbox",
+      "implementation": "bash-sandbox 的 pwsh 对偶(SandboxPwshExecutor extends PwshLocalExecutor,注册 ctx.shell):confine(spec, policy) 用 ctx.sandbox.confine 包裹完整 pwsh argv(Windows 上 ACL 受限令牌 runner 链);resolve() 印入 per-call policy,runner 失败分类与 denial 签名匹配。",
+      "provides": ["ctx.shell 服务(SandboxPwshExecutor)", "ctx.shell.sandboxMode 能力事实", "result.sandbox 事实"],
+      "depends_on": [
+        {"plugin_id": "dsh-pwsh-local", "mechanism": "E3", "evidence": "packages/shell/pwsh-sandbox/src/index.ts:28", "purpose": "继承本地 pwsh 执行器"},
+        {"plugin_id": "dsh-sandbox-local", "mechanism": "E2", "evidence": "packages/shell/pwsh-sandbox/src/index.ts:53,184", "purpose": "ctx.sandbox.confine"},
+        {"plugin_id": "dsh-sandbox-policy", "mechanism": "E2", "evidence": "packages/shell/pwsh-sandbox/src/index.ts:53,79", "purpose": "默认模式事实"},
+        {"plugin_id": "dsh-subprocess", "mechanism": "E2", "evidence": "packages/shell/pwsh-sandbox/src/index.ts:53", "purpose": "进程基板"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-tool-pwsh", "evidence": "packages/shell/tool-pwsh/src/index.ts:198-203", "purpose": "pwsh 工具按 sandboxMode 决定升级"}
+      ]
+    }
+  ]
+}

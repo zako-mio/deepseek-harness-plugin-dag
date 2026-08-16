@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" agent="drawio-worker" version="24.0.0">
+  <diagram id="dsh-tool-fs" name="dsh-tool-fs">
+    <mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="840" pageHeight="577" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="n1" value="dsh-tools" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="1"><mxGeometry x="40" y="60" width="180" height="48" as="geometry"/></mxCell>
+        <mxCell id="n2" value="dsh-fs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="1"><mxGeometry x="40" y="126" width="180" height="48" as="geometry"/></mxCell>
+        <mxCell id="n3" value="dsh-sandbox-policy" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="1"><mxGeometry x="40" y="192" width="180" height="48" as="geometry"/></mxCell>
+        <mxCell id="n4" value="dsh-user-approval" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="1"><mxGeometry x="40" y="258" width="180" height="48" as="geometry"/></mxCell>
+        <mxCell id="n5" value="dsh-fs-observation-policy" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="1"><mxGeometry x="40" y="324" width="180" height="48" as="geometry"/></mxCell>
+        <mxCell id="n6" value="dsh-session" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="1"><mxGeometry x="40" y="390" width="180" height="48" as="geometry"/></mxCell>
+        <mxCell id="n7" value="dsh-attachment" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="1"><mxGeometry x="40" y="456" width="180" height="48" as="geometry"/></mxCell>
+        <mxCell id="n8" value="dsh-llm" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="1"><mxGeometry x="40" y="522" width="180" height="48" as="geometry"/></mxCell>
+        <mxCell id="n9" value="dsh-agent-instructions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="1"><mxGeometry x="620" y="60" width="180" height="48" as="geometry"/></mxCell>
+        <mxCell id="n10" value="dsh-subagent-in-process-driver" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="1"><mxGeometry x="620" y="126" width="180" height="48" as="geometry"/></mxCell>
+        <mxCell id="n11" value="dsh-tool-fs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontFamily=Microsoft YaHei;fontSize=14;" vertex="1" parent="1"><mxGeometry x="300" y="275" width="220" height="80" as="geometry"/></mxCell>
+        <mxCell id="n12" value="&lt;b&gt;provides&lt;/b&gt;&lt;br&gt;ctx.tools 注册 read/write/edit/read_image&lt;br&gt;fs/observed 事件发射&lt;br&gt;fs/write-intent / fs/edit-intent waterfall&lt;br&gt;ctx.systemPrompt section: tool:*" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="1"><mxGeometry x="210" y="381" width="400" height="110" as="geometry"/></mxCell>
+        <mxCell id="n13" value="E2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontFamily=Microsoft YaHei;fontSize=12;" edge="1" source="n1" target="n11" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="n14" value="E2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontFamily=Microsoft YaHei;fontSize=12;" edge="1" source="n2" target="n11" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="n15" value="E2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontFamily=Microsoft YaHei;fontSize=12;" edge="1" source="n3" target="n11" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="n16" value="E2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontFamily=Microsoft YaHei;fontSize=12;" edge="1" source="n4" target="n11" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="n17" value="E2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontFamily=Microsoft YaHei;fontSize=12;" edge="1" source="n5" target="n11" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="n18" value="E2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontFamily=Microsoft YaHei;fontSize=12;" edge="1" source="n6" target="n11" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="n19" value="E2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontFamily=Microsoft YaHei;fontSize=12;" edge="1" source="n7" target="n11" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="n20" value="E2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontFamily=Microsoft YaHei;fontSize=12;" edge="1" source="n8" target="n11" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="n21" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontFamily=Microsoft YaHei;fontSize=12;" edge="1" source="n11" target="n9" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="n22" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontFamily=Microsoft YaHei;fontSize=12;" edge="1" source="n11" target="n10" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="n23" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;fontFamily=Microsoft YaHei;fontSize=12;" edge="1" source="n11" target="n12" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="n24" value="&lt;b&gt;E 标注&lt;/b&gt;&#160;&#160;E1=类型/常量/继承复用&#160;&#160;E2=inject 服务依赖&#160;&#160;E3=其他契约(运行时组合)&#160;&#160;|&#160;&#160;左: 上游依赖 depends_on&#160;&#160;右: 下游 dependents&#160;&#160;下: provides" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="1"><mxGeometry x="40" y="511" width="520" height="26" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

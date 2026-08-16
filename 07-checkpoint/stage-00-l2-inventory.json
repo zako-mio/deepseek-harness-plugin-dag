@@ -1,0 +1,136 @@
+{
+  "meta": {
+    "mission": "deepseek-harness 插件级 DAG 依赖链分析 — 第二层 web-app bundle",
+    "repo": "D:\\Opencode_Download\\Mission-file\\2026-08\\0814-deepseek-harness源码解析\\01-source-clone",
+    "scope": "packages/bundle/web-app/cordis.patch.yml 在 base 之上追加装配的插件 + 被 UI 包 import 依赖的 Web shell kernel / UI 底座包",
+    "created_at": "2026-08-17",
+    "insert_rows": 51,
+    "unique_packages": 58,
+    "groups": 5,
+    "note": "web-startup(@deepseek-ai/dsh-web-app/startup) 与 web-runtime(@deepseek-ai/dsh-web-app) 经 normalize_pid 归并为 dsh-web-app 单节点",
+    "base_row_overrides": [
+      {"row_id": "api-gateway", "base_node": "dsh-api-gateway", "l2_node": "dsh-host-apiproxy", "mechanism": "E3", "note": "web patch 覆盖 base 行: dsh-host-apiproxy 取代 dsh-api-gateway 作为 API 网关"}
+    ]
+  },
+  "groups": [
+    {
+      "id": "G25",
+      "name": "宿主服务",
+      "plugins": [
+        {"id": "dsh-code-runtime-worker-thread", "name": "@deepseek-ai/dsh-code-runtime-worker-thread", "path": "packages/code-runtime/code-runtime-worker-thread", "row_id": "code-runtime"},
+        {"id": "dsh-storage", "name": "@deepseek-ai/dsh-storage", "path": "packages/storage/storage", "row_id": "storage"},
+        {"id": "dsh-storage-json", "name": "@deepseek-ai/dsh-storage-json", "path": "packages/storage/storage-json", "row_id": "storage-json"},
+        {"id": "dsh-storage-domain", "name": "@deepseek-ai/dsh-storage-domain", "path": "packages/storage/storage-domain", "row_id": "storage-domain"},
+        {"id": "dsh-message-feedback", "name": "@deepseek-ai/dsh-message-feedback", "path": "packages/feedback/message-feedback", "row_id": "message-feedback"},
+        {"id": "dsh-session-log-export", "name": "@deepseek-ai/dsh-session-log-export", "path": "packages/session-query/session-log-export", "row_id": "session-log-download"},
+        {"id": "dsh-workspace", "name": "@deepseek-ai/dsh-workspace", "path": "packages/workspace/workspace", "row_id": "workspace"},
+        {"id": "dsh-session-projection-cache", "name": "@deepseek-ai/dsh-session-projection-cache", "path": "packages/session/session-projection-cache", "row_id": "session-projection-cache"},
+        {"id": "dsh-session-stats", "name": "@deepseek-ai/dsh-session-stats", "path": "packages/session/session-stats", "row_id": "session-stats"},
+        {"id": "dsh-host-directory-picker-auto", "name": "@deepseek-ai/dsh-host-directory-picker-auto", "path": "packages/host/directory-picker-auto", "row_id": "directory-picker"},
+        {"id": "dsh-host-plugin-inventory", "name": "@deepseek-ai/dsh-host-plugin-inventory", "path": "packages/host/plugin-inventory", "row_id": "plugin-inventory"},
+        {"id": "dsh-host-apiproxy", "name": "@deepseek-ai/dsh-host-apiproxy", "path": "packages/host/apiproxy", "row_id": "api-gateway"},
+        {"id": "dsh-cordis-host-runner", "name": "@deepseek-ai/dsh-cordis-host-runner", "path": "packages/extensions/cordis-host-runner", "row_id": "cordis-host-runner"},
+        {"id": "dsh-host-webserver", "name": "@deepseek-ai/dsh-host-webserver", "path": "packages/host/webserver", "row_id": "webserver"},
+        {"id": "dsh-web-app", "name": "@deepseek-ai/dsh-web-app", "path": "packages/bundle/web-app", "row_id": "web-runtime+web-startup"},
+        {"id": "dsh-agent-presets", "name": "@deepseek-ai/dsh-agent-presets", "path": "packages/preset/agent-presets", "row_id": "agent-presets"}
+      ]
+    },
+    {
+      "id": "G26",
+      "name": "客户端runtime",
+      "plugins": [
+        {"id": "dsh-client-hmr", "name": "@deepseek-ai/dsh-client-hmr", "path": "packages/client/hmr", "row_id": "client-hmr"},
+        {"id": "dsh-client-modules", "name": "@deepseek-ai/dsh-client-modules", "path": "packages/client/modules", "row_id": "modules"},
+        {"id": "dsh-client-connection", "name": "@deepseek-ai/dsh-client-connection", "path": "packages/client/connection", "row_id": "connection"},
+        {"id": "dsh-api-remotes", "name": "@deepseek-ai/dsh-api-remotes", "path": "packages/api/remotes", "row_id": "api-remotes"},
+        {"id": "dsh-client-runtime", "name": "@deepseek-ai/dsh-client-runtime", "path": "packages/client/runtime", "row_id": "client-runtime"},
+        {"id": "dsh-cordis-client-runner", "name": "@deepseek-ai/dsh-cordis-client-runner", "path": "packages/extensions/cordis-client-runner", "row_id": "cordis-client-runner"},
+        {"id": "dsh-client-locale", "name": "@deepseek-ai/dsh-client-locale", "path": "packages/client/locale", "row_id": "locale"},
+        {"id": "dsh-client-web", "name": "@deepseek-ai/dsh-client-web", "path": "packages/client/web", "row_id": null, "note": "import 底座: Web shell kernel, 被 ui-* 包 import"},
+        {"id": "dsh-client-web-react", "name": "@deepseek-ai/dsh-client-web-react", "path": "packages/client/web-react", "row_id": null, "note": "import 底座: createSlotRenderer/SessionProvider/useInvoke"},
+        {"id": "dsh-client-ui-theme", "name": "@deepseek-ai/dsh-client-ui-theme", "path": "packages/client/ui-theme", "row_id": "ui-theme"}
+      ]
+    },
+    {
+      "id": "G27",
+      "name": "会话交互UI",
+      "plugins": [
+        {"id": "dsh-client-ui-conversation", "name": "@deepseek-ai/dsh-client-ui-conversation", "path": "packages/client/ui-conversation", "row_id": "ui-conversation"},
+        {"id": "dsh-client-ui-tool", "name": "@deepseek-ai/dsh-client-ui-tool", "path": "packages/client/ui-tool", "row_id": "ui-tool"},
+        {"id": "dsh-client-ui-cordis", "name": "@deepseek-ai/dsh-client-ui-cordis", "path": "packages/extensions/ui-cordis", "row_id": "ui-cordis"},
+        {"id": "dsh-client-ui-workflow-run", "name": "@deepseek-ai/dsh-client-ui-workflow-run", "path": "packages/client/ui-workflow-run", "row_id": "ui-workflow-run"},
+        {"id": "dsh-client-ui-deliverables", "name": "@deepseek-ai/dsh-client-ui-deliverables", "path": "packages/client/ui-deliverables", "row_id": "ui-deliverables"},
+        {"id": "dsh-client-ui-workspace", "name": "@deepseek-ai/dsh-client-ui-workspace", "path": "packages/client/ui-workspace", "row_id": "ui-workspace"},
+        {"id": "dsh-client-ui-jobs", "name": "@deepseek-ai/dsh-client-ui-jobs", "path": "packages/client/ui-jobs", "row_id": "ui-jobs"},
+        {"id": "dsh-client-ui-goal", "name": "@deepseek-ai/dsh-client-ui-goal", "path": "packages/client/ui-goal", "row_id": "ui-goal"},
+        {"id": "dsh-client-ui-trajectory", "name": "@deepseek-ai/dsh-client-ui-trajectory", "path": "packages/client/ui-trajectory", "row_id": "ui-trajectory"},
+        {"id": "dsh-client-ui-user-questions", "name": "@deepseek-ai/dsh-client-ui-user-questions", "path": "packages/client/ui-user-questions", "row_id": "ui-user-questions"},
+        {"id": "dsh-client-ui-message-feedback", "name": "@deepseek-ai/dsh-client-ui-message-feedback", "path": "packages/client/ui-message-feedback", "row_id": "ui-message-feedback"}
+      ]
+    },
+    {
+      "id": "G28",
+      "name": "设置输入UI",
+      "plugins": [
+        {"id": "dsh-client-ui-settings", "name": "@deepseek-ai/dsh-client-ui-settings", "path": "packages/client/ui-settings", "row_id": "ui-settings"},
+        {"id": "dsh-client-ui-settings-general", "name": "@deepseek-ai/dsh-client-ui-settings-general", "path": "packages/client/ui-settings-general", "row_id": "ui-settings-general"},
+        {"id": "dsh-client-ui-settings-models", "name": "@deepseek-ai/dsh-client-ui-settings-models", "path": "packages/client/ui-settings-models", "row_id": "ui-settings-models"},
+        {"id": "dsh-client-ui-settings-plugin-inventory", "name": "@deepseek-ai/dsh-client-ui-settings-plugin-inventory", "path": "packages/client/ui-settings-plugin-inventory", "row_id": "ui-settings-plugin-inventory"},
+        {"id": "dsh-client-ui-settings-plugins", "name": "@deepseek-ai/dsh-client-ui-settings-plugins", "path": "packages/client/ui-settings-plugins", "row_id": "ui-settings-plugins"},
+        {"id": "dsh-client-ui-input-trigger", "name": "@deepseek-ai/dsh-client-ui-input-trigger", "path": "packages/client/ui-input-trigger", "row_id": "ui-input-trigger"},
+        {"id": "dsh-client-ui-commands", "name": "@deepseek-ai/dsh-client-ui-commands", "path": "packages/client/ui-commands", "row_id": "ui-commands"},
+        {"id": "dsh-client-ui-skill", "name": "@deepseek-ai/dsh-client-ui-skill", "path": "packages/client/ui-skill", "row_id": "ui-skill"},
+        {"id": "dsh-client-ui-subagent", "name": "@deepseek-ai/dsh-client-ui-subagent", "path": "packages/client/ui-subagent", "row_id": "ui-subagent"},
+        {"id": "dsh-client-ui-plan", "name": "@deepseek-ai/dsh-client-ui-plan", "path": "packages/client/ui-plan", "row_id": "ui-plan"},
+        {"id": "dsh-client-ui-model-selection", "name": "@deepseek-ai/dsh-client-ui-model-selection", "path": "packages/client/ui-model-selection", "row_id": "ui-model-selection"},
+        {"id": "dsh-client-ui-permission-presets", "name": "@deepseek-ai/dsh-client-ui-permission-presets", "path": "packages/client/ui-permission-presets", "row_id": "ui-permission"},
+        {"id": "dsh-client-ui-agent-preset", "name": "@deepseek-ai/dsh-client-ui-agent-preset", "path": "packages/client/ui-agent-preset", "row_id": "ui-agent-preset"}
+      ]
+    },
+    {
+      "id": "G29",
+      "name": "UI底座",
+      "plugins": [
+        {"id": "dsh-client-ui-layout", "name": "@deepseek-ai/dsh-client-ui-layout", "path": "packages/client/ui-layout", "row_id": "ui-layout"},
+        {"id": "dsh-client-ui-sidebar", "name": "@deepseek-ai/dsh-client-ui-sidebar", "path": "packages/client/ui-sidebar", "row_id": "ui-sidebar"},
+        {"id": "dsh-client-ui-primitives", "name": "@deepseek-ai/dsh-client-ui-primitives", "path": "packages/client/ui-primitives", "row_id": null, "note": "import 底座: 通用 UI atoms"},
+        {"id": "dsh-client-ui-slots", "name": "@deepseek-ai/dsh-client-ui-slots", "path": "packages/client/ui-slots", "row_id": null, "note": "import 底座: slot 渲染桥梁"},
+        {"id": "dsh-client-schema-form", "name": "@deepseek-ai/dsh-client-schema-form", "path": "packages/client/schema-form", "row_id": null, "note": "import 底座: schema/draft 模型层, settings 编辑器依赖"},
+        {"id": "dsh-client-ui-attachment", "name": "@deepseek-ai/dsh-client-ui-attachment", "path": "packages/client/ui-attachment", "row_id": null, "note": "import 底座: 附件渲染 atoms, zero cordis"},
+        {"id": "dsh-client-ui-directory-picker-browse", "name": "@deepseek-ai/dsh-client-ui-directory-picker-browse", "path": "packages/client/ui-directory-picker-browse", "row_id": null, "note": "目录选择 browse 前端, 被 host-directory-picker-auto 装载"},
+        {"id": "dsh-client-ui-directory-picker-native", "name": "@deepseek-ai/dsh-client-ui-directory-picker-native", "path": "packages/client/ui-directory-picker-native", "row_id": null, "note": "目录选择 native 前端, 被 host-directory-picker-auto 装载"}
+      ]
+    }
+  ],
+  "disabled_base_rows": [
+    {"row_id": "hmr", "node": "cordis-plugin-hmr", "note": "base 行被覆盖为 disabled: true, web 未启用共享 HMR"},
+    {"row_id": "tool-bash", "node": "dsh-tool-bash"},
+    {"row_id": "tool-pwsh", "node": "dsh-tool-pwsh"},
+    {"row_id": "tool-jobs", "node": "dsh-tool-jobs", "note": "注册表留宿主面, 模型侧 job_* 控制移到 preset"},
+    {"row_id": "tool-fs", "node": "dsh-tool-fs"},
+    {"row_id": "tool-fs-search", "node": "dsh-tool-fs-search"},
+    {"row_id": "tool-str-replace-editor", "node": "dsh-tool-str-replace-editor"},
+    {"row_id": "skill-filesystem", "node": "dsh-skill-filesystem", "note": "preset 拥有本地发现, base 宿主行禁用"},
+    {"row_id": "tool-skill", "node": "dsh-tool-skill"},
+    {"row_id": "tool-goal", "node": "dsh-tool-goal"},
+    {"row_id": "plan-mode", "node": "dsh-plan-mode"},
+    {"row_id": "compaction-basic", "node": "dsh-compaction-basic", "note": "token meter 留宿主面, 压缩后端移到 preset"},
+    {"row_id": "command-compact", "node": "dsh-command-compact"},
+    {"row_id": "tool-result-pruner", "node": "dsh-compaction-tool-result-pruner"},
+    {"row_id": "tool-subagent-control", "node": "dsh-tool-subagent-control", "note": "子代理注册表留宿主面, 委派工具移到 preset"},
+    {"row_id": "tool-subagent-list-agents", "node": null, "note": "非独立 L1 节点 (sub-entry)"},
+    {"row_id": "tool-subagent", "node": "dsh-tool-subagent"},
+    {"row_id": "tool-subagent-fork", "node": null, "note": "非独立 L1 节点 (sub-entry)"},
+    {"row_id": "workflow-worker-thread", "node": "dsh-workflow-worker-thread"},
+    {"row_id": "tool-workflow", "node": "dsh-tool-workflow"},
+    {"row_id": "tool-ralph", "node": "dsh-tool-ralph"},
+    {"row_id": "agent-instructions", "node": "dsh-agent-instructions"},
+    {"row_id": "tool-todo", "node": "dsh-tool-todo"},
+    {"row_id": "tool-web", "node": "dsh-tool-web"}
+  ],
+  "base_config_overrides": [
+    {"row_id": "system-prompt", "note": "web persona 覆盖 (base 行 config 整段替换)"},
+    {"row_id": "session-query-sqlite", "note": "path=:memory: + openAt:never (web 值, base 行覆盖)"},
+    {"row_id": "tools", "note": "mode: !!js process.env.DSH_TOOLS_MODE (web 值, base 行覆盖)"}
+  ]
+}

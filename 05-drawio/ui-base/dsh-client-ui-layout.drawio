@@ -1,0 +1,28 @@
+<mxfile host="app.diagrams.net" agent="drawio-worker" version="24.0.0" type="device">
+<diagram id="diagram-dsh-client-ui-layout" name="dsh-client-ui-layout">
+<mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1060" pageHeight="500" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="11" value="上游依赖 depends_on (E1/E2/E3)" style="text;html=1;fontSize=12;fontStyle=4;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontColor=#b8860b;" vertex="1" parent="1"><mxGeometry x="40" y="30" width="200" height="22" as="geometry"/></mxCell>
+<mxCell id="12" value="下游被依赖 dependents" style="text;html=1;fontSize=12;fontStyle=4;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontColor=#5a7d4a;" vertex="1" parent="1"><mxGeometry x="770" y="30" width="250" height="22" as="geometry"/></mxCell>
+<mxCell id="13" value="&lt;b&gt;dsh-client-ui-layout&lt;/b&gt;&lt;br&gt;&lt;font style=&#x27;font-size:11px&#x27;&gt;@deepseek-ai/dsh-client-ui-layout&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fontFamily=Microsoft YaHei;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f3b57;" vertex="1" parent="1"><mxGeometry x="428" y="150" width="260" height="96" as="geometry"/></mxCell>
+<mxCell id="20" value="dsh-client-runtime&lt;br&gt;E2 reflect.provide(&#x27;layout&#x27;) + root slot 注册面" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="40" y="70" width="200" height="56" as="geometry"/></mxCell>
+<mxCell id="21" value="dsh-client-ui-slots&lt;br&gt;E1 slot 注册 API 与 SlotMap 合并面" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="40" y="142" width="200" height="56" as="geometry"/></mxCell>
+<mxCell id="22" value="dsh-client-ui-theme&lt;br&gt;E2 ctx.theme 服务与 theme/change 事件流" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="40" y="214" width="200" height="56" as="geometry"/></mxCell>
+<mxCell id="30" value="dsh-client-ui-conversation&lt;br&gt;消费 conversation/details 父 slot + ctx.layout 面板动作" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#2d4a25;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="770" y="70" width="250" height="56" as="geometry"/></mxCell>
+<mxCell id="31" value="dsh-client-ui-sidebar&lt;br&gt;占用 sidebar 列座位 + ctx.layout.toggleSidebar" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#2d4a25;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="770" y="142" width="250" height="56" as="geometry"/></mxCell>
+<mxCell id="32" value="dsh-client-ui-settings-general&lt;br&gt;壳归因避免引用环（注释依赖）" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#2d4a25;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="770" y="214" width="250" height="56" as="geometry"/></mxCell>
+<mxCell id="33" value="dsh-client-web&lt;br&gt;AppFrame 装配 root slot（shell 级 renderSlot）" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#2d4a25;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="770" y="286" width="250" height="56" as="geometry"/></mxCell>
+<mxCell id="40" value="&lt;b&gt;provides 关键项&lt;/b&gt;&lt;br&gt;• ctx.layout（toggleSidebar/openDetails/closeDetails）&lt;br&gt;• root 的 4 个 child slot 声明：sidebar(single/root)、conversation(single/session-maybe)、details(single/session)、shell.overlay(list/root)&lt;br&gt;• AppFrame 三栏组件 + 布局 store（面板几何）&lt;br&gt;• ThemePresenter（theme→document.body）" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#7a4d00;align=left;verticalAlign=middle;spacing=8;" vertex="1" parent="1"><mxGeometry x="40" y="392" width="980" height="92" as="geometry"/></mxCell>
+<mxCell id="50" edge="1" parent="1" source="20" target="13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="51" edge="1" parent="1" source="21" target="13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="52" edge="1" parent="1" source="22" target="13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="53" edge="1" parent="1" source="13" target="30" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="54" edge="1" parent="1" source="13" target="31" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="55" edge="1" parent="1" source="13" target="32" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="56" edge="1" parent="1" source="13" target="33" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+</mxfile>

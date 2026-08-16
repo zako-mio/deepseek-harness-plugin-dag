@@ -1,0 +1,94 @@
+[
+  {
+    "id": "dsh-acp-demo",
+    "name": "@deepseek-ai/dsh-acp-demo",
+    "implementation": "ACP 自动化服务器示例应用：apply(ctx, config) 在一个复合 effect('acp-demo.composition') 中按顺序 ctx.plugin 装配 agent-spine-demo(spine, 不预创建 agent) → JsonlSessionPersistence(JSONL 持久化) → sessionCheckpointPolicy(flush 屏障) → SqliteSessionQueryEngine(查询索引) → dsh-acp 传输桥(每 session/new 用 provider/model 创建 agent)；卸载按逆序保证 ACP 会话 quiesce 先于持久化 detach。bin.ts 经 dsh-app-boot 的 boot/loadEnv/resolveConfigPath 启动 stdio JSON-RPC ACP 服务，stdout 保持纯净(仅 stderr 诊断)。Config schema 由 schemastery 定义并转发各子插件配置。",
+    "provides": ["acp-demo 组合插件(apply)", "dsh-acp-demo bin(stdio ACP JSON-RPC 服务)", "完整可读 Config schema(provider/model/toolOrder/workspaceContext/skills/goals 等)"],
+    "depends_on": [
+      {"plugin_id": "dsh-agent-spine-demo", "mechanism": "E2", "evidence": "packages/examples/acp-demo/src/index.ts:117", "purpose": "ctx.plugin(agentCore) 装配默认 spine 作为 ACP 会话后端"},
+      {"plugin_id": "dsh-session-persistence-jsonl", "mechanism": "E2", "evidence": "packages/examples/acp-demo/src/index.ts:123-129", "purpose": "ctx.plugin(JsonlSessionPersistence) 挂载 JSONL 会话持久化"},
+      {"plugin_id": "dsh-session-checkpoint-policy", "mechanism": "E2", "evidence": "packages/examples/acp-demo/src/index.ts:131-133", "purpose": "ctx.plugin(sessionCheckpointPolicy) 强制 flush 屏障"},
+      {"plugin_id": "dsh-session-query-sqlite", "mechanism": "E2", "evidence": "packages/examples/acp-demo/src/index.ts:134-136", "purpose": "ctx.plugin(SqliteSessionQueryEngine) 挂载 SQLite 会话查询索引"},
+      {"plugin_id": "dsh-acp", "mechanism": "E2", "evidence": "packages/examples/acp-demo/src/index.ts:137-139", "purpose": "ctx.plugin(acp) 装配 ACP 传输桥，每 session/new 创建 agent"},
+      {"plugin_id": "dsh-app-boot", "mechanism": "E1", "evidence": "packages/examples/acp-demo/src/bin.ts:14", "purpose": "boot/loadEnv/resolveConfigPath 启动进程生命周期"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E3", "evidence": "packages/examples/acp-demo/package.json:48", "purpose": "peerDependency 不变量契约"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-agent-spine-demo",
+    "name": "@deepseek-ai/dsh-agent-spine-demo",
+    "implementation": "默认 executor-less/UI-less agent spine 组合插件。apply() 按依赖分层 ctx.plugin 装配：Timer/LlmRuntime/SessionStore/SessionTitleService/SystemPrompt/ToolRuntime 核心 → SkillRegistry+SkillFileSystem(skills 可选) → AgentRegistry+llmRetry → 可选 GoalService/toolGoal/goalSession → LocalJobRegistry+InvariantRegistry+4 个 invariant 伴随插件 → 可选 bashEnv+toolBash → workspaceContext → toolSkill/toolJobs → AgentLoop(agents 列表驱动)。Config 用 z.intersect 合并 AgentLoop.Config+SystemPrompt.Config+自有 schema；pickSpineConfig() 提取 bundle 属主字段供 app 包转发。只暴露命名导出(Loader 默认解包会丢 Config schema, 见 docs/postmortem/0001)。",
+    "provides": ["agent-spine-demo 组合插件", "pickSpineConfig 字段提取", "SkillConfigSchema/SessionTitleConfigSchema/ToolBashConfigSchema/GoalConfigSchema 等转发 schema", "agent-spine-demo-invariant 伴随插件"],
+    "depends_on": [
+      {"plugin_id": "dsh-agent-loop", "mechanism": "E2", "evidence": "packages/examples/agent-spine-demo/src/index.ts:261-264", "purpose": "ctx.plugin(AgentLoop) 装配循环，agents 声明式启动"},
+      {"plugin_id": "dsh-llm", "mechanism": "E2", "evidence": "packages/examples/agent-spine-demo/src/index.ts:221", "purpose": "ctx.plugin(LlmRuntime) LLM 服务"},
+      {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/examples/agent-spine-demo/src/index.ts:222", "purpose": "ctx.plugin(SessionStore) 事件溯源会话存储"},
+      {"plugin_id": "dsh-system-prompt", "mechanism": "E2", "evidence": "packages/examples/agent-spine-demo/src/index.ts:225-230", "purpose": "ctx.plugin(SystemPrompt) 提示词装配"},
+      {"plugin_id": "dsh-tools", "mechanism": "E2", "evidence": "packages/examples/agent-spine-demo/src/index.ts:231", "purpose": "ctx.plugin(ToolRuntime) 工具注册表"},
+      {"plugin_id": "dsh-skill", "mechanism": "E2", "evidence": "packages/examples/agent-spine-demo/src/index.ts:234", "purpose": "ctx.plugin(SkillRegistry) 技能注册表(可选)"},
+      {"plugin_id": "dsh-skill-filesystem", "mechanism": "E2", "evidence": "packages/examples/agent-spine-demo/src/index.ts:235", "purpose": "ctx.plugin(SkillFileSystem) 本地技能提供者"},
+      {"plugin_id": "dsh-agent", "mechanism": "E2", "evidence": "packages/examples/agent-spine-demo/src/index.ts:237", "purpose": "ctx.plugin(AgentRegistry) agent 注册表"},
+      {"plugin_id": "dsh-goal", "mechanism": "E2", "evidence": "packages/examples/agent-spine-demo/src/index.ts:240", "purpose": "可选 ctx.plugin(GoalService) 持久化目标域"},
+      {"plugin_id": "dsh-jobs-local", "mechanism": "E2", "evidence": "packages/examples/agent-spine-demo/src/index.ts:244", "purpose": "ctx.plugin(LocalJobRegistry) 进程内后台任务"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/examples/agent-spine-demo/src/index.ts:245", "purpose": "ctx.plugin(InvariantRegistry) 关系校验"},
+      {"plugin_id": "dsh-tool-bash", "mechanism": "E2", "evidence": "packages/examples/agent-spine-demo/src/index.ts:252", "purpose": "可选 ctx.plugin(toolBash) 模型面 bash 工具"},
+      {"plugin_id": "dsh-shell-env", "mechanism": "E2", "evidence": "packages/examples/agent-spine-demo/src/index.ts:251", "purpose": "ctx.plugin(bashEnv) shell 环境"},
+      {"plugin_id": "dsh-agent-instructions", "mechanism": "E2", "evidence": "packages/examples/agent-spine-demo/src/index.ts:255", "purpose": "可选 ctx.plugin(workspaceContext) 工作区上下文"},
+      {"plugin_id": "dsh-tool-skill", "mechanism": "E2", "evidence": "packages/examples/agent-spine-demo/src/index.ts:259", "purpose": "可选 ctx.plugin(toolSkill) 模型面技能目录"},
+      {"plugin_id": "dsh-tool-jobs", "mechanism": "E2", "evidence": "packages/examples/agent-spine-demo/src/index.ts:260", "purpose": "可选 ctx.plugin(toolJobs) 模型面任务工具"},
+      {"plugin_id": "dsh-session-title", "mechanism": "E2", "evidence": "packages/examples/agent-spine-demo/src/index.ts:223", "purpose": "ctx.plugin(SessionTitleService) 会话标题服务"},
+      {"plugin_id": "dsh-llm-retry", "mechanism": "E2", "evidence": "packages/examples/agent-spine-demo/src/index.ts:238", "purpose": "ctx.plugin(llmRetry) provider 路由重试"},
+      {"plugin_id": "dsh-home-paths", "mechanism": "E1", "evidence": "packages/examples/agent-spine-demo/src/index.ts:38,215-218", "purpose": "resolveDshHome 解析 dshHome 并校验一致性"},
+      {"plugin_id": "dsh-goal-round-driver", "mechanism": "E2", "evidence": "packages/examples/agent-spine-demo/src/index.ts:242", "purpose": "可选 ctx.plugin(goalSession) 同会话目标驱动"},
+      {"plugin_id": "dsh-tool-goal", "mechanism": "E2", "evidence": "packages/examples/agent-spine-demo/src/index.ts:241", "purpose": "可选 ctx.plugin(toolGoal) 模型面目标工具"}
+    ],
+    "dependents": [
+      {"plugin_id": "dsh-acp-demo", "evidence": "packages/examples/acp-demo/src/index.ts:117; packages/examples/acp-demo/package.json:46,63", "purpose": "ACP 示例以 ctx.plugin(agentCore) 装配本 spine"},
+      {"plugin_id": "dsh-sdk-jsonrpc-server", "evidence": "packages/sdk/server/package.json:51; packages/sdk/server/tests/server.spec.ts:12", "purpose": "sdk 服务测试装配 agent-spine-demo 作为 spine 后端"}
+    ]
+  },
+  {
+    "id": "dsh-sdk-jsonrpc-demo",
+    "name": "@deepseek-ai/dsh-sdk-jsonrpc-demo",
+    "implementation": "Bin-only 示例应用包：不导出组合插件(index.ts 仅 export {})。runJsonrpcAgent(bareModuleBaseUrl?) 共享进程生命周期：installFailLoud+loadEnv 后按 DSH_CORDIS_CONFIG 环境变量/argv 解析外部 cordis.yml 路径(不存在则报 usage 退出)，经 dsh-app-boot 的 boot() 启动外部配置，并安装 stdin 'end'/SIGTERM/SIGINT 处理器统一 dispose 退出。bin.ts 是通用 dsh-jsonrpc-agent bin(外部配置自带插件包)；packaged-bin.ts 传 import.meta.url 作 bareModuleBaseUrl(闭包运行时装包内解析裸插件)。外部配置决定是否装载 dsh-sdk-jsonrpc-server 服务插件。",
+    "provides": ["dsh-jsonrpc-agent bin(通用 JSON-RPC agent)", "packaged-bin 闭包运行时入口", "runner.ts 共享进程生命周期"],
+    "depends_on": [
+      {"plugin_id": "dsh-app-boot", "mechanism": "E1", "evidence": "packages/examples/jsonrpc-demo/src/runner.ts:8,38; package.json:48", "purpose": "boot/installFailLoud/loadEnv/resolveConfigPath 启动外部配置"},
+      {"plugin_id": "dsh-sdk-jsonrpc-server", "mechanism": "E1", "evidence": "packages/examples/jsonrpc-demo/src/index.ts:5", "purpose": "doc 契约：外部配置决定是否装载 dsh-sdk-jsonrpc-server 服务插件(运行时经 cordis.yml 装载)"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E3", "evidence": "packages/examples/jsonrpc-demo/package.json:51; src/invariant.ts:8", "purpose": "peerDependency + invariant 伴随插件"},
+      {"plugin_id": "cordis", "mechanism": "E3", "evidence": "packages/examples/jsonrpc-demo/package.json:52", "purpose": "peerDependency Context 类型"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-typert-generator",
+    "name": "@deepseek-ai/dsh-typert-generator",
+    "implementation": "Typert 生成工具链：WorkspaceAnalyzer(analyzer.ts) 基于 typescript 编译器做 workspace 级程序分析，产出 compiler-independent Typert 模型(model.ts)；FaceModelEmitter(emitter.ts) 用 @jridgewell/gen-mapping 生成 sourcemap 感知的 host/client 面反射工件；TypeGraphRenderer(renderer.ts) 渲染类型图；WorkspaceTypertGenerator(workspace.ts) 组合 discover→analyze→emit 并校验 package.json exports/files 契约(./typert、./client/typert、./remote)；cordis-catalog.ts 做 Cordis 目录投影与 type-link 违规门控。tsdown-plugin.ts 暴露 typertPlugin(transform 降级装饰器 + writeBundle 生成工件)，供根 tsdown.config.ts 以 workspace 模式接入构建。",
+    "provides": ["WorkspaceAnalyzer/WorkspaceCaches(TS 项目分析)", "FaceModelEmitter(model 驱动工件发射)", "TypeGraphRenderer(类型图渲染)", "WorkspaceTypertGenerator(workspace 级发现+生成)", "cordis-catalog 投影与 type-link 门控", "typertPlugin(tsdown/rolldown 插件面)"],
+    "depends_on": [
+      {"plugin_id": "typescript", "mechanism": "E1", "evidence": "packages/typert/generator/src/analyzer.ts:10; package.json:41", "purpose": "ts.transpileModule/Program/symbol 提取模型(外部依赖)"},
+      {"plugin_id": "jridgewell-gen-mapping", "mechanism": "E1", "evidence": "packages/typert/generator/src/emitter.ts:9; package.json:40", "purpose": "GenMapping/addMapping/toEncodedMap 生成 sourcemap(外部依赖)"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E3", "evidence": "packages/typert/generator/package.json:44", "purpose": "peerDependency 不变量契约"},
+      {"plugin_id": "cordis", "mechanism": "E3", "evidence": "packages/typert/generator/package.json:45", "purpose": "peerDependency Context/插件类型"}
+    ],
+    "dependents": [
+      {"plugin_id": "dsh-typert-loader", "evidence": "packages/typert/loader/src/index.ts:39(TYPERT_HOST_EXPORT='./typert'); packages/typert/loader/tests/loader.spec.ts:41", "purpose": "loader 装载生成工件 ./typert.host.js 并自动注册"},
+      {"plugin_id": "dsh-typert-registry", "evidence": "packages/typert/generator/tests/fixtures/type-model/packages/*/package.json(./typert exports); packages/typert/registry/package.json:44", "purpose": "registry 消费生成工件；生成器测试 fixture 验证产物契约"}
+    ]
+  },
+  {
+    "id": "dsh-native-command",
+    "name": "@deepseek-ai/dsh-native-command",
+    "implementation": "零依赖无 shell 的 execFile 运行器(库而非插件，无 ctx/state/events)。runNativeCommand(command, args, signal) 直接 execFile 执行可执行文件路径/PATH 名，不做 shell 字符串解释；utf8 stdio 捕获(stdout/stderr 在 exit 0 时 resolve，非零错误带 code/stdout/stderr reject)、AbortSignal 中止传播、windowsHide 隐藏 Windows 控制台。invariant.ts 提供包属 invariant 伴随插件。服务宿主原生 OS 集成(native 目录选择器、默认应用打开)。",
+    "provides": ["runNativeCommand(execFile runner)", "NativeCommandRunner 可测试边界类型", "native-command-invariant 伴随插件"],
+    "depends_on": [
+      {"plugin_id": "dsh-invariants", "mechanism": "E3", "evidence": "packages/util/native-command/package.json:35", "purpose": "peerDependency + invariant 注册"},
+      {"plugin_id": "cordis", "mechanism": "E3", "evidence": "packages/util/native-command/package.json:36", "purpose": "peerDependency 插件类型"}
+    ],
+    "dependents": [
+      {"plugin_id": "dsh-host-directory-picker-native", "evidence": "packages/host/directory-picker-native/src/native-picker.ts:3; packages/host/directory-picker-native/package.json:41", "purpose": "native 目录选择器 import runNativeCommand"},
+      {"plugin_id": "dsh-host-apiproxy", "evidence": "packages/host/apiproxy/src/native-path-opener.ts:13; packages/host/apiproxy/package.json:58", "purpose": "默认应用打开(open-with-default) hand-off 使用 runNativeCommand"}
+    ]
+  }
+]

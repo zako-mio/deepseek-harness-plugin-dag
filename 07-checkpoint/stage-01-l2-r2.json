@@ -1,0 +1,196 @@
+{
+  "route": "R2-client-runtime",
+  "scope": "客户端 runtime 与传输 10 插件",
+  "plugins": [
+    {
+      "id": "dsh-client-hmr",
+      "name": "@deepseek-ai/dsh-client-hmr",
+      "implementation": "双面插件。node 半：以 500ms 间隔 stat-poll 扫描 clientModules.graph() 中每个行 id 的 client bundle 文件（polling 设计——网络挂载无 inotify），mtime/size 变化时调 ctx.clientModules.rebuilt(id) 触发重哈希，并注册 /plugins/events SSE 通道（连接时推 graph 帧、重建时推 rebuilt 帧）。browser 半：EventSource 订阅同一 SSE，收到 rebuilt 帧后按 invalidate→prefetch→registry.delete→drain 旧 fiber→removeOwnedStyles→entry.refresh() 顺序热交换插件 fiber（registry-first teardown 避免 Loader 自处置标记 disabled）。串行队列防帧交错。无回滚策略。",
+      "provides": ["/plugins/events SSE 通道（graph/rebuilt 帧，PluginsEventFrame）"],
+      "depends_on": [
+        {"plugin_id": "dsh-client-modules", "mechanism": "E1", "evidence": "packages/client/hmr/src/index.ts:16-17（import type dsh-client-modules）；package.json peerDependencies @deepseek-ai/dsh-client-modules", "purpose": "node 半消费 clientModules 服务的 graph()/clientPath()/onGraphChanged()/onRebuilt() 与 rebuilt() 重哈希钩子"},
+        {"plugin_id": "dsh-client-modules", "mechanism": "E2", "evidence": "packages/client/hmr/src/index.ts:28（inject ['clientModules','webServer']）、:68（ctx.clientModules.rebuilt(id)）、:120（ctx.clientModules.graph()）", "purpose": "bundle 监视数据源；browser 半注入 modules 服务做 invalidate/prefetch（src/client/index.ts:76, 101-116）"},
+        {"plugin_id": "dsh-host-webserver", "mechanism": "E1", "evidence": "packages/client/hmr/src/index.ts:17（import type dsh-host-webserver）；peerDependencies @deepseek-ai/dsh-host-webserver", "purpose": "node 半通过 ctx.webServer.register 挂 SSE 路由（:166-179）"},
+        {"plugin_id": "dsh-client-modules", "mechanism": "E2", "evidence": "packages/client/hmr/src/client/index.ts:76（inject ['loader','modules']）、:115（modLoader.invalidate(id)）、:124（entry.ctx.registry.delete）", "purpose": "browser 半用 modules（懒 CJS 模块表）失效/预取，用 loader entry 做 fiber 交换"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-client-modules", "evidence": "packages/client/modules/src/index.ts:274-292（rebuilt() 通知 rebuildListeners→graph 重组合成）", "purpose": "HMR 是 bundle 内容变化进入 client graph 的唯一入口（onRebuilt/onGraphChanged 订阅者）"}
+      ]
+    },
+    {
+      "id": "dsh-client-modules",
+      "name": "@deepseek-ai/dsh-client-modules",
+      "implementation": "双面插件。node 半：增量扫描 host Loader 条目的 package.json 中 dsh.client（platform=web）声明，按 exports['./client'] 解析 bundle 路径，sha1 短哈希做 rev，组合 window.__DSH_BOOT__ 图（WebBootEntry/WebBootGraph），serveBundle 提供 /plugins/<id>/client.js(+.map)，tapIndex 注入 boot manifest，并提供 clientModuleHost 服务（graph()/clientPath()/rebuilt()/onRebuilt()/onGraphChanged()）。browser 半：懒 CJS 模块表（ClientModuleSystem）——执行 bundle 只注册 factory，materialization 才跑副作用；提供 ctx.modules，被 vendored Loader 作为 internal 契约消费。",
+      "provides": ["clientModules 服务（ctx 合并）", "window.__DSH_BOOT__ 注入", "/plugins/<id>/client.js 路由", "ctx.modules（ClientModuleLoader, browser）", "dsh.client 声明解析（inject/immediately/platform）"],
+      "depends_on": [
+        {"plugin_id": "dsh-host-webserver", "mechanism": "E1", "evidence": "packages/client/modules/src/index.ts:32（import type dsh-host-webserver）；Service.inject = ['webServer','loader']（:185）", "purpose": "注册 /plugins 前缀路由与 tapIndex 注入"},
+        {"plugin_id": "dsh-host-webserver", "mechanism": "E2", "evidence": "packages/client/modules/src/index.ts:242（ctx.webServer.register({kind:'prefix',path:'/plugins'})）、:246（ctx.webServer.tapIndex）", "purpose": "bundle 路由与 boot manifest 注入的宿主"},
+        {"plugin_id": "dsh-cordis-host-runner", "mechanism": "E2", "evidence": "packages/client/modules/src/index.ts:218（ctx.on('internal/plugin',…)）", "purpose": "fiber 构造/处置标记 dirty 名字，增量扫描 loader entries"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-client-hmr", "evidence": "packages/client/hmr/src/index.ts:16（import type）、:28（inject ['clientModules']）", "purpose": "消费 clientModuleHost 做 bundle 监视与 SSE 重哈希"},
+        {"plugin_id": "dsh-client-connection", "evidence": "packages/client/connection/src/index.ts:130（apply 依赖 webServer 挂 /api；无直接引用 modules）", "purpose": "同层传输行；browser 半的模块表被 shell 内核静态注册（boot.tsx）"},
+        {"plugin_id": "dsh-client-web", "evidence": "packages/client/web/src/boot.tsx:38-42（import ModulesClient + ClientModuleSystem + parseBootManifest）、:60（MODULES_ID）", "purpose": "shell kernel 在 cordis 存在前构建模块系统并 adopt modules 入口"},
+        {"plugin_id": "dsh-cordis-client-runner", "evidence": "packages/extensions/cordis-client-runner/src/client/index.ts:208（ctx.get('modules') as ClientModuleSystem）", "purpose": "动态包 runner 用模块表注册/失效 factory"}
+      ]
+    },
+    {
+      "id": "dsh-client-connection",
+      "name": "@deepseek-ai/dsh-client-connection",
+      "implementation": "双面插件，web 传输两端。node 半：binds api-gateway 到 webserver /api 前缀——每个请求先过 browser-trust fence（isTrustedApiRequest，DNS-rebinding/跨站防护），PRIVILEGED_METHODS 空信任列表钉死 loopback；/api 挂 createSharedFetchHandler，非网关方法回落到 apiProxy.toFetchHandler；inject ['apiProxy'] 后注册 /api/events.mux 与 /api/events.host 两个 WebSocket downlink（WebSocketDownlinks，客户端消息协议违规→close 1008）。browser 半：ConnectionHandle 提供 api（fixture?）WebApiClient——unary 走 fetch，mux/host 走 WebSocket；rpc 走 POST /<channel>/<endpoint> JSON（ClientConnectionRpc）；ConnectionController 双流 connect/pump/reconnect 循环（指数退避+streamOpenTimeout）。",
+      "provides": ["ctx.connection（browser: ConnectionHandle {api,isLoopback,hostDescription,rpc,start}）", "ctx.connection（host: HostConnectionService 共享 RPC 通道注册）", "/api 前缀路由", "/api/events.mux + /api/events.host WebSocket downlink", "HostConnectionHandle"],
+      "depends_on": [
+        {"plugin_id": "dsh-host-apiproxy", "mechanism": "E1", "evidence": "packages/client/connection/src/index.ts:7-8（import { toFetchHandler } from '@deepseek-ai/dsh-host-apiproxy'）", "purpose": "/api 的 dispatch 面——未拦截方法 fallback 到 apiProxy"},
+        {"plugin_id": "dsh-host-apiproxy", "mechanism": "E2", "evidence": "packages/client/connection/src/index.ts:137（ctx.get('apiProxy')）、:156-158（toFetchHandler(apiProxy).fetch）、:174（ctx.inject(['apiProxy'])）", "purpose": "网关服务注入；downlinks 泵 apiProxy.events.mux/host（websocket-downlink.ts:65,78）"},
+        {"plugin_id": "dsh-host-apiproxy", "mechanism": "E2", "evidence": "packages/client/connection/src/client/web-api-client.ts:5-6（import muxFrameSchema/hostFrameSchema/serverRequestSchema from dsh-host-apiproxy/api）", "purpose": "browser 半校验 WebSocket 帧的 schema（同一 wire 契约）"},
+        {"plugin_id": "dsh-host-webserver", "mechanism": "E1", "evidence": "packages/client/connection/src/index.ts:6（import type WebRoute/WebUpgradeRoute from dsh-host-webserver）；package.json peerDependencies", "purpose": "/api 前缀路由与 registerUpgrade 的宿主"},
+        {"plugin_id": "dsh-host-webserver", "mechanism": "E2", "evidence": "packages/client/connection/src/index.ts:47（inject ['webServer']）、:173（ctx.webServer.register(route)）、:181（apiCtx.webServer.registerUpgrade）", "purpose": "挂 HTTP 路由与 WS upgrade"},
+        {"plugin_id": "dsh-web-app", "mechanism": "E3", "evidence": "packages/bundle/web-app/cordis.patch.yml:156-163（connection 行 inject: [webRuntime]，trustedHosts: !!js ctx.webRuntime.trustedHosts）", "purpose": "装配层：从 web-runtime 的 webRuntime 服务取 LAN 信任字面量；组合注入非运行依赖"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-client-runtime", "evidence": "packages/client/runtime/src/client/index.ts:183（inject ['connection']）、:194（ctx.get('connection') as ConnectionHandle）、:204-231（connection.start 提供 sinks）", "purpose": "runtime 消费 ConnectionHandle 启动双流循环并分发 mux/host 帧"},
+        {"plugin_id": "dsh-api-remotes", "evidence": "packages/api/remotes/src/client/index.ts:44（import type … from '@deepseek-ai/dsh-client-connection/client'）", "purpose": "type-only re-export：业务包只命名一个装配包即可获得传输类型"},
+        {"plugin_id": "dsh-client-locale", "evidence": "packages/client/locale/src/client/index.ts:347（inject ['connection']）", "purpose": "locale 依赖 wire 传输（settingsScope 需要 remote 通道）"},
+        {"plugin_id": "dsh-client-ui-theme", "evidence": "packages/client/ui-theme/src/client/index.ts:376（inject ['connection']）", "purpose": "theme 依赖传输层"}
+      ]
+    },
+    {
+      "id": "dsh-api-remotes",
+      "name": "@deepseek-ai/dsh-api-remotes",
+      "implementation": "Remote BFF 装配与 Host Agent/Session lookup 策略。index.ts（host 面）：空 apply，仅通过 API_REMOTE_FORWARDED_EVENTS satisfies TypertForwardableEvent[] 做编译期形状门（forwarded event 必须是已声明事件、不能绑定 Scope、必须单向）。agent-lookup.ts：createApiRemoteAgentResolver 构建共享解析器——live Agent 复用、cold session 经 inspectApiRemoteSession(持久化检查)后 resume 一次/身份、subagent-owned 身份保留 agent-busy fence；ctx.inject(['typert']) 配置 agent/session Typert lookups。client/index.ts：platform-neutral 装配——ctx.remote.$mount 挂载 commands/goals/dynamicCordisRunner/pluginInventory/messageFeedback 五个 Remote 命名空间，type-only 再导出传输与负载词汇。",
+      "provides": ["ctx.remote（browser: TypertClientRemote 装配面）", "agent/session Typert lookups + host agent context 配置（host）", "API_REMOTE_FORWARDED_EVENTS allowlist（11 个事件）", "createApiRemoteAgentResolver / hasApiRemoteSubagentOwner"],
+      "depends_on": [
+        {"plugin_id": "dsh-api-gateway", "mechanism": "E1", "evidence": "packages/api/remotes/package.json dsh.client.inject: ['@deepseek-ai/dsh-api-gateway']；src/client/index.ts:45（import type {} from '@deepseek-ai/dsh-api-gateway/client'）", "purpose": "client 面声明依赖网关 client（remote 装配需要其类型面）"},
+        {"plugin_id": "dsh-host-apiproxy", "mechanism": "E3", "evidence": "packages/bundle/web-app/cordis.patch.yml:99-100（api-gateway 行 dsh-host-apiproxy 先于 api-remotes 行 :165-166）", "purpose": "装配顺序：网关先于 Remote 装配存在"},
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/api/remotes/src/agent-lookup.ts:5（import type { Session… } from '@deepseek-ai/dsh-session'）；peerDependencies", "purpose": "SessionHeader/SessionEvent/SessionId 类型与 ctx.sessions.get 服务（:139）"},
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/api/remotes/src/agent-lookup.ts:4（import type { Agent… } from '@deepseek-ai/dsh-agent'）；peerDependencies", "purpose": "Agent 类型与 ctx.agents.get/resume/isOwnedBy 服务（:70-71,128,162）"},
+        {"plugin_id": "dsh-session-persistence", "mechanism": "E2", "evidence": "packages/api/remotes/src/agent-lookup.ts:98（ctx.get('sessionPersistence')）、:102-110（persistence.list/inspect）", "purpose": "cold session 检查（resume 前持久化读）"},
+        {"plugin_id": "dsh-typert-registry", "mechanism": "E2", "evidence": "packages/api/remotes/src/agent-lookup.ts:199（ctx.inject(['typert'])）、:205-207（typeCtx.typert.lookups.configure）", "purpose": "配置 Agent/Session Typert lookups"},
+        {"plugin_id": "dsh-cordis-host-runner", "mechanism": "E1", "evidence": "packages/api/remotes/src/index.ts:11（import type {} from '@deepseek-ai/dsh-cordis-host-runner/types'）；client/index.ts:6（import dynamicRemote）", "purpose": "dynamicCordisRunner Remote 贡献（供 cordis-client-runner 消费）"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-client-runtime", "evidence": "packages/client/runtime/src/client/index.ts:183（inject ['remote','remote.commands']）、:195（new SessionRuntime(ctx, connection.api, ctx.remote, …)）、:216（ctx.remote.$dispatch）", "purpose": "runtime 消费 ctx.remote 命名空间与 forwarded-event 分发"},
+        {"plugin_id": "dsh-cordis-client-runner", "evidence": "packages/extensions/cordis-client-runner/src/client/index.ts:181（inject ['remote.dynamicCordisRunner']）、:215（ctx.remote.dynamicCordisRunner.invoke）、:295-307（ctx.remote.$on）", "purpose": "动态包 runner 消费 dynamicCordisRunner 命名空间与 5 个 forwarded 事件"},
+        {"plugin_id": "dsh-client-locale", "evidence": "packages/client/locale/src/client/index.ts:347（inject ['remote']）", "purpose": "settingsScope 通道与 remote 刷新"},
+        {"plugin_id": "dsh-client-ui-theme", "evidence": "packages/client/ui-theme/src/client/index.ts:376（inject ['remote']）", "purpose": "settingsScope 通道与 remote 刷新"}
+      ]
+    },
+    {
+      "id": "dsh-client-runtime",
+      "name": "@deepseek-ai/dsh-client-runtime",
+      "implementation": "客户端核心服务层（纯 browser，host apply 空）。SlotRegistry：cordis Service 包装 SlotCore——'slots/changed' 事件桥、register 经 ctx.effect 绑定 caller fiber、install()/renderSlot('root')/installLocale() boot-once、store-instance 轴（handle×scope→实例，session 实例随 scope death 清理）、hostFace 聚合 sessions/workspaces/locale。SessionRuntime：list snapshot store（manager 投影，current 持久化）、Agent scope 树（createScope：no-op fiber+ctx.extend tag，agent id===session id，lazy mint+stage-driven teardown）、SessionBinding 缓存、SessionProvideChannel。WorkspaceRuntime：workspace list + 双 baseline + 初始 selection。apply 启动 connection.start 双流，分发 mux/host 帧到 sessions/workspaces，host/remote-event 帧转 ctx.remote.$dispatch。",
+      "provides": ["ctx.slots（SlotRegistry）", "ctx.sessions（ISessions/SessionRuntime）", "ctx.workspaces（IWorkspaces/WorkspaceRuntime）", "ctx.conversationEvents / ctx.conversationViews", "事件：slots/changed、connection/reset", "TypertContext agent（registerClient）", "SessionStandardProps/GlobalStandardProps 类型合并（ui-slots）", "createSnapshotStore/defineStore/shallowEqual"],
+      "depends_on": [
+        {"plugin_id": "dsh-client-connection", "mechanism": "E1", "evidence": "packages/client/runtime/src/client/index.ts:3（import type { ConnectionHandle } from '@deepseek-ai/dsh-api-remotes/client'；dsh.client.inject 含 @deepseek-ai/dsh-client-connection）", "purpose": "inject 顺序：connection 先于 runtime 激活"},
+        {"plugin_id": "dsh-client-connection", "mechanism": "E2", "evidence": "packages/client/runtime/src/client/index.ts:183（inject ['connection']）、:194（ctx.get('connection')）、:204（connection.start({onMuxEnvelope,…})）", "purpose": "启动双流循环，消费 api/ConnectionHandle"},
+        {"plugin_id": "dsh-api-remotes", "mechanism": "E1", "evidence": "packages/client/runtime/src/client/index.ts:7（import type {} from '@deepseek-ai/dsh-api-remotes/client'）；package.json peerDependencies @deepseek-ai/dsh-api-remotes", "purpose": "类型面（remote 合并）"},
+        {"plugin_id": "dsh-api-remotes", "mechanism": "E2", "evidence": "packages/client/runtime/src/client/index.ts:183（inject ['remote','remote.commands']）、:195（new SessionRuntime(ctx, connection.api, ctx.remote, conversation)）", "purpose": "对象层共享 Remote 命名空间"},
+        {"plugin_id": "dsh-typert-registry", "mechanism": "E2", "evidence": "packages/client/runtime/src/client/index.ts:183（inject ['typert']）、:196（ctx.typert.contexts.registerClient('agent',…)）", "purpose": "注册 client Agent scope identity"},
+        {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1", "evidence": "packages/client/runtime/src/client/slots.ts:19（import { SlotCore } from '@deepseek-ai/dsh-client-ui-slots'）", "purpose": "SlotCore 纯注册语义/声明账本被 Service 层包装"},
+        {"plugin_id": "dsh-session-projection", "mechanism": "E1", "evidence": "packages/client/runtime/src/client/sessions/service.ts:27（import type { SessionProjectionMap } from '@deepseek-ai/dsh-session-projection/types'）；package.json dependencies", "purpose": "projection 值类型（projectionValues）"},
+        {"plugin_id": "dsh-host-apiproxy", "mechanism": "E1", "evidence": "packages/client/runtime/src/client/sessions/service.ts:23（import { SESSION_SEARCH_RESULT_LIMIT } from '@deepseek-ai/dsh-host-apiproxy/api'）", "purpose": "wire 层常量（search 结果上限）"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-client-web-react", "evidence": "packages/client/web-react/src/scoped-slots.tsx:895-909（createSlotRenderer 的 renderRoot 由 runtime slots.install 安装）", "purpose": "renderer 消费 SlotRendererHost（sessions.provideInfo/workspaces.list/locale）"},
+        {"plugin_id": "dsh-client-web", "evidence": "packages/client/web/src/app.tsx:13（import type {} from '@deepseek-ai/dsh-client-runtime/client'）、:28-41（ctx.slots.renderSlot('root')）", "purpose": "shell 装配读 ctx.slots/sessions；app-shell inject ['slots','sessions']（app-shell.ts:30）"},
+        {"plugin_id": "dsh-client-locale", "evidence": "packages/client/locale/src/client/index.ts:347（inject ['slots']）；src/client/index.ts:363（ctx.slots.installLocale(locale)）", "purpose": "locale 安装 LocaleFace 到 slots"},
+        {"plugin_id": "dsh-client-ui-theme", "evidence": "packages/client/ui-theme/src/client/index.ts:376（inject ['slots']）", "purpose": "theme Appearance 行注册进 settings.general.item slot"},
+        {"plugin_id": "dsh-cordis-client-runner", "evidence": "packages/extensions/cordis-client-runner/src/client/index.ts:181（inject ['slots']）、:209（ctx.get('slots') as SlotRegistry）", "purpose": "动态包 runner 用 SlotRegistry.onEntryError 做 render-crash 监督"}
+      ]
+    },
+    {
+      "id": "dsh-cordis-client-runner",
+      "name": "@deepseek-ai/dsh-cordis-client-runner",
+      "implementation": "动态双半插件包的浏览器半运行引擎（node 半 apply 空，仅让行出现在 Loader）。DynamicCordisPackageRunner：把浏览器半源码 evaluateClientHalf（闭包求值）→ guard facade 包装 → 模块表注册 factory（moduleIdOf: 'dyn/<id>'）→ 创建 loader entry，复用静态插件的 inject 等待/fiber-effect 清理/status 投影；unload=loader entry 移除+factory 失效+样式移除。CordisRunOrchestrator：订阅 remote.dynamicCordisRunner 命名空间与 5 个 forwarded 事件（cordis/request-run 等），驱动 run/approve/decline/startUserRun。ClientCordisInspectRegistry：inspect manifest 同步/query 解析。provideClientTimer 提供 ClientTimerService。",
+      "provides": ["ctx.dynamicCordisRunner（CordisRunnerFace: activeRuns/lastRunError/renderFailures/approve/decline/startUserRun/subscribe/getSnapshot/isLoaded）", "ctx.clientTimer（ClientTimerService）", "ClientCordisInspectRegistry"],
+      "depends_on": [
+        {"plugin_id": "dsh-api-remotes", "mechanism": "E1", "evidence": "packages/extensions/cordis-client-runner/src/client/index.ts:181（inject ['remote','remote.dynamicCordisRunner']）；package.json dsh.client.inject 含 @deepseek-ai/dsh-api-remotes", "purpose": "dynamicCordisRunner Remote 命名空间——声明的注入让页面在 host 半不可达时不加载浏览器半"},
+        {"plugin_id": "dsh-api-remotes", "mechanism": "E2", "evidence": "packages/extensions/cordis-client-runner/src/client/index.ts:215（ctx.remote.dynamicCordisRunner.invoke）、:295-307（ctx.remote.$on('cordis/request-run' 等 5 事件)）", "purpose": "host.call 路由与 dispatch 订阅"},
+        {"plugin_id": "dsh-client-runtime", "mechanism": "E1", "evidence": "packages/extensions/cordis-client-runner/src/client/index.ts:19（import type { SlotRegistry } from '@deepseek-ai/dsh-client-runtime/client'）；package.json peerDependencies + dsh.client.inject", "purpose": "slots 服务与类型"},
+        {"plugin_id": "dsh-client-runtime", "mechanism": "E2", "evidence": "packages/extensions/cordis-client-runner/src/client/index.ts:209（ctx.get('slots') as SlotRegistry）、runtime.ts:217（env.slots.onEntryError）", "purpose": "render-crash 监督 seam（owner WeakMap 按 component 归因）"},
+        {"plugin_id": "dsh-client-modules", "mechanism": "E1", "evidence": "packages/extensions/cordis-client-runner/src/client/index.ts:18（import type { ClientModuleSystem } from '@deepseek-ai/dsh-client-modules/client'）", "purpose": "模块表类型与 factory 注册/失效（runtime.ts:156 moduleIdOf）"},
+        {"plugin_id": "dsh-client-modules", "mechanism": "E2", "evidence": "packages/extensions/cordis-client-runner/src/client/index.ts:208（ctx.get('modules') as ClientModuleSystem）", "purpose": "load 前 invalidate + __ModuleLoader__.load 注册"},
+        {"plugin_id": "dsh-client-ui-theme", "mechanism": "E2", "evidence": "packages/extensions/cordis-client-runner/package.json dsh.client.inject 含 @deepseek-ai/dsh-client-ui-theme", "purpose": "动态包可经 ctx.theme.overrideTokens 挂 token 覆盖层"},
+        {"plugin_id": "dsh-client-connection", "mechanism": "E1", "evidence": "packages/extensions/cordis-client-runner/src/client/runtime.ts:22（import type { SessionId } from '@deepseek-ai/dsh-client-connection/client'）；peerDependencies", "purpose": "wire 类型"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-api-remotes", "evidence": "packages/api/remotes/src/client/index.ts:108-112（$mount dynamicRemote 提供 dynamicCordisRunner 命名空间）", "purpose": "反向：api-remotes 装配的命名空间是本插件的注入前提（组装闭环）"},
+        {"plugin_id": "dsh-client-ui-workflow-run", "evidence": "cordis.patch.yml:210-211（ui-workflow-run 行；runner 面供 run 控制）", "purpose": "运行面消费 CordisRunnerFace"}
+      ]
+    },
+    {
+      "id": "dsh-client-locale",
+      "name": "@deepseek-ai/dsh-client-locale",
+      "implementation": "双面。node 半：ctx.inject(['settings']) 注册 LOCALE_SETTINGS_NAMESPACE 的 LocaleSettingsSchema（settingsNamespace）。browser 半：LocaleRuntime——字典注册（namespace×locale→dict，双语文档强制）、lookup 链（entry 命名空间 active→zh 回退→common 共享命名空间→key 原文）、bind(ns) 稳定 translate 引用、setLocale 写 settingsScope、浏览器语言检测（navigator.languages 主 subtag→zh/en，window 存在性测试防 node）。提供 LocaleFace（getSnapshot/subscribe/bind）经 ctx.slots.installLocale 装入渲染机制（t 座位），注册 'locale/change' 事件，并把 LanguageRow 注册进 settings.general.item slot（order 0）。",
+      "provides": ["ctx.locale（LocaleRuntime/LocaleFace）", "事件：locale/change", "LocaleFace 安装（t 座位）", "settings.general.item slot 行（id: 'language'）", "命名空间：common、settings.locale"],
+      "depends_on": [
+        {"plugin_id": "dsh-client-runtime", "mechanism": "E1", "evidence": "packages/client/locale/src/client/index.ts:16（import type { ClientContext, SettingsScope } from '@deepseek-ai/dsh-client-runtime/client'）；package.json dsh.client.inject 含 runtime", "purpose": "ClientContext/类型与 slots 服务"},
+        {"plugin_id": "dsh-client-runtime", "mechanism": "E2", "evidence": "packages/client/locale/src/client/index.ts:347（inject ['slots']）、:363（ctx.slots.installLocale(locale)）、:384（ctx.slots.inject('settings.general.item')）", "purpose": "LocaleFace 安装与 Language 行注册"},
+        {"plugin_id": "dsh-client-ui-settings", "mechanism": "E2", "evidence": "packages/client/locale/src/client/index.ts:347（inject ['settingsScope']）、:356（ctx.settingsScope.bind({namespace})）", "purpose": "持久化语言偏好"},
+        {"plugin_id": "dsh-client-connection", "mechanism": "E2", "evidence": "packages/client/locale/src/client/index.ts:347（inject ['connection']）", "purpose": "传输/remote 通道"},
+        {"plugin_id": "dsh-api-remotes", "mechanism": "E2", "evidence": "packages/client/locale/src/client/index.ts:347（inject ['remote']）", "purpose": "settings 刷新 remote 通道"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-client-ui-theme", "evidence": "packages/client/ui-theme/src/client/index.ts:376（inject ['locale']）、:389（ctx.locale.register(SETTINGS_NS,…)）", "purpose": "theme 注册 settings.theme 字典并依赖 locale 面"},
+        {"plugin_id": "dsh-client-web-react", "evidence": "packages/client/web-react/src/scoped-slots.tsx:227-241（localeSeat 消费 LocaleFace）、:277-283（useLocaleRevision 订阅 revision）", "purpose": "渲染机制合成 t 座位与 locale 切换重渲染"},
+        {"plugin_id": "dsh-client-runtime", "evidence": "packages/client/runtime/src/client/slots.ts:97-99（_locale 字段）、:230-238（installLocale）", "purpose": "LocaleFace 宿主（boot-once 安装面）"}
+      ]
+    },
+    {
+      "id": "dsh-client-web",
+      "name": "@deepseek-ai/dsh-client-web",
+      "implementation": "Web shell kernel（import 底座，无 cordis 行）。AppWebEntry.run() 两阶段启动：① module 面——parseBootManifest 解析 window.__DSH_BOOT__，构建 ClientModuleSystem（modules+staticModules seed 表+loadBundle seams），registerStatic(APP_SHELL_ID, AppShell) 与 MODULES_ID，渲染 AppRoot loading 页；② plugin 面——ctx.plugin(Loader) 后 loader.internal=modules（internal 契约先于任何 entry 注入），订阅 internal/status 投影，await immediately 层 prefetch，创建 [MODULES_ID, ...plugin rows, APP_SHELL_ID] 每行一个 loader entry，loader.await()+assertEntriesActive 全 ACTIVE sweep（fail-loud 列出 pending 缺服务），flip settled。AppRoot 门：boot settled 前只渲染 loading/failure 报告，settled 后调 app-shell 的 renderApp()→ctx.slots.renderSlot('root')。",
+      "provides": ["AppWebEntry（boot kernel）", "AppRoot 门组件", "app-shell 装配 entry（APP_SHELL_ID='@deepseek-ai/dsh-client-app-shell'）", "getStaticModules seed 表", "PLATFORM_MODULES（平台字表）"],
+      "depends_on": [
+        {"plugin_id": "dsh-client-modules", "mechanism": "E1", "evidence": "packages/client/web/src/boot.tsx:38-42（import { ClientModuleSystem, parseBootManifest } from '@deepseek-ai/dsh-client-modules/client'）；package.json dependencies", "purpose": "模块表内核（bootstrap 例外）"},
+        {"plugin_id": "dsh-client-modules", "mechanism": "E2", "evidence": "packages/client/web/src/boot.tsx:100-112（new ClientModuleSystem + registerStatic(MODULES_ID, ModulesClient) + __DSH_MODULES__ 槽写入）、:168（loader.internal = this.modules）", "purpose": "构建/adopt 模块系统，注入 Loader internal 契约"},
+        {"plugin_id": "dsh-cordis-host-runner", "mechanism": "E2", "evidence": "packages/client/web/src/boot.tsx:163（await ctx.plugin(Loader)）、:198（loader.create({name})）", "purpose": "vendored Loader 挂载与 entry 创建"},
+        {"plugin_id": "dsh-client-web-react", "mechanism": "E1", "evidence": "packages/client/web/src/app-shell.ts:7（import { createSlotRenderer } from '@deepseek-ai/dsh-client-web-react'）；src/app.tsx:10（bindSnapshotSelector）", "purpose": "shell 装配渲染器与 uSES 绑定"},
+        {"plugin_id": "dsh-client-runtime", "mechanism": "E1", "evidence": "packages/client/web/src/app.tsx:13（import type {} from '@deepseek-ai/dsh-client-runtime/client'）", "purpose": "SlotMap 'root' 声明合并（类型面）"},
+        {"plugin_id": "dsh-client-runtime", "mechanism": "E2", "evidence": "packages/client/web/src/app-shell.ts:30（inject ['slots','sessions','layout']）、:39（ctx.slots.install(createSlotRenderer())）；app.tsx:41（ctx.slots.renderSlot('root', {})）", "purpose": "renderer 安装与 root 渲染必须等 runtime 服务 active"},
+        {"plugin_id": "dsh-client-ui-layout", "mechanism": "E2", "evidence": "packages/client/web/src/app-shell.ts:30（inject ['layout']）", "purpose": "AppFrame 在 root slot 注册，shell 只做 ctx 级 renderSlot"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-client-hmr", "evidence": "cordis.patch.yml:142-143（client-hmr 行注释：'node half is a client-side package, which a host-side bundle cannot import'——故为行而非 web-runtime 子行）", "purpose": "HMR 行单独挂在 web 装配层（同 bundle 但非子行）"},
+        {"plugin_id": "dsh-client-modules", "evidence": "packages/client/modules/src/client/index.ts:27-33（apply 读 window.__DSH_MODULES__ 槽并 provide('modules')）", "purpose": "kernel 槽写入是 wrapper apply 的前提（供应侧握手）"}
+      ]
+    },
+    {
+      "id": "dsh-client-web-react",
+      "name": "@deepseek-ai/dsh-client-web-react",
+      "implementation": "Shell 侧 React 胶水（import 底座，无 cordis 行）。createSlotRenderer：返回 SlotRenderer{renderRoot}——HostContext.Provider+SessionMaybeProvider+RootOutlet；renderer 由 runtime 的 ctx.slots.install 安装（app-shell 行执行）。createSlotRenderer 内部 SlotOutlet 用 useSyncExternalStore 订阅 host.subscribe(key)/getVersion + useLocaleRevision，SlotErrorBoundary 按 entry 隔离崩溃（SlotAssemblyError rethrow，其余走 onEntryError）。bindSnapshotSelector：唯一 hook 构造器——useSyncExternalStoreWithSelector 把裸 observable 源绑成类型化 selector hook（subscribe/getSnapshot 闭包缓存，Object.is 相等）。SessionProvider/SessionMaybeProvider：订阅 host.sessions.provideInfo，key={sessionId} 重建 session 子树，session-maybe 有 adoption 语义。useInvoke：异步动作稳定 trigger+pending（per-hook 外部 store）。",
+      "provides": ["createSlotRenderer（SlotRenderer）", "bindSnapshotSelector（uSES 桥）", "SessionProvider / SessionMaybeProvider", "useInvoke", "SlotErrorBoundary/SlotOwnershipError/StaleAuthorizationError/SlotAssemblyError", "observableHook/maybeObservableHook/projectionHook"],
+      "depends_on": [
+        {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1", "evidence": "packages/client/web-react/src/index.ts:2（import type { SnapshotSelectorHook } from '@deepseek-ai/dsh-client-ui-slots'）；src/scoped-slots.tsx:6-11（import SlotOwnershipError, SlotRendererHost 等）", "purpose": "slot 契约类型（HostObservable/SlotRendererHost/StoredEntry/LocaleFace）"},
+        {"plugin_id": "dsh-client-runtime", "mechanism": "E2", "evidence": "packages/client/web-react/src/scoped-slots.tsx:353-355（host.sessions.list / host.workspaces.list 标准 hook）、:417-424（host.storeOf 解 store）、:405-415（host.locale t 座位）", "purpose": "renderer 消费 SlotRendererHost 的 sessions/workspaces/locale/store 面（运行时提供）"},
+        {"plugin_id": "dsh-client-locale", "mechanism": "E2", "evidence": "packages/client/web-react/src/scoped-slots.tsx:227-241（localeSeat 调 face.bind(ns)+getSnapshot().revision）", "purpose": "t 座位绑定与 locale 切换重渲染"},
+        {"plugin_id": "dsh-cordis-host-runner", "mechanism": "E1", "evidence": "packages/client/web-react/package.json devDependencies（无 cordis-plugin-loader 值依赖）；peerDependencies 仅 cordis+invariants", "purpose": "框架层不直接依赖 Loader（renderer 由 shell 安装）"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-client-web", "evidence": "packages/client/web/src/app-shell.ts:7（createSlotRenderer import）；src/seed.ts:36（'@deepseek-ai/dsh-client-web-react' 进 seed 表）", "purpose": "shell 构建 renderer 并经 app-shell 行安装；seed 表供 fetch bundle 解析 external"},
+        {"plugin_id": "dsh-client-runtime", "evidence": "packages/client/runtime/src/client/slots.ts:213-221（install(renderer) boot-once 契约）", "purpose": "SlotRegistry.install 消费 renderer 产品（同一 install/renderSlot 双 throw 契约）"},
+        {"plugin_id": "dsh-client-hmr", "evidence": "packages/client/hmr/src/client/index.ts:87-91（removeOwnedStyles 管理 style[data-plugin]——renderer 侧样式由 factory materialization 注入）", "purpose": "renderer 渲染的 entry 样式生命周期与 HMR 交换衔接"}
+      ]
+    },
+    {
+      "id": "dsh-client-ui-theme",
+      "name": "@deepseek-ai/dsh-client-ui-theme",
+      "implementation": "双面主题插件。node 半：ctx.inject(['settings']) 注册 THEME_SETTINGS_NAMESPACE 的 ThemeSettingsSchema；ctx.inject(['webServer']) 挂 tapIndex→injectBootTheme——在 body 后内联脚本按持久化偏好设置 colorScheme+data-ds-dark-theme（pre-plugin 预着色，system 在浏览器解析）。browser 半：ThemeRuntime——DOM-free（presenter 由 ui-layout 消费 snapshot），持有 prefers-color-scheme media query（system 偏好下 OS 切换触发 publish），register()/overrideTokens()（seq 序层折叠，later 层 per-token 胜出），setTheme 写 settingsScope；注册 'theme/change' 事件；把 AppearanceRow 注册进 settings.general.item slot（order 10）。styles/ 提供 --dsw-* token 与 base/design-platform/scrollbar/shiki CSS。",
+      "provides": ["ctx.theme（ThemeRuntime/ThemeSnapshot）", "事件：theme/change", "boot-theme 内联脚本（tapIndex 注入）", "settings.general.item slot 行（id: 'appearance'）", "命名空间：settings.theme", "--dsw-* token stylesheets"],
+      "depends_on": [
+        {"plugin_id": "dsh-client-runtime", "mechanism": "E1", "evidence": "packages/client/ui-theme/src/client/index.ts:12（import type { ClientContext, SettingsScope } from '@deepseek-ai/dsh-client-runtime/client'）；package.json dsh.client.inject 含 runtime", "purpose": "ClientContext/slots 服务"},
+        {"plugin_id": "dsh-client-runtime", "mechanism": "E2", "evidence": "packages/client/ui-theme/src/client/index.ts:376（inject ['slots']）、:406（ctx.slots.inject('settings.general.item')）", "purpose": "Appearance 行注册"},
+        {"plugin_id": "dsh-client-locale", "mechanism": "E1", "evidence": "packages/client/ui-theme/src/client/index.ts:17（import type {} from '@deepseek-ai/dsh-client-locale/client'）；package.json peerDependencies + dsh.client.inject 含 locale", "purpose": "locale Context 合并（ctx.locale）"},
+        {"plugin_id": "dsh-client-locale", "mechanism": "E2", "evidence": "packages/client/ui-theme/src/client/index.ts:376（inject ['locale']）、:389（ctx.locale.register(SETTINGS_NS,{zh,en})）", "purpose": "settings.theme 字典注册"},
+        {"plugin_id": "dsh-client-ui-settings", "mechanism": "E2", "evidence": "packages/client/ui-theme/src/client/index.ts:376（inject ['settingsScope']）、:385（ctx.settingsScope.bind({namespace})）", "purpose": "持久化主题偏好（settings 文档）"},
+        {"plugin_id": "dsh-client-connection", "mechanism": "E2", "evidence": "packages/client/ui-theme/src/client/index.ts:376（inject ['connection']）", "purpose": "传输/remote 通道"},
+        {"plugin_id": "dsh-api-remotes", "mechanism": "E2", "evidence": "packages/client/ui-theme/src/client/index.ts:376（inject ['remote']）", "purpose": "settings 刷新 remote 通道"},
+        {"plugin_id": "dsh-settings", "mechanism": "E1", "evidence": "packages/client/ui-theme/src/index.ts:5（import { settingsNamespace } from '@deepseek-ai/dsh-settings'）", "purpose": "host 半注册 settings namespace"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-cordis-client-runner", "evidence": "packages/extensions/cordis-client-runner/package.json dsh.client.inject 含 @deepseek-ai/dsh-client-ui-theme", "purpose": "动态包可经 ctx.theme.overrideTokens 挂 token 覆盖（ThemeTokenModes 校验）"},
+        {"plugin_id": "dsh-client-ui-layout", "evidence": "cordis.patch.yml:174-175（ui-theme 行先于 ui-layout 行 :180-181）；ui-theme/src/client/index.ts:2-4（'presenter consumes the resolved snapshot'）", "purpose": "theme 快照被 ui-layout 的 ThemePresenter 消费（装配顺序保证 theme 先 active）"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,312 @@
+{
+  "route": "R3-interaction",
+  "scope": "交互与状态域 21 插件",
+  "plugins": [
+    {
+      "id": "dsh-user-approval",
+      "name": "@deepseek-ai/dsh-user-approval",
+      "implementation": "定义 ctx.approval 审批 seam(Service 默认导出)。request() 先校验 open turn，append approval/asked 审计事件，再经 ctx.waterfall 调度 scope-targeted 'approval/request' 瀑布(fail-closed 默认 'unavailable'，'never' 策略确定性 reject，abort 得 'cancelled')，最后 append approval/decided 配对事件。setPolicy() 用 setApprovalPolicy 写 session 日志并 agent.inject 用户可见切换通知；经 ctx.inject(['systemPrompt']) 注册 'approval:policy' context 段向模型陈述当前策略。",
+      "provides": ["ctx.approval(ApprovalService)", "approval/request 瀑布事件(Scoped)", "session 事件 approval/asked|decided|policy", "systemPrompt context 段 approval:policy", "setApprovalPolicy/effectiveApprovalPolicy/APPROVAL_POLICIES"],
+      "depends_on": [
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/interaction/user-approval/src/index.ts:146,267,274", "purpose": "审批审计事件与 policy 持久化"},
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/interaction/user-approval/src/index.ts:10,159,230", "purpose": "携带 live agent 路由 answerer"},
+        {"plugin_id": "dsh-system-prompt", "mechanism": "E3", "evidence": "packages/interaction/user-approval/src/index.ts:204", "purpose": "向模型暴露 approval policy"},
+        {"plugin_id": "dsh-scope", "mechanism": "E2", "evidence": "packages/interaction/user-approval/src/index.ts:12,319", "purpose": "按 agent scope 过滤瀑布监听者"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/interaction/user-approval/src/index.ts:11", "purpose": "createUserMessage"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-tools", "evidence": "packages/core/tools/src/index.ts:1693,1706", "purpose": "serviceAsk → approval.request"},
+        {"plugin_id": "dsh-permission-presets", "evidence": "packages/interaction/permission-presets/src/index.ts:23,376,428", "purpose": "preset 捆绑 approval 旋钮"},
+        {"plugin_id": "dsh-acp", "evidence": "packages/acp/acp/src/index.ts:215", "purpose": "ACP 作为 approval answerer"},
+        {"plugin_id": "dsh-host-apiproxy", "evidence": "packages/host/apiproxy/src/api-proxy.ts:1422", "purpose": "apiproxy 转发审批给 UI"}
+      ]
+    },
+    {
+      "id": "dsh-permission-presets",
+      "name": "@deepseek-ai/dsh-permission-presets",
+      "implementation": "定义 ctx.permissionPresets 服务，把 sandbox 模式与 approval policy 两个旋钮捆绑成产品级 preset 表(read-only/workspace-write/danger-full-access)。set()/apply() 先 append 'permission/preset' 事件再经 setSandboxMode/setApprovalPolicy 写各旋钮；pinInitialPermission 在 session/created 时补齐缺省旋钮。经 installSettingsSection 注册 'permission' 默认 preset 设置，注册 'permissions' 投影单元与 /permission 命令。",
+      "provides": ["ctx.permissionPresets", "session 事件 permission/preset", "permissions 投影单元", "/permission 命令", "permission settings 命名空间"],
+      "depends_on": [
+        {"plugin_id": "dsh-user-approval", "mechanism": "E2", "evidence": "packages/interaction/permission-presets/src/index.ts:23,376,389", "purpose": "approval 旋钮写穿"},
+        {"plugin_id": "dsh-sandbox-policy", "mechanism": "E2", "evidence": "packages/interaction/permission-presets/src/index.ts:18,387", "purpose": "sandbox 旋钮写穿"},
+        {"plugin_id": "dsh-shell", "mechanism": "E3", "evidence": "packages/interaction/permission-presets/src/index.ts:21,192,310", "purpose": "读取 sandboxMode 能力事实"},
+        {"plugin_id": "dsh-settings", "mechanism": "E3", "evidence": "packages/interaction/permission-presets/src/index.ts:24,211", "purpose": "持久化 defaultPreset"},
+        {"plugin_id": "dsh-commands", "mechanism": "E3", "evidence": "packages/interaction/permission-presets/src/index.ts:257", "purpose": "/permission 命令注册"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-host-apiproxy", "evidence": "packages/host/apiproxy/src/api-proxy.ts", "purpose": "读取 permissions 投影"},
+        {"plugin_id": "dsh-ui-permission-presets", "evidence": "packages/client/ui-permission-presets", "purpose": "UI 渲染选择器"}
+      ]
+    },
+    {
+      "id": "dsh-commands",
+      "name": "@deepseek-ai/dsh-commands",
+      "implementation": "定义 ctx.commands CommandRuntime(TypertRemoteService 默认导出)，用 ScopedLayers 做全局+per-agent scope 命令注册。register() 校验名称/描述/handler；execute() 解析斜杠行，mint commandId、append 'command/run' 日志事件、调用 handler、settle 后 append 'command/done'。list()/find() 是 @Remote 导出，notifyChange 发 'commands/change'。",
+      "provides": ["ctx.commands(CommandRuntime)", "session 事件 command/run|command/done", "commands/change emit 事件", "@Remote list/find/execute", "parseCommand/CommandId"],
+      "depends_on": [
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/interaction/commands/src/index.ts:308,330,360", "purpose": "命令生命周期事件持久化"},
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/interaction/commands/src/index.ts:7,260", "purpose": "命令执行目标 agent"},
+        {"plugin_id": "dsh-scope", "mechanism": "E2", "evidence": "packages/interaction/commands/src/index.ts:8,226", "purpose": "per-agent 命令分层"},
+        {"plugin_id": "dsh-typert-protocol", "mechanism": "E1", "evidence": "packages/interaction/commands/src/index.ts:11,225", "purpose": "跨进程远程命令执行通道"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-command-feedback", "evidence": "packages/feedback/command-feedback/src/index.ts:16,101", "purpose": "/feedback 命令"},
+        {"plugin_id": "dsh-command-goal", "evidence": "packages/goal/command-goal/src/index.ts:12,164", "purpose": "/goal 命令"},
+        {"plugin_id": "dsh-command-compact", "evidence": "packages/compaction/command-compact/src/index.ts:11,100", "purpose": "/compact 命令"},
+        {"plugin_id": "dsh-permission-presets", "evidence": "packages/interaction/permission-presets/src/index.ts:257-276", "purpose": "/permission 命令"},
+        {"plugin_id": "dsh-plan-mode", "evidence": "packages/plan/plan-mode/src/index.ts:269", "purpose": "/plan 命令"}
+      ]
+    },
+    {
+      "id": "dsh-user-questions",
+      "name": "@deepseek-ai/dsh-user-questions",
+      "implementation": "定义 ctx.userQuestions UserQuestionService(Service 默认导出)，单活动 provider 注册模型(registerProvider 重复抛 DUPLICATE_PROVIDER)。ask() 校验 abort/空问题/agent 必须为 live root(CALLER_NOT_LIVE/DELEGATED_CALLER)/intent 标签合法，再委托 provider.ask()。模型侧工具由 dsh-tool-ask-user 提供。",
+      "provides": ["ctx.userQuestions", "UserQuestionProvider 注册 seam", "UserQuestionError 错误分类"],
+      "depends_on": [
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/interaction/user-questions/src/index.ts:11,100-113", "purpose": "agent live/root 校验"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/interaction/user-questions/src/index.ts:12", "purpose": "HarnessError 基类"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-tool-ask-user", "evidence": "packages/interaction/tool-ask-user/src/index.ts:14,81", "purpose": "ask_user_question 工具"},
+        {"plugin_id": "dsh-plan-mode", "evidence": "packages/plan/plan-mode/src/index.ts:330-351", "purpose": "exit_plan_mode 评审提问"}
+      ]
+    },
+    {
+      "id": "dsh-command-feedback",
+      "name": "@deepseek-ai/dsh-command-feedback",
+      "implementation": "apply() 在 ctx.commands 注册 /feedback 命令(recordInput:false)。handler 校验非空文本后 recordFeedback() 向 session append 'feedback/record' 事件(log-only)，acknowledge 附带 session id、匿名用户 id 与 session-telemetry 共享披露句。",
+      "provides": ["/feedback 命令", "session 事件 feedback/record", "recordFeedback()"],
+      "depends_on": [
+        {"plugin_id": "dsh-commands", "mechanism": "E3", "evidence": "packages/feedback/command-feedback/src/index.ts:16,101", "purpose": "/命令注册"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/feedback/command-feedback/src/index.ts:12,75", "purpose": "feedback/record 持久化"},
+        {"plugin_id": "dsh-anonymous-user-id", "mechanism": "E1", "evidence": "packages/feedback/command-feedback/src/index.ts:13,95", "purpose": "匿名用户 id"},
+        {"plugin_id": "dsh-session-telemetry", "mechanism": "E3", "evidence": "packages/feedback/command-feedback/src/index.ts:11,92", "purpose": "共享披露策略(可选)"}
+      ],
+      "dependents": []
+    },
+    {
+      "id": "dsh-command-goal",
+      "name": "@deepseek-ai/dsh-command-goal",
+      "implementation": "apply() 在 ctx.commands 注册 /goal 命令。handler 解析 show/create/edit/pause/resume/clear 语法，通过 ctx.goals.get/create/edit/pause/resume/clear(compare-and-set ref) 执行，GoalView 渲染为多行 CommandResult。",
+      "provides": ["/goal 命令", "GoalCommand 语法解析与渲染"],
+      "depends_on": [
+        {"plugin_id": "dsh-commands", "mechanism": "E3", "evidence": "packages/goal/command-goal/src/index.ts:12,164", "purpose": "/命令注册"},
+        {"plugin_id": "dsh-goal", "mechanism": "E2", "evidence": "packages/goal/command-goal/src/index.ts:8,113-146", "purpose": "goal 域状态读写"}
+      ],
+      "dependents": []
+    },
+    {
+      "id": "dsh-command-compact",
+      "name": "@deepseek-ai/dsh-command-compact",
+      "implementation": "apply() 用 ctx.effect 管理生命周期：teardown 先 drain 进行中的 handler，再注册 /compact 命令。handler 调 ctx.compaction.compactNow(agent,signal,commandId)，成功返回 shadowedSeqs/shadowedTokenCount；ManualCompactionError 代码映射为人类可读错误。",
+      "provides": ["/compact 命令"],
+      "depends_on": [
+        {"plugin_id": "dsh-commands", "mechanism": "E3", "evidence": "packages/compaction/command-compact/src/index.ts:11,100", "purpose": "/命令注册"},
+        {"plugin_id": "dsh-compaction", "mechanism": "E2", "evidence": "packages/compaction/command-compact/src/index.ts:7,66", "purpose": "compactNow 手动压缩"}
+      ],
+      "dependents": []
+    },
+    {
+      "id": "dsh-credentials-local",
+      "name": "@deepseek-ai/dsh-credentials-local",
+      "implementation": "实现 CredentialProvider 抽象(默认导出)，文件位于 $DSH_HOME/.credentials.yaml。resolve() 按信任层级查值：继承环境(只读,获胜)>managed 文件>项目 .env>用户 .env。写路径经 withFileLock 读-改-写(0600/0700、保留注释)，chokidar 热重载，write() 拒绝 env 遮蔽的 ref，notifyUpdated 发 credentials/updated 事件。",
+      "provides": ["ctx.credentials(LocalCredentialProvider)", "resolve/describe/set/unset", "credentials/updated 事件扇出", "CREDENTIALS_FILENAME/resolveSpec"],
+      "depends_on": [
+        {"plugin_id": "dsh-credentials", "mechanism": "E1", "evidence": "packages/credentials/credentials-local/src/index.ts:47,115", "purpose": "Provider seam 抽象"},
+        {"plugin_id": "dsh-launch-environment", "mechanism": "E1", "evidence": "packages/credentials/credentials-local/src/index.ts:46,251,261", "purpose": "读取 env 层"},
+        {"plugin_id": "dsh-home-paths", "mechanism": "E1", "evidence": "packages/credentials/credentials-local/src/index.ts:45,81", "purpose": "resolveDshHome"},
+        {"plugin_id": "dsh-atomic-write", "mechanism": "E1", "evidence": "packages/credentials/credentials-local/src/index.ts:44,384", "purpose": "跨进程锁与原子写"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-web-search-deepseek", "evidence": "packages/web/web-search-deepseek/src/index.ts:103", "purpose": "读取存储的 API key"},
+        {"plugin_id": "dsh-llm-pi-ai", "evidence": "packages/llm/llm-pi-ai/tests/dynamic-config.spec.ts:134", "purpose": "provider 密钥写入"}
+      ]
+    },
+    {
+      "id": "dsh-settings-file",
+      "name": "@deepseek-ai/dsh-settings-file",
+      "implementation": "实现 SettingsProvider 抽象(默认导出)，单个 YAML/JSON 文档($DSH_HOME/settings.yaml)承载所有 namespace section。load() 解析并 publish，persist() 经操作链+withFileLock 读-改-写，renderYaml 用 patchNode 做注释保留的 leaf-level diff。chokidar watch 热发布外部编辑，reconcileFromDisk 抑制 self-write。",
+      "provides": ["ctx.settings(FileSettingsProvider)", "documentPath/prepareDocument", "settings/update→persist 实现"],
+      "depends_on": [
+        {"plugin_id": "dsh-settings", "mechanism": "E1", "evidence": "packages/settings/settings-file/src/index.ts:18,105", "purpose": "SettingsProvider 抽象"},
+        {"plugin_id": "dsh-home-paths", "mechanism": "E1", "evidence": "packages/settings/settings-file/src/index.ts:17,56,238", "purpose": "解析文档路径"},
+        {"plugin_id": "dsh-atomic-write", "mechanism": "E1", "evidence": "packages/settings/settings-file/src/index.ts:16,215", "purpose": "跨进程锁与原子写"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-permission-presets", "evidence": "packages/interaction/permission-presets/src/index.ts:211-218", "purpose": "preset 默认值落盘"},
+        {"plugin_id": "dsh-llm-pi-ai", "evidence": "packages/llm/llm-pi-ai/tests/dynamic-config.spec.ts:77", "purpose": "provider 动态配置"}
+      ]
+    },
+    {
+      "id": "dsh-attachment-local",
+      "name": "@deepseek-ai/dsh-attachment-local",
+      "implementation": "实现 AttachmentStore 抽象(默认导出)，内容寻址存储于 DSH_HOME/attachments/v1(objects/<2位前缀>/<sha256>)。saveImage 先 inspectMetadata 完整解码校验，再 durable 写入(fsync staging→link→sync)返回 sha256 引用；readImage 校验摘要与元数据；validateImage 只做准入校验。",
+      "provides": ["ctx.attachments(LocalAttachmentStore)", "validateImage/saveImage/readImage", "detectImage/readImageFile 导出"],
+      "depends_on": [
+        {"plugin_id": "dsh-attachment", "mechanism": "E1", "evidence": "packages/attachment/attachment-local/src/index.ts:6", "purpose": "AttachmentStore 抽象"},
+        {"plugin_id": "dsh-home-paths", "mechanism": "E1", "evidence": "packages/attachment/attachment-local/src/index.ts:8,53", "purpose": "resolveDshHome"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-tool-fs", "evidence": "packages/fs/tool-fs/src/read-image.ts:172,191", "purpose": "read_image 存附件"},
+        {"plugin_id": "dsh-host-apiproxy", "evidence": "packages/host/apiproxy/src/api-proxy.ts:155-180", "purpose": "客户端附件上传"},
+        {"plugin_id": "dsh-session-export", "evidence": "packages/host/apiproxy/src/session-export.ts:60", "purpose": "会话导出携带附件"}
+      ]
+    },
+    {
+      "id": "dsh-jobs-local",
+      "name": "@deepseek-ai/dsh-jobs-local",
+      "implementation": "实现 JobRegistry 抽象(默认导出)的进程内版本：TrackedTask 全内存、snapshot 永不外泄 live state。start() 校验 owner controller 可达与 maxConcurrentJobsPerOwner 限额，创建 job 并挂 hooks.done settle；list/get/read/kill/wait 按 owner session-id 鉴权；onJobDone/onJobsChanged/attachController 经 ScopedLayers 分层注册，disposeAll 在 ctx teardown 时 cancel。",
+      "provides": ["ctx.jobs(LocalJobRegistry)", "start/list/get/read/kill/wait", "onJobDone/onJobsChanged/attachController", "TASK_WAIT_TIMEOUT"],
+      "depends_on": [
+        {"plugin_id": "dsh-jobs", "mechanism": "E1", "evidence": "packages/jobs/jobs-local/src/index.ts:18", "purpose": "JobRegistry 抽象"},
+        {"plugin_id": "dsh-scope", "mechanism": "E2", "evidence": "packages/jobs/jobs-local/src/index.ts:15,116", "purpose": "per-owner 分层"},
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/jobs/jobs-local/src/index.ts:14,46", "purpose": "job owner 生命周期"},
+        {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "packages/jobs/jobs-local/src/index.ts:17,250", "purpose": "wait 超时"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-tool-jobs", "evidence": "packages/jobs/tool-jobs/src/index.ts:260,279,334", "purpose": "模型 job_* 工具"},
+        {"plugin_id": "dsh-tool-subagent", "evidence": "packages/subagent/tool-subagent/src/index.ts:400,406", "purpose": "subagent 后台任务"}
+      ]
+    },
+    {
+      "id": "dsh-tool-jobs",
+      "name": "@deepseek-ai/dsh-tool-jobs",
+      "implementation": "apply() 注册 job_output/job_list/job_kill 三个模型工具：attachController('tool-jobs') 使 producers 可 start；onJobDone 把未报告完成以 notice 注入 busy owner 或 followup 唤醒 idle owner(wakeup 默认，maxConsecutiveWakes 限界)；tools/pre-execute 捕获 outputLimitBytes；systemPrompt.section 给模型指导；agent/inbox/claimed 用户输入重置 wake 预算。",
+      "provides": ["ctx.tools: job_output/job_list/job_kill", "jobs controller attachment('tool-jobs')", "completion notice 注入/唤醒", "systemPrompt section tool:jobs", "tools/pre-execute 输出限制监听"],
+      "depends_on": [
+        {"plugin_id": "dsh-tools", "mechanism": "E3", "evidence": "packages/jobs/tool-jobs/src/index.ts:14,233,302", "purpose": "工具注册与执行管道"},
+        {"plugin_id": "dsh-jobs", "mechanism": "E2", "evidence": "packages/jobs/tool-jobs/src/index.ts:16,334,356,392", "purpose": "job 状态读写"},
+        {"plugin_id": "dsh-jobs-local", "mechanism": "E3", "evidence": "packages/jobs/tool-jobs/src/index.ts:260", "purpose": "controller 注册落地"},
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/jobs/tool-jobs/src/index.ts:19,294-299", "purpose": "completion 通知投递"},
+        {"plugin_id": "dsh-system-prompt", "mechanism": "E3", "evidence": "packages/jobs/tool-jobs/src/index.ts:263", "purpose": "模型跨调用指导"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-tool-subagent", "evidence": "packages/subagent/tool-subagent/src/index.ts:402", "purpose": "subagent 后台任务依赖 controller"}
+      ]
+    },
+    {
+      "id": "dsh-goal",
+      "name": "@deepseek-ai/dsh-goal",
+      "implementation": "事件溯源 goal 域(ctx.goals GoalService，extends TypertRemoteService)。所有变更 append 'goal/change' 事件，per-session 缓存经 fold.ts 增量同步，compare-and-set ref 校验防 stale。create/edit/pause/resume/complete/block/clear 提交后经 agentEvents 发 'goal/changed'；'agent/session-start' 重置 activation=disarmed；注册 'goal' 投影单元；@Remote 导出。",
+      "provides": ["ctx.goals(GoalService)", "session 事件 goal/change", "goal/changed agent-scoped emit", "goal session projection", "@Remote API"],
+      "depends_on": [
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/goal/goal/src/index.ts:546", "purpose": "goal/change 持久化"},
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/goal/goal/src/index.ts:12,198,415,557", "purpose": "agent 身份与 goal/changed"},
+        {"plugin_id": "dsh-session-projection", "mechanism": "E3", "evidence": "packages/goal/goal/src/index.ts:204", "purpose": "goal 投影单元"},
+        {"plugin_id": "dsh-scope", "mechanism": "E2", "evidence": "packages/goal/goal/src/domain.ts:114", "purpose": "事件按 agent scope 分发"},
+        {"plugin_id": "dsh-typert-protocol", "mechanism": "E1", "evidence": "packages/goal/goal/src/index.ts:15,183", "purpose": "远程 goal API"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-tool-goal", "evidence": "packages/goal/tool-goal/src/index.ts:202,225,269", "purpose": "模型 goal 工具"},
+        {"plugin_id": "dsh-goal-round-driver", "evidence": "packages/goal/goal-round-driver/src/index.ts:99,167,269", "purpose": "自动续跑驱动"},
+        {"plugin_id": "dsh-command-goal", "evidence": "packages/goal/command-goal/src/index.ts:113-146", "purpose": "/goal 命令"}
+      ]
+    },
+    {
+      "id": "dsh-goal-round-driver",
+      "name": "@deepseek-ai/dsh-goal-round-driver",
+      "implementation": "apply() 安装 per-agent 竞态防护的自动续跑调度：监听 agent/created|disposed|session-start|status|error、goal/changed、agent/inbox/inserted|claimed|discarded、session/event。drive() 在 agent idle+armed+未达 maxGoalRounds 时渲染 round prompt 并经 agent.followup 排队；agent/pre-step 校验 reservation，失败则 block('prompt-rejected') 或 restore。",
+      "provides": ["goal round 自动续跑调度", "agent/pre-step 续跑校验(reject)", "goal-round 消息源"],
+      "depends_on": [
+        {"plugin_id": "dsh-agent", "mechanism": "E2", "evidence": "packages/goal/goal-round-driver/src/index.ts:9,106-107,192,215,435", "purpose": "agent 事件与 followup"},
+        {"plugin_id": "dsh-goal", "mechanism": "E2", "evidence": "packages/goal/goal-round-driver/src/index.ts:10,99,167,269", "purpose": "goal 状态读取与 block"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/goal/goal-round-driver/src/index.ts:13,145,307", "purpose": "checkpoint 冲刷与 turn 边界"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/goal/goal-round-driver/src/index.ts:11,176", "purpose": "createUserMessage"}
+      ],
+      "dependents": []
+    },
+    {
+      "id": "dsh-tool-goal",
+      "name": "@deepseek-ai/dsh-tool-goal",
+      "implementation": "apply() 注册 get_goal/create_goal/update_goal 工具与 systemPrompt section 'tool:goal'。authority.ts 校验执行时 agent 为 live 且 open turn(GOAL_TOOL_DRIVER_REQUIRED)，create/edit/pause/resume 需 requireDirectHuman，complete/blocked 可由 direct-human 或精确 goal round 授权；autonomous 完成经 exec.deferContext 注入 wrapup 收尾上下文。",
+      "provides": ["ctx.tools: get_goal/create_goal/update_goal", "systemPrompt section tool:goal", "execution-time authority 校验"],
+      "depends_on": [
+        {"plugin_id": "dsh-goal", "mechanism": "E2", "evidence": "packages/goal/tool-goal/src/index.ts:9,202,225,269", "purpose": "goal 域读写"},
+        {"plugin_id": "dsh-tools", "mechanism": "E3", "evidence": "packages/goal/tool-goal/src/index.ts:12,195", "purpose": "工具注册"},
+        {"plugin_id": "dsh-agent", "mechanism": "E2", "evidence": "packages/goal/tool-goal/src/authority.ts:55-62", "purpose": "调用者认证"},
+        {"plugin_id": "dsh-system-prompt", "mechanism": "E3", "evidence": "packages/goal/tool-goal/src/index.ts:189", "purpose": "模型策略指导"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/goal/tool-goal/src/authority.ts:30-42", "purpose": "open turn 判定"}
+      ],
+      "dependents": []
+    },
+    {
+      "id": "dsh-plan-mode",
+      "name": "@deepseek-ai/dsh-plan-mode",
+      "implementation": "定义 ctx.planMode PlanModeController。状态由 session 日志 'plan/mode' 折叠；agent/pre-step 接受后 onBoundary append 待定选择；systemPrompt.section('plan:policy') 渲染部署指导；/plan 命令与 exit_plan_mode 工具(经 userQuestions.ask 做 plan-review，approve 则 pendingIntents 置 false)；'plan' session projection 由 command/run+plan/mode 双事件折叠。",
+      "provides": ["ctx.planMode", "session 事件 plan/mode", "plan session projection", "/plan 命令", "ctx.tools: exit_plan_mode", "systemPrompt section plan:policy"],
+      "depends_on": [
+        {"plugin_id": "dsh-tools", "mechanism": "E3", "evidence": "packages/plan/plan-mode/src/index.ts:32,185,305", "purpose": "exit_plan_mode 工具注册"},
+        {"plugin_id": "dsh-system-prompt", "mechanism": "E3", "evidence": "packages/plan/plan-mode/src/index.ts:33,225", "purpose": "plan:policy 段"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/plan/plan-mode/src/index.ts:53,440,456", "purpose": "plan/mode 持久化"},
+        {"plugin_id": "dsh-user-questions", "mechanism": "E3", "evidence": "packages/plan/plan-mode/src/index.ts:34,330", "purpose": "exit 前计划评审"},
+        {"plugin_id": "dsh-commands", "mechanism": "E3", "evidence": "packages/plan/plan-mode/src/index.ts:269", "purpose": "/plan 命令"},
+        {"plugin_id": "dsh-session-projection", "mechanism": "E3", "evidence": "packages/plan/plan-mode/src/index.ts:244", "purpose": "plan 投影单元"}
+      ],
+      "dependents": []
+    },
+    {
+      "id": "dsh-skill",
+      "name": "@deepseek-ai/dsh-skill",
+      "implementation": "Skill 能力族 Service Definition：ctx.skills SkillRegistry(Service 默认导出)合并各 provider 目录。registerProvider 按调用 context scope 分层注册(ScopedLayers)；list/snapshot 折叠全局+scope 链层并 rank 决胜，collect 带 cache(按 cwd+scope 链+revision)；get 经 provider.get 加载完整正文并校验；变更发 'skills/change' 并失效缓存。renderSkillContent 提供模型可见渲染。",
+      "provides": ["ctx.skills(SkillRegistry)", "skills/change emit 事件", "registerProvider/register/list/snapshot/get", "renderSkillContent/isSkillName"],
+      "depends_on": [
+        {"plugin_id": "dsh-scope", "mechanism": "E2", "evidence": "packages/skill/skill/src/index.ts:15,363", "purpose": "provider/runtime skill 分层"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/skill/skill/src/index.ts:14,155", "purpose": "assertNever + MessageSourceMap 注入"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-skill-filesystem", "evidence": "packages/skill/skill-filesystem/src/index.ts:46,132", "purpose": "本地文件 provider"},
+        {"plugin_id": "dsh-skill-badge", "evidence": "packages/skill/skill-badge/src/index.ts:55,59", "purpose": "内置 badge provider"},
+        {"plugin_id": "dsh-tool-skill", "evidence": "packages/skill/tool-skill/src/index.ts:25,134", "purpose": "模型 skill 加载"}
+      ]
+    },
+    {
+      "id": "dsh-skill-filesystem",
+      "name": "@deepseek-ai/dsh-skill-filesystem",
+      "implementation": "apply() 在 ctx.skills.registerProvider 注册 filesystem provider；list() 扫描 project(.dsh/skills,.agents/skills)/custom/user/bundled 根，按 source rank 排序；get() 解析 frontmatter 并经 ctx.fs 读正文；SkillWatchManager 以 chokidar 监控根目录并调 control.invalidate；ctx.on('fs/observed') 监听模型写后失效。",
+      "provides": ["ctx.skills 的 filesystem provider", "project/custom/user/bundled skill 发现", "frontmatter 解析与 watch 失效"],
+      "depends_on": [
+        {"plugin_id": "dsh-skill", "mechanism": "E3", "evidence": "packages/skill/skill-filesystem/src/index.ts:46,132", "purpose": "provider 注册 seam"},
+        {"plugin_id": "dsh-fs", "mechanism": "E3", "evidence": "packages/skill/skill-filesystem/src/index.ts:21,139,193", "purpose": "读取文件与观察宿主写入"},
+        {"plugin_id": "dsh-home-paths", "mechanism": "E1", "evidence": "packages/skill/skill-filesystem/src/index.ts:22,163", "purpose": "解析用户根路径"}
+      ],
+      "dependents": []
+    },
+    {
+      "id": "dsh-skill-badge",
+      "name": "@deepseek-ai/dsh-skill-badge",
+      "implementation": "apply() 在 ctx.skills.registerProvider 注册不可变内置 provider 'dsh-badge'：list 返回单个 CANDIDATE，get 读取 assets/dsh-badge.md。注意：交付 CLI 在 bundle/base/cordis.patch.yml:245 声明 disabled:true，启用该配置行才是显式 opt-in。",
+      "provides": ["ctx.skills 的 'dsh-badge' bundled provider"],
+      "depends_on": [
+        {"plugin_id": "dsh-skill", "mechanism": "E3", "evidence": "packages/skill/skill-badge/src/index.ts:55,59", "purpose": "provider 注册 seam"},
+        {"plugin_id": "dsh-bundle-base", "mechanism": "E1", "evidence": "packages/bundle/base/cordis.patch.yml:243-245", "purpose": "disabled:true 组合声明"}
+      ],
+      "dependents": []
+    },
+    {
+      "id": "dsh-tool-skill",
+      "name": "@deepseek-ai/dsh-tool-skill",
+      "implementation": "apply() 注册 'skill' 模型工具(ctx.skills.list 查名、isModelInvocable 校验、ctx.skills.get 加载、renderSkillContent 渲染)。两个 agent/pre-step 监听：(1) 扫描 claimed user 消息首行 /<name> 的显式技能调用；(2) 按工具可见性发布/替换 'skill-catalog' catalog 目录消息。",
+      "provides": ["ctx.tools: skill", "skill-catalog catalog 消息注入", "user 显式 /<skill> 调用注入"],
+      "depends_on": [
+        {"plugin_id": "dsh-skill", "mechanism": "E2", "evidence": "packages/skill/tool-skill/src/index.ts:15-22,134,141,222", "purpose": "技能目录与正文加载"},
+        {"plugin_id": "dsh-tools", "mechanism": "E3", "evidence": "packages/skill/tool-skill/src/index.ts:11,161", "purpose": "工具注册"},
+        {"plugin_id": "dsh-agent", "mechanism": "E2", "evidence": "packages/skill/tool-skill/src/index.ts:10,177,213", "purpose": "pre-step 注入钩子"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/skill/tool-skill/src/index.ts:12,197", "purpose": "createUserMessage + MessageSourceMap"}
+      ],
+      "dependents": []
+    },
+    {
+      "id": "dsh-tool-todo",
+      "name": "@deepseek-ai/dsh-tool-todo",
+      "implementation": "apply() 注册 todo_write 工具：整表替换语义，execute 校验后 exec.agent.session.append('todo/write')，返回新表+counts；无 agent 则拒绝。ctx.inject(['sessionProjections']) 注册 'todos' 投影(last todo/write 快照，turn/start 清空)。",
+      "provides": ["ctx.tools: todo_write", "session 事件 todo/write", "todos session projection"],
+      "depends_on": [
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/todo/tool-todo/src/index.ts:13,213", "purpose": "todo 快照持久化"},
+        {"plugin_id": "dsh-tools", "mechanism": "E3", "evidence": "packages/todo/tool-todo/src/index.ts:12,149", "purpose": "工具注册"},
+        {"plugin_id": "dsh-session-projection", "mechanism": "E3", "evidence": "packages/todo/tool-todo/src/index.ts:135", "purpose": "todos 投影单元"},
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/todo/tool-todo/src/index.ts:208-212", "purpose": "owning session 归属"}
+      ],
+      "dependents": []
+    }
+  ]
+}

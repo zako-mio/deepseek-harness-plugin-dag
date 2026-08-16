@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" agent="drawio-worker" version="24.4.0">
+  <diagram id="dsh-settings-file" name="dsh-settings-file">
+    <mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="461" math="0" shadow="0" adaptiveColors="auto">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="legend" value="&lt;b&gt;E1&lt;/b&gt; 类型/编译依赖   &#160;&#160; &lt;b&gt;E2&lt;/b&gt; 运行时注入   &#160;&#160; &lt;b&gt;E3&lt;/b&gt; 声明式/配置" style="text;html=1;align=center;fontSize=12;fontFamily=Microsoft YaHei;fillColor=none;" vertex="1" parent="1"><mxGeometry x="280" y="4" width="440" height="26" as="geometry"/></mxCell>
+        <mxCell id="c" value="&lt;b&gt;dsh-settings-file&lt;/b&gt;&lt;br&gt;&lt;font size='2'&gt;G11 凭据设置&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=15;fontStyle=1;fontFamily=Microsoft YaHei;" vertex="1" parent="1"><mxGeometry x="340" y="94" width="190" height="100" as="geometry"/></mxCell>
+        <mxCell id="l0" value="&lt;b&gt;dsh-settings&lt;/b&gt;&lt;br&gt;[E1]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;fontFamily=Microsoft YaHei;" vertex="1" parent="1"><mxGeometry x="20" y="30" width="175" height="52" as="geometry"/></mxCell>
+        <mxCell id="l1" value="&lt;b&gt;dsh-home-paths&lt;/b&gt;&lt;br&gt;[E1]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;fontFamily=Microsoft YaHei;" vertex="1" parent="1"><mxGeometry x="20" y="106" width="175" height="52" as="geometry"/></mxCell>
+        <mxCell id="l2" value="&lt;b&gt;dsh-atomic-write&lt;/b&gt;&lt;br&gt;[E1]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;fontFamily=Microsoft YaHei;" vertex="1" parent="1"><mxGeometry x="20" y="182" width="175" height="52" as="geometry"/></mxCell>
+        <mxCell id="r0" value="&lt;b&gt;dsh-permission-presets&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontFamily=Microsoft YaHei;" vertex="1" parent="1"><mxGeometry x="675" y="30" width="175" height="52" as="geometry"/></mxCell>
+        <mxCell id="r1" value="&lt;b&gt;dsh-llm-pi-ai&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontFamily=Microsoft YaHei;" vertex="1" parent="1"><mxGeometry x="675" y="106" width="175" height="52" as="geometry"/></mxCell>
+        <mxCell id="p" value="&lt;b&gt;provides&lt;/b&gt;&lt;br&gt;&#183; ctx.settings(FileSettingsProvider)&lt;br&gt;&#183; documentPath/prepareDocument&lt;br&gt;&#183; settings/update → persist 实现&lt;br&gt;&#183; 注释保留 leaf-level diff 渲染" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=10;verticalAlign=top;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontFamily=Microsoft YaHei;" vertex="1" parent="1"><mxGeometry x="250" y="209" width="370" height="192" as="geometry"/></mxCell>
+        <mxCell id="el0" edge="1" parent="1" source="l0" target="c" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;fontFamily=Microsoft YaHei;fontSize=11;"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="el1" edge="1" parent="1" source="l1" target="c" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;fontFamily=Microsoft YaHei;fontSize=11;"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="el2" edge="1" parent="1" source="l2" target="c" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;fontFamily=Microsoft YaHei;fontSize=11;"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="er0" edge="1" parent="1" source="c" target="r0" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;fontFamily=Microsoft YaHei;fontSize=11;"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="er1" edge="1" parent="1" source="c" target="r1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;fontFamily=Microsoft YaHei;fontSize=11;"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

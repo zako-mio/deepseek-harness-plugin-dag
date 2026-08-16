@@ -1,0 +1,26 @@
+<mxfile host="app.diagrams.net" agent="drawio-worker" version="24.0.0" type="device">
+<diagram id="diagram-dsh-client-ui-agent-preset" name="dsh-client-ui-agent-preset">
+<mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1060" pageHeight="690" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="11" value="上游依赖 depends_on (E1/E2/E3)" style="text;html=1;fontSize=12;fontStyle=4;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontColor=#b8860b;" vertex="1" parent="1"><mxGeometry x="40" y="30" width="200" height="22" as="geometry"/></mxCell>
+<mxCell id="12" value="下游被依赖 dependents" style="text;html=1;fontSize=12;fontStyle=4;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontColor=#5a7d4a;" vertex="1" parent="1"><mxGeometry x="770" y="30" width="250" height="22" as="geometry"/></mxCell>
+<mxCell id="13" value="&lt;b&gt;dsh-client-ui-agent-preset&lt;/b&gt;&lt;br&gt;&lt;font style=&#x27;font-size:11px&#x27;&gt;@deepseek-ai/dsh-client-ui-agent-preset&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fontFamily=Microsoft YaHei;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f3b57;" vertex="1" parent="1"><mxGeometry x="428" y="282" width="260" height="96" as="geometry"/></mxCell>
+<mxCell id="20" value="dsh-agent-presets&lt;br&gt;E2 host roster 与默认 preset 持久化" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="40" y="70" width="200" height="56" as="geometry"/></mxCell>
+<mxCell id="21" value="dsh-client-connection&lt;br&gt;E2 connection.api 构建 store" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="40" y="142" width="200" height="56" as="geometry"/></mxCell>
+<mxCell id="22" value="dsh-client-ui-conversation&lt;br&gt;E1 hero/header 槽与新会话 flow" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="40" y="214" width="200" height="56" as="geometry"/></mxCell>
+<mxCell id="23" value="dsh-client-ui-settings&lt;br&gt;E1 settings.general.item/section 槽位注入" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="40" y="286" width="200" height="56" as="geometry"/></mxCell>
+<mxCell id="24" value="dsh-session&lt;br&gt;E2 会话 preset 状态选择写" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="40" y="358" width="200" height="56" as="geometry"/></mxCell>
+<mxCell id="25" value="dsh-workspace&lt;br&gt;E2 工作区启动新会话" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="40" y="430" width="200" height="56" as="geometry"/></mxCell>
+<mxCell id="26" value="&lt;b&gt;provides 关键项&lt;/b&gt;&lt;br&gt;• settings.general.item &#x27;agent-preset&#x27; 项&lt;br&gt;• conversation.hero.agentPreset chip (AgentPresetSeat)&lt;br&gt;• conversation.session.header.actions &#x27;agent-preset&#x27; label&lt;br&gt;• settings.section &#x27;agent-presets&#x27; (AgentPresetSection 记录/编辑)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#7a4d00;align=left;verticalAlign=middle;spacing=8;" vertex="1" parent="1"><mxGeometry x="40" y="528" width="980" height="86" as="geometry"/></mxCell>
+<mxCell id="27" edge="1" parent="1" source="20" target="13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="28" edge="1" parent="1" source="21" target="13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="29" edge="1" parent="1" source="22" target="13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="30" edge="1" parent="1" source="23" target="13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="31" edge="1" parent="1" source="24" target="13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="32" edge="1" parent="1" source="25" target="13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+</mxfile>

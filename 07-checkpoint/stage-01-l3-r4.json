@@ -1,0 +1,137 @@
+{
+  "route": "R4-hooks-tools-extensions",
+  "scope": "L3 G36 Hooks/工具扩展 6 插件 + 4 特殊模块结构分析",
+  "plugins": [
+    {
+      "id": "dsh-hooks-claude-code",
+      "name": "@deepseek-ai/dsh-hooks-claude-code",
+      "implementation": "Bridge 插件：在 harness 拦截 seam 上运行未修改的 Claude Code hooks.json/settings hook 配置。name='hooks-claude-code', inject=['shell']（src/index.ts:39-42）。apply 时一次性读入并解析 hooks.json（readFileSync + parseClaudeCodeConfig，:101-116），注册 7 个扩展点：agent/session-start(SessionStart, detached, :206)、agent/pre-step(UserPromptSubmit→PreStepDecision, :219)、tools/pre-execute(PreToolUse→PreToolDecision, :238)、tools/post-execute(PostToolUse→PostToolDecision, :247)、agent/turn-stopping(Stop, deny 时 agent.steer 强制续跑, :270)、subagent/start(:281)、subagent/end(:291)。共享执行/解析在 dsh-hook-protocol（runHook/matchesMatcher/mergeHookOutputs/createDetachedRuns/appendHookInvoked/appendHookResult）。写 hook/invoked+hook/result session 事件对；支持 CLAUDE_PLUGIN_ROOT/CLAUDE_PROJECT_DIR 替换；updatedInput/systemMessage 仅告警不生效；hook 在 session workspace 内运行。",
+      "provides": ["7 个拦截扩展点处理（SessionStart/UserPromptSubmit/PreToolUse/PostToolUse/Stop/SubagentStart/SubagentStop）", "Claude Code 方言 payload 编解码（stdin JSON + exit-code 决策映射）", "hook/invoked + hook/result session 事件对", "inject ['shell']"],
+      "depends_on": [
+        {"plugin_id": "dsh-hook-protocol", "mechanism": "E1", "evidence": "packages/hooks/hooks-claude-code/src/index.ts:21-33 (import runHook/matchesMatcher/mergeHookOutputs/createDetachedRuns/appendHookInvoked/appendHookResult); package.json:39 (peerDep)", "purpose": "共享 hook 执行/解析/合并协议 seam"},
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/hooks/hooks-claude-code/src/index.ts:15 (Agent/PreStepDecision 类型); package.json:38 (peerDep)", "purpose": "agent 类型与 pre-step 决策契约"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/hooks/hooks-claude-code/src/index.ts:16-17 (createUserMessage/ContentBlock/MessageSource); package.json:41 (peerDep)", "purpose": "hook 输出构造 UserMessage 上下文"},
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/hooks/hooks-claude-code/src/index.ts:18 (UserMessage 类型); package.json:42 (peerDep)", "purpose": "session 消息类型"},
+        {"plugin_id": "dsh-session-persistence", "mechanism": "E1", "evidence": "packages/hooks/hooks-claude-code/src/index.ts:19 (type-only import); package.json:43 (peerDep)", "purpose": "hook/result 持久化事件类型"},
+        {"plugin_id": "dsh-subagent", "mechanism": "E1", "evidence": "packages/hooks/hooks-claude-code/src/index.ts:36 (SubagentRunId); package.json:44 (peerDep)", "purpose": "subagent start/end 配对 identity"},
+        {"plugin_id": "dsh-tools", "mechanism": "E1", "evidence": "packages/hooks/hooks-claude-code/src/index.ts:20 (PostToolDecision/PreToolDecision/ToolExecution); package.json:45 (peerDep)", "purpose": "tool 前后决策类型"},
+        {"plugin_id": "dsh-shell", "mechanism": "E2", "evidence": "packages/hooks/hooks-claude-code/src/index.ts:42 (inject ['shell']); runHook(ctx.shell, ...) :163", "purpose": "执行 hook 命令的 shell 服务"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E3", "evidence": "packages/hooks/hooks-claude-code/src/invariant.ts:29-30 (register); package.json:40 (peerDep)", "purpose": "包属 invariant 伴随插件"}
+      ],
+      "dependents": []
+    },
+    {
+      "id": "dsh-hooks-codex",
+      "name": "@deepseek-ai/dsh-hooks-codex",
+      "implementation": "Bridge 插件：在 harness 拦截 seam 上运行未修改的 Codex hooks.json。name='hooks-codex', inject=['shell']（src/index.ts:40-41）。apply 读入解析 Codex hooks.json（parseCodexConfig, :81-97），注册 5 个扩展点：agent/session-start(SessionStart, detached, :188)、agent/pre-step(UserPromptSubmit, 仅 reject 支持, :199)、tools/pre-execute(PreToolUse, 仅 deny, :225)、tools/post-execute(PostToolUse, :234)、agent/turn-stopping(Stop, :260)。Codex 方言：snake_case payload、每事件带 model、正则匹配器、无 hook 环境/命令替换、无 pre-tool approval/rewrite 路径，仅 honor 阻断决策；stop_hook_active 恒 false。共享执行/解析在 dsh-hook-protocol。",
+      "provides": ["5 个拦截扩展点处理（SessionStart/UserPromptSubmit/PreToolUse/PostToolUse/Stop）", "Codex 方言 payload 编解码（snake_case + model + turn_id）", "hook/invoked + hook/result session 事件对", "inject ['shell']"],
+      "depends_on": [
+        {"plugin_id": "dsh-hook-protocol", "mechanism": "E1", "evidence": "packages/hooks/hooks-codex/src/index.ts:24-36 (import runHook/matchesMatcher/mergeHookOutputs/createDetachedRuns/appendHookInvoked/appendHookResult); package.json:39 (peerDep)", "purpose": "共享 hook 执行/解析/合并协议 seam"},
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/hooks/hooks-codex/src/index.ts:18 (Agent/PreStepDecision); package.json:38 (peerDep)", "purpose": "agent 类型与决策契约"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/hooks/hooks-codex/src/index.ts:19-20 (createUserMessage/ContentBlock/MessageSource); package.json:41 (peerDep)", "purpose": "hook 输出构造上下文"},
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/hooks/hooks-codex/src/index.ts:21 (UserMessage); package.json:42 (peerDep)", "purpose": "session 消息类型"},
+        {"plugin_id": "dsh-session-persistence", "mechanism": "E1", "evidence": "packages/hooks/hooks-codex/src/index.ts:22 (type-only); package.json:43 (peerDep)", "purpose": "hook/result 持久化事件类型"},
+        {"plugin_id": "dsh-tools", "mechanism": "E1", "evidence": "packages/hooks/hooks-codex/src/index.ts:23 (PostToolDecision/PreToolDecision/ToolExecution); package.json:44 (peerDep)", "purpose": "tool 前后决策类型"},
+        {"plugin_id": "dsh-shell", "mechanism": "E2", "evidence": "packages/hooks/hooks-codex/src/index.ts:41 (inject ['shell'])", "purpose": "执行 hook 命令的 shell 服务"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E3", "evidence": "packages/hooks/hooks-codex/src/invariant.ts:29-30; package.json:40 (peerDep)", "purpose": "包属 invariant 伴随插件"}
+      ],
+      "dependents": []
+    },
+    {
+      "id": "dsh-tool-cordis",
+      "name": "@deepseek-ai/dsh-tool-cordis",
+      "implementation": "Model 面向的 Cordis 运行时/包管理工具集。name='tool-cordis', inject=['tools','systemPrompt','dynamicCordisRunner','cordisInspect']（src/index.ts:26-27）。注册 7 个工具：cordis_inspect_list/query/self、cordis_define、cordis_run、cordis_stop、cordis_undefine（:41-378）；注册 tool:cordis system prompt section（order 115, :36）；经 ctx.cordisInspect.register 注册 Host Inspect Provider（Service/Event/Builtin/Tool, providers.ts:26-64）；agent/pre-step 侦测用户 @pluginId（正则 @([a-z]{3,6}-\\d+), :381-398,497-506）注入 DynamicCordisReference 上下文。所有运行时操作走 dsh-cordis-host-runner 的 dynamicCordisRunner（define/run/stop/undefine/reference/snapshot/inspectPlugin/inspectPackage）。presentCall 卡片经 dsh-tools GenericCallView。",
+      "provides": ["7 个 cordis_* 工具（inspect_list/query/self, define, run, stop, undefine）", "tool:cordis system prompt section (order 115)", "Host Inspect Provider 注册（Service/Event/Builtin/Tool）", "agent/pre-step @pluginId 上下文注入", "inject ['tools','systemPrompt','dynamicCordisRunner','cordisInspect']"],
+      "depends_on": [
+        {"plugin_id": "dsh-cordis-host-runner", "mechanism": "E2", "evidence": "packages/extensions/tool-cordis/src/index.ts:27 (inject ['dynamicCordisRunner','cordisInspect']); :38 (:cordisInspect.register), :55 (:cordisInspect.list), :83 (:cordisInspect.query), :121,126,221,291,344,374,388,459-460 (:dynamicCordisRunner.listPlugins/inspectPlugin/define/run/stop/undefine/reference/snapshot/inspectPackage); package.json:36 (peerDep)", "purpose": "dynamic Cordis 运行时宿主服务 + inspect registry 服务"},
+        {"plugin_id": "dsh-cordis-host-runner", "mechanism": "E1", "evidence": "packages/extensions/tool-cordis/src/index.ts:9-11 (import CordisDynamicPackageId/CordisDynamicPluginId/DynamicCordisReference)", "purpose": "动态插件 branded id 类型"},
+        {"plugin_id": "dsh-tools", "mechanism": "E1", "evidence": "packages/extensions/tool-cordis/src/index.ts:15-16 (defineTool/ToolExecution); package.json:42 (peerDep)", "purpose": "工具定义与执行上下文类型"},
+        {"plugin_id": "dsh-tools", "mechanism": "E2", "evidence": "packages/extensions/tool-cordis/src/index.ts:27 (inject ['tools']), :41 (:tools.register)", "purpose": "工具注册表服务"},
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/extensions/tool-cordis/src/index.ts:7 (Agent/PreStepDecision); package.json:35 (peerDep)", "purpose": "agent 类型与 pre-step 决策"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/extensions/tool-cordis/src/index.ts:12 (createUserMessage); package.json:38 (peerDep)", "purpose": "@pluginId 上下文 UserMessage 构造"},
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/extensions/tool-cordis/src/index.ts:13-14 (JsonValue/UserMessage); package.json:40 (peerDep)", "purpose": "JSON 值/消息类型"},
+        {"plugin_id": "dsh-system-prompt", "mechanism": "E2", "evidence": "packages/extensions/tool-cordis/src/index.ts:17 (type-only), :36 (ctx.systemPrompt.section); package.json:41 (peerDep)", "purpose": "tool:cordis prompt section 注册"},
+        {"plugin_id": "dsh-scope", "mechanism": "E1", "evidence": "packages/extensions/tool-cordis/src/inspect.ts:11 (ScopeKey 类型); package.json:39 (peerDep)", "purpose": "scope 键类型（fiber 服务盘点）"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E3", "evidence": "packages/extensions/tool-cordis/src/invariant.ts:29-30", "purpose": "包属 invariant 伴随插件"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-typert-generator", "evidence": "packages/typert/generator/package.json:49 (deps dsh-tool-cordis); packages/typert/generator/tests/tools-catalog.spec.ts:8 (import EVENT_API/SERVICE_API/TYPE_API from @deepseek-ai/dsh-tool-cordis/src/api-catalog.ts)", "purpose": "消费 api-catalog 机器可读 Cordis API 目录生成 typert 工件"}
+      ]
+    },
+    {
+      "id": "dsh-persona",
+      "name": "@deepseek-ai/dsh-persona",
+      "implementation": "组合式部署人设行（scope-only）。name='persona', inject=['systemPrompt']（src/index.ts:28-31）。挂载在 agent preset 内为单个 agent 遮蔽部署人设：apply 时向 systemPrompt 注册 deployment:persona section（PERSONA_SECTION/PERSONA_ORDER 从 dsh-system-prompt 导入，:23,61-66），config.text 为模板（{{…}} 变量渲染），complete:true 时成为唯一 system prompt（:65），includeRuntimeContext:false 抑制运行时上下文快照（:67）。在 agent scope 之外挂载会与注册表自身的 deployment:persona 冲突并 fail loud。",
+      "provides": ["deployment:persona prompt section 注册（scope-only, order 0）", "complete 模式（该 agent 唯一 system prompt）", "includeRuntimeContext 抑制能力"],
+      "depends_on": [
+        {"plugin_id": "dsh-system-prompt", "mechanism": "E1", "evidence": "packages/preset/persona/src/index.ts:23 (import PERSONA_ORDER/PERSONA_SECTION); package.json:36 (peerDep)", "purpose": "persona 槽位常量（避免双硬编码漂移）"},
+        {"plugin_id": "dsh-system-prompt", "mechanism": "E2", "evidence": "packages/preset/persona/src/index.ts:31 (inject ['systemPrompt']), :61 (:systemPrompt.section), :67 (:systemPrompt.suppressRuntimeContext)", "purpose": "prompt registry 服务"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E3", "evidence": "packages/preset/persona/src/invariant.ts:29-30; package.json:35 (peerDep)", "purpose": "包属 invariant 伴随插件"}
+      ],
+      "dependents": []
+    },
+    {
+      "id": "dsh-agent-tool-presentation",
+      "name": "@deepseek-ai/dsh-agent-tool-presentation",
+      "implementation": "Agent 平面工具呈现选择器：agent preset 携带的一行，声明模型看到的工具形态。name='tool-presentation', inject=['tools']（src/index.ts:28-35）。config.mode 必填（native|code|both, :46-52）：native 立即 ctx.tools.presentAs('native')（:63-64）；code/both 经 ctx.inject(['codeRuntime']) 等待宿主平面 codeRuntime 服务后 presentAs(mode)（:69-71）——未组装运行时的部署会令该行停在 pending，dsh-agent-presets 指名此 id 拒绝挂载。注册表本身留在宿主平面，preset 只能拥有呈现声明。",
+      "provides": ["ctx.tools.presentAs() 呈现声明（native/code/both，per-scope）", "code 模式 codeRuntime 等待挂载语义（pending→audit 拒绝）", "tool-presentation-invariant 伴随插件"],
+      "depends_on": [
+        {"plugin_id": "dsh-tools", "mechanism": "E1", "evidence": "packages/core/agent-tool-presentation/src/index.ts:23 (ToolPresentationMode 类型); package.json:39 (peerDep)", "purpose": "呈现模式类型"},
+        {"plugin_id": "dsh-tools", "mechanism": "E2", "evidence": "packages/core/agent-tool-presentation/src/index.ts:35 (inject ['tools']), :64,70 (ctx.tools.presentAs)", "purpose": "工具注册表呈现服务"},
+        {"plugin_id": "dsh-code-runtime-worker-thread", "mechanism": "E2", "evidence": "packages/core/agent-tool-presentation/src/index.ts:69 (ctx.inject(['codeRuntime'], ...))", "purpose": "code 模式所需的宿主平面 TypeScript 运行时"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E3", "evidence": "packages/core/agent-tool-presentation/src/invariant.ts:31; package.json:38 (peerDep)", "purpose": "包属 invariant 伴随插件"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-agent-presets", "evidence": "packages/core/agent-tool-presentation/README.md:15 + src/index.ts:68 (dsh-agent-presets 拒绝持有未达可用态行的挂载并指名此 id)", "purpose": "preset 组合消费本行作呈现声明；激活审计点名"}
+      ]
+    },
+    {
+      "id": "dsh-native-command",
+      "name": "@deepseek-ai/dsh-native-command",
+      "implementation": "零依赖无 shell 的 execFile 运行器（库而非插件，无 ctx/state/events；与 R5 stage-01-l3-r5.json 同条记录一致）。runNativeCommand(command, args, signal) 直接 execFile 执行可执行文件路径/PATH 名，不做 shell 字符串解释；utf8 stdio 捕获（exit 0 resolve，非零带 code/stdout/stderr reject）、AbortSignal 中止传播、windowsHide 隐藏 Windows 控制台。invariant.ts 提供包属 invariant 伴随插件。服务宿主原生 OS 集成（native 目录选择器、默认应用打开）。",
+      "provides": ["runNativeCommand(execFile runner)", "NativeCommandRunner 可测试边界类型", "native-command-invariant 伴随插件"],
+      "depends_on": [
+        {"plugin_id": "dsh-invariants", "mechanism": "E3", "evidence": "packages/util/native-command/package.json:35 (peerDep); src/invariant.ts:29-30", "purpose": "peerDependency + invariant 注册"},
+        {"plugin_id": "cordis", "mechanism": "E3", "evidence": "packages/util/native-command/package.json:36 (peerDep)", "purpose": "peerDependency 插件类型"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-host-directory-picker-native", "evidence": "packages/host/directory-picker-native/package.json:41 (deps dsh-native-command); src/native-picker.ts:3 (import runNativeCommand)", "purpose": "native 目录选择器 import runNativeCommand"},
+        {"plugin_id": "dsh-host-apiproxy", "evidence": "packages/host/apiproxy/package.json:58 (deps dsh-native-command); src/native-path-opener.ts:13", "purpose": "默认应用打开(open-with-default) hand-off 使用 runNativeCommand"}
+      ]
+    }
+  ],
+  "special_modules": [
+    {
+      "id": "dsh-base",
+      "kind": "bundle",
+      "assembly_summary": "所有 profile 的第一 patch 层（package.json dsh.bundle.patch=cordis.patch.yml），对空 profile 根做一次 insert ~80+ 行。装配行（按功能分组）：基础设施 timer/cordis-plugin-hmr/typert-registry/typert-loader/api-gateway；LLM llm/llm-deepseek/llm-pi-ai(dormant)/llm-retry；会话 session/session-persistence-jsonl/session-query-sqlite(openAt:never)/session-projection/session-title(+first-prompt-llm)/session-telemetry-otel(DISABLED)/session-checkpoint-policy/attachment-local/session-title；agent agent/agent-default-model(deepseek-v4-flash)/agent-loop(agents:[])/agent-instructions；权限 sandbox/sandbox-policy(workspace-write)/bash-sandbox(win32 disabled)/pwsh-sandbox(non-win32 disabled)/approval(ask)/permission-presets；shell shell-env/tool-bash(win32 disabled)/tool-pwsh(non-win32 disabled)/tool-jobs；fs fs-sandbox/tool-fs/tool-fs-search/fs-observation-policy/tool-str-replace-editor；上下文 skill/skill-filesystem/skill-badge(disabled)/tool-skill/commands/command-feedback/command-goal/command-compact/goal+goal-round-driver+tool-goal/plan-mode/token-meter/compaction-basic/tool-result-pruner/tool-todo/repeat-tool-reminder；子代理 subagent/subagent-spawn-in-process/subagent-fork-in-process/tool-subagent-control(+list-agents)/tool-subagent(+fork)/tool-subagent-report；workflow workflow-worker-thread/tool-workflow；spill spill-local/spill-policy；web web(deepseek-official)/web-search-deepseek/tool-web(fetch:false)；其余 subprocess-local/credentials-local/settings-file/user-questions/user-approval/tool-ralph/tool-call-timeout-policy/tools/system-prompt(persona '')。模式相关行（web persona/headless tools mode）不属于本层。",
+      "dependencies": ["dsh-agent", "dsh-agent-loop", "dsh-agent-default-model", "dsh-session", "dsh-session-persistence-jsonl", "dsh-session-query-sqlite", "dsh-session-projection", "dsh-session-telemetry-otel", "dsh-session-checkpoint-policy", "dsh-session-title", "dsh-session-title-first-prompt-llm", "dsh-llm", "dsh-llm-deepseek", "dsh-llm-pi-ai", "dsh-llm-retry", "dsh-tools", "dsh-tool-bash", "dsh-tool-pwsh", "dsh-tool-fs", "dsh-tool-fs-search", "dsh-tool-web", "dsh-tool-subagent", "dsh-tool-subagent-control", "dsh-tool-subagent-report", "dsh-tool-skill", "dsh-tool-jobs", "dsh-tool-todo", "dsh-tool-goal", "dsh-tool-ralph", "dsh-tool-workflow", "dsh-tool-str-replace-editor", "dsh-subagent", "dsh-subagent-spawn-in-process", "dsh-subagent-fork-in-process", "dsh-web", "dsh-web-search-deepseek", "dsh-skill", "dsh-skill-filesystem", "dsh-skill-badge", "dsh-system-prompt", "dsh-api-gateway", "dsh-typert-registry", "dsh-typert-loader", "dsh-commands", "dsh-command-feedback", "dsh-command-goal", "dsh-command-compact", "dsh-goal", "dsh-goal-round-driver", "dsh-plan-mode", "dsh-token-meter", "dsh-compaction-basic", "dsh-compaction-tool-result-pruner", "dsh-spill-local", "dsh-spill-policy", "dsh-sandbox-local", "dsh-sandbox-policy", "dsh-bash-sandbox", "dsh-pwsh-sandbox", "dsh-subprocess-local", "dsh-shell-env", "dsh-user-approval", "dsh-user-questions", "dsh-permission-presets", "dsh-credentials-local", "dsh-settings-file", "dsh-attachment-local", "dsh-agent-instructions", "dsh-jobs-local", "dsh-tool-call-timeout-policy", "dsh-repeat-tool-reminder", "dsh-workflow-worker-thread"],
+      "structure_notes": "src/index.ts 无运行时 API（export {}，实质是 cordis.patch.yml）；package.json dsh.bundle.patch=cordis.patch.yml 由 profile composer 解析。patch 按行 id 寻址、整段替换 config、后写覆盖；行顺序无加载语义（服务可用性驱动）。base 是每个 profile 的第一层（DEFAULT_PROFILE_BUNDLES=[@deepseek-ai/dsh-base]，profile.ts:125），web/headless 模式 bundle 在其上叠加。",
+      "evidence": "packages/bundle/base/cordis.patch.yml:15-450; packages/bundle/base/package.json:36-40 (dsh.bundle), 44-118 (78 个 dsh-* deps); packages/boot/app-boot/src/profile.ts:125"
+    },
+    {
+      "id": "dsh-headless",
+      "kind": "bundle",
+      "assembly_summary": "一次性任务模式 bundle，直接叠在 dsh-base 之上（PROFILE_TEMPLATES headless=[base,headless], profile.ts:116）。cordis.patch.yml 内容：覆盖 system-prompt.persona（coding agent + {{model}}/{{cwd}} 模板）；禁用 hmr（launcher watch-only fallback 保持用户 patch 层 live）；tools 行 mode 透传 process.env.DSH_TOOLS_MODE；insert 三行：code-runtime (@deepseek-ai/dsh-code-runtime-worker-thread)、headless-startup (@deepseek-ai/dsh-headless/startup, inject [cmdlineArgs]，commander 解析 task 位置参数与 --help，action 发布 headlessStartup 服务)、headless-runner (@deepseek-ai/dsh-headless, inject [agentDefaultModel, agents, sessions] + [headlessStartup]，task: !!js ctx.headlessStartup.task)。",
+      "dependencies": ["dsh-agent", "dsh-agent-default-model", "dsh-session", "dsh-llm", "dsh-cmdline", "dsh-code-runtime-worker-thread"],
+      "structure_notes": "启动流程：launcher 提供 cmdlineArgs/appExit（dsh-cmdline provideCmdline）→ headless-startup 用 parseCmdline 解析 task 并发布 headlessStartup 服务 → headless-runner 的懒 config 等该服务 → apply 后先 await ctx.get('loader').await() 全量 settle → agents.create 建 Agent（installModelSelection 注入默认模型选择）→ whenIdle + followup(task) → 驱动到 quiescence → sessions.flush 落盘 → summarize 折叠最后 assistant 文本 → io.stdout 打印 → ctx.appExit 退出。无 Host/HTTP/browser 插件。package.json dsh.bundle.patch=cordis.patch.yml（:41-44）。",
+      "evidence": "packages/bundle/headless/cordis.patch.yml:1-36; packages/bundle/headless/src/index.ts:96-130; packages/bundle/headless/src/startup.ts:49-57; packages/bundle/headless/package.json:41-51"
+    },
+    {
+      "id": "dsh-app-boot",
+      "kind": "boot",
+      "assembly_summary": "app bins (dsh/dsh-acp-demo) 的共享启动胶水，非插件（无 name/inject/apply）。boot() 序列（index.ts:757-802）：new Context → baseUrl=config 目录 → provide dshHomePath → ctx.plugin(Loader) → prepare?(ctx)（bin 宿主安装）→ mountRootInclude 挂根 Include（builtins.include/group 注册，HostResolvedRootInclude 支持 bareModuleBaseUrl 解析, :486-529）→ loader.await() → assertEntriesActivated。配套 API：resolveConfigPath（snapshot 模式换 cordis.snapshot.yml）、loadEnv/loadLayeredEnv（bootstrap-only 变量黑名单 PATH/DSH_/XDG_ 等拒绝注入）、installFailLoud（unhandledRejection→exit 1 + release）、watchUserPatches（HMR 注册 cordis.patch.yml 热重载）、loadOptionalPatches/loadOverlayPatches、renderConfigDump、assertEntriesLoaded、addHarnessSourceSection（boot 后向 systemPrompt 注册 harness:source 段 order -99，供 tool-cordis 自引用）。profile.ts：PROFILES_DIR/PROFILE_PATCH_FILENAME/initProfile/readProfileManifest/writeProfileManifest/resolveBundleDir/loadProfile/composeEntries/normalizeShippedProfile。",
+      "dependencies": ["dsh-system-prompt", "dsh-home-paths", "dsh-launch-environment"],
+      "structure_notes": "装配层次：profile 目录 package.json dsh.profile.bundles 按序解析 bundle 包（resolveBundleDir 先安装锚点后 profile 目录）→ 每 bundle 的 cordis.patch.yml 与用户 cordis.patch.yml 经单个 applyEntryPatches（composeEntries）合成 entry 列表 → 根 Include 装载。PROFILE_TEMPLATES：web=[base,web-app]、headless=[base,headless]；INSTALLATION_OWNED_PROFILE_TUPLES 修正安装拥有元组。app-boot 是 bin 与 Loader 树之间的胶水，不进 cordis 树。",
+      "evidence": "packages/boot/app-boot/src/index.ts:61,177,278,486,609,757,821; src/profile.ts:39,114,125,152,263,344,371,413; package.json:37-46 (peerDeps cordis-plugin-loader/include/group/hmr + dsh-launch-environment/home-paths/system-prompt)"
+    },
+    {
+      "id": "dsh-cmdline",
+      "kind": "boot",
+      "assembly_summary": "launcher → app 的不可变命令行交接，非插件（无 name/inject/apply）。provideCmdline(ctx, host) 在树挂载前把 cmdlineArgs（冻结 argv 快照, get()）与 appExit（有界退出请求）provide 到 host context（src/index.ts:68-72）；parseCmdline(ctx, program) 用 app 的 commander program 解析快照（:98-119）：成功解析运行该 command 的同步 action（app 代码在此发布自有服务），help/version/语法拒绝/action 的 program.error 经 exitOverride 转为 CommanderError → ctx.appExit(exitCode) 终止；configureExitAndOutput 递归统一子命令输出/exit（:146-154）；hasAction 结构检测防无 action 程序静默（:132-135）；isCommanderError 结构识别避免 out-of-tree commander 身份冲突（:167-172）。任意 app 插件可 inject cmdlineArgs；普通行可注入某 provider 发布的服务读懒解析 config（如 port: !!js ctx.webStartup.port ?? 3080）。",
+      "dependencies": ["dsh-invariants"],
+      "structure_notes": "与 app-boot 配套的 boot 层 seam：dsh-headless/startup 是消费示例（commander action 发布 headlessStartup 服务, packages/bundle/headless/src/startup.ts:49-57）。launcher 只解析自己 flags（--profile/--patch/config dumps），其后参数原样经 cmdlineArgs 交树，app 拥有自己的 flag 家族/--help/解析错误。",
+      "evidence": "packages/boot/cmdline/src/index.ts:27-72 (CmdlineArgs/AppExit/provideCmdline), :98-119 (parseCmdline), :146-173 (configureExitAndOutput/isCommanderError); package.json:34-37 (peerDeps)"
+    }
+  ]
+}

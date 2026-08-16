@@ -1,0 +1,384 @@
+{
+  "meta": {
+    "mission": "L3 其余插件 DAG 分析",
+    "generated_at": "2026-08-17",
+    "uncovered_total": 56,
+    "special_module_count": 4,
+    "seam_count": 13,
+    "plugin_node_count": 39,
+    "decisions": [
+      "bundle自身+boot层 → 特殊独立分析模块(不进主DAG,单独一节)",
+      "test-support 6包 → 归入 seam",
+      "L3抽象基座 seam → 并入 external-seams.json",
+      "主DAG → 更新 webapp-dag.json"
+    ]
+  },
+  "special_modules": [
+    {
+      "id": "dsh-app-boot",
+      "name": "@deepseek-ai/dsh-app-boot",
+      "path": "packages/boot/app-boot",
+      "note": "启动框架",
+      "ts_count": 3
+    },
+    {
+      "id": "dsh-cmdline",
+      "name": "@deepseek-ai/dsh-cmdline",
+      "path": "packages/boot/cmdline",
+      "note": "命令行解析",
+      "ts_count": 2
+    },
+    {
+      "id": "dsh-base",
+      "name": "@deepseek-ai/dsh-base",
+      "path": "packages/bundle/base",
+      "note": "bundle 自身",
+      "ts_count": 2
+    },
+    {
+      "id": "dsh-headless",
+      "name": "@deepseek-ai/dsh-headless",
+      "path": "packages/bundle/headless",
+      "note": "独立 bundle (有 cordis.patch.yml)",
+      "ts_count": 3
+    }
+  ],
+  "l3_seams": [
+    {
+      "id": "dsh-acp",
+      "name": "@deepseek-ai/dsh-acp",
+      "path": "packages/acp/acp",
+      "note": "抽象基座",
+      "ts_count": 3
+    },
+    {
+      "id": "dsh-e2b",
+      "name": "@deepseek-ai/dsh-e2b",
+      "path": "packages/e2b/e2b",
+      "note": "抽象基座",
+      "ts_count": 2
+    },
+    {
+      "id": "dsh-hook-protocol",
+      "name": "@deepseek-ai/dsh-hook-protocol",
+      "path": "packages/hooks/hook-protocol",
+      "note": "抽象基座",
+      "ts_count": 9
+    },
+    {
+      "id": "dsh-lsp",
+      "name": "@deepseek-ai/dsh-lsp",
+      "path": "packages/lsp/lsp",
+      "note": "抽象基座",
+      "ts_count": 4
+    },
+    {
+      "id": "dsh-mcp-client",
+      "name": "@deepseek-ai/dsh-mcp-client",
+      "path": "packages/mcp/mcp-client",
+      "note": "抽象基座",
+      "ts_count": 5
+    },
+    {
+      "id": "dsh-sdk-protocol",
+      "name": "@deepseek-ai/dsh-sdk-protocol",
+      "path": "packages/sdk/protocol",
+      "note": "抽象基座",
+      "ts_count": 4
+    },
+    {
+      "id": "dsh-terminal",
+      "name": "@deepseek-ai/dsh-terminal",
+      "path": "packages/terminal/terminal",
+      "note": "抽象基座",
+      "ts_count": 3
+    },
+    {
+      "id": "dsh-acp-snapshot",
+      "name": "@deepseek-ai/dsh-acp-snapshot",
+      "path": "packages/test-support/acp-snapshot",
+      "note": "test-support",
+      "ts_count": 6
+    },
+    {
+      "id": "dsh-agent-loop-testkit",
+      "name": "@deepseek-ai/dsh-agent-loop-testkit",
+      "path": "packages/test-support/agent-loop-testkit",
+      "note": "test-support",
+      "ts_count": 2
+    },
+    {
+      "id": "dsh-client-test-runtime",
+      "name": "@deepseek-ai/dsh-client-test-runtime",
+      "path": "packages/test-support/client-runtime",
+      "note": "test-support",
+      "ts_count": 10
+    },
+    {
+      "id": "dsh-llm-mock-server",
+      "name": "@deepseek-ai/dsh-llm-mock-server",
+      "path": "packages/test-support/llm-mock-server",
+      "note": "test-support",
+      "ts_count": 4
+    },
+    {
+      "id": "dsh-llm-replay",
+      "name": "@deepseek-ai/dsh-llm-replay",
+      "path": "packages/test-support/llm-replay",
+      "note": "test-support",
+      "ts_count": 2
+    },
+    {
+      "id": "dsh-loader-smoke",
+      "name": "@deepseek-ai/dsh-loader-smoke",
+      "path": "packages/test-support/loader-smoke",
+      "note": "test-support",
+      "ts_count": 3
+    }
+  ],
+  "groups": [
+    {
+      "id": "G30",
+      "name": "外部执行后端",
+      "plugins": [
+        {
+          "id": "dsh-fs-e2b",
+          "name": "@deepseek-ai/dsh-fs-e2b",
+          "path": "packages/e2b/fs-e2b"
+        },
+        {
+          "id": "dsh-subprocess-e2b",
+          "name": "@deepseek-ai/dsh-subprocess-e2b",
+          "path": "packages/e2b/subprocess-e2b"
+        },
+        {
+          "id": "dsh-terminal-bash",
+          "name": "@deepseek-ai/dsh-terminal-bash",
+          "path": "packages/terminal/terminal-bash"
+        },
+        {
+          "id": "dsh-tool-terminal",
+          "name": "@deepseek-ai/dsh-tool-terminal",
+          "path": "packages/terminal/tool-terminal"
+        },
+        {
+          "id": "dsh-tool-bash-persistent",
+          "name": "@deepseek-ai/dsh-tool-bash-persistent",
+          "path": "packages/shell/tool-bash-persistent"
+        },
+        {
+          "id": "dsh-schedule",
+          "name": "@deepseek-ai/dsh-schedule",
+          "path": "packages/schedule/schedule"
+        }
+      ]
+    },
+    {
+      "id": "G31",
+      "name": "协议与SDK",
+      "plugins": [
+        {
+          "id": "dsh-sdk-client",
+          "name": "@deepseek-ai/dsh-sdk-client",
+          "path": "packages/sdk/client"
+        },
+        {
+          "id": "dsh-sdk-jsonrpc-server",
+          "name": "@deepseek-ai/dsh-sdk-jsonrpc-server",
+          "path": "packages/sdk/server"
+        }
+      ]
+    },
+    {
+      "id": "G32",
+      "name": "LSP集成",
+      "plugins": [
+        {
+          "id": "dsh-lsp-stdio",
+          "name": "@deepseek-ai/dsh-lsp-stdio",
+          "path": "packages/lsp/lsp-stdio"
+        },
+        {
+          "id": "dsh-tool-lsp",
+          "name": "@deepseek-ai/dsh-tool-lsp",
+          "path": "packages/lsp/tool-lsp"
+        }
+      ]
+    },
+    {
+      "id": "G33",
+      "name": "子代理外部后端",
+      "plugins": [
+        {
+          "id": "dsh-subagent-acp",
+          "name": "@deepseek-ai/dsh-subagent-acp",
+          "path": "packages/subagent/subagent-acp"
+        },
+        {
+          "id": "dsh-subagent-claude-code",
+          "name": "@deepseek-ai/dsh-subagent-claude-code",
+          "path": "packages/subagent/subagent-claude-code"
+        },
+        {
+          "id": "dsh-subagent-codex",
+          "name": "@deepseek-ai/dsh-subagent-codex",
+          "path": "packages/subagent/subagent-codex"
+        },
+        {
+          "id": "dsh-subagent-dsh-sdk",
+          "name": "@deepseek-ai/dsh-subagent-dsh-sdk",
+          "path": "packages/subagent/subagent-dsh-sdk"
+        }
+      ]
+    },
+    {
+      "id": "G34",
+      "name": "Web上下文扩展",
+      "plugins": [
+        {
+          "id": "dsh-web-fetch-http",
+          "name": "@deepseek-ai/dsh-web-fetch-http",
+          "path": "packages/web/web-fetch-http"
+        },
+        {
+          "id": "dsh-web-search-exa",
+          "name": "@deepseek-ai/dsh-web-search-exa",
+          "path": "packages/web/web-search-exa"
+        },
+        {
+          "id": "dsh-web-search-perplexity",
+          "name": "@deepseek-ai/dsh-web-search-perplexity",
+          "path": "packages/web/web-search-perplexity"
+        },
+        {
+          "id": "dsh-session-reference",
+          "name": "@deepseek-ai/dsh-session-reference",
+          "path": "packages/context/session-reference"
+        },
+        {
+          "id": "dsh-time-context",
+          "name": "@deepseek-ai/dsh-time-context",
+          "path": "packages/context/time-context"
+        },
+        {
+          "id": "dsh-tmux-context",
+          "name": "@deepseek-ai/dsh-tmux-context",
+          "path": "packages/context/tmux-context"
+        }
+      ]
+    },
+    {
+      "id": "G35",
+      "name": "会话存储变体",
+      "plugins": [
+        {
+          "id": "dsh-session-persistence-sqlite",
+          "name": "@deepseek-ai/dsh-session-persistence-sqlite",
+          "path": "packages/session/session-persistence-sqlite"
+        },
+        {
+          "id": "dsh-storage-sqlite",
+          "name": "@deepseek-ai/dsh-storage-sqlite",
+          "path": "packages/storage/storage-sqlite"
+        },
+        {
+          "id": "dsh-session-title-all-prompts-llm",
+          "name": "@deepseek-ai/dsh-session-title-all-prompts-llm",
+          "path": "packages/session/session-title-all-prompts-llm"
+        },
+        {
+          "id": "dsh-tool-session-query",
+          "name": "@deepseek-ai/dsh-tool-session-query",
+          "path": "packages/session-query/tool-session-query"
+        }
+      ]
+    },
+    {
+      "id": "G36",
+      "name": "Hooks工具扩展",
+      "plugins": [
+        {
+          "id": "dsh-hooks-claude-code",
+          "name": "@deepseek-ai/dsh-hooks-claude-code",
+          "path": "packages/hooks/hooks-claude-code"
+        },
+        {
+          "id": "dsh-hooks-codex",
+          "name": "@deepseek-ai/dsh-hooks-codex",
+          "path": "packages/hooks/hooks-codex"
+        },
+        {
+          "id": "dsh-tool-cordis",
+          "name": "@deepseek-ai/dsh-tool-cordis",
+          "path": "packages/extensions/tool-cordis"
+        },
+        {
+          "id": "dsh-tool-ask-user",
+          "name": "@deepseek-ai/dsh-tool-ask-user",
+          "path": "packages/interaction/tool-ask-user"
+        },
+        {
+          "id": "dsh-persona",
+          "name": "@deepseek-ai/dsh-persona",
+          "path": "packages/preset/persona"
+        },
+        {
+          "id": "dsh-agent-tool-presentation",
+          "name": "@deepseek-ai/dsh-agent-tool-presentation",
+          "path": "packages/core/agent-tool-presentation"
+        }
+      ]
+    },
+    {
+      "id": "G37",
+      "name": "示例与框架",
+      "plugins": [
+        {
+          "id": "dsh-acp-demo",
+          "name": "@deepseek-ai/dsh-acp-demo",
+          "path": "packages/examples/acp-demo"
+        },
+        {
+          "id": "dsh-agent-spine-demo",
+          "name": "@deepseek-ai/dsh-agent-spine-demo",
+          "path": "packages/examples/agent-spine-demo"
+        },
+        {
+          "id": "dsh-sdk-jsonrpc-demo",
+          "name": "@deepseek-ai/dsh-sdk-jsonrpc-demo",
+          "path": "packages/examples/jsonrpc-demo"
+        },
+        {
+          "id": "dsh-typert-generator",
+          "name": "@deepseek-ai/dsh-typert-generator",
+          "path": "packages/typert/generator"
+        },
+        {
+          "id": "dsh-native-command",
+          "name": "@deepseek-ai/dsh-native-command",
+          "path": "packages/util/native-command"
+        },
+        {
+          "id": "dsh-host-frontend-static",
+          "name": "@deepseek-ai/dsh-host-frontend-static",
+          "path": "packages/host/frontend-static"
+        },
+        {
+          "id": "dsh-host-directory-picker",
+          "name": "@deepseek-ai/dsh-host-directory-picker",
+          "path": "packages/host/directory-picker"
+        },
+        {
+          "id": "dsh-host-directory-picker-browse",
+          "name": "@deepseek-ai/dsh-host-directory-picker-browse",
+          "path": "packages/host/directory-picker-browse"
+        },
+        {
+          "id": "dsh-host-directory-picker-native",
+          "name": "@deepseek-ai/dsh-host-directory-picker-native",
+          "path": "packages/host/directory-picker-native"
+        }
+      ]
+    }
+  ]
+}

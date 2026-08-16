@@ -1,0 +1,2816 @@
+{
+  "meta": {
+    "mission": "deepseek-harness 插件级 DAG 依赖链分析 - 第一层核心集",
+    "generated_at": "2026-08-16",
+    "source": "stage-01-r1~r6.json (6路 explore 源码级三依据分析)",
+    "plugin_count": 76,
+    "edge_count": 194,
+    "layer_count": 8,
+    "group_count": 24,
+    "acyclic": true
+  },
+  "groups": [
+    {
+      "id": "G01",
+      "name": "运行时框架",
+      "plugins": [
+        "cordis-plugin-timer",
+        "cordis-plugin-hmr"
+      ]
+    },
+    {
+      "id": "G02",
+      "name": "类型契约",
+      "plugins": [
+        "dsh-typert-registry",
+        "dsh-typert-loader",
+        "dsh-api-gateway"
+      ]
+    },
+    {
+      "id": "G03",
+      "name": "核心服务",
+      "plugins": [
+        "dsh-session",
+        "dsh-agent",
+        "dsh-agent-loop",
+        "dsh-agent-default-model",
+        "dsh-system-prompt",
+        "dsh-tools"
+      ]
+    },
+    {
+      "id": "G04",
+      "name": "LLM核心",
+      "plugins": [
+        "dsh-llm"
+      ]
+    },
+    {
+      "id": "G05",
+      "name": "LLM适配",
+      "plugins": [
+        "dsh-llm-deepseek",
+        "dsh-llm-pi-ai"
+      ]
+    },
+    {
+      "id": "G06",
+      "name": "LLM治理",
+      "plugins": [
+        "dsh-llm-retry",
+        "dsh-token-meter"
+      ]
+    },
+    {
+      "id": "G07",
+      "name": "会话持久化",
+      "plugins": [
+        "dsh-session-persistence-jsonl",
+        "dsh-session-query-sqlite",
+        "dsh-session-checkpoint-policy",
+        "dsh-session-telemetry-otel"
+      ]
+    },
+    {
+      "id": "G08",
+      "name": "会话展示",
+      "plugins": [
+        "dsh-session-title",
+        "dsh-session-title-first-prompt-llm",
+        "dsh-session-projection",
+        "dsh-user-questions"
+      ]
+    },
+    {
+      "id": "G09",
+      "name": "审批权限",
+      "plugins": [
+        "dsh-user-approval",
+        "dsh-permission-presets"
+      ]
+    },
+    {
+      "id": "G10",
+      "name": "命令交互",
+      "plugins": [
+        "dsh-commands",
+        "dsh-command-feedback",
+        "dsh-command-goal",
+        "dsh-command-compact"
+      ]
+    },
+    {
+      "id": "G11",
+      "name": "凭据设置",
+      "plugins": [
+        "dsh-credentials-local",
+        "dsh-settings-file"
+      ]
+    },
+    {
+      "id": "G12",
+      "name": "附件",
+      "plugins": [
+        "dsh-attachment-local"
+      ]
+    },
+    {
+      "id": "G13",
+      "name": "文件系统",
+      "plugins": [
+        "dsh-fs-sandbox",
+        "dsh-tool-fs",
+        "dsh-tool-fs-search",
+        "dsh-tool-str-replace-editor",
+        "dsh-fs-observation-policy"
+      ]
+    },
+    {
+      "id": "G14",
+      "name": "Shell工具",
+      "plugins": [
+        "dsh-tool-bash",
+        "dsh-tool-pwsh",
+        "dsh-shell-env"
+      ]
+    },
+    {
+      "id": "G15",
+      "name": "沙箱执行",
+      "plugins": [
+        "dsh-sandbox-local",
+        "dsh-sandbox-policy",
+        "dsh-subprocess-local",
+        "dsh-bash-sandbox",
+        "dsh-pwsh-sandbox"
+      ]
+    },
+    {
+      "id": "G16",
+      "name": "作业",
+      "plugins": [
+        "dsh-jobs-local",
+        "dsh-tool-jobs"
+      ]
+    },
+    {
+      "id": "G17",
+      "name": "目标计划",
+      "plugins": [
+        "dsh-goal",
+        "dsh-goal-round-driver",
+        "dsh-tool-goal",
+        "dsh-plan-mode"
+      ]
+    },
+    {
+      "id": "G18",
+      "name": "技能",
+      "plugins": [
+        "dsh-skill",
+        "dsh-skill-filesystem",
+        "dsh-skill-badge",
+        "dsh-tool-skill"
+      ]
+    },
+    {
+      "id": "G19",
+      "name": "子代理",
+      "plugins": [
+        "dsh-subagent",
+        "dsh-subagent-spawn-in-process",
+        "dsh-subagent-fork-in-process",
+        "dsh-tool-subagent",
+        "dsh-tool-subagent-control",
+        "dsh-tool-subagent-report"
+      ]
+    },
+    {
+      "id": "G20",
+      "name": "工作流",
+      "plugins": [
+        "dsh-workflow-worker-thread",
+        "dsh-tool-workflow",
+        "dsh-tool-ralph"
+      ]
+    },
+    {
+      "id": "G21",
+      "name": "上下文治理",
+      "plugins": [
+        "dsh-compaction-basic",
+        "dsh-compaction-tool-result-pruner",
+        "dsh-spill-local",
+        "dsh-spill-policy"
+      ]
+    },
+    {
+      "id": "G22",
+      "name": "上下文注入",
+      "plugins": [
+        "dsh-agent-instructions"
+      ]
+    },
+    {
+      "id": "G23",
+      "name": "工具守卫",
+      "plugins": [
+        "dsh-tool-call-timeout-policy",
+        "dsh-repeat-tool-reminder",
+        "dsh-tool-todo"
+      ]
+    },
+    {
+      "id": "G24",
+      "name": "Web搜索",
+      "plugins": [
+        "dsh-web",
+        "dsh-web-search-deepseek",
+        "dsh-tool-web"
+      ]
+    }
+  ],
+  "layers": {
+    "0": [
+      "dsh-subprocess-local",
+      "dsh-credentials-local",
+      "dsh-spill-local",
+      "dsh-settings-file",
+      "dsh-attachment-local",
+      "cordis-plugin-timer",
+      "dsh-llm",
+      "dsh-typert-registry"
+    ],
+    "1": [
+      "dsh-api-gateway",
+      "dsh-skill",
+      "dsh-web",
+      "dsh-system-prompt",
+      "dsh-typert-loader",
+      "cordis-plugin-hmr",
+      "dsh-llm-deepseek",
+      "dsh-llm-pi-ai",
+      "dsh-session"
+    ],
+    "2": [
+      "dsh-skill-badge",
+      "dsh-session-query-sqlite",
+      "dsh-session-telemetry-otel",
+      "dsh-sandbox-local",
+      "dsh-fs-observation-policy",
+      "dsh-session-persistence-jsonl",
+      "dsh-skill-filesystem",
+      "dsh-session-projection",
+      "dsh-agent"
+    ],
+    "3": [
+      "dsh-goal",
+      "dsh-jobs-local",
+      "dsh-agent-default-model",
+      "dsh-commands",
+      "dsh-llm-retry",
+      "dsh-token-meter",
+      "dsh-web-search-deepseek",
+      "dsh-sandbox-policy",
+      "dsh-user-approval",
+      "dsh-session-title",
+      "dsh-user-questions"
+    ],
+    "4": [
+      "dsh-bash-sandbox",
+      "dsh-goal-round-driver",
+      "dsh-command-goal",
+      "dsh-pwsh-sandbox",
+      "dsh-compaction-tool-result-pruner",
+      "dsh-command-compact",
+      "dsh-session-title-first-prompt-llm",
+      "dsh-permission-presets",
+      "dsh-command-feedback",
+      "dsh-tools",
+      "dsh-fs-sandbox"
+    ],
+    "5": [
+      "dsh-spill-policy",
+      "dsh-tool-str-replace-editor",
+      "dsh-shell-env",
+      "dsh-compaction-basic",
+      "dsh-tool-fs-search",
+      "dsh-tool-todo",
+      "dsh-tool-jobs",
+      "dsh-tool-goal",
+      "dsh-agent-instructions",
+      "dsh-agent-loop",
+      "dsh-subagent",
+      "dsh-repeat-tool-reminder",
+      "dsh-tool-skill",
+      "dsh-session-checkpoint-policy",
+      "dsh-plan-mode",
+      "dsh-tool-call-timeout-policy",
+      "dsh-tool-fs"
+    ],
+    "6": [
+      "dsh-tool-bash",
+      "dsh-workflow-worker-thread",
+      "dsh-tool-subagent-control",
+      "dsh-subagent-fork-in-process",
+      "dsh-tool-subagent-report",
+      "dsh-subagent-spawn-in-process",
+      "dsh-tool-subagent",
+      "dsh-tool-pwsh",
+      "dsh-tool-web"
+    ],
+    "7": [
+      "dsh-tool-ralph",
+      "dsh-tool-workflow"
+    ]
+  },
+  "nodes": [
+    {
+      "id": "cordis-plugin-timer",
+      "name": "@deepseek-ai/cordis-plugin-timer",
+      "group": "G01",
+      "group_name": "运行时框架",
+      "layer": 0,
+      "implementation": "Vendored 的 cordis 官方定时器服务插件(框架层基础能力)。定义 TimerService 类(extends Service，注册名 'timer')，通过 ctx.mixin 把 timeout/interval/throttle/debounce/setTimeout/setInterval 六个方法混入 Context，全部基于 ctx.effect 建立 fiber 生命周期绑定(context 销毁自动清理)。",
+      "provides": [
+        "ctx.timer (TimerService)",
+        "ctx.timeout()/interval()/throttle()/debounce()/setTimeout()/setInterval() 六个 mixin",
+        "Context 类型声明扩展"
+      ],
+      "path": ""
+    },
+    {
+      "id": "dsh-attachment-local",
+      "name": "@deepseek-ai/dsh-attachment-local",
+      "group": "G12",
+      "group_name": "附件",
+      "layer": 0,
+      "implementation": "实现 AttachmentStore 抽象(默认导出)，内容寻址存储于 DSH_HOME/attachments/v1(objects/<2位前缀>/<sha256>)。saveImage 先 inspectMetadata 完整解码校验，再 durable 写入(fsync staging→link→sync)返回 sha256 引用；readImage 校验摘要与元数据；validateImage 只做准入校验。",
+      "provides": [
+        "ctx.attachments(LocalAttachmentStore)",
+        "validateImage/saveImage/readImage",
+        "detectImage/readImageFile 导出"
+      ],
+      "path": "packages/attachment/attachment-local"
+    },
+    {
+      "id": "dsh-credentials-local",
+      "name": "@deepseek-ai/dsh-credentials-local",
+      "group": "G11",
+      "group_name": "凭据设置",
+      "layer": 0,
+      "implementation": "实现 CredentialProvider 抽象(默认导出)，文件位于 $DSH_HOME/.credentials.yaml。resolve() 按信任层级查值：继承环境(只读,获胜)>managed 文件>项目 .env>用户 .env。写路径经 withFileLock 读-改-写(0600/0700、保留注释)，chokidar 热重载，write() 拒绝 env 遮蔽的 ref，notifyUpdated 发 credentials/updated 事件。",
+      "provides": [
+        "ctx.credentials(LocalCredentialProvider)",
+        "resolve/describe/set/unset",
+        "credentials/updated 事件扇出",
+        "CREDENTIALS_FILENAME/resolveSpec"
+      ],
+      "path": "packages/credentials/credentials-local"
+    },
+    {
+      "id": "dsh-llm",
+      "name": "@deepseek-ai/dsh-llm",
+      "group": "G04",
+      "group_name": "LLM核心",
+      "layer": 0,
+      "implementation": "Provider 无关的 LLM 服务接口(ctx.llm)。LlmRuntime 服务维护 provider→LlmAdapter 注册表(registerAdapter)、可配置 provider 目录(registerConfigurableProviders)与模型发现(registerModelDiscovery)；stream() 走 llm/stream 瀑布拦截；prepareCall() 在注册时快照能力解析绑定一次派发；resolveCallConfig/resolveModelInfo 校验模型能力。附错误分类(LlmError/HarnessError)、BlockAssembler 流组装。",
+      "provides": [
+        "ctx.llm(LlmRuntime)",
+        "llm/stream 瀑布事件",
+        "llm/adapters-updated 通知事件",
+        "registerAdapter/registerConfigurableProviders/registerModelDiscovery",
+        "LlmAdapter 抽象基类",
+        "LlmError/HarnessError",
+        "BlockAssembler",
+        "createUserMessage/createAssistantMessage/createToolResultMessage",
+        "llm-invariant 伴随插件"
+      ],
+      "path": "packages/llm/llm"
+    },
+    {
+      "id": "dsh-settings-file",
+      "name": "@deepseek-ai/dsh-settings-file",
+      "group": "G11",
+      "group_name": "凭据设置",
+      "layer": 0,
+      "implementation": "实现 SettingsProvider 抽象(默认导出)，单个 YAML/JSON 文档($DSH_HOME/settings.yaml)承载所有 namespace section。load() 解析并 publish，persist() 经操作链+withFileLock 读-改-写，renderYaml 用 patchNode 做注释保留的 leaf-level diff。chokidar watch 热发布外部编辑，reconcileFromDisk 抑制 self-write。",
+      "provides": [
+        "ctx.settings(FileSettingsProvider)",
+        "documentPath/prepareDocument",
+        "settings/update→persist 实现"
+      ],
+      "path": "packages/settings/settings-file"
+    },
+    {
+      "id": "dsh-spill-local",
+      "name": "@deepseek-ai/dsh-spill-local",
+      "group": "G21",
+      "group_name": "上下文治理",
+      "layer": 0,
+      "implementation": "以 LocalSpillStore 类(extends SpillStore)默认导出，static Config 仅 root(缺省 OS temp 下 mkdtemp 私有 0700)。saveText 将完整文本写入 <root>/session-<sha256前12>/<随机hex>-<sanitizedName>，open('wx',0600) 独占写入防符号链接投毒，返回 SpillLocator。",
+      "provides": [
+        "ctx.spillStore 服务",
+        "session-scoped 私有文件存储",
+        "traversal-safe 命名"
+      ],
+      "path": "packages/spill/spill-local"
+    },
+    {
+      "id": "dsh-subprocess-local",
+      "name": "@deepseek-ai/dsh-subprocess-local",
+      "group": "G15",
+      "group_name": "沙箱执行",
+      "layer": 0,
+      "implementation": "子进程 seam 的本地实现(LocalSubprocessRuntime extends SubprocessRuntime):spawn() 创建 detached 进程树(Windows 经 taskkill /T),OutputCollector 做每流内存尾部保留+溢出 spill 文件,childEnv 清洗父环境,spawnTerminal 经 node-pty 提供 PTY 句柄。",
+      "provides": [
+        "ctx.subprocess 服务",
+        "输出采集(spill 文件)/环境清洗/进程树终止"
+      ],
+      "path": "packages/subprocess/subprocess-local"
+    },
+    {
+      "id": "dsh-typert-registry",
+      "name": "@deepseek-ai/dsh-typert-registry",
+      "group": "G02",
+      "group_name": "类型契约",
+      "layer": 0,
+      "implementation": "Typert 运行时注册表(ctx.typert)。TypertRegistry 服务注册生成的包反射/Zod schema(register 原子提交)、local/remote Invocation 描述符、host 对象查找器与 host Context 提供者；typertKey/typertEndpoint 构成全局键；lookups/contexts/remotes/local 各视图暴露给依赖方；纯运行时反射仓库。",
+      "provides": [
+        "ctx.typert(TypertRegistry)",
+        "register()/get()/resolve()/list()/toJSONSchema()",
+        "typert.lookups/contexts/remotes/local 视图",
+        "typertKey/typertEndpoint",
+        "变更订阅(ChangeSource)"
+      ],
+      "path": "packages/typert/registry"
+    },
+    {
+      "id": "cordis-plugin-hmr",
+      "name": "@deepseek-ai/cordis-plugin-hmr",
+      "group": "G01",
+      "group_name": "运行时框架",
+      "layer": 1,
+      "implementation": "Vendored 的 cordis 官方热更新插件(框架层)。Hmr 类(Service 'hmr')static inject=['loader','timer']。(1) registerConfig 对配置树外精确路径起 chokidar watcher；(2) [Service.init] 对 root/ignored 建全局 watcher，external 文件触发 loader.exit() 全量重载；(3) partialReload 通过 loadCache 依赖图分析把变更分类 accepted/declined，重 import 插件入口，失败 rollback。",
+      "provides": [
+        "ctx.hmr (Hmr 服务)",
+        "ctx.hmr.registerConfig()",
+        "事件 hmr/change|hmr/reload|hmr/config-update-failed"
+      ],
+      "path": ""
+    },
+    {
+      "id": "dsh-api-gateway",
+      "name": "@deepseek-ai/dsh-api-gateway",
+      "group": "G02",
+      "group_name": "类型契约",
+      "layer": 1,
+      "implementation": "Typert Remote 双向网关：Host 端 TypertGatewayService(ctx.typertGateway，static inject=['typert']) 把 '/api/<namespace>/<method>' RPC 派发到 live cordis Service——先 ctx.typert.local 严格 descriptor，缺省时经 collectSrcClaims 反射构建 SRC descriptor；Client 端 ClientRemoteService(ctx.remote，inject=['typert','connection']) 安装 direct/scoped 方法到 RemoteNamespaceService，经 connection.rpc.call('/api',...) 转发，支持 $on/$dispatch 远程事件订阅。",
+      "provides": [
+        "ctx.typertGateway(Host 派发器)",
+        "ctx.remote(Client Remote 命名空间)",
+        "connection.rpc.intercept('/api')",
+        "Client 远程事件 $on/$dispatch"
+      ],
+      "path": "packages/api/gateway"
+    },
+    {
+      "id": "dsh-llm-deepseek",
+      "name": "@deepseek-ai/dsh-llm-deepseek",
+      "group": "G05",
+      "group_name": "LLM适配",
+      "layer": 1,
+      "implementation": "DeepSeek chat-completions 适配器插件(inject ['llm'])。apply() 创建 DeepSeekAdapter(fetch+SSE，eventsource-parser 解析)，向 ctx.llm.registerAdapter(['deepseek-official'], adapter) 与 registerConfigurableProviders 注册路由；连接事实(apiKeyEnv/baseURL/models/retryPolicy)每次请求经 options() thunk 重新解析，API key 经 ctx.get('credentials') 或 launchEnvironment 按请求解析；错误码归一化(AUTH/RATE_LIMIT/QUOTA/CONTEXT_WINDOW_EXCEEDED)。",
+      "provides": [
+        "llm 适配器: provider 路由 'deepseek-official'",
+        "可配置 provider 目录(llm-deepseek 设置段)",
+        "模型目录 deepseek-v4-flash/deepseek-v4-pro",
+        "llm-deepseek 设置段 schema",
+        "DeepSeekAdapter 类导出"
+      ],
+      "path": "packages/llm/llm-deepseek"
+    },
+    {
+      "id": "dsh-llm-pi-ai",
+      "name": "@deepseek-ai/dsh-llm-pi-ai",
+      "group": "G05",
+      "group_name": "LLM适配",
+      "layer": 1,
+      "implementation": "pi-ai 库驱动的通用 LLM 适配器插件(inject ['llm'])。apply() 按 provider 配置 dict 生成 PiAiAdapter(继承 LlmAdapter)，routes 来自 pi-ai catalog 或手声明；每次请求解析 profile，key 经 credentials/launchEnvironment 解析；ctx.llm.registerConfigurableProviders 维护目录、registerModelDiscovery 提供端点问询、registerAdapter 注册路由；含模型回放与图片附件解析(resolveAttachments→ctx.get('attachments'))。",
+      "provides": [
+        "llm 适配器: 多 provider 路由(openai/anthropic/自定义)",
+        "可配置 provider 目录(llm-pi-ai 设置段)",
+        "模型发现(registerModelDiscovery)",
+        "llm-pi-ai 设置段 schema",
+        "PiAiAdapter 类导出"
+      ],
+      "path": "packages/llm/llm-pi-ai"
+    },
+    {
+      "id": "dsh-session",
+      "name": "@deepseek-ai/dsh-session",
+      "group": "G03",
+      "group_name": "核心服务",
+      "layer": 1,
+      "implementation": "事件溯源(Event-sourced)会话存储。SessionStore(ctx.sessions) 维护内存 Map 存 Session，append-only 事件日志由 Session 类持有；append() 同步通知，通过 session/created / session/event / session/flush / session/disposed 事件向外广播，持久化由外部插件订阅事件自行落盘。Session 提供 deriveMessages()(折叠 surface 派生 LLM 消息历史)、requestHeader()(折叠 request/header 事件)、prepare/enter/announce 三段式发布边界(配合 agent-loop 的复合 effect 保证拆解顺序)。",
+      "provides": [
+        "ctx.sessions(SessionStore)",
+        "session/created 事件",
+        "session/event 事件",
+        "session/flush 事件",
+        "session/disposed 事件",
+        "Session 类(append/events/deriveMessages/requestHeader/surface)",
+        "SessionPreparation",
+        "SessionForkError",
+        "packChunkRuns/decodeStorageRecord(存储格式)",
+        "deepFreeze 冻结的不可变事件契约"
+      ],
+      "path": "packages/core/session"
+    },
+    {
+      "id": "dsh-skill",
+      "name": "@deepseek-ai/dsh-skill",
+      "group": "G18",
+      "group_name": "技能",
+      "layer": 1,
+      "implementation": "Agent skill provider 注册表(能力接缝的 Service Definition 角色)。SkillRegistry(ctx.skills) 用 ScopedLayers 维护 global + per-scope 分层：registerProvider 分层注册，register 接收运行时 skill。读取面 list()/snapshot()/get()：collect 以 (cwd, scopeChain, revision) 为缓存键合并各层，就近层同名胜出；变更经 'skills/change' 事件通知。renderSkillContent 渲染成统一 <skill_content> 模型块。",
+      "provides": [
+        "ctx.skills(registerProvider/register/list/snapshot/get)",
+        "skills/change 事件",
+        "SkillProvider 契约",
+        "renderSkillContent/escapeText + skill-invocation MessageSourceMap"
+      ],
+      "path": "packages/skill/skill"
+    },
+    {
+      "id": "dsh-system-prompt",
+      "name": "@deepseek-ai/dsh-system-prompt",
+      "group": "G03",
+      "group_name": "核心服务",
+      "layer": 1,
+      "implementation": "系统提示词装配注册表(ctx.systemPrompt)。SystemPrompt 服务管理分层的 sections/contexts/tools/variables 注册(PromptLayer + ScopedLayers 支持 agent 作用域遮蔽)，assemble() 收集全局+作用域层、按 order 排序、toolOrder 规范工具顺序、插值 {{variable}}，再跑 system-prompt/assemble 瀑布允许插件改写；renderPrompt/renderContextSections 产出最终模型输入。",
+      "provides": [
+        "ctx.systemPrompt(SystemPrompt)",
+        "system-prompt/assemble 瀑布事件",
+        "system-prompt/change 事件",
+        "section()/context()/tools()/variable()/suppressRuntimeContext()/assemble()",
+        "renderPrompt/renderContextSections",
+        "PERSONA_SECTION/PERSONA_ORDER/TOOL_ORDER_REST",
+        "system-prompt-invariant 伴随插件"
+      ],
+      "path": "packages/core/system-prompt"
+    },
+    {
+      "id": "dsh-typert-loader",
+      "name": "@deepseek-ai/dsh-typert-loader",
+      "group": "G02",
+      "group_name": "类型契约",
+      "layer": 1,
+      "implementation": "Typert 构建产物的自动注册集成。apply(ctx) 扫描 loader entries 与显式配置 packages，对每个 entry 解析其 package.json 的 './typert' export，动态 import 后经 validateTypertManifest 严格校验，通过 ctx.typert.register(manifest) 注册。监听 'internal/plugin' 事件把 fiber entry 标记 dirty，microtask 批量 flush 增量 reconcile；unmount 时撤下注册。",
+      "provides": [
+        "typert manifest 自动注册/撤销能力",
+        "inject=['typert','loader'] 插件入口",
+        "validateTypertManifest/TYPERT_HOST_EXPORT"
+      ],
+      "path": "packages/typert/loader"
+    },
+    {
+      "id": "dsh-web",
+      "name": "@deepseek-ai/dsh-web",
+      "group": "G24",
+      "group_name": "Web搜索",
+      "layer": 1,
+      "implementation": "web 能力缝服务定义：WebRuntime extends Service 注册为 ctx.web，维护 searchProviders/fetchProviders 两个命名注册表。search()/fetch() 在调用时按配置 id→注册→available() 优先级解析唯一 provider，无配置时恰好一个可用自动选中；search 结果按 maxResults 截断。",
+      "provides": [
+        "ctx.web(WebRuntime)",
+        "registerSearchProvider/registerFetchProvider",
+        "WebError 错误分类学",
+        "searchProvider/fetchProvider 选择配置"
+      ],
+      "path": "packages/web/web"
+    },
+    {
+      "id": "dsh-agent",
+      "name": "@deepseek-ai/dsh-agent",
+      "group": "G03",
+      "group_name": "核心服务",
+      "layer": 2,
+      "implementation": "Agent 服务(ctx.agents)：live 注册表 + initiator scope(AsyncLocalStorage 因果归属) + 工厂委派。AgentRegistry 只跟踪/生命周期管理，具体 create/resume 由 dsh-agent-loop 实现 AgentFactory 通过 setFactory 注入。提供 agentEvents/emitAgentEvent 事件派发(agent/created、agent/disposed、agent/status、agent/request、agent/request-error 等主题事件词表)；model-selection.ts 将模型选择耦合到 system-prompt/assemble 与 agent/request 瀑布。",
+      "provides": [
+        "ctx.agents(AgentRegistry)",
+        "ctx.agent(DX accessor)",
+        "agent/created|disposed|status 事件",
+        "agent/inbox/* 事件",
+        "agent/session-start|pre-step|request|request-error|turn-stopping|error 事件词表",
+        "AgentFactory 接口(由 agent-loop 实现)",
+        "Inbox 类",
+        "typert lookups: agent",
+        "ModelSelection/installModelSelection"
+      ],
+      "path": "packages/core/agent"
+    },
+    {
+      "id": "dsh-fs-observation-policy",
+      "name": "@deepseek-ai/dsh-fs-observation-policy",
+      "group": "G13",
+      "group_name": "文件系统",
+      "layer": 2,
+      "implementation": "纯事件型文件观察策略(不注册任何服务):apply() 建立 ObservedStateGate,以 WeakMap<owner(session), Map<targetKey, FsObservation>> 记录观察;通过 ctx.on 订阅三个 fs/* 事件——fs/write-intent 决策、fs/edit-intent 决策、fs/observed 记录。无此插件时工具退化为无条件变更。",
+      "provides": [
+        "fs/write-intent、fs/edit-intent 瀑布单槽决策监听",
+        "fs/observed 监听(会话级观察状态)",
+        "FS_NOT_OBSERVED/FS_NOT_FOUND 守卫语义"
+      ],
+      "path": "packages/fs/fs-observation-policy"
+    },
+    {
+      "id": "dsh-sandbox-local",
+      "name": "@deepseek-ai/dsh-sandbox-local",
+      "group": "G15",
+      "group_name": "沙箱执行",
+      "layer": 2,
+      "implementation": "本地进程沙箱 provider(LocalSandboxProvider extends SandboxProvider):按平台链选择 runner——linux 先 bwrap 后 landlock、darwin seatbelt、win32 windows-acl,功能探测仲裁;confine(argv, policy) 返回包裹 argv+enforcement+denialSignatures;windows-acl rung 拥有写授权:每 workspace 常驻 ACE+每会话私有临时目录 ACE。",
+      "provides": [
+        "ctx.sandbox 服务(LocalSandboxProvider: confine())",
+        "runner 链选择/功能探测",
+        "windows-acl 写授权物化"
+      ],
+      "path": "packages/sandbox/sandbox-local"
+    },
+    {
+      "id": "dsh-session-persistence-jsonl",
+      "name": "@deepseek-ai/dsh-session-persistence-jsonl",
+      "group": "G07",
+      "group_name": "会话持久化",
+      "layer": 2,
+      "implementation": "以 JsonlSessionPersistence 类(extends SessionPersistence implements PersistenceBackend)作为默认导出插件，static inject=['sessions']。构造时实例化 PersistenceCoordinator，由协调器安装写路径监听(session/created 捕获 header、session/event 入缓冲、session/flush drain、session/disposed retire)；后端实现 JSONL 追加式日志存储 + zstd 帧压缩 + 崩溃修复(link/unlink 原子发布)。",
+      "provides": [
+        "ctx.sessionPersistence 服务",
+        "PersistenceCoordinator 写路径监听",
+        "JSONL 追加式日志 + zstd + 崩溃修复",
+        "locate/readRaw/listSnapshots"
+      ],
+      "path": "packages/session/session-persistence-jsonl"
+    },
+    {
+      "id": "dsh-session-projection",
+      "name": "@deepseek-ai/dsh-session-projection",
+      "group": "G08",
+      "group_name": "会话展示",
+      "layer": 2,
+      "implementation": "会话投影能力接缝：SessionProjectionRegistry(ctx.sessionProjections) 管理 merge 可扩展的 SessionProjectionMap 类型表与投影单元注册。服务构造时订阅 'session/event' 一次驱动所有注册单元，仅当 apply 返回新引用才触发 onChanged。注册是 effect，同 key 多注册者共享单元并 refs 计数。读取面：snapshot()/checkpoint()/restoreFloor()/viewCheckpoint()/restore()。",
+      "provides": [
+        "ctx.sessionProjections",
+        "SessionProjectionMap 类型表",
+        "ProjectionDefinition 纯同步单元契约",
+        "ProjectionChangeListener"
+      ],
+      "path": "packages/session/session-projection"
+    },
+    {
+      "id": "dsh-session-query-sqlite",
+      "name": "@deepseek-ai/dsh-session-query-sqlite",
+      "group": "G07",
+      "group_name": "会话持久化",
+      "layer": 2,
+      "implementation": "以 SqliteSessionQueryEngine 类(extends SessionQueryEngine)实现 ctx.sessionQuery 的 SQLite FTS5 后端，static inject=['sessions']。搜索前 _reconcile 做双源观察：live 源折叠 ctx.sessions.list()，持久化源通过可选 ctx.inject(['sessionPersistence']) 的 listSnapshots 对比 revision、inspect 装载变更日志；searchSessions/searchEvents 返回带实例指纹的游标分页。",
+      "provides": [
+        "ctx.sessionQuery 服务",
+        "SQLite FTS5 全文检索索引",
+        "launcherSessionQueryPath 可选槽位"
+      ],
+      "path": "packages/session-query/session-query-sqlite"
+    },
+    {
+      "id": "dsh-session-telemetry-otel",
+      "name": "@deepseek-ai/dsh-session-telemetry-otel",
+      "group": "G07",
+      "group_name": "会话持久化",
+      "layer": 2,
+      "implementation": "以 OpenTelemetrySessionBackend 类(extends SessionTelemetryBackend)默认导出，static inject=['sessions']。FULL 模式构造 LoggerProvider+BatchLogRecordProcessor+OTLPLogExporter 并 new SessionTelemetryCoordinator(ctx, backend, 'live') 全量跟随；FEEDBACK_ONLY 模式 coordinator 走 'on-demand' 并注册 feedback/record 监听；DISABLED 不建 SDK。记录映射为 logger.emit()，shutdown 带超时竞速。",
+      "provides": [
+        "ctx.sessionTelemetry 服务",
+        "SessionTelemetryCoordinator 组合",
+        "OTel 日志管道",
+        "feedback/record 捕获监听"
+      ],
+      "path": "packages/session/session-telemetry-otel"
+    },
+    {
+      "id": "dsh-skill-badge",
+      "name": "@deepseek-ai/dsh-skill-badge",
+      "group": "G18",
+      "group_name": "技能",
+      "layer": 2,
+      "implementation": "apply() 在 ctx.skills.registerProvider 注册不可变内置 provider 'dsh-badge'：list 返回单个 CANDIDATE，get 读取 assets/dsh-badge.md。注意：交付 CLI 在 bundle/base/cordis.patch.yml:245 声明 disabled:true，启用该配置行才是显式 opt-in。",
+      "provides": [
+        "ctx.skills 的 'dsh-badge' bundled provider"
+      ],
+      "path": "packages/skill/skill-badge"
+    },
+    {
+      "id": "dsh-skill-filesystem",
+      "name": "@deepseek-ai/dsh-skill-filesystem",
+      "group": "G18",
+      "group_name": "技能",
+      "layer": 2,
+      "implementation": "apply() 在 ctx.skills.registerProvider 注册 filesystem provider；list() 扫描 project(.dsh/skills,.agents/skills)/custom/user/bundled 根，按 source rank 排序；get() 解析 frontmatter 并经 ctx.fs 读正文；SkillWatchManager 以 chokidar 监控根目录并调 control.invalidate；ctx.on('fs/observed') 监听模型写后失效。",
+      "provides": [
+        "ctx.skills 的 filesystem provider",
+        "project/custom/user/bundled skill 发现",
+        "frontmatter 解析与 watch 失效"
+      ],
+      "path": "packages/skill/skill-filesystem"
+    },
+    {
+      "id": "dsh-agent-default-model",
+      "name": "@deepseek-ai/dsh-agent-default-model",
+      "group": "G03",
+      "group_name": "核心服务",
+      "layer": 3,
+      "implementation": "默认模型选择服务(ctx.agentDefaultModel)。持有 provider/model/reasoningEffort 组成入口，通过 dsh-settings 的 installSettingsSection 绑定用户层可热更新默认选择；currentSelection() 投影为 dsh-agent 的 ModelSelection，saveSelection() 写回设置文档。",
+      "provides": [
+        "ctx.agentDefaultModel(AgentDefaultModelConfig)",
+        "currentSelection(): ModelSelection",
+        "saveSelection()",
+        "AGENT_DEFAULT_MODEL_SETTINGS_NAMESPACE"
+      ],
+      "path": "packages/core/agent-default-model"
+    },
+    {
+      "id": "dsh-commands",
+      "name": "@deepseek-ai/dsh-commands",
+      "group": "G10",
+      "group_name": "命令交互",
+      "layer": 3,
+      "implementation": "定义 ctx.commands CommandRuntime(TypertRemoteService 默认导出)，用 ScopedLayers 做全局+per-agent scope 命令注册。register() 校验名称/描述/handler；execute() 解析斜杠行，mint commandId、append 'command/run' 日志事件、调用 handler、settle 后 append 'command/done'。list()/find() 是 @Remote 导出，notifyChange 发 'commands/change'。",
+      "provides": [
+        "ctx.commands(CommandRuntime)",
+        "session 事件 command/run|command/done",
+        "commands/change emit 事件",
+        "@Remote list/find/execute",
+        "parseCommand/CommandId"
+      ],
+      "path": "packages/interaction/commands"
+    },
+    {
+      "id": "dsh-goal",
+      "name": "@deepseek-ai/dsh-goal",
+      "group": "G17",
+      "group_name": "目标计划",
+      "layer": 3,
+      "implementation": "事件溯源 goal 域(ctx.goals GoalService，extends TypertRemoteService)。所有变更 append 'goal/change' 事件，per-session 缓存经 fold.ts 增量同步，compare-and-set ref 校验防 stale。create/edit/pause/resume/complete/block/clear 提交后经 agentEvents 发 'goal/changed'；'agent/session-start' 重置 activation=disarmed；注册 'goal' 投影单元；@Remote 导出。",
+      "provides": [
+        "ctx.goals(GoalService)",
+        "session 事件 goal/change",
+        "goal/changed agent-scoped emit",
+        "goal session projection",
+        "@Remote API"
+      ],
+      "path": "packages/goal/goal"
+    },
+    {
+      "id": "dsh-jobs-local",
+      "name": "@deepseek-ai/dsh-jobs-local",
+      "group": "G16",
+      "group_name": "作业",
+      "layer": 3,
+      "implementation": "实现 JobRegistry 抽象(默认导出)的进程内版本：TrackedTask 全内存、snapshot 永不外泄 live state。start() 校验 owner controller 可达与 maxConcurrentJobsPerOwner 限额，创建 job 并挂 hooks.done settle；list/get/read/kill/wait 按 owner session-id 鉴权；onJobDone/onJobsChanged/attachController 经 ScopedLayers 分层注册，disposeAll 在 ctx teardown 时 cancel。",
+      "provides": [
+        "ctx.jobs(LocalJobRegistry)",
+        "start/list/get/read/kill/wait",
+        "onJobDone/onJobsChanged/attachController",
+        "TASK_WAIT_TIMEOUT"
+      ],
+      "path": "packages/jobs/jobs-local"
+    },
+    {
+      "id": "dsh-llm-retry",
+      "name": "@deepseek-ai/dsh-llm-retry",
+      "group": "G06",
+      "group_name": "LLM治理",
+      "layer": 3,
+      "implementation": "Provider 路由的 LLM 请求重试策略插件(inject ['agents'])。apply() 订阅 agent/request-error 瀑布事件，按 ResolvedRetryPolicy 判定重试：retryableCodes 匹配、maxRetries 上限(经 session 事件日志查历史重试次数)、指数退避+抖动、providerRetryAfterMs 优先；每次重试先 agent.session.append('llm/retry') 持久化再等待。",
+      "provides": [
+        "agent/request-error 瀑布的 retry 恢复策略",
+        "llm/retry、llm/retry-started 会话事件类型",
+        "LlmRetryEventData 类型导出",
+        "llm-retry-invariant"
+      ],
+      "path": "packages/llm/llm-retry"
+    },
+    {
+      "id": "dsh-sandbox-policy",
+      "name": "@deepseek-ai/dsh-sandbox-policy",
+      "group": "G15",
+      "group_name": "沙箱执行",
+      "layer": 3,
+      "implementation": "沙箱策略中枢(SandboxPolicyService extends Service,注册 ctx.sandboxPolicy):部署默认模式(read-only fail-safe)+ per-session 解析——resolve({session}) 合并 approved override > 会话 sandbox/mode 事件折叠 > 部署默认;会话级 mode 切换以 setSandboxMode 写 sandbox/mode 日志事件;另经 ctx.inject(['systemPrompt']) 提供 sandbox:policy 动态上下文段落。",
+      "provides": [
+        "ctx.sandboxPolicy 服务",
+        "sandbox/mode 会话事件 + setSandboxMode/effectiveSandboxMode",
+        "ctx.systemPrompt context: sandbox:policy"
+      ],
+      "path": "packages/sandbox/sandbox-policy"
+    },
+    {
+      "id": "dsh-session-title",
+      "name": "@deepseek-ai/dsh-session-title",
+      "group": "G08",
+      "group_name": "会话展示",
+      "layer": 3,
+      "implementation": "Log-backed 会话标题服务。SessionTitleService(ctx.sessionTitle，static inject=['sessions']) 以 session log 中 'session/title' 事件为唯一事实源。监听 'session/event'(user/message 触发自动调度)、'llm/stream'(主请求路由)、'session/disposed'(中止在途)；自动生成走 provider 注册 + 确定性 fallback 双轨；user rename() 钉住标题。注册 'title' 投影单元。",
+      "provides": [
+        "ctx.sessionTitle(get/rename/refresh/register)",
+        "session/title 会话事件",
+        "title projection key",
+        "SessionTitleProvider 契约",
+        "fallbackSessionTitle/foldSessionTitle"
+      ],
+      "path": "packages/session/session-title"
+    },
+    {
+      "id": "dsh-token-meter",
+      "name": "@deepseek-ai/dsh-token-meter",
+      "group": "G06",
+      "group_name": "LLM治理",
+      "layer": 3,
+      "implementation": "Replay-aware token 计量服务(ctx.tokenMeter)。TokenMeter 服务按 session 维护 ReplayState，惰性折叠事件日志得出请求压力与 surface token 估算；measure() 输出基线+surface 增量；estimateMessage/estimateHeader 启发式计价；可选注入 sessionProjections 注册 usage/contextPressure/breakdown 三个投影定义。",
+      "provides": [
+        "ctx.tokenMeter(TokenMeter)",
+        "measure(): TokenMeasurement",
+        "estimateMessage()",
+        "tokenUsage/contextPressure/contextBreakdown 投影定义",
+        "TokenMeterConfig"
+      ],
+      "path": "packages/llm/token-meter"
+    },
+    {
+      "id": "dsh-user-approval",
+      "name": "@deepseek-ai/dsh-user-approval",
+      "group": "G09",
+      "group_name": "审批权限",
+      "layer": 3,
+      "implementation": "定义 ctx.approval 审批 seam(Service 默认导出)。request() 先校验 open turn，append approval/asked 审计事件，再经 ctx.waterfall 调度 scope-targeted 'approval/request' 瀑布(fail-closed 默认 'unavailable'，'never' 策略确定性 reject，abort 得 'cancelled')，最后 append approval/decided 配对事件。setPolicy() 用 setApprovalPolicy 写 session 日志并 agent.inject 用户可见切换通知；经 ctx.inject(['systemPrompt']) 注册 'approval:policy' context 段向模型陈述当前策略。",
+      "provides": [
+        "ctx.approval(ApprovalService)",
+        "approval/request 瀑布事件(Scoped)",
+        "session 事件 approval/asked|decided|policy",
+        "systemPrompt context 段 approval:policy",
+        "setApprovalPolicy/effectiveApprovalPolicy/APPROVAL_POLICIES"
+      ],
+      "path": "packages/interaction/user-approval"
+    },
+    {
+      "id": "dsh-user-questions",
+      "name": "@deepseek-ai/dsh-user-questions",
+      "group": "G08",
+      "group_name": "会话展示",
+      "layer": 3,
+      "implementation": "用户提问能力接缝：UserQuestionService(ctx.userQuestions) 维护单一活动 UI provider 槽。ask(request) 是唯一出口：前置校验(signal 中止/空问题/agent 必须精确 live root/plan-review intent 标签合法)，然后委托 provider.ask。",
+      "provides": [
+        "ctx.userQuestions(ask/registerProvider)",
+        "UserQuestionProvider 单槽契约",
+        "UserQuestionError 错误面",
+        "wire-safe 类型出口"
+      ],
+      "path": "packages/interaction/user-questions"
+    },
+    {
+      "id": "dsh-web-search-deepseek",
+      "name": "@deepseek-ai/dsh-web-search-deepseek",
+      "group": "G24",
+      "group_name": "Web搜索",
+      "layer": 3,
+      "implementation": "DeepSeek 官方搜索 provider：apply 通过 ctx.web.registerSearchProvider 注册 id='deepseek-official'。search() 每次操作快照 options 后向 Anthropic 兼容 Messages API 发原生 web_search_20250305 工具请求，mapAnthropicResponse 合并引用为 WebSearchResult；apiKey 经 dsh-credentials resolveApiKey 解析，并把脱密请求体记入 session 事件 'web/deepseek-search-llm-request'。",
+      "provides": [
+        "ctx.web 搜索 provider 'deepseek-official'",
+        "settings 段 web-search-deepseek",
+        "Session 事件 web/deepseek-search-llm-request"
+      ],
+      "path": "packages/web/web-search-deepseek"
+    },
+    {
+      "id": "dsh-bash-sandbox",
+      "name": "@deepseek-ai/dsh-bash-sandbox",
+      "group": "G15",
+      "group_name": "沙箱执行",
+      "layer": 4,
+      "implementation": "沙箱消费型 bash 执行器(SandboxBashExecutor extends LocalBashExecutor,注册 ctx.shell 替代本地执行器):每条命令经 ctx.sandbox.confine(['bash','-c',command], policy) 包裹;resolve() 把 per-call sandboxPolicy 印入 spec;runner 失败抛 SANDBOX_UNAVAILABLE,settlement 按 denialSignatures 分类 denied 并附 enforcement 事实。",
+      "provides": [
+        "ctx.shell 服务(SandboxBashExecutor)",
+        "ctx.shell.sandboxMode 能力事实",
+        "result.sandbox 事实"
+      ],
+      "path": "packages/shell/bash-sandbox"
+    },
+    {
+      "id": "dsh-command-compact",
+      "name": "@deepseek-ai/dsh-command-compact",
+      "group": "G10",
+      "group_name": "命令交互",
+      "layer": 4,
+      "implementation": "apply() 用 ctx.effect 管理生命周期：teardown 先 drain 进行中的 handler，再注册 /compact 命令。handler 调 ctx.compaction.compactNow(agent,signal,commandId)，成功返回 shadowedSeqs/shadowedTokenCount；ManualCompactionError 代码映射为人类可读错误。",
+      "provides": [
+        "/compact 命令"
+      ],
+      "path": "packages/compaction/command-compact"
+    },
+    {
+      "id": "dsh-command-feedback",
+      "name": "@deepseek-ai/dsh-command-feedback",
+      "group": "G10",
+      "group_name": "命令交互",
+      "layer": 4,
+      "implementation": "apply() 在 ctx.commands 注册 /feedback 命令(recordInput:false)。handler 校验非空文本后 recordFeedback() 向 session append 'feedback/record' 事件(log-only)，acknowledge 附带 session id、匿名用户 id 与 session-telemetry 共享披露句。",
+      "provides": [
+        "/feedback 命令",
+        "session 事件 feedback/record",
+        "recordFeedback()"
+      ],
+      "path": "packages/feedback/command-feedback"
+    },
+    {
+      "id": "dsh-command-goal",
+      "name": "@deepseek-ai/dsh-command-goal",
+      "group": "G10",
+      "group_name": "命令交互",
+      "layer": 4,
+      "implementation": "apply() 在 ctx.commands 注册 /goal 命令。handler 解析 show/create/edit/pause/resume/clear 语法，通过 ctx.goals.get/create/edit/pause/resume/clear(compare-and-set ref) 执行，GoalView 渲染为多行 CommandResult。",
+      "provides": [
+        "/goal 命令",
+        "GoalCommand 语法解析与渲染"
+      ],
+      "path": "packages/goal/command-goal"
+    },
+    {
+      "id": "dsh-compaction-tool-result-pruner",
+      "name": "@deepseek-ai/dsh-compaction-tool-result-pruner",
+      "group": "G21",
+      "group_name": "上下文治理",
+      "layer": 4,
+      "implementation": "以 ToolResultPruner 类(extends Service，super(ctx,'toolResultPruner'))默认导出，static inject=['tokenMeter']。pruneSession 遍历 session.surface.nodes 中 tool/result 事件，pruneContent 按 Unicode 码点做 head/middle/tail 截断；超预算的替换先 append 'compaction/prune' 影子定价事件，再 append 同内容裁剪版 'tool/result' 事件并带 surfaceOp:{op:'replace'} 落盘。",
+      "provides": [
+        "ctx.toolResultPruner 服务",
+        "pruneSession 模型无关裁剪",
+        "compaction/prune 影子定价协议",
+        "surfaceOp replace 重写"
+      ],
+      "path": "packages/compaction/compaction-tool-result-pruner"
+    },
+    {
+      "id": "dsh-fs-sandbox",
+      "name": "@deepseek-ai/dsh-fs-sandbox",
+      "group": "G13",
+      "group_name": "文件系统",
+      "layer": 4,
+      "implementation": "以 SandboxedFileSystem 类(继承 LocalFileSystem)提供沙箱强制的 ctx.fs 后端:对 writeText/editText 两个变更操作做 per-call 策略围栏(checkedTarget)——read-only 拒绝所有变更,workspace-write 重新 canonicalize 后以 isPathUnder 判定目标位于 writableRoots 内并返回新鲜 target 防 TOCTOU,danger-full-access 放行;拒绝抛 FS_SANDBOX_DENIED。读取不设防。",
+      "provides": [
+        "ctx.fs 服务(SandboxedFileSystem,替代 dsh-fs-local)",
+        "ctx.fs.sandboxMode 能力事实",
+        "fs-sandbox-invariant 伴生插件"
+      ],
+      "path": "packages/fs/fs-sandbox"
+    },
+    {
+      "id": "dsh-goal-round-driver",
+      "name": "@deepseek-ai/dsh-goal-round-driver",
+      "group": "G17",
+      "group_name": "目标计划",
+      "layer": 4,
+      "implementation": "apply() 安装 per-agent 竞态防护的自动续跑调度：监听 agent/created|disposed|session-start|status|error、goal/changed、agent/inbox/inserted|claimed|discarded、session/event。drive() 在 agent idle+armed+未达 maxGoalRounds 时渲染 round prompt 并经 agent.followup 排队；agent/pre-step 校验 reservation，失败则 block('prompt-rejected') 或 restore。",
+      "provides": [
+        "goal round 自动续跑调度",
+        "agent/pre-step 续跑校验(reject)",
+        "goal-round 消息源"
+      ],
+      "path": "packages/goal/goal-round-driver"
+    },
+    {
+      "id": "dsh-permission-presets",
+      "name": "@deepseek-ai/dsh-permission-presets",
+      "group": "G09",
+      "group_name": "审批权限",
+      "layer": 4,
+      "implementation": "定义 ctx.permissionPresets 服务，把 sandbox 模式与 approval policy 两个旋钮捆绑成产品级 preset 表(read-only/workspace-write/danger-full-access)。set()/apply() 先 append 'permission/preset' 事件再经 setSandboxMode/setApprovalPolicy 写各旋钮；pinInitialPermission 在 session/created 时补齐缺省旋钮。经 installSettingsSection 注册 'permission' 默认 preset 设置，注册 'permissions' 投影单元与 /permission 命令。",
+      "provides": [
+        "ctx.permissionPresets",
+        "session 事件 permission/preset",
+        "permissions 投影单元",
+        "/permission 命令",
+        "permission settings 命名空间"
+      ],
+      "path": "packages/interaction/permission-presets"
+    },
+    {
+      "id": "dsh-pwsh-sandbox",
+      "name": "@deepseek-ai/dsh-pwsh-sandbox",
+      "group": "G15",
+      "group_name": "沙箱执行",
+      "layer": 4,
+      "implementation": "bash-sandbox 的 pwsh 对偶(SandboxPwshExecutor extends PwshLocalExecutor,注册 ctx.shell):confine(spec, policy) 用 ctx.sandbox.confine 包裹完整 pwsh argv(Windows 上 ACL 受限令牌 runner 链);resolve() 印入 per-call policy,runner 失败分类与 denial 签名匹配。",
+      "provides": [
+        "ctx.shell 服务(SandboxPwshExecutor)",
+        "ctx.shell.sandboxMode 能力事实",
+        "result.sandbox 事实"
+      ],
+      "path": "packages/shell/pwsh-sandbox"
+    },
+    {
+      "id": "dsh-session-title-first-prompt-llm",
+      "name": "@deepseek-ai/dsh-session-title-first-prompt-llm",
+      "group": "G08",
+      "group_name": "会话展示",
+      "layer": 4,
+      "implementation": "首条人类消息的 LLM 标题 provider 薄插件。apply(ctx, config) 直接调用 @deepseek-ai/dsh-session-title-llm 的 registerSessionTitleLlmProvider，以 'first-prompt' 自动模式注册 provider，消息选择器取 messages[0]。",
+      "provides": [
+        "向 ctx.sessionTitle 注册 first-prompt LLM provider",
+        "Config schema(复用共享字段)"
+      ],
+      "path": "packages/session/session-title-first-prompt-llm"
+    },
+    {
+      "id": "dsh-tools",
+      "name": "@deepseek-ai/dsh-tools",
+      "group": "G03",
+      "group_name": "核心服务",
+      "layer": 4,
+      "implementation": "工具注册表与执行管线(ctx.tools)。ToolRuntime 服务(static inject ['systemPrompt']) 管理分层工具注册(ScopedLayers)与可见性解析器(view)，按 mode(native/code/both) 决定模型可见工具集；execute() 走 pre-execute → execute → post-execute 三个瀑布(pre 允许/拒绝/询问、execute 包装超时/重试、post 接受/替换/阻断)，最后发 tools/result 观察事件；approval 请求经 ctx.get('approval') 可选 seam 路由，codeRuntime 经 ctx.get('codeRuntime') 可选。",
+      "provides": [
+        "ctx.tools(ToolRuntime)",
+        "tools/pre-execute|tools/execute|tools/post-execute|tools/code-dispatch-log 瀑布事件",
+        "tools/result 观察事件",
+        "tools/change 通知事件",
+        "defineTool/schema.ts 工具定义 API",
+        "ToolExecutionInput/ToolRunContext",
+        "TOOL_RUNTIME_SCHEDULER",
+        "run_code 保留工具(code mode)",
+        "tools-invariant 伴随插件"
+      ],
+      "path": "packages/core/tools"
+    },
+    {
+      "id": "dsh-agent-instructions",
+      "name": "@deepseek-ai/dsh-agent-instructions",
+      "group": "G22",
+      "group_name": "上下文注入",
+      "layer": 5,
+      "implementation": "纯 apply(ctx, config) 函数插件。agent/pre-step 里先 next() 委托，等投影队列排空后 compose 基线+作用域指令并 syncInbox(inbox.prepend/replace/remove)；session/event 跟踪 step/turn 判定 openStep；tools/result 收集 read/write/edit 触碰路径，step 关闭后 queueProjection 串行重算指令版本并注入 inbox。ctx.get('fs') 可选。",
+      "provides": [
+        "agent/pre-step 指令上下文 compose/inbox 同步",
+        "session/event step/turn 跟踪",
+        "tools/result 文件触碰投影触发",
+        "agent-instructions 源 user/message 注入"
+      ],
+      "path": "packages/context/agent-instructions"
+    },
+    {
+      "id": "dsh-agent-loop",
+      "name": "@deepseek-ai/dsh-agent-loop",
+      "group": "G03",
+      "group_name": "核心服务",
+      "layer": 5,
+      "implementation": "具体 agent 循环插件。AgentLoop 服务(static inject: agents/sessions/llm/tools/systemPrompt) 实现 dsh-agent 的 AgentFactory(createAgent/resume)，创建 ReactLoopAgent；config.agents 声明式启动。ReactLoopAgent 驱动 turn/step 边界：systemPrompt.assemble 装配提示词→runtimeContext 投影动态上下文→llm.prepareCall/stream 发起模型流→executeToolCalls 用 tools 注册表调度工具→错误经 agent/request-error 瀑布恢复。",
+      "provides": [
+        "ctx.agentLoop(AgentLoop)",
+        "AgentFactory 实现(setFactory)",
+        "ReactLoopAgent(Agent 驱动实现)",
+        "agent-loop/config-start-failed 事件",
+        "AGENT_LOOP_SETTINGS_NAMESPACE",
+        "agent-loop-invariant 伴随插件"
+      ],
+      "path": "packages/core/agent-loop"
+    },
+    {
+      "id": "dsh-compaction-basic",
+      "name": "@deepseek-ai/dsh-compaction-basic",
+      "group": "G21",
+      "group_name": "上下文治理",
+      "layer": 5,
+      "implementation": "以 BasicCompactionEngine 类(extends CompactionEngine)默认导出，static inject=['llm','tokenMeter','sessions']。auto 时注册 agent/pre-step 压力压缩、agent/request-error 溢出恢复(CONTEXT_WINDOW_EXCEEDED)、agent/status idle 重置。compactIfNeeded 用 ctx.tokenMeter.measure 定价，可选 ctx.get('toolResultPruner') 先裁剪，再 compactSurfaceRegion(append compaction/start|summary|end + user/message surfaceOp replace)；summarize 经 ctx.llm.stream() 复用 KV 前缀缓存。",
+      "provides": [
+        "ctx.compaction 服务",
+        "agent/pre-step 自动压力压缩",
+        "agent/request-error context-overflow 恢复",
+        "compaction/start|summary|end 事件 + surfaceOp replace"
+      ],
+      "path": "packages/compaction/compaction-basic"
+    },
+    {
+      "id": "dsh-plan-mode",
+      "name": "@deepseek-ai/dsh-plan-mode",
+      "group": "G17",
+      "group_name": "目标计划",
+      "layer": 5,
+      "implementation": "定义 ctx.planMode PlanModeController。状态由 session 日志 'plan/mode' 折叠；agent/pre-step 接受后 onBoundary append 待定选择；systemPrompt.section('plan:policy') 渲染部署指导；/plan 命令与 exit_plan_mode 工具(经 userQuestions.ask 做 plan-review，approve 则 pendingIntents 置 false)；'plan' session projection 由 command/run+plan/mode 双事件折叠。",
+      "provides": [
+        "ctx.planMode",
+        "session 事件 plan/mode",
+        "plan session projection",
+        "/plan 命令",
+        "ctx.tools: exit_plan_mode",
+        "systemPrompt section plan:policy"
+      ],
+      "path": "packages/plan/plan-mode"
+    },
+    {
+      "id": "dsh-repeat-tool-reminder",
+      "name": "@deepseek-ai/dsh-repeat-tool-reminder",
+      "group": "G23",
+      "group_name": "工具守卫",
+      "layer": 5,
+      "implementation": "重复工具调用提醒 guard：apply 维护 WeakMap<Agent, Chain> 连续重复链。在 'tools/post-execute' 上 observe，参数深排序 canonicalize 后按 [name, canonical] 计数，命中 thresholds 则注入提醒 UserMessage 到 additionalContexts(只 enrich 不 veto)；'agent/pre-step' 在用户消息出现时重置链。",
+      "provides": [
+        "tools/post-execute 观察者(重复提醒注入)",
+        "agent/pre-step 重置钩子",
+        "配置 thresholds/include/exclude"
+      ],
+      "path": "packages/guard/repeat-tool-reminder"
+    },
+    {
+      "id": "dsh-session-checkpoint-policy",
+      "name": "@deepseek-ai/dsh-session-checkpoint-policy",
+      "group": "G07",
+      "group_name": "会话持久化",
+      "layer": 5,
+      "implementation": "纯 apply(ctx) 函数插件，inject=['llm','sessionPersistence','sessions','tools']。在三处语义边界前强制 ctx.sessions.flush：llm/stream 包装器在延迟构造模型流之前 flush(失败即阻止 adapter dispatch)；tools/execute 在顶层工具分发前 flush；agent/pre-step 在每步请求前 flush。",
+      "provides": [
+        "ctx.on('llm/stream') 前置 flush 包装",
+        "ctx.on('tools/execute') 顶层工具 flush 屏障",
+        "ctx.on('agent/pre-step') 每步 flush"
+      ],
+      "path": "packages/session/session-checkpoint-policy"
+    },
+    {
+      "id": "dsh-shell-env",
+      "name": "@deepseek-ai/dsh-shell-env",
+      "group": "G14",
+      "group_name": "Shell工具",
+      "layer": 5,
+      "implementation": "工具无关的受信 DSH_* shell 环境注册表:ShellEnvRegistry extends Service 注册为 ctx.shellEnv,collect(execution) 重建每次调用的环境快照(内置 DSH_HOME/DSH_SHELL/DSH_SESSION_ID + 各 contributor);register(contributor) 校验键格式/保留键/重复所有权并以 ctx.effect 提供 fiber 级注销;apply() 内置 session-persistence contributor。",
+      "provides": [
+        "ctx.shellEnv 服务(ShellEnvRegistry)",
+        "内置 DSH_HOME、DSH_SHELL、DSH_SESSION_ID",
+        "session-persistence contributor(DSH_SESSION_JSONL)"
+      ],
+      "path": "packages/shell/shell-env"
+    },
+    {
+      "id": "dsh-spill-policy",
+      "name": "@deepseek-ai/dsh-spill-policy",
+      "group": "G21",
+      "group_name": "上下文治理",
+      "layer": 5,
+      "implementation": "纯 apply(ctx, config) 函数插件，inject=['tools']，Config 仅 maxInlineBytes(省略则 no-op)。注册 tools/post-execute prepend 监听：对 accept 且纯文本且超限的顶层结果，spillReplacement 经 ctx.get('spillStore').saveText 存全量文本，用 TextRetainer 做 head/tail 预算内预览 + spillNotice 定位行；第二臂 tools/code-dispatch-log prepend 对 tool/code-dispatch 子调用做相同 cap。",
+      "provides": [
+        "tools/post-execute prepend 结果溢出转存",
+        "tools/code-dispatch-log prepend 日志溢出转存"
+      ],
+      "path": "packages/spill/spill-policy"
+    },
+    {
+      "id": "dsh-subagent",
+      "name": "@deepseek-ai/dsh-subagent",
+      "group": "G19",
+      "group_name": "子代理",
+      "layer": 5,
+      "implementation": "子代理能力缝(capability seam)的服务定义：SubagentRuntime extends Service 注册为 ctx.subagents，维护命名 provider 注册表。start() 先做能力校验与描述符快照再委派给 provider，并用 observeRun 发布 subagent/start、subagent/end 生命周期事件。构造时 ctx.inject(['agents']) 创建 SubagentContinuationManager 支撑可续聊子代理，ctx.inject(['sessionProjections']) 注册 subagentTiming/Identity 投影。",
+      "provides": [
+        "ctx.subagents(SubagentRuntime)",
+        "subagent/provider-added|removed|start|end 事件",
+        "SubagentContinuationManager",
+        "subagent 标识/时序 sessionProjections",
+        "SubagentRunId/descriptor 折叠/快照"
+      ],
+      "path": "packages/subagent/subagent"
+    },
+    {
+      "id": "dsh-tool-call-timeout-policy",
+      "name": "@deepseek-ai/dsh-tool-call-timeout-policy",
+      "group": "G23",
+      "group_name": "工具守卫",
+      "layer": 5,
+      "implementation": "工具调用超时 guard：apply 在 'tools/execute' 事件链上包装。读取 ctx.tools.get(exec.name, exec.agent)?.timeoutMs，用 dsh-timeout 的 deadline 派生 deadline 信号临时替换 exec.signal 后委托 next()，超时则以 toolTimeoutResult 生成 TOOL_TIMEOUT 错误结果替换，finally 恢复上游信号。",
+      "provides": [
+        "tools/execute 包装(per-tool deadline + TOOL_TIMEOUT)",
+        "常量 TOOL_TIMEOUT"
+      ],
+      "path": "packages/guard/timeout-policy"
+    },
+    {
+      "id": "dsh-tool-fs",
+      "name": "@deepseek-ai/dsh-tool-fs",
+      "group": "G13",
+      "group_name": "文件系统",
+      "layer": 5,
+      "implementation": "模型面向的文件系统工具套件:apply() 经 ctx.tools.register 注册 read/write/edit 工具(read 附带流式大文件/窗口渲染/观察事件,write/edit 通过 FsSandboxController 解析 per-call 沙箱策略、经 ctx.waterfall 取 fs/write-intent|fs/edit-intent 守卫并 emit fs/observed);read_image 仅在 ctx.inject(['attachments']) 挂载时注册;每工具同时注册 ctx.systemPrompt.section 引导文本。",
+      "provides": [
+        "ctx.tools 注册 read/write/edit/read_image(条件)",
+        "fs/observed 事件发射",
+        "fs/write-intent、fs/edit-intent waterfall 触发点",
+        "ctx.systemPrompt section: tool:read/write/edit"
+      ],
+      "path": "packages/fs/tool-fs"
+    },
+    {
+      "id": "dsh-tool-fs-search",
+      "name": "@deepseek-ai/dsh-tool-fs-search",
+      "group": "G13",
+      "group_name": "文件系统",
+      "layer": 5,
+      "implementation": "模型面向的 glob/grep 发现工具套件,基于 @vscode/ripgrep:apply() 注册两工具,执行经 ctx.subprocess.spawn() 以固定 argv 模板直接运行,无 shell 层;runRipgrep 完成 stdout 预算/退出码分类,超限结果经 ctx.get('spillStore') 尽力保存并附 recovery 提示;tools/post-execute 监听在 top-level 直接调用时替换投影以携带 spill 引用。",
+      "provides": [
+        "ctx.tools 注册 glob、grep",
+        "tools/post-execute 监听(spill 投影)",
+        "ctx.systemPrompt section: tool:glob/grep",
+        "SEARCH_* 错误词汇"
+      ],
+      "path": "packages/fs/tool-fs-search"
+    },
+    {
+      "id": "dsh-tool-goal",
+      "name": "@deepseek-ai/dsh-tool-goal",
+      "group": "G17",
+      "group_name": "目标计划",
+      "layer": 5,
+      "implementation": "apply() 注册 get_goal/create_goal/update_goal 工具与 systemPrompt section 'tool:goal'。authority.ts 校验执行时 agent 为 live 且 open turn(GOAL_TOOL_DRIVER_REQUIRED)，create/edit/pause/resume 需 requireDirectHuman，complete/blocked 可由 direct-human 或精确 goal round 授权；autonomous 完成经 exec.deferContext 注入 wrapup 收尾上下文。",
+      "provides": [
+        "ctx.tools: get_goal/create_goal/update_goal",
+        "systemPrompt section tool:goal",
+        "execution-time authority 校验"
+      ],
+      "path": "packages/goal/tool-goal"
+    },
+    {
+      "id": "dsh-tool-jobs",
+      "name": "@deepseek-ai/dsh-tool-jobs",
+      "group": "G16",
+      "group_name": "作业",
+      "layer": 5,
+      "implementation": "apply() 注册 job_output/job_list/job_kill 三个模型工具：attachController('tool-jobs') 使 producers 可 start；onJobDone 把未报告完成以 notice 注入 busy owner 或 followup 唤醒 idle owner(wakeup 默认，maxConsecutiveWakes 限界)；tools/pre-execute 捕获 outputLimitBytes；systemPrompt.section 给模型指导；agent/inbox/claimed 用户输入重置 wake 预算。",
+      "provides": [
+        "ctx.tools: job_output/job_list/job_kill",
+        "jobs controller attachment('tool-jobs')",
+        "completion notice 注入/唤醒",
+        "systemPrompt section tool:jobs",
+        "tools/pre-execute 输出限制监听"
+      ],
+      "path": "packages/jobs/tool-jobs"
+    },
+    {
+      "id": "dsh-tool-skill",
+      "name": "@deepseek-ai/dsh-tool-skill",
+      "group": "G18",
+      "group_name": "技能",
+      "layer": 5,
+      "implementation": "apply() 注册 'skill' 模型工具(ctx.skills.list 查名、isModelInvocable 校验、ctx.skills.get 加载、renderSkillContent 渲染)。两个 agent/pre-step 监听：(1) 扫描 claimed user 消息首行 /<name> 的显式技能调用；(2) 按工具可见性发布/替换 'skill-catalog' catalog 目录消息。",
+      "provides": [
+        "ctx.tools: skill",
+        "skill-catalog catalog 消息注入",
+        "user 显式 /<skill> 调用注入"
+      ],
+      "path": "packages/skill/tool-skill"
+    },
+    {
+      "id": "dsh-tool-str-replace-editor",
+      "name": "@deepseek-ai/dsh-tool-str-replace-editor",
+      "group": "G13",
+      "group_name": "文件系统",
+      "layer": 5,
+      "implementation": "注册单一 str_replace_editor 工具(view/create/str_replace/insert 四命令):view 经 ctx.fs.readText/listDir 输出 cat -n 风格内容;create/str_replace/insert 经 MutationPolicy 解析 sandboxPolicy、ctx.waterfall 取 fs/write-intent|fs/edit-intent 守卫、writeText 带 replaceIfVersion/createIfAbsent 提交,str_replace 要求 old_str 唯一匹配;denial 映射为 [sandbox:] 标记。",
+      "provides": [
+        "ctx.tools 注册 str_replace_editor",
+        "fs/observed 发射、fs/write-intent|fs/edit-intent 触发"
+      ],
+      "path": "packages/fs/tool-str-replace-editor"
+    },
+    {
+      "id": "dsh-tool-todo",
+      "name": "@deepseek-ai/dsh-tool-todo",
+      "group": "G23",
+      "group_name": "工具守卫",
+      "layer": 5,
+      "implementation": "apply() 注册 todo_write 工具：整表替换语义，execute 校验后 exec.agent.session.append('todo/write')，返回新表+counts；无 agent 则拒绝。ctx.inject(['sessionProjections']) 注册 'todos' 投影(last todo/write 快照，turn/start 清空)。",
+      "provides": [
+        "ctx.tools: todo_write",
+        "session 事件 todo/write",
+        "todos session projection"
+      ],
+      "path": "packages/todo/tool-todo"
+    },
+    {
+      "id": "dsh-subagent-fork-in-process",
+      "name": "@deepseek-ai/dsh-subagent-fork-in-process",
+      "group": "G19",
+      "group_name": "子代理",
+      "layer": 6,
+      "implementation": "ctx.subagents 的 fork provider 后端：apply 注册 ForkInProcessProvider。start() 通过 completedTurnPrefix(parent) 截取父会话截至最后 turn/end 的完整事件前缀作为种子，再调 startInProcessRun(request, {seed}) 创建继承父上下文的子代理；inheritsParentContext=true。",
+      "provides": [
+        "ctx.subagents 命名 provider 'fork'",
+        "继承父上下文能力声明"
+      ],
+      "path": "packages/subagent/subagent-fork-in-process"
+    },
+    {
+      "id": "dsh-subagent-spawn-in-process",
+      "name": "@deepseek-ai/dsh-subagent-spawn-in-process",
+      "group": "G19",
+      "group_name": "子代理",
+      "layer": 6,
+      "implementation": "ctx.subagents 的 spawn provider 后端：apply 直接 ctx.subagents.registerProvider(new SpawnInProcessProvider(config.providerName))。声明全部 4 项能力(outputSchema/depthLimit/toolFilter/persona)，inheritsParentContext=false；start() 委托共享驱动 startInProcessRun 走 ctx.agents.create 全新子代理；prepareContinuable 返回空 spec。",
+      "provides": [
+        "ctx.subagents 命名 provider 'spawn'",
+        "子代理能力声明: outputSchema/depthLimit/toolFilter/persona"
+      ],
+      "path": "packages/subagent/subagent-spawn-in-process"
+    },
+    {
+      "id": "dsh-tool-bash",
+      "name": "@deepseek-ai/dsh-tool-bash",
+      "group": "G14",
+      "group_name": "Shell工具",
+      "layer": 6,
+      "implementation": "模型面向 bash 工具:apply() 注册 bash 工具,execute 先 validateEscalationArgs、解析 standingPolicy,带 sandbox_permissions 则经 ctx.get('approval') 走 approveEscalation,resolveWorkdir(会话 cwd),收集 ctx.shellEnv.collect 的 DSH_* 环境,前台 ctx.shell.run / 后台 ctx.jobs.start;结果含 sandbox 事实。",
+      "provides": [
+        "ctx.tools 注册 bash",
+        "ctx.jobs 后台任务注册(kind: 'bash')",
+        "ctx.systemPrompt section: tool:bash"
+      ],
+      "path": "packages/shell/tool-bash"
+    },
+    {
+      "id": "dsh-tool-pwsh",
+      "name": "@deepseek-ai/dsh-tool-pwsh",
+      "group": "G14",
+      "group_name": "Shell工具",
+      "layer": 6,
+      "implementation": "tool-bash 的 PowerShell 对偶:注册 pwsh 工具,逐调用镜像 bash 的 validate/escalation/standingPolicy/resolveWorkdir/shellEnv 收集/前台后台执行;升级经 ctx.get('approval'),后台经 ctx.jobs.start(kind:'pwsh');额外 declare module 扩展 dsh-jobs 的 JobKindMap 增加 pwsh kind。",
+      "provides": [
+        "ctx.tools 注册 pwsh",
+        "dsh-jobs 模块声明扩展(JobKindMap.pwsh)",
+        "ctx.jobs 后台任务(kind: 'pwsh')",
+        "ctx.systemPrompt section: tool:pwsh"
+      ],
+      "path": "packages/shell/tool-pwsh"
+    },
+    {
+      "id": "dsh-tool-subagent",
+      "name": "@deepseek-ai/dsh-tool-subagent",
+      "group": "G19",
+      "group_name": "子代理",
+      "layer": 6,
+      "implementation": "模型可见的 subagent 委派工具：apply 通过 ctx.tools.register 注册(config.toolName ?? 'subagent')。工具 mount 随 provider 生命周期动态挂载/卸载(监听 subagent/provider-added|removed)；execute 区分前台、one-shot 后台(jobs.start)与 continuable 后台(ctx.subagents.startContinuable)。",
+      "provides": [
+        "模型工具 'subagent'",
+        "systemPrompt section tool:subagent",
+        "后台委派作业路由(dsh-jobs + continuable)"
+      ],
+      "path": "packages/subagent/tool-subagent"
+    },
+    {
+      "id": "dsh-tool-subagent-control",
+      "name": "@deepseek-ai/dsh-tool-subagent-control",
+      "group": "G19",
+      "group_name": "子代理",
+      "layer": 6,
+      "implementation": "全局命名控制工具：apply 注册 send_message(ctx.subagents.followup 转发)与 interrupt_agent(ctx.subagents.interrupt 转发)；list-agents 子入口注册 list_agents(listChildren/listDescendants + agents 实时状态)。工具名全局唯一。",
+      "provides": [
+        "模型工具 send_message/interrupt_agent",
+        "可独立加载的 list_agents"
+      ],
+      "path": "packages/subagent/tool-subagent-control"
+    },
+    {
+      "id": "dsh-tool-subagent-report",
+      "name": "@deepseek-ai/dsh-tool-subagent-report",
+      "group": "G19",
+      "group_name": "子代理",
+      "layer": 6,
+      "implementation": "子作用域 report 工具：apply 通过 ctx.subagents.registerContinuableSetup(childCtx => installReportTool(childCtx, ctx, reportDelivery)) 将 report 工具与 prompt 指引装入每个可续聊子代理的未发布 childCtx。installReportTool 注册 childCtx.tools 的 'report' 工具(调 ctx.subagents.reportFrom)，仅对 continuable in-process 子代理可见。",
+      "provides": [
+        "子代理作用域模型工具 'report'",
+        "子代理 systemPrompt section tool:report",
+        "父调度策略 reportDelivery: quiet|wakeup"
+      ],
+      "path": "packages/subagent/tool-subagent-report"
+    },
+    {
+      "id": "dsh-tool-web",
+      "name": "@deepseek-ai/dsh-tool-web",
+      "group": "G24",
+      "group_name": "Web搜索",
+      "layer": 6,
+      "implementation": "模型可见 web 工具套件：apply 按 config 决定注册 web_search(经 ctx.web.search 执行并投影 WebSearchResult)与 web_fetch(经 ctx.web.fetch 执行后由 turndown 把 HTML 转 markdown，带深度上限)。两工具把 config 的 timeoutMs 附到 ToolDefinition.timeoutMs 交 timeout-policy 强制。",
+      "provides": [
+        "模型工具 web_search/web_fetch",
+        "systemPrompt sections tool:web_search",
+        "presentation meta: WebSearchMeta/WebFetchMeta"
+      ],
+      "path": "packages/web/tool-web"
+    },
+    {
+      "id": "dsh-workflow-worker-thread",
+      "name": "@deepseek-ai/dsh-workflow-worker-thread",
+      "group": "G20",
+      "group_name": "工作流",
+      "layer": 6,
+      "implementation": "worker-thread workflow 引擎：WorkerThreadWorkflowEngine extends WorkflowEngine 注册为 ctx.workflowEngine。start() 同步校验 meta、宿主侧 body 预解析、解析 subagent provider 路由与并发上限，随后在独立 worker 线程执行模型编写的脚本，worker 内 agent() 经 ChildRpcBridge RPC 回宿主，宿主 startChild 调 this.subagents.start(provider) 启动子代理并把结果结构化克隆回 worker；发布 workflow/start|phase|log|agent-start|agent-end|end 事件。",
+      "provides": [
+        "ctx.workflowEngine(WorkerThreadWorkflowEngine)",
+        "workflow/* 事件",
+        "WorkerRun/materializeFromRealm/validateMeta"
+      ],
+      "path": "packages/workflow/workflow-worker-thread"
+    },
+    {
+      "id": "dsh-tool-ralph",
+      "name": "@deepseek-ai/dsh-tool-ralph",
+      "group": "G20",
+      "group_name": "工作流",
+      "layer": 7,
+      "implementation": "模型可见 Ralph 循环工具：apply 注册 'ralph' 工具，execute 经 ctx.workflowEngine.start 执行固定 RALPH_SCRIPT。脚本每轮调 agent(prompt, {schema}) 启动 fresh structured-output 子代理，仅携带不可变 objective 与上轮受限结构化 handoff；requireFreshProvider 强制 provider 具备 outputSchema 且不继承父上下文。",
+      "provides": [
+        "模型工具 'ralph'",
+        "RALPH_SCRIPT/RALPH_META 固定编排",
+        "systemPrompt section tool:ralph",
+        "子代理路由校验(fresh+outputSchema)"
+      ],
+      "path": "packages/workflow/tool-ralph"
+    },
+    {
+      "id": "dsh-tool-workflow",
+      "name": "@deepseek-ai/dsh-tool-workflow",
+      "group": "G20",
+      "group_name": "工作流",
+      "layer": 7,
+      "implementation": "模型可见 workflow 工具：apply 注册 defineTool({name: config.toolName ?? 'workflow'})。execute 校验 exec.agent 后调 ctx.workflowEngine.start，桥接 exec.signal→run.cancel，await run.result 后按 stopReason 映射错误；createWorkflowRecorder 监听 workflow/agent-start|end 把 tool-workflow/run-start 等 4 类事件追加进父 Session。",
+      "provides": [
+        "模型工具 'workflow'",
+        "systemPrompt section tool:workflow",
+        "Session 事件 tool-workflow/run-start|agent-start|agent-end|run-end"
+      ],
+      "path": "packages/workflow/tool-workflow"
+    }
+  ],
+  "edges": [
+    {
+      "from": "cordis-plugin-hmr",
+      "to": "cordis-plugin-timer",
+      "mechanism": "E2",
+      "evidence": "vendor/hmr/src/index.ts:87,242",
+      "purpose": "static inject timer; ctx.debounce"
+    },
+    {
+      "from": "cordis-plugin-hmr",
+      "to": "cordis-plugin-timer",
+      "mechanism": "E3",
+      "evidence": "vendor/hmr/package.json:43-46",
+      "purpose": "peer 声明先装 timer"
+    },
+    {
+      "from": "dsh-agent",
+      "to": "dsh-llm",
+      "mechanism": "E1",
+      "evidence": "packages/core/agent/package.json:41, packages/core/agent/src/model-selection.ts:7",
+      "purpose": "LlmCallConfig/ReasoningEffortId 类型"
+    },
+    {
+      "from": "dsh-agent",
+      "to": "dsh-session",
+      "mechanism": "E2",
+      "evidence": "packages/core/agent/src/index.ts:14, 268-280",
+      "purpose": "Agent 以 SessionId 为 id"
+    },
+    {
+      "from": "dsh-agent",
+      "to": "dsh-system-prompt",
+      "mechanism": "E2",
+      "evidence": "packages/core/agent/src/model-selection.ts:40-53",
+      "purpose": "监听 system-prompt/assemble 注入模型变量"
+    },
+    {
+      "from": "dsh-agent",
+      "to": "dsh-typert-registry",
+      "mechanism": "E2",
+      "evidence": "packages/core/agent/src/index.ts:268-281",
+      "purpose": "ctx.inject(['typert']) 注册 agent 查找器"
+    },
+    {
+      "from": "dsh-agent-default-model",
+      "to": "dsh-agent",
+      "mechanism": "E1",
+      "evidence": "packages/core/agent-default-model/src/index.ts:9",
+      "purpose": "ModelSelection 类型"
+    },
+    {
+      "from": "dsh-agent-default-model",
+      "to": "dsh-llm",
+      "mechanism": "E1",
+      "evidence": "packages/core/agent-default-model/src/index.ts:10",
+      "purpose": "ReasoningEffortId branded 类型"
+    },
+    {
+      "from": "dsh-agent-instructions",
+      "to": "dsh-agent",
+      "mechanism": "E2",
+      "evidence": "packages/context/agent-instructions/src/index.ts:322",
+      "purpose": "订阅 agent/pre-step waterfall"
+    },
+    {
+      "from": "dsh-agent-instructions",
+      "to": "dsh-llm",
+      "mechanism": "E3",
+      "evidence": "packages/context/agent-instructions/src/index.ts:15",
+      "purpose": "createUserMessage"
+    },
+    {
+      "from": "dsh-agent-instructions",
+      "to": "dsh-session",
+      "mechanism": "E2",
+      "evidence": "packages/context/agent-instructions/src/index.ts:305-314",
+      "purpose": "订阅 session/event step 判定"
+    },
+    {
+      "from": "dsh-agent-instructions",
+      "to": "dsh-tools",
+      "mechanism": "E2",
+      "evidence": "packages/context/agent-instructions/src/index.ts:350",
+      "purpose": "订阅 tools/result 捕获触碰"
+    },
+    {
+      "from": "dsh-agent-loop",
+      "to": "dsh-agent",
+      "mechanism": "E2",
+      "evidence": "packages/core/agent-loop/src/index.ts:297, 350, 559-562",
+      "purpose": "static inject agents + setFactory"
+    },
+    {
+      "from": "dsh-agent-loop",
+      "to": "dsh-llm",
+      "mechanism": "E2",
+      "evidence": "packages/core/agent-loop/src/agent.ts:345, 449",
+      "purpose": "llm.prepareCall/stream 发起模型调用"
+    },
+    {
+      "from": "dsh-agent-loop",
+      "to": "dsh-session",
+      "mechanism": "E2",
+      "evidence": "packages/core/agent-loop/src/index.ts:24-25, 558-560, 590",
+      "purpose": "ctx.sessions.prepare/enter/announce 创建会话"
+    },
+    {
+      "from": "dsh-agent-loop",
+      "to": "dsh-system-prompt",
+      "mechanism": "E2",
+      "evidence": "packages/core/agent-loop/src/agent.ts:230, 337",
+      "purpose": "ctx.systemPrompt.assemble 装配提示词"
+    },
+    {
+      "from": "dsh-agent-loop",
+      "to": "dsh-tools",
+      "mechanism": "E2",
+      "evidence": "packages/core/agent-loop/src/tool-calls.ts:17, 88, 204",
+      "purpose": "ctx.tools.executionMode 调度工具"
+    },
+    {
+      "from": "dsh-api-gateway",
+      "to": "dsh-typert-registry",
+      "mechanism": "E2",
+      "evidence": "packages/api/gateway/src/index.ts:91,117-135",
+      "purpose": "descriptor 权威来源"
+    },
+    {
+      "from": "dsh-bash-sandbox",
+      "to": "dsh-sandbox-local",
+      "mechanism": "E2",
+      "evidence": "packages/shell/bash-sandbox/src/index.ts:45,178",
+      "purpose": "ctx.sandbox.confine"
+    },
+    {
+      "from": "dsh-bash-sandbox",
+      "to": "dsh-sandbox-policy",
+      "mechanism": "E2",
+      "evidence": "packages/shell/bash-sandbox/src/index.ts:45,71",
+      "purpose": "默认模式事实"
+    },
+    {
+      "from": "dsh-command-compact",
+      "to": "dsh-commands",
+      "mechanism": "E3",
+      "evidence": "packages/compaction/command-compact/src/index.ts:11,100",
+      "purpose": "/命令注册"
+    },
+    {
+      "from": "dsh-command-feedback",
+      "to": "dsh-commands",
+      "mechanism": "E3",
+      "evidence": "packages/feedback/command-feedback/src/index.ts:16,101",
+      "purpose": "/命令注册"
+    },
+    {
+      "from": "dsh-command-feedback",
+      "to": "dsh-session",
+      "mechanism": "E2",
+      "evidence": "packages/feedback/command-feedback/src/index.ts:12,75",
+      "purpose": "feedback/record 持久化"
+    },
+    {
+      "from": "dsh-command-goal",
+      "to": "dsh-commands",
+      "mechanism": "E3",
+      "evidence": "packages/goal/command-goal/src/index.ts:12,164",
+      "purpose": "/命令注册"
+    },
+    {
+      "from": "dsh-command-goal",
+      "to": "dsh-goal",
+      "mechanism": "E2",
+      "evidence": "packages/goal/command-goal/src/index.ts:8,113-146",
+      "purpose": "goal 域状态读写"
+    },
+    {
+      "from": "dsh-commands",
+      "to": "dsh-agent",
+      "mechanism": "E1",
+      "evidence": "packages/interaction/commands/src/index.ts:7,260",
+      "purpose": "命令执行目标 agent"
+    },
+    {
+      "from": "dsh-commands",
+      "to": "dsh-session",
+      "mechanism": "E2",
+      "evidence": "packages/interaction/commands/src/index.ts:308,330,360",
+      "purpose": "命令生命周期事件持久化"
+    },
+    {
+      "from": "dsh-compaction-basic",
+      "to": "dsh-agent",
+      "mechanism": "E2",
+      "evidence": "packages/compaction/compaction-basic/src/index.ts:147,179",
+      "purpose": "订阅 agent/pre-step|request-error|status"
+    },
+    {
+      "from": "dsh-compaction-basic",
+      "to": "dsh-compaction-tool-result-pruner",
+      "mechanism": "E1",
+      "evidence": "packages/compaction/compaction-basic/src/index.ts:281,309",
+      "purpose": "可选 pruneSession(压缩前先裁剪)"
+    },
+    {
+      "from": "dsh-compaction-basic",
+      "to": "dsh-llm",
+      "mechanism": "E1",
+      "evidence": "packages/compaction/compaction-basic/src/summarizer.ts:121-164",
+      "purpose": "summarizeWithLlm 经 ctx.llm.stream()"
+    },
+    {
+      "from": "dsh-compaction-basic",
+      "to": "dsh-session",
+      "mechanism": "E2",
+      "evidence": "packages/compaction/compaction-basic/src/index.ts:173; region.ts:189-215,462-463",
+      "purpose": "订阅 session/event + append compaction 事件"
+    },
+    {
+      "from": "dsh-compaction-basic",
+      "to": "dsh-token-meter",
+      "mechanism": "E1",
+      "evidence": "packages/compaction/compaction-basic/src/index.ts:104,267",
+      "purpose": "measure 定价压力/收敛"
+    },
+    {
+      "from": "dsh-compaction-tool-result-pruner",
+      "to": "dsh-llm",
+      "mechanism": "E3",
+      "evidence": "packages/compaction/compaction-tool-result-pruner/src/index.ts:9",
+      "purpose": "freezeMessage"
+    },
+    {
+      "from": "dsh-compaction-tool-result-pruner",
+      "to": "dsh-session",
+      "mechanism": "E1",
+      "evidence": "packages/compaction/compaction-tool-result-pruner/src/index.ts:138-171",
+      "purpose": "读 surface.nodes + append 替换"
+    },
+    {
+      "from": "dsh-compaction-tool-result-pruner",
+      "to": "dsh-token-meter",
+      "mechanism": "E1",
+      "evidence": "packages/compaction/compaction-tool-result-pruner/src/index.ts:47,165",
+      "purpose": "estimateMessage 计算 shadowedTokenCount"
+    },
+    {
+      "from": "dsh-fs-observation-policy",
+      "to": "dsh-session",
+      "mechanism": "E2",
+      "evidence": "packages/fs/fs-observation-policy/src/index.ts:40",
+      "purpose": "owner 从 actor.agent.session 派生"
+    },
+    {
+      "from": "dsh-fs-sandbox",
+      "to": "dsh-sandbox-policy",
+      "mechanism": "E2",
+      "evidence": "packages/fs/fs-sandbox/src/index.ts:60,127,65",
+      "purpose": "static inject sandboxPolicy;默认模式取自 defaultMode"
+    },
+    {
+      "from": "dsh-goal",
+      "to": "dsh-agent",
+      "mechanism": "E1",
+      "evidence": "packages/goal/goal/src/index.ts:12,198,415,557",
+      "purpose": "agent 身份与 goal/changed"
+    },
+    {
+      "from": "dsh-goal",
+      "to": "dsh-session",
+      "mechanism": "E2",
+      "evidence": "packages/goal/goal/src/index.ts:546",
+      "purpose": "goal/change 持久化"
+    },
+    {
+      "from": "dsh-goal",
+      "to": "dsh-session-projection",
+      "mechanism": "E3",
+      "evidence": "packages/goal/goal/src/index.ts:204",
+      "purpose": "goal 投影单元"
+    },
+    {
+      "from": "dsh-goal-round-driver",
+      "to": "dsh-agent",
+      "mechanism": "E2",
+      "evidence": "packages/goal/goal-round-driver/src/index.ts:9,106-107,192,215,435",
+      "purpose": "agent 事件与 followup"
+    },
+    {
+      "from": "dsh-goal-round-driver",
+      "to": "dsh-goal",
+      "mechanism": "E2",
+      "evidence": "packages/goal/goal-round-driver/src/index.ts:10,99,167,269",
+      "purpose": "goal 状态读取与 block"
+    },
+    {
+      "from": "dsh-goal-round-driver",
+      "to": "dsh-llm",
+      "mechanism": "E1",
+      "evidence": "packages/goal/goal-round-driver/src/index.ts:11,176",
+      "purpose": "createUserMessage"
+    },
+    {
+      "from": "dsh-goal-round-driver",
+      "to": "dsh-session",
+      "mechanism": "E2",
+      "evidence": "packages/goal/goal-round-driver/src/index.ts:13,145,307",
+      "purpose": "checkpoint 冲刷与 turn 边界"
+    },
+    {
+      "from": "dsh-jobs-local",
+      "to": "dsh-agent",
+      "mechanism": "E1",
+      "evidence": "packages/jobs/jobs-local/src/index.ts:14,46",
+      "purpose": "job owner 生命周期"
+    },
+    {
+      "from": "dsh-llm-deepseek",
+      "to": "dsh-llm",
+      "mechanism": "E2",
+      "evidence": "packages/llm/llm-deepseek/src/index.ts:42, 251-256",
+      "purpose": "inject ['llm']：registerAdapter"
+    },
+    {
+      "from": "dsh-llm-pi-ai",
+      "to": "dsh-llm",
+      "mechanism": "E2",
+      "evidence": "packages/llm/llm-pi-ai/src/index.ts:85, 220, 246, 270",
+      "purpose": "inject ['llm']：registerAdapter 等"
+    },
+    {
+      "from": "dsh-llm-retry",
+      "to": "dsh-agent",
+      "mechanism": "E2",
+      "evidence": "packages/llm/llm-retry/src/index.ts:21, 210-219",
+      "purpose": "inject ['agents']；订阅 agent/request-error"
+    },
+    {
+      "from": "dsh-llm-retry",
+      "to": "dsh-llm",
+      "mechanism": "E1",
+      "evidence": "packages/llm/llm-retry/src/index.ts:12",
+      "purpose": "LlmFailure/ResolvedRetryPolicy 类型"
+    },
+    {
+      "from": "dsh-llm-retry",
+      "to": "dsh-session",
+      "mechanism": "E2",
+      "evidence": "packages/llm/llm-retry/src/index.ts:13, 150, 182",
+      "purpose": "agent.session.append('llm/retry')"
+    },
+    {
+      "from": "dsh-permission-presets",
+      "to": "dsh-commands",
+      "mechanism": "E3",
+      "evidence": "packages/interaction/permission-presets/src/index.ts:257",
+      "purpose": "/permission 命令注册"
+    },
+    {
+      "from": "dsh-permission-presets",
+      "to": "dsh-sandbox-policy",
+      "mechanism": "E2",
+      "evidence": "packages/interaction/permission-presets/src/index.ts:18,387",
+      "purpose": "sandbox 旋钮写穿"
+    },
+    {
+      "from": "dsh-permission-presets",
+      "to": "dsh-user-approval",
+      "mechanism": "E2",
+      "evidence": "packages/interaction/permission-presets/src/index.ts:23,376,389",
+      "purpose": "approval 旋钮写穿"
+    },
+    {
+      "from": "dsh-plan-mode",
+      "to": "dsh-commands",
+      "mechanism": "E3",
+      "evidence": "packages/plan/plan-mode/src/index.ts:269",
+      "purpose": "/plan 命令"
+    },
+    {
+      "from": "dsh-plan-mode",
+      "to": "dsh-session",
+      "mechanism": "E2",
+      "evidence": "packages/plan/plan-mode/src/index.ts:53,440,456",
+      "purpose": "plan/mode 持久化"
+    },
+    {
+      "from": "dsh-plan-mode",
+      "to": "dsh-session-projection",
+      "mechanism": "E3",
+      "evidence": "packages/plan/plan-mode/src/index.ts:244",
+      "purpose": "plan 投影单元"
+    },
+    {
+      "from": "dsh-plan-mode",
+      "to": "dsh-system-prompt",
+      "mechanism": "E3",
+      "evidence": "packages/plan/plan-mode/src/index.ts:33,225",
+      "purpose": "plan:policy 段"
+    },
+    {
+      "from": "dsh-plan-mode",
+      "to": "dsh-tools",
+      "mechanism": "E3",
+      "evidence": "packages/plan/plan-mode/src/index.ts:32,185,305",
+      "purpose": "exit_plan_mode 工具注册"
+    },
+    {
+      "from": "dsh-plan-mode",
+      "to": "dsh-user-questions",
+      "mechanism": "E3",
+      "evidence": "packages/plan/plan-mode/src/index.ts:34,330",
+      "purpose": "exit 前计划评审"
+    },
+    {
+      "from": "dsh-pwsh-sandbox",
+      "to": "dsh-sandbox-local",
+      "mechanism": "E2",
+      "evidence": "packages/shell/pwsh-sandbox/src/index.ts:53,184",
+      "purpose": "ctx.sandbox.confine"
+    },
+    {
+      "from": "dsh-pwsh-sandbox",
+      "to": "dsh-sandbox-policy",
+      "mechanism": "E2",
+      "evidence": "packages/shell/pwsh-sandbox/src/index.ts:53,79",
+      "purpose": "默认模式事实"
+    },
+    {
+      "from": "dsh-repeat-tool-reminder",
+      "to": "dsh-agent",
+      "mechanism": "E2",
+      "evidence": "packages/guard/repeat-tool-reminder/src/index.ts:11,229",
+      "purpose": "监听 agent/pre-step"
+    },
+    {
+      "from": "dsh-repeat-tool-reminder",
+      "to": "dsh-llm",
+      "mechanism": "E1",
+      "evidence": "packages/guard/repeat-tool-reminder/src/index.ts:12,203",
+      "purpose": "createUserMessage"
+    },
+    {
+      "from": "dsh-repeat-tool-reminder",
+      "to": "dsh-session",
+      "mechanism": "E1",
+      "evidence": "packages/guard/repeat-tool-reminder/src/index.ts:14,203",
+      "purpose": "UserMessage 类型"
+    },
+    {
+      "from": "dsh-repeat-tool-reminder",
+      "to": "dsh-tools",
+      "mechanism": "E2",
+      "evidence": "packages/guard/repeat-tool-reminder/src/index.ts:15,213",
+      "purpose": "监听 tools/post-execute"
+    },
+    {
+      "from": "dsh-sandbox-local",
+      "to": "dsh-llm",
+      "mechanism": "E1",
+      "evidence": "packages/sandbox/sandbox-local/src/index.ts:36",
+      "purpose": "assertNever"
+    },
+    {
+      "from": "dsh-sandbox-local",
+      "to": "dsh-session",
+      "mechanism": "E1",
+      "evidence": "packages/sandbox/sandbox-local/src/index.ts:39",
+      "purpose": "SessionId 会话隔离键"
+    },
+    {
+      "from": "dsh-sandbox-policy",
+      "to": "dsh-agent",
+      "mechanism": "E1",
+      "evidence": "packages/sandbox/sandbox-policy/src/index.ts:24",
+      "purpose": "类型依赖"
+    },
+    {
+      "from": "dsh-sandbox-policy",
+      "to": "dsh-session",
+      "mechanism": "E2",
+      "evidence": "packages/sandbox/sandbox-policy/src/index.ts:26,139-150; session-mode.ts:70",
+      "purpose": "会话事件日志作模式折叠存储"
+    },
+    {
+      "from": "dsh-sandbox-policy",
+      "to": "dsh-system-prompt",
+      "mechanism": "E2",
+      "evidence": "packages/sandbox/sandbox-policy/src/index.ts:112-123",
+      "purpose": "策略投影进运行时上下文"
+    },
+    {
+      "from": "dsh-session",
+      "to": "dsh-llm",
+      "mechanism": "E1",
+      "evidence": "packages/core/session/package.json:46, packages/core/session/src/index.ts:11-14",
+      "purpose": "import deepFreeze 冻结事件/头, Message/UserMessage 类型定义事件载荷"
+    },
+    {
+      "from": "dsh-session",
+      "to": "dsh-typert-registry",
+      "mechanism": "E2",
+      "evidence": "packages/core/session/src/index.ts:798-805",
+      "purpose": "ctx.inject(['typert']) 注册 session 查找器(typert.lookups.register)"
+    },
+    {
+      "from": "dsh-session-checkpoint-policy",
+      "to": "dsh-agent",
+      "mechanism": "E3",
+      "evidence": "packages/session/session-checkpoint-policy/src/index.ts:11",
+      "purpose": "PreStepDecision 类型"
+    },
+    {
+      "from": "dsh-session-checkpoint-policy",
+      "to": "dsh-llm",
+      "mechanism": "E3",
+      "evidence": "packages/session/session-checkpoint-policy/src/index.ts:9",
+      "purpose": "StreamChunk 类型"
+    },
+    {
+      "from": "dsh-session-checkpoint-policy",
+      "to": "dsh-session",
+      "mechanism": "E1",
+      "evidence": "packages/session/session-checkpoint-policy/src/index.ts:18,35,72,80",
+      "purpose": "ctx.sessions.flush 强制持久化屏障"
+    },
+    {
+      "from": "dsh-session-checkpoint-policy",
+      "to": "dsh-tools",
+      "mechanism": "E3",
+      "evidence": "packages/session/session-checkpoint-policy/src/index.ts:10",
+      "purpose": "ToolExecutionResult 类型"
+    },
+    {
+      "from": "dsh-session-persistence-jsonl",
+      "to": "dsh-session",
+      "mechanism": "E2",
+      "evidence": "packages/session/session-persistence/src/coordinator.ts:1118-1132",
+      "purpose": "订阅 session/created|event|flush|disposed 事件源"
+    },
+    {
+      "from": "dsh-session-persistence-jsonl",
+      "to": "dsh-session",
+      "mechanism": "E1",
+      "evidence": "packages/session/session-persistence-jsonl/src/index.ts:124",
+      "purpose": "static inject sessions"
+    },
+    {
+      "from": "dsh-session-persistence-jsonl",
+      "to": "dsh-session",
+      "mechanism": "E3",
+      "evidence": "packages/session/session-persistence-jsonl/src/format.ts:12",
+      "purpose": "packChunkRuns/decodeStorageRecord"
+    },
+    {
+      "from": "dsh-session-projection",
+      "to": "dsh-session",
+      "mechanism": "E2",
+      "evidence": "packages/session/session-projection/src/index.ts:22,181",
+      "purpose": "订阅 session/event 驱动投影"
+    },
+    {
+      "from": "dsh-session-query-sqlite",
+      "to": "dsh-session",
+      "mechanism": "E1",
+      "evidence": "packages/session-query/session-query-sqlite/src/index.ts:197",
+      "purpose": "static inject sessions; observeLive"
+    },
+    {
+      "from": "dsh-session-telemetry-otel",
+      "to": "dsh-llm",
+      "mechanism": "E3",
+      "evidence": "packages/session/session-telemetry-otel/src/index.ts:27",
+      "purpose": "APP_IDENTITY"
+    },
+    {
+      "from": "dsh-session-telemetry-otel",
+      "to": "dsh-session",
+      "mechanism": "E1",
+      "evidence": "packages/session/session-telemetry-otel/src/index.ts:148,247",
+      "purpose": "static inject sessions; feedback 校验"
+    },
+    {
+      "from": "dsh-session-title",
+      "to": "dsh-llm",
+      "mechanism": "E1",
+      "evidence": "packages/session/session-title/src/index.ts:10-11,331-334",
+      "purpose": "isAgentLoopRequest"
+    },
+    {
+      "from": "dsh-session-title",
+      "to": "dsh-session",
+      "mechanism": "E2",
+      "evidence": "packages/session/session-title/src/index.ts:262,319,374",
+      "purpose": "事件源读取/追加"
+    },
+    {
+      "from": "dsh-session-title",
+      "to": "dsh-session-projection",
+      "mechanism": "E2",
+      "evidence": "packages/session/session-title/src/index.ts:308-317",
+      "purpose": "注册 title 纯折单元"
+    },
+    {
+      "from": "dsh-session-title-first-prompt-llm",
+      "to": "dsh-llm",
+      "mechanism": "E2",
+      "evidence": "packages/session/session-title-first-prompt-llm/src/index.ts:12",
+      "purpose": "LLM 服务调用"
+    },
+    {
+      "from": "dsh-session-title-first-prompt-llm",
+      "to": "dsh-session",
+      "mechanism": "E2",
+      "evidence": "packages/session/session-title-first-prompt-llm/src/index.ts:12",
+      "purpose": "会话服务访问"
+    },
+    {
+      "from": "dsh-session-title-first-prompt-llm",
+      "to": "dsh-session-title",
+      "mechanism": "E2",
+      "evidence": "packages/session/session-title-first-prompt-llm/src/index.ts:12,35",
+      "purpose": "注册进标题服务"
+    },
+    {
+      "from": "dsh-shell-env",
+      "to": "dsh-session",
+      "mechanism": "E2",
+      "evidence": "packages/shell/shell-env/src/index.ts:158",
+      "purpose": "会话 id 注入 DSH_SESSION_ID"
+    },
+    {
+      "from": "dsh-shell-env",
+      "to": "dsh-tools",
+      "mechanism": "E1",
+      "evidence": "packages/shell/shell-env/src/index.ts:16",
+      "purpose": "ToolExecution 类型"
+    },
+    {
+      "from": "dsh-skill",
+      "to": "dsh-llm",
+      "mechanism": "E1",
+      "evidence": "packages/skill/skill/src/index.ts:14,155-160",
+      "purpose": "assertNever + MessageSourceMap 注入"
+    },
+    {
+      "from": "dsh-skill-badge",
+      "to": "dsh-skill",
+      "mechanism": "E3",
+      "evidence": "packages/skill/skill-badge/src/index.ts:55,59",
+      "purpose": "provider 注册 seam"
+    },
+    {
+      "from": "dsh-skill-filesystem",
+      "to": "dsh-skill",
+      "mechanism": "E3",
+      "evidence": "packages/skill/skill-filesystem/src/index.ts:46,132",
+      "purpose": "provider 注册 seam"
+    },
+    {
+      "from": "dsh-spill-policy",
+      "to": "dsh-session",
+      "mechanism": "E3",
+      "evidence": "packages/spill/spill-policy/src/index.ts:52",
+      "purpose": "SessionId 类型"
+    },
+    {
+      "from": "dsh-spill-policy",
+      "to": "dsh-spill-local",
+      "mechanism": "E1",
+      "evidence": "packages/spill/spill-policy/src/index.ts:142-155",
+      "purpose": "ctx.get('spillStore') 存溢出"
+    },
+    {
+      "from": "dsh-spill-policy",
+      "to": "dsh-tools",
+      "mechanism": "E2",
+      "evidence": "packages/spill/spill-policy/src/index.ts:190,217",
+      "purpose": "订阅 tools/post-execute waterfall"
+    },
+    {
+      "from": "dsh-subagent",
+      "to": "dsh-agent",
+      "mechanism": "E1",
+      "evidence": "packages/subagent/subagent/src/index.ts:186",
+      "purpose": "ctx.inject(['agents']) 建立 ContinuationManager"
+    },
+    {
+      "from": "dsh-subagent",
+      "to": "dsh-session",
+      "mechanism": "E1",
+      "evidence": "packages/subagent/subagent/src/list-children.ts:201,231",
+      "purpose": "ctx.get('sessions') 枚举子代理"
+    },
+    {
+      "from": "dsh-subagent",
+      "to": "dsh-tools",
+      "mechanism": "E1",
+      "evidence": "packages/subagent/subagent/src/index.ts:37",
+      "purpose": "assertObjectJsonSchema 校验"
+    },
+    {
+      "from": "dsh-subagent-fork-in-process",
+      "to": "dsh-agent",
+      "mechanism": "E1",
+      "evidence": "packages/subagent/subagent-fork-in-process/src/index.ts:13,49",
+      "purpose": "Agent 类型与 parent.session.header"
+    },
+    {
+      "from": "dsh-subagent-fork-in-process",
+      "to": "dsh-session",
+      "mechanism": "E1",
+      "evidence": "packages/subagent/subagent-fork-in-process/src/index.ts:12,49",
+      "purpose": "parent.session.events 截取种子"
+    },
+    {
+      "from": "dsh-subagent-fork-in-process",
+      "to": "dsh-subagent",
+      "mechanism": "E1",
+      "evidence": "packages/subagent/subagent-fork-in-process/src/index.ts:28,93",
+      "purpose": "inject subagents 注册 provider"
+    },
+    {
+      "from": "dsh-subagent-spawn-in-process",
+      "to": "dsh-agent",
+      "mechanism": "E3",
+      "evidence": "packages/subagent/subagent-spawn-in-process/package.json:45",
+      "purpose": "子代理经 ctx.agents 工厂创建"
+    },
+    {
+      "from": "dsh-subagent-spawn-in-process",
+      "to": "dsh-subagent",
+      "mechanism": "E1",
+      "evidence": "packages/subagent/subagent-spawn-in-process/src/index.ts:22,63",
+      "purpose": "inject subagents 注册 provider"
+    },
+    {
+      "from": "dsh-subagent-spawn-in-process",
+      "to": "dsh-tools",
+      "mechanism": "E3",
+      "evidence": "packages/subagent/subagent-spawn-in-process/src/index.ts:20-21",
+      "purpose": "子代理工具链由 agents 工厂提供"
+    },
+    {
+      "from": "dsh-system-prompt",
+      "to": "dsh-llm",
+      "mechanism": "E1",
+      "evidence": "packages/core/system-prompt/src/index.ts:11",
+      "purpose": "ToolSchema/ContextSnapshotSection 类型"
+    },
+    {
+      "from": "dsh-token-meter",
+      "to": "dsh-llm",
+      "mechanism": "E1",
+      "evidence": "packages/llm/token-meter/src/index.ts:9-10",
+      "purpose": "BlockAssembler/deepFreeze；TokenUsage 类型"
+    },
+    {
+      "from": "dsh-token-meter",
+      "to": "dsh-session",
+      "mechanism": "E2",
+      "evidence": "packages/llm/token-meter/src/index.ts:11-12, 95-97",
+      "purpose": "订阅 session/event；折叠 header/surface"
+    },
+    {
+      "from": "dsh-token-meter",
+      "to": "dsh-session-projection",
+      "mechanism": "E2",
+      "evidence": "packages/llm/token-meter/src/index.ts:14, 87-91",
+      "purpose": "ctx.inject(['sessionProjections']) 注册投影"
+    },
+    {
+      "from": "dsh-tool-bash",
+      "to": "dsh-agent",
+      "mechanism": "E1",
+      "evidence": "packages/shell/tool-bash/src/index.ts:17,149",
+      "purpose": "Agent 类型与 job owner"
+    },
+    {
+      "from": "dsh-tool-bash",
+      "to": "dsh-sandbox-policy",
+      "mechanism": "E2",
+      "evidence": "packages/shell/tool-bash/src/index.ts:194,200",
+      "purpose": "standing policy 解析"
+    },
+    {
+      "from": "dsh-tool-bash",
+      "to": "dsh-shell-env",
+      "mechanism": "E2",
+      "evidence": "packages/shell/tool-bash/src/index.ts:31,341",
+      "purpose": "收集 DSH_* 环境"
+    },
+    {
+      "from": "dsh-tool-bash",
+      "to": "dsh-tools",
+      "mechanism": "E2",
+      "evidence": "packages/shell/tool-bash/src/index.ts:31,242",
+      "purpose": "工具注册管线"
+    },
+    {
+      "from": "dsh-tool-bash",
+      "to": "dsh-user-approval",
+      "mechanism": "E2",
+      "evidence": "packages/shell/tool-bash/src/index.ts:226",
+      "purpose": "升级批准通道"
+    },
+    {
+      "from": "dsh-tool-call-timeout-policy",
+      "to": "dsh-llm",
+      "mechanism": "E3",
+      "evidence": "packages/guard/timeout-policy/package.json:36",
+      "purpose": "ToolExecutionResult 类型"
+    },
+    {
+      "from": "dsh-tool-call-timeout-policy",
+      "to": "dsh-tools",
+      "mechanism": "E2",
+      "evidence": "packages/guard/timeout-policy/src/index.ts:31,56-57",
+      "purpose": "inject tools; 监听 tools/execute"
+    },
+    {
+      "from": "dsh-tool-fs",
+      "to": "dsh-fs-observation-policy",
+      "mechanism": "E2",
+      "evidence": "packages/fs/tool-fs/src/write.ts:111,122",
+      "purpose": "fs/* 事件槽的监听方"
+    },
+    {
+      "from": "dsh-tool-fs",
+      "to": "dsh-llm",
+      "mechanism": "E2",
+      "evidence": "packages/fs/tool-fs/src/read-image.ts:68,72",
+      "purpose": "read_image 能力门控"
+    },
+    {
+      "from": "dsh-tool-fs",
+      "to": "dsh-sandbox-policy",
+      "mechanism": "E2",
+      "evidence": "packages/fs/tool-fs/src/sandbox.ts:46-49,89",
+      "purpose": "per-call 策略解析"
+    },
+    {
+      "from": "dsh-tool-fs",
+      "to": "dsh-session",
+      "mechanism": "E2",
+      "evidence": "packages/fs/tool-fs/src/session-cwd.ts:24",
+      "purpose": "解析会话 cwd"
+    },
+    {
+      "from": "dsh-tool-fs",
+      "to": "dsh-tools",
+      "mechanism": "E2",
+      "evidence": "packages/fs/tool-fs/src/index.ts:22; write.ts:69",
+      "purpose": "工具注册管线"
+    },
+    {
+      "from": "dsh-tool-fs",
+      "to": "dsh-user-approval",
+      "mechanism": "E2",
+      "evidence": "packages/fs/tool-fs/src/sandbox.ts:100",
+      "purpose": "approveEscalation 的 approver 通道"
+    },
+    {
+      "from": "dsh-tool-fs-search",
+      "to": "dsh-session",
+      "mechanism": "E2",
+      "evidence": "packages/fs/tool-fs-search/src/search-core.ts:223,377",
+      "purpose": "会话 cwd 作 rg workdir"
+    },
+    {
+      "from": "dsh-tool-fs-search",
+      "to": "dsh-tools",
+      "mechanism": "E2",
+      "evidence": "packages/fs/tool-fs-search/src/index.ts:70; glob.ts:359,361",
+      "purpose": "工具注册与 post-execute 瀑布"
+    },
+    {
+      "from": "dsh-tool-goal",
+      "to": "dsh-agent",
+      "mechanism": "E2",
+      "evidence": "packages/goal/tool-goal/src/authority.ts:55-62",
+      "purpose": "调用者认证"
+    },
+    {
+      "from": "dsh-tool-goal",
+      "to": "dsh-goal",
+      "mechanism": "E2",
+      "evidence": "packages/goal/tool-goal/src/index.ts:9,202,225,269",
+      "purpose": "goal 域读写"
+    },
+    {
+      "from": "dsh-tool-goal",
+      "to": "dsh-session",
+      "mechanism": "E2",
+      "evidence": "packages/goal/tool-goal/src/authority.ts:30-42",
+      "purpose": "open turn 判定"
+    },
+    {
+      "from": "dsh-tool-goal",
+      "to": "dsh-system-prompt",
+      "mechanism": "E3",
+      "evidence": "packages/goal/tool-goal/src/index.ts:189",
+      "purpose": "模型策略指导"
+    },
+    {
+      "from": "dsh-tool-goal",
+      "to": "dsh-tools",
+      "mechanism": "E3",
+      "evidence": "packages/goal/tool-goal/src/index.ts:12,195",
+      "purpose": "工具注册"
+    },
+    {
+      "from": "dsh-tool-jobs",
+      "to": "dsh-agent",
+      "mechanism": "E1",
+      "evidence": "packages/jobs/tool-jobs/src/index.ts:19,294-299",
+      "purpose": "completion 通知投递"
+    },
+    {
+      "from": "dsh-tool-jobs",
+      "to": "dsh-jobs-local",
+      "mechanism": "E3",
+      "evidence": "packages/jobs/tool-jobs/src/index.ts:260",
+      "purpose": "controller 注册落地"
+    },
+    {
+      "from": "dsh-tool-jobs",
+      "to": "dsh-system-prompt",
+      "mechanism": "E3",
+      "evidence": "packages/jobs/tool-jobs/src/index.ts:263",
+      "purpose": "模型跨调用指导"
+    },
+    {
+      "from": "dsh-tool-jobs",
+      "to": "dsh-tools",
+      "mechanism": "E3",
+      "evidence": "packages/jobs/tool-jobs/src/index.ts:14,233,302",
+      "purpose": "工具注册与执行管道"
+    },
+    {
+      "from": "dsh-tool-pwsh",
+      "to": "dsh-sandbox-policy",
+      "mechanism": "E2",
+      "evidence": "packages/shell/tool-pwsh/src/index.ts:200,207",
+      "purpose": "standing policy"
+    },
+    {
+      "from": "dsh-tool-pwsh",
+      "to": "dsh-shell-env",
+      "mechanism": "E2",
+      "evidence": "packages/shell/tool-pwsh/src/index.ts:49,363",
+      "purpose": "收集 DSH_* 环境"
+    },
+    {
+      "from": "dsh-tool-pwsh",
+      "to": "dsh-tools",
+      "mechanism": "E2",
+      "evidence": "packages/shell/tool-pwsh/src/index.ts:49,252",
+      "purpose": "工具注册管线"
+    },
+    {
+      "from": "dsh-tool-ralph",
+      "to": "dsh-subagent",
+      "mechanism": "E1",
+      "evidence": "packages/workflow/tool-ralph/src/index.ts:12,20,221",
+      "purpose": "getProvider 校验 fresh provider"
+    },
+    {
+      "from": "dsh-tool-ralph",
+      "to": "dsh-system-prompt",
+      "mechanism": "E1",
+      "evidence": "packages/workflow/tool-ralph/src/index.ts:17,20,407",
+      "purpose": "systemPrompt.section"
+    },
+    {
+      "from": "dsh-tool-ralph",
+      "to": "dsh-tools",
+      "mechanism": "E1",
+      "evidence": "packages/workflow/tool-ralph/src/index.ts:13,20,412",
+      "purpose": "defineTool + register"
+    },
+    {
+      "from": "dsh-tool-ralph",
+      "to": "dsh-workflow-worker-thread",
+      "mechanism": "E1",
+      "evidence": "packages/workflow/tool-ralph/package.json:61",
+      "purpose": "ctx.workflowEngine 具体实现"
+    },
+    {
+      "from": "dsh-tool-skill",
+      "to": "dsh-agent",
+      "mechanism": "E2",
+      "evidence": "packages/skill/tool-skill/src/index.ts:10,177,213",
+      "purpose": "pre-step 注入钩子"
+    },
+    {
+      "from": "dsh-tool-skill",
+      "to": "dsh-llm",
+      "mechanism": "E1",
+      "evidence": "packages/skill/tool-skill/src/index.ts:12,197",
+      "purpose": "createUserMessage + MessageSourceMap"
+    },
+    {
+      "from": "dsh-tool-skill",
+      "to": "dsh-skill",
+      "mechanism": "E2",
+      "evidence": "packages/skill/tool-skill/src/index.ts:15-22,134,141,222",
+      "purpose": "技能目录与正文加载"
+    },
+    {
+      "from": "dsh-tool-skill",
+      "to": "dsh-tools",
+      "mechanism": "E3",
+      "evidence": "packages/skill/tool-skill/src/index.ts:11,161",
+      "purpose": "工具注册"
+    },
+    {
+      "from": "dsh-tool-str-replace-editor",
+      "to": "dsh-fs-observation-policy",
+      "mechanism": "E2",
+      "evidence": "packages/fs/tool-str-replace-editor/src/index.ts:252,284,337",
+      "purpose": "写/编辑前守卫与观察记录"
+    },
+    {
+      "from": "dsh-tool-str-replace-editor",
+      "to": "dsh-sandbox-policy",
+      "mechanism": "E2",
+      "evidence": "packages/fs/tool-str-replace-editor/src/index.ts:69-72,76",
+      "purpose": "MutationPolicy per-call 模式"
+    },
+    {
+      "from": "dsh-tool-str-replace-editor",
+      "to": "dsh-tools",
+      "mechanism": "E2",
+      "evidence": "packages/fs/tool-str-replace-editor/src/index.ts:494,422",
+      "purpose": "工具注册管线"
+    },
+    {
+      "from": "dsh-tool-subagent",
+      "to": "dsh-agent",
+      "mechanism": "E1",
+      "evidence": "packages/subagent/tool-subagent/src/index.ts:14,370",
+      "purpose": "exec.agent 委派 parent"
+    },
+    {
+      "from": "dsh-tool-subagent",
+      "to": "dsh-subagent",
+      "mechanism": "E1",
+      "evidence": "packages/subagent/tool-subagent/src/index.ts:17,23,425",
+      "purpose": "start/startContinuable/getProvider"
+    },
+    {
+      "from": "dsh-tool-subagent",
+      "to": "dsh-system-prompt",
+      "mechanism": "E1",
+      "evidence": "packages/subagent/tool-subagent/src/index.ts:20,459",
+      "purpose": "systemPrompt.section 注册指引"
+    },
+    {
+      "from": "dsh-tool-subagent",
+      "to": "dsh-tools",
+      "mechanism": "E1",
+      "evidence": "packages/subagent/tool-subagent/src/index.ts:13,297",
+      "purpose": "defineTool + register"
+    },
+    {
+      "from": "dsh-tool-subagent-control",
+      "to": "dsh-agent",
+      "mechanism": "E1",
+      "evidence": "packages/subagent/tool-subagent-control/src/list-agents.ts:18,60",
+      "purpose": "list_agents inject agents"
+    },
+    {
+      "from": "dsh-tool-subagent-control",
+      "to": "dsh-llm",
+      "mechanism": "E1",
+      "evidence": "packages/subagent/tool-subagent-control/src/list-agents.ts:14",
+      "purpose": "assertNever"
+    },
+    {
+      "from": "dsh-tool-subagent-control",
+      "to": "dsh-session",
+      "mechanism": "E1",
+      "evidence": "packages/subagent/tool-subagent-control/src/index.ts:15,68",
+      "purpose": "SessionId 品牌化入参"
+    },
+    {
+      "from": "dsh-tool-subagent-control",
+      "to": "dsh-subagent",
+      "mechanism": "E1",
+      "evidence": "packages/subagent/tool-subagent-control/src/index.ts:19,66",
+      "purpose": "followup/interrupt"
+    },
+    {
+      "from": "dsh-tool-subagent-control",
+      "to": "dsh-tools",
+      "mechanism": "E1",
+      "evidence": "packages/subagent/tool-subagent-control/src/index.ts:13,26",
+      "purpose": "defineTool + register"
+    },
+    {
+      "from": "dsh-tool-subagent-report",
+      "to": "dsh-agent",
+      "mechanism": "E1",
+      "evidence": "packages/subagent/tool-subagent-report/src/index.ts:11,98",
+      "purpose": "exec.agent 报告发送方"
+    },
+    {
+      "from": "dsh-tool-subagent-report",
+      "to": "dsh-subagent",
+      "mechanism": "E1",
+      "evidence": "packages/subagent/tool-subagent-report/src/index.ts:21,140",
+      "purpose": "registerContinuableSetup + reportFrom"
+    },
+    {
+      "from": "dsh-tool-subagent-report",
+      "to": "dsh-system-prompt",
+      "mechanism": "E1",
+      "evidence": "packages/subagent/tool-subagent-report/src/index.ts:14,54",
+      "purpose": "childCtx.systemPrompt.section"
+    },
+    {
+      "from": "dsh-tool-subagent-report",
+      "to": "dsh-tools",
+      "mechanism": "E1",
+      "evidence": "packages/subagent/tool-subagent-report/src/index.ts:15,65",
+      "purpose": "childCtx.tools.register"
+    },
+    {
+      "from": "dsh-tool-todo",
+      "to": "dsh-agent",
+      "mechanism": "E1",
+      "evidence": "packages/todo/tool-todo/src/index.ts:208-212",
+      "purpose": "owning session 归属"
+    },
+    {
+      "from": "dsh-tool-todo",
+      "to": "dsh-session",
+      "mechanism": "E2",
+      "evidence": "packages/todo/tool-todo/src/index.ts:13,213",
+      "purpose": "todo 快照持久化"
+    },
+    {
+      "from": "dsh-tool-todo",
+      "to": "dsh-session-projection",
+      "mechanism": "E3",
+      "evidence": "packages/todo/tool-todo/src/index.ts:135",
+      "purpose": "todos 投影单元"
+    },
+    {
+      "from": "dsh-tool-todo",
+      "to": "dsh-tools",
+      "mechanism": "E3",
+      "evidence": "packages/todo/tool-todo/src/index.ts:12,149",
+      "purpose": "工具注册"
+    },
+    {
+      "from": "dsh-tool-web",
+      "to": "dsh-llm",
+      "mechanism": "E3",
+      "evidence": "packages/web/tool-web/src/index.ts:37",
+      "purpose": "ContentBlock/assertNever 类型"
+    },
+    {
+      "from": "dsh-tool-web",
+      "to": "dsh-system-prompt",
+      "mechanism": "E1",
+      "evidence": "packages/web/tool-web/src/index.ts:24",
+      "purpose": "systemPrompt.section"
+    },
+    {
+      "from": "dsh-tool-web",
+      "to": "dsh-tool-call-timeout-policy",
+      "mechanism": "E2",
+      "evidence": "packages/web/tool-web/src/index.ts:75-78",
+      "purpose": "timeoutMs 交策略强制"
+    },
+    {
+      "from": "dsh-tool-web",
+      "to": "dsh-tools",
+      "mechanism": "E1",
+      "evidence": "packages/web/tool-web/src/index.ts:24",
+      "purpose": "defineTool + register"
+    },
+    {
+      "from": "dsh-tool-web",
+      "to": "dsh-web",
+      "mechanism": "E1",
+      "evidence": "packages/web/tool-web/src/index.ts:24,261",
+      "purpose": "ctx.web.search/fetch"
+    },
+    {
+      "from": "dsh-tool-workflow",
+      "to": "dsh-session",
+      "mechanism": "E1",
+      "evidence": "packages/workflow/tool-workflow/src/index.ts:18,87",
+      "purpose": "Session.append 记录运行事件"
+    },
+    {
+      "from": "dsh-tool-workflow",
+      "to": "dsh-system-prompt",
+      "mechanism": "E1",
+      "evidence": "packages/workflow/tool-workflow/src/index.ts:27,30,212",
+      "purpose": "systemPrompt.section"
+    },
+    {
+      "from": "dsh-tool-workflow",
+      "to": "dsh-tools",
+      "mechanism": "E1",
+      "evidence": "packages/workflow/tool-workflow/src/index.ts:15,30,217",
+      "purpose": "defineTool + register"
+    },
+    {
+      "from": "dsh-tool-workflow",
+      "to": "dsh-workflow-worker-thread",
+      "mechanism": "E1",
+      "evidence": "packages/workflow/tool-workflow/package.json:61",
+      "purpose": "ctx.workflowEngine 具体实现"
+    },
+    {
+      "from": "dsh-tools",
+      "to": "dsh-agent",
+      "mechanism": "E1",
+      "evidence": "packages/core/tools/src/index.ts:13",
+      "purpose": "ToolExecutionInput.agent 关联调用归属"
+    },
+    {
+      "from": "dsh-tools",
+      "to": "dsh-llm",
+      "mechanism": "E1",
+      "evidence": "packages/core/tools/src/index.ts:11-12",
+      "purpose": "ToolSchema/ContentBlock/HarnessError 类型"
+    },
+    {
+      "from": "dsh-tools",
+      "to": "dsh-session",
+      "mechanism": "E1",
+      "evidence": "packages/core/tools/src/index.ts:14-15, 102",
+      "purpose": "snapshotJsonValue 快照工具参数"
+    },
+    {
+      "from": "dsh-tools",
+      "to": "dsh-system-prompt",
+      "mechanism": "E2",
+      "evidence": "packages/core/tools/src/index.ts:788, 832-835",
+      "purpose": "static inject systemPrompt"
+    },
+    {
+      "from": "dsh-tools",
+      "to": "dsh-user-approval",
+      "mechanism": "E2",
+      "evidence": "packages/core/tools/src/index.ts:18-20, 1693, 1706",
+      "purpose": "ctx.get('approval') 可选 seam：ask 决策转 approval.request"
+    },
+    {
+      "from": "dsh-typert-loader",
+      "to": "dsh-typert-registry",
+      "mechanism": "E2",
+      "evidence": "packages/typert/loader/src/index.ts:35,383",
+      "purpose": "ctx.typert.register"
+    },
+    {
+      "from": "dsh-user-approval",
+      "to": "dsh-agent",
+      "mechanism": "E1",
+      "evidence": "packages/interaction/user-approval/src/index.ts:10,159,230",
+      "purpose": "携带 live agent 路由 answerer"
+    },
+    {
+      "from": "dsh-user-approval",
+      "to": "dsh-llm",
+      "mechanism": "E1",
+      "evidence": "packages/interaction/user-approval/src/index.ts:11",
+      "purpose": "createUserMessage"
+    },
+    {
+      "from": "dsh-user-approval",
+      "to": "dsh-session",
+      "mechanism": "E2",
+      "evidence": "packages/interaction/user-approval/src/index.ts:146,267,274",
+      "purpose": "审批审计事件与 policy 持久化"
+    },
+    {
+      "from": "dsh-user-approval",
+      "to": "dsh-system-prompt",
+      "mechanism": "E3",
+      "evidence": "packages/interaction/user-approval/src/index.ts:204",
+      "purpose": "向模型暴露 approval policy"
+    },
+    {
+      "from": "dsh-user-questions",
+      "to": "dsh-agent",
+      "mechanism": "E1",
+      "evidence": "packages/interaction/user-questions/src/index.ts:11,101-112",
+      "purpose": "调用者身份边界"
+    },
+    {
+      "from": "dsh-user-questions",
+      "to": "dsh-llm",
+      "mechanism": "E1",
+      "evidence": "packages/interaction/user-questions/src/index.ts:12",
+      "purpose": "HarnessError 基类"
+    },
+    {
+      "from": "dsh-web",
+      "to": "dsh-llm",
+      "mechanism": "E3",
+      "evidence": "packages/web/web/package.json:36",
+      "purpose": "类型/错误基类声明依赖"
+    },
+    {
+      "from": "dsh-web-search-deepseek",
+      "to": "dsh-agent",
+      "mechanism": "E3",
+      "evidence": "packages/web/web-search-deepseek/package.json:35",
+      "purpose": "currentInitiator 归属"
+    },
+    {
+      "from": "dsh-web-search-deepseek",
+      "to": "dsh-session",
+      "mechanism": "E1",
+      "evidence": "packages/web/web-search-deepseek/src/index.ts:14,117-122",
+      "purpose": "session.append 记录搜索请求"
+    },
+    {
+      "from": "dsh-web-search-deepseek",
+      "to": "dsh-web",
+      "mechanism": "E1",
+      "evidence": "packages/web/web-search-deepseek/src/index.ts:41,137",
+      "purpose": "registerSearchProvider + WebError"
+    },
+    {
+      "from": "dsh-workflow-worker-thread",
+      "to": "dsh-agent",
+      "mechanism": "E1",
+      "evidence": "packages/workflow/workflow-worker-thread/src/index.ts:14,177",
+      "purpose": "request.parent Agent"
+    },
+    {
+      "from": "dsh-workflow-worker-thread",
+      "to": "dsh-session",
+      "mechanism": "E1",
+      "evidence": "packages/workflow/workflow-worker-thread/src/host.ts:16,393",
+      "purpose": "snapshotJsonValue 序列化跨 worker"
+    },
+    {
+      "from": "dsh-workflow-worker-thread",
+      "to": "dsh-subagent",
+      "mechanism": "E1",
+      "evidence": "packages/workflow/workflow-worker-thread/src/host.ts:352",
+      "purpose": "startChild 经 subagents.start(provider)"
+    },
+    {
+      "from": "dsh-workflow-worker-thread",
+      "to": "dsh-tools",
+      "mechanism": "E1",
+      "evidence": "packages/workflow/workflow-worker-thread/package.json:46",
+      "purpose": "agent() 选项 schema"
+    }
+  ]
+}

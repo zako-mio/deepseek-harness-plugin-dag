@@ -1,0 +1,334 @@
+{
+  "route": "R1-host-services",
+  "scope": "宿主层与服务 16 插件",
+  "plugins": [
+    {
+      "id": "dsh-code-runtime-worker-thread",
+      "name": "@deepseek-ai/dsh-code-runtime-worker-thread",
+      "implementation": "worker_threads 实现 CodeRuntime 抽象：run() 用 stripTypeScriptTypes 剥类型后为每个程序 spawn 全新 worker（空 env、无 execArgv、resourceLimits 堆上限），绑定函数与 JSON 值经 message port 桥接（decode/encodeWorkerJson）；ELU 轮询 busy-time + wall-time 双预算、输出字节账本 OutputLedger、abort/exit/timeout 收敛到静止后 dispose。提供 ctx.codeRuntime 服务。",
+      "provides": ["ctx.codeRuntime（CodeRuntime 后端，language=typescript, isolation=worker-thread）"],
+      "depends_on": [
+        {"plugin_id": "dsh-code-runtime", "mechanism": "E1", "evidence": "packages/code-runtime/code-runtime-worker-thread/package.json:39; src/index.ts:16-17", "purpose": "继承 CodeRuntime 抽象基类与服务契约"},
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/code-runtime/code-runtime-worker-thread/package.json:41; src/index.ts:18", "purpose": "snapshotJsonValue 将绑定解析结果快照为无损耗 JSON"},
+        {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "packages/code-runtime/code-runtime-worker-thread/package.json:42; src/index.ts:15", "purpose": "MAX_TIMER_DELAY_MS 校验 maxWallMs 上限（setTimeout 钳制）"},
+        {"plugin_id": "dsh-cordis", "mechanism": "E1", "evidence": "packages/code-runtime/code-runtime-worker-thread/package.json:43; src/index.ts:13,270", "purpose": "Cordis Service 生命周期与 ctx.effect 清理"},
+        {"plugin_id": "dsh-web-app", "mechanism": "E3", "evidence": "packages/bundle/web-app/cordis.patch.yml:47-49", "purpose": "web bundle insert 行：以 code-runtime 行装配本插件"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-tools", "evidence": "packages/core/tools/src/index.ts:1020-1022", "purpose": "Code Mode 工具通过 ctx.get('codeRuntime') 解析运行时，缺失则 loud 报错"}
+      ]
+    },
+    {
+      "id": "dsh-storage",
+      "name": "@deepseek-ai/dsh-storage",
+      "implementation": "存储中枢 ctx.storage：Storage 服务 = 命名后端注册表 BackendRegistry + 可挂载数据形式（StorageForms 接口声明合并扩展）。本身不做 IO；storageBackendServiceKey(name) 生成后端生命周期服务键；domain getter 读取挂载的 domain 形式。default export 服务类（非函数插件）。",
+      "provides": ["ctx.storage（Storage：backend 注册表 + mount/form 数据形式）", "storageBackendServiceKey(name) 服务键生成器"],
+      "depends_on": [
+        {"plugin_id": "dsh-cordis", "mechanism": "E1", "evidence": "packages/storage/storage/src/index.ts:8", "purpose": "Cordis Service 基类与 Context 声明合并（ctx.storage）"},
+        {"plugin_id": "dsh-web-app", "mechanism": "E3", "evidence": "packages/bundle/web-app/cordis.patch.yml:51-52", "purpose": "web bundle insert 行：storage 行装配"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-storage-json", "evidence": "packages/storage/storage-json/src/index.ts:19,107", "purpose": "inject ['storage'] 后在 hub 注册 'json' 后端"},
+        {"plugin_id": "dsh-storage-domain", "evidence": "packages/storage/storage-domain/src/index.ts:44,107,209", "purpose": "inject ['storage']，backend.get 解析路由、mount('domain') 挂形式"}
+      ]
+    },
+    {
+      "id": "dsh-storage-json",
+      "name": "@deepseek-ai/dsh-storage-json",
+      "implementation": "JSON 文件后端：每 unit 一个 <root>/<unit>.json，原子整文件重写（atomic.ts），只提供 kv facet；apply 在 storage 中枢 ctx.storage.backend.register('json') 注册后端，并 ctx.provide(storageBackendServiceKey('json')) 供 domain 层注入等待激活；root 无默认值。",
+      "provides": ["storage.backend.json 后端（kv facet）", "storage.backend.json 服务键"],
+      "depends_on": [
+        {"plugin_id": "dsh-storage", "mechanism": "E1", "evidence": "packages/storage/storage-json/package.json:36; src/index.ts:12-13", "purpose": "注册到 hub 后端注册表并取 storageBackendServiceKey"},
+        {"plugin_id": "dsh-storage", "mechanism": "E2", "evidence": "packages/storage/storage-json/src/index.ts:19,107,113", "purpose": "inject ['storage']；ctx.storage.backend.register('json')；provide 生命周期键"},
+        {"plugin_id": "dsh-web-app", "mechanism": "E3", "evidence": "packages/bundle/web-app/cordis.patch.yml:54-57", "purpose": "insert 行装配，config.root = dshHomePath('storages')"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-storage-domain", "evidence": "packages/bundle/web-app/cordis.patch.yml:59-62; packages/storage/storage-domain/src/index.ts:107", "purpose": "E3 config backend: json → domain 层经 ctx.storage.backend.get('json') 路由打开"}
+      ]
+    },
+    {
+      "id": "dsh-storage-domain",
+      "name": "@deepseek-ai/dsh-storage-domain",
+      "implementation": "领域数据形式：apply 对声明的后端服务键 ctx.inject 等待，随后在 storage 中枢 ctx.storage.mount('domain') 挂 DomainFacility 并 provide ctx.storageDomain；open() 按 routes/backend 经 hub 路由到后端 kv、zod 校验加载记录、经 DomainImpl 发 domain/changed 变更事件。",
+      "provides": ["ctx.storageDomain（DomainFacility）", "ctx.storage.domain 数据形式", "domain/changed 事件"],
+      "depends_on": [
+        {"plugin_id": "dsh-storage", "mechanism": "E1", "evidence": "packages/storage/storage-domain/package.json:36-38; src/index.ts:12", "purpose": "storageBackendServiceKey 与 StorageForms 声明合并"},
+        {"plugin_id": "dsh-storage", "mechanism": "E2", "evidence": "packages/storage/storage-domain/src/index.ts:44,107,206-217", "purpose": "inject ['storage']；backend.get 解析；ctx.inject(backendServices) 等后端；mount('domain')"},
+        {"plugin_id": "dsh-storage-json", "mechanism": "E3", "evidence": "packages/bundle/web-app/cordis.patch.yml:59-62; packages/storage/storage-domain/src/index.ts:106-107", "purpose": "config backend: json → 经 hub 解析 'json' 后端（E2 解析）"},
+        {"plugin_id": "dsh-web-app", "mechanism": "E3", "evidence": "packages/bundle/web-app/cordis.patch.yml:59-62", "purpose": "insert 行装配，backend: json"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-message-feedback", "evidence": "packages/feedback/message-feedback/src/index.ts:151,174", "purpose": "static inject ['storageDomain']；ctx.storageDomain.open(messageFeedbackDomainSpec)"},
+        {"plugin_id": "dsh-workspace", "evidence": "packages/workspace/workspace/src/index.ts:93,120", "purpose": "static inject ['storageDomain']；open workspaceDomainSpec"},
+        {"plugin_id": "dsh-session-projection-cache", "evidence": "packages/session/session-projection-cache/src/index.ts:72,85", "purpose": "static inject ['storageDomain']；open projectionCacheDomainSpec"}
+      ]
+    },
+    {
+      "id": "dsh-message-feedback",
+      "name": "@deepseek-ai/dsh-message-feedback",
+      "implementation": "消息级 Like/Dislike+可选笔记 sidecar：MessageFeedbackService（TypertRemoteService）提供 @Remote list/put/delete；基于 storageDomain 打开 message-feedback 域表（sessions 表），经 sessionPersistence/sessions 校验会话生命周期与助手消息目标，version 乐观并发，note 字节上限（maxNoteBytes）配置。",
+      "provides": ["ctx.messageFeedback 服务", "messageFeedback Typert Remote（list/put/delete）"],
+      "depends_on": [
+        {"plugin_id": "dsh-storage-domain", "mechanism": "E1", "evidence": "packages/feedback/message-feedback/package.json:57; src/index.ts:13", "purpose": "KvTable 类型与域表读写"},
+        {"plugin_id": "dsh-storage-domain", "mechanism": "E2", "evidence": "packages/feedback/message-feedback/src/index.ts:151,174", "purpose": "static inject ['storageDomain']；open message-feedback 域"},
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/feedback/message-feedback/package.json:55; src/index.ts:10-11", "purpose": "deriveEventMessage/isAppendSurfaceEvent 定位目标助手消息"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/feedback/message-feedback/src/index.ts:304,329-331", "purpose": "ctx.sessions.get 判定 live 会话；flush 持久化屏障"},
+        {"plugin_id": "dsh-session-persistence", "mechanism": "E1", "evidence": "packages/feedback/message-feedback/package.json:56; src/index.ts:12", "purpose": "SessionInspection 类型"},
+        {"plugin_id": "dsh-session-persistence", "mechanism": "E2", "evidence": "packages/feedback/message-feedback/src/index.ts:305-311,336-338", "purpose": "listSnapshots/inspect/readFrom 校验冷会话生命周期"},
+        {"plugin_id": "dsh-typert-protocol", "mechanism": "E1", "evidence": "packages/feedback/message-feedback/package.json:58; src/index.ts:14", "purpose": "TypertRemoteService 与 @Remote 装饰器"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/feedback/message-feedback/package.json:54", "purpose": "peerDependencies（生成 typert 产物引用）"},
+        {"plugin_id": "dsh-web-app", "mechanism": "E3", "evidence": "packages/bundle/web-app/cordis.patch.yml:64-67", "purpose": "insert 行装配，config.maxNoteBytes: 8192"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-api-remotes", "evidence": "packages/api/remotes/src/client/index.ts:8,109", "purpose": "client Remote 装配挂载 messageFeedbackRemote 命名空间"}
+      ]
+    },
+    {
+      "id": "dsh-session-log-export",
+      "name": "@deepseek-ai/dsh-session-log-export",
+      "implementation": "宿主侧（src/index.ts）在 commands 注册表注册 /export 命令（无路径参数，返回 success 提示）；同包浏览器侧（src/client）provide sessionLogDownload controller，订阅 command/executed 触发下载 /api/session.export，注入 conversation.session.header.utilities slot 挂共享下载对话框，locale 注册。",
+      "provides": ["/export 人类命令（宿主）", "sessionLogDownload controller（浏览器）", "conversation.session.header.utilities slot 条目"],
+      "depends_on": [
+        {"plugin_id": "dsh-commands", "mechanism": "E1", "evidence": "packages/session-query/session-log-export/src/index.ts:4", "purpose": "CommandResult 类型"},
+        {"plugin_id": "dsh-commands", "mechanism": "E2", "evidence": "packages/session-query/session-log-export/src/index.ts:7,19-25", "purpose": "inject ['commands']；ctx.commands.register('export')"},
+        {"plugin_id": "dsh-host-apiproxy", "mechanism": "E2", "evidence": "packages/session-query/session-log-export/src/client/controller.ts:114; packages/host/apiproxy/src/api-proxy.ts:3639-3644", "purpose": "浏览器下载控制器 fetch /api/session.export，由网关 downloads.sessionLog 端点服务"},
+        {"plugin_id": "dsh-client-ui-slots", "mechanism": "E2", "evidence": "packages/session-query/session-log-export/src/client/index.ts:26,40-49", "purpose": "inject ['slots','locale']；slots.inject 头部工具槽"},
+        {"plugin_id": "dsh-web-app", "mechanism": "E3", "evidence": "packages/bundle/web-app/cordis.patch.yml:70-71", "purpose": "insert 行装配（row id session-log-download）"}
+      ],
+      "dependents": []
+    },
+    {
+      "id": "dsh-workspace",
+      "name": "@deepseek-ai/dsh-workspace",
+      "implementation": "工作区实体注册表 ctx.workspaceRegistry：storageDomain 打开 workspace 域（workspaces 表+全局顺序/归档集+pending-mutation 恢复）；sessionPersistence 建 canonical-cwd 头索引与一次性历史 bootstrap；create/get/list/delete/insertBefore/archiveSession，实体经 WorkspaceEntity 校验会话成员。",
+      "provides": ["ctx.workspaceRegistry（WorkspaceRegistry 服务）"],
+      "depends_on": [
+        {"plugin_id": "dsh-storage-domain", "mechanism": "E1", "evidence": "packages/workspace/workspace/package.json:41; src/index.ts:14", "purpose": "DomainGlobal/KvTable 类型与域读写"},
+        {"plugin_id": "dsh-storage-domain", "mechanism": "E2", "evidence": "packages/workspace/workspace/src/index.ts:93,120-124", "purpose": "static inject ['storageDomain']；open workspaceDomainSpec 取表/全局"},
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/workspace/workspace/package.json:43; src/index.ts:12", "purpose": "SessionHeader/SessionId 类型"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/workspace/workspace/src/index.ts:264", "purpose": "ctx.get('sessions') 判定 live 会话"},
+        {"plugin_id": "dsh-session-persistence", "mechanism": "E1", "evidence": "packages/workspace/workspace/package.json:44; src/index.ts:13", "purpose": "Context merge（ctx.sessionPersistence）"},
+        {"plugin_id": "dsh-session-persistence", "mechanism": "E2", "evidence": "packages/workspace/workspace/src/index.ts:129,133,266", "purpose": "list() 头索引 bootstrap 与 sessionKnown 校验"},
+        {"plugin_id": "dsh-web-app", "mechanism": "E3", "evidence": "packages/bundle/web-app/cordis.patch.yml:73-74", "purpose": "insert 行装配"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-host-apiproxy", "evidence": "packages/host/apiproxy/src/index.ts:72; packages/host/apiproxy/src/api-proxy.ts:25-29,1513,1712-1714", "purpose": "static inject 'workspaceRegistry'；workspace.* 域经 ctx.workspaceRegistry 实现"}
+      ]
+    },
+    {
+      "id": "dsh-session-projection-cache",
+      "name": "@deepseek-ai/dsh-session-projection-cache",
+      "implementation": "持久化投影缓存 ctx.sessionProjectionCache：storageDomain 打开 session_projcache 域（sessions 表）；订阅 session/event（turn/end 强制点+count/interval 节流写后置）与 session/disposed（detach 强制点）；冷读阶梯=缓存行→persistence readFrom 尾部→registry restore→fail-soft 写回；写前经 sessions.flush 持久化屏障。",
+      "provides": ["ctx.sessionProjectionCache（SessionProjectionCache 服务）"],
+      "depends_on": [
+        {"plugin_id": "dsh-storage-domain", "mechanism": "E1", "evidence": "packages/session/session-projection-cache/package.json:43; src/index.ts:23", "purpose": "KvTable 类型与域表"},
+        {"plugin_id": "dsh-storage-domain", "mechanism": "E2", "evidence": "packages/session/session-projection-cache/src/index.ts:72,85-87", "purpose": "static inject ['storageDomain']；open projectionCacheDomainSpec"},
+        {"plugin_id": "dsh-session-projection", "mechanism": "E1", "evidence": "packages/session/session-projection-cache/package.json:42; src/index.ts:22", "purpose": "ProjectionCheckpoint/Snapshot 类型"},
+        {"plugin_id": "dsh-session-projection", "mechanism": "E2", "evidence": "packages/session/session-projection-cache/src/index.ts:122,141,169,186", "purpose": "viewCheckpoint/checkpoint/restoreFloor/restore 折叠与恢复"},
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/session/session-projection-cache/package.json:40; src/index.ts:17-18", "purpose": "Session/SessionEvent 类型与 snapshotJsonValue"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/session/session-projection-cache/src/index.ts:150,205,226", "purpose": "sessions.flush 屏障；ctx.on('session/event') 与 ctx.on('session/disposed') 写点"},
+        {"plugin_id": "dsh-session-persistence", "mechanism": "E1", "evidence": "packages/session/session-projection-cache/package.json:41; src/index.ts:21", "purpose": "Context merge（ctx.sessionPersistence）"},
+        {"plugin_id": "dsh-session-persistence", "mechanism": "E2", "evidence": "packages/session/session-projection-cache/src/index.ts:175,179,192", "purpose": "readFrom 尾部重放/全量重读"},
+        {"plugin_id": "dsh-web-app", "mechanism": "E3", "evidence": "packages/bundle/web-app/cordis.patch.yml:76-80", "purpose": "insert 行装配，writeEveryEvents: 200 / writeIntervalMs: 5000"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-host-apiproxy", "evidence": "packages/host/apiproxy/src/api-proxy.ts:860-861", "purpose": "session.list 冷列经 ctx.get('sessionProjectionCache')?.cachedSnapshot 零日志读取"}
+      ]
+    },
+    {
+      "id": "dsh-session-stats",
+      "name": "@deepseek-ai/dsh-session-stats",
+      "implementation": "函数插件：在 ctx.sessionProjections.register 注册 'sessionStats' 投影单元（projection.ts 纯 fold：turn/step 计数、llm/tool/ttft/decode 墙钟与输出 token，zod schema 校验状态），apply 按事件流 step/start、assistant/chunk、assistant/message、tool/call、tool/result 折叠；交付由投影 seam 负责。",
+      "provides": ["sessionStats 投影单元（key 'sessionStats'）"],
+      "depends_on": [
+        {"plugin_id": "dsh-session-projection", "mechanism": "E1", "evidence": "packages/session/session-stats/package.json:47; src/projection.ts:28", "purpose": "ProjectionDefinition 类型"},
+        {"plugin_id": "dsh-session-projection", "mechanism": "E2", "evidence": "packages/session/session-stats/src/index.ts:20,28", "purpose": "inject ['sessionProjections']；register 单元"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/session/session-stats/package.json:45; src/projection.ts:27", "purpose": "isTokenDelta 判定首 token"},
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/session/session-stats/package.json:46", "purpose": "peerDependencies（事件类型）"},
+        {"plugin_id": "dsh-web-app", "mechanism": "E3", "evidence": "packages/bundle/web-app/cordis.patch.yml:82-85", "purpose": "insert 行装配（chat stats strip 的 sessionStats 投影键）"}
+      ],
+      "dependents": []
+    },
+    {
+      "id": "dsh-host-directory-picker-auto",
+      "name": "@deepseek-ai/dsh-host-directory-picker-auto",
+      "implementation": "启动一次采样 bind host/平台/display/Linux chooser 解析交互类型（native|browse），经 ctx.loader.create 把对应后端包（BACKEND_PACKAGES）+客户端 UI 包（SURFACE_PACKAGES）作为真实 Loader 条目挂入内存根树，卸载时按逆序 remove；不动配置树。",
+      "provides": ["挂载 directoryPicker 后端（native|browse）+ 对应客户端 surface 为 Loader 条目"],
+      "depends_on": [
+        {"plugin_id": "dsh-host-webserver", "mechanism": "E1", "evidence": "packages/host/directory-picker-auto/package.json:41; src/index.ts:17", "purpose": "Context merge（ctx.webServer）"},
+        {"plugin_id": "dsh-host-webserver", "mechanism": "E2", "evidence": "packages/host/directory-picker-auto/src/index.ts:29,64", "purpose": "inject ['webServer','loader']；ctx.webServer.host 读有效 bind host"},
+        {"plugin_id": "dsh-cordis-plugin-loader", "mechanism": "E1", "evidence": "packages/host/directory-picker-auto/package.json:36; src/index.ts:16", "purpose": "Context merge（ctx.loader）"},
+        {"plugin_id": "dsh-cordis-plugin-loader", "mechanism": "E2", "evidence": "packages/host/directory-picker-auto/src/index.ts:79-87", "purpose": "ctx.loader.store/remove/create 挂载与卸载条目"},
+        {"plugin_id": "dsh-host-directory-picker-native", "mechanism": "E1", "evidence": "packages/host/directory-picker-auto/package.json:40; src/index.ts:38", "purpose": "native 后端包名（loader.create 挂载）"},
+        {"plugin_id": "dsh-host-directory-picker-browse", "mechanism": "E1", "evidence": "packages/host/directory-picker-auto/package.json:39; src/index.ts:39", "purpose": "browse 后端包名（loader.create 挂载）"},
+        {"plugin_id": "dsh-web-app", "mechanism": "E3", "evidence": "packages/bundle/web-app/cordis.patch.yml:87-91", "purpose": "insert 行装配（row id directory-picker）"}
+      ],
+      "dependents": []
+    },
+    {
+      "id": "dsh-host-plugin-inventory",
+      "name": "@deepseek-ai/dsh-host-plugin-inventory",
+      "implementation": "PluginInventoryGateway（TypertRemoteService）：@Remote('list') 直接遍历 ctx.loader.entries() 投影非 group 条目（entryId/moduleName/enabled/fiberPhase，FiberState→phase 映射），每次调用实时读 Loader，无二级缓存。",
+      "provides": ["ctx.pluginInventory（pluginInventory Typert Remote：list）"],
+      "depends_on": [
+        {"plugin_id": "dsh-cordis-plugin-loader", "mechanism": "E1", "evidence": "packages/host/plugin-inventory/package.json:55; src/index.ts:4", "purpose": "Context merge（ctx.loader）"},
+        {"plugin_id": "dsh-cordis-plugin-loader", "mechanism": "E2", "evidence": "packages/host/plugin-inventory/src/index.ts:44,59-67", "purpose": "static inject ['loader']；ctx.loader.entries() 实时投影"},
+        {"plugin_id": "dsh-typert-protocol", "mechanism": "E1", "evidence": "packages/host/plugin-inventory/package.json:58; src/index.ts:5", "purpose": "TypertRemoteService 与 @Remote"},
+        {"plugin_id": "dsh-web-app", "mechanism": "E3", "evidence": "packages/bundle/web-app/cordis.patch.yml:93-95", "purpose": "insert 行装配（read-only Loader 投影供可信客户端 RPC）"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-api-remotes", "evidence": "packages/api/remotes/src/client/index.ts:7,109", "purpose": "client Remote 装配挂载 pluginInventoryRemote 命名空间"}
+      ]
+    },
+    {
+      "id": "dsh-host-apiproxy",
+      "name": "@deepseek-ai/dsh-host-apiproxy",
+      "implementation": "ApiProxyService 提供 ctx.apiProxy 传输无关网关：createApiProxy 实现 api/ 契约各域（sessions/subagents/workspace/host/goals/skills/agentPresets/settings/credentials/llm/events/downloads/respond），模型选择读写 ctx.agentDefaultModel，session-export 支持 ZIP 下载；静态 inject 声明 11 个宿主服务，另经 ctx.get 可选解析投影/设置/凭据等。",
+      "override_base": "dsh-api-gateway",
+      "provides": ["ctx.apiProxy（ApiProxy 网关：sessions/subagents/workspace/host/goals/skills/agentPresets/settings/credentials/llm/events/downloads/respond）"],
+      "depends_on": [
+        {"plugin_id": "dsh-api-gateway", "mechanism": "E3", "evidence": "packages/bundle/web-app/cordis.patch.yml:97-100", "purpose": "E3 override：row id api-gateway 覆盖 base 层 api-gateway 行（name 换为 dsh-host-apiproxy）"},
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:10-11", "purpose": "installModelSelection/Agent 类型，模型切换实现"},
+        {"plugin_id": "dsh-agent", "mechanism": "E2", "evidence": "packages/host/apiproxy/src/index.ts:71; api-proxy.ts:1600-1602", "purpose": "static inject 'agents'；live agent 解析"},
+        {"plugin_id": "dsh-agent-default-model", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/index.ts:17", "purpose": "Context merge（ctx.agentDefaultModel）"},
+        {"plugin_id": "dsh-agent-default-model", "mechanism": "E2", "evidence": "packages/host/apiproxy/src/index.ts:70,99-100", "purpose": "static inject；currentSelection/saveSelection 持久默认模型"},
+        {"plugin_id": "dsh-agent-presets", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:31-36; package.json:79", "purpose": "resolveSessionPreset/preset 错误类型（agentPresets.* 域）"},
+        {"plugin_id": "dsh-agent-presets", "mechanism": "E2", "evidence": "packages/host/apiproxy/src/api-proxy.ts:1231,1602,1797,3066", "purpose": "ctx.get('agentPresets') 解析 preset 组合/服务"},
+        {"plugin_id": "dsh-attachment", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:13-14", "purpose": "AttachmentError/ImageAttachmentRef（会话图片域）"},
+        {"plugin_id": "dsh-attachment", "mechanism": "E2", "evidence": "packages/host/apiproxy/src/index.ts:71", "purpose": "static inject 'attachments'；imageLimits 投影（api-proxy.ts:1315-1321）"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:15-17", "purpose": "createUserMessage/freezeMessage/ReasoningEffortId（llm 域）"},
+        {"plugin_id": "dsh-llm", "mechanism": "E2", "evidence": "packages/host/apiproxy/src/index.ts:71; api-proxy.ts:1837", "purpose": "static inject 'llm'；ctx.get('llm') 模型目录"},
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:18-19", "purpose": "Session/SessionEvent/SessionId 类型"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/host/apiproxy/src/index.ts:71; api-proxy.ts:1499,1735", "purpose": "static inject 'sessions'；会话枚举/列表"},
+        {"plugin_id": "dsh-session-persistence", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:20,54", "purpose": "SessionPersistence/SessionRawArtifact 类型"},
+        {"plugin_id": "dsh-session-persistence", "mechanism": "E2", "evidence": "packages/host/apiproxy/src/api-proxy.ts:1634,1738,3644-3646", "purpose": "ctx.get('sessionPersistence') 冷会话/导出"},
+        {"plugin_id": "dsh-session-projection", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:60-61", "purpose": "Context merge（ctx.sessionProjections）"},
+        {"plugin_id": "dsh-session-projection", "mechanism": "E2", "evidence": "packages/host/apiproxy/src/api-proxy.ts:842,1283-1296", "purpose": "ctx.get('sessionProjections') snapshot/onChanged 投影帧广播"},
+        {"plugin_id": "dsh-session-projection-cache", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:65-66", "purpose": "Context merge（ctx.sessionProjectionCache）"},
+        {"plugin_id": "dsh-session-projection-cache", "mechanism": "E2", "evidence": "packages/host/apiproxy/src/api-proxy.ts:860-861", "purpose": "session.list 冷列 cachedSnapshot"},
+        {"plugin_id": "dsh-session-query", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:21", "purpose": "SessionQueryEngine/SessionSearchCursor 类型"},
+        {"plugin_id": "dsh-session-query", "mechanism": "E2", "evidence": "packages/host/apiproxy/src/index.ts:71; api-proxy.ts:2043", "purpose": "static inject 'sessionQuery'；会话全文搜索"},
+        {"plugin_id": "dsh-workspace", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:25-29", "purpose": "workspace 域值类型与错误"},
+        {"plugin_id": "dsh-workspace", "mechanism": "E2", "evidence": "packages/host/apiproxy/src/index.ts:72; api-proxy.ts:1513,1712-1714,2805-2829", "purpose": "static inject 'workspaceRegistry'；workspace.* 端点"},
+        {"plugin_id": "dsh-subagent", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:22-23", "purpose": "SubagentError/SubagentListEntry 类型"},
+        {"plugin_id": "dsh-subagent", "mechanism": "E2", "evidence": "packages/host/apiproxy/src/index.ts:71", "purpose": "static inject 'subagents'"},
+        {"plugin_id": "dsh-tools", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:37", "purpose": "Context merge（ctx.tools）"},
+        {"plugin_id": "dsh-tools", "mechanism": "E2", "evidence": "packages/host/apiproxy/src/index.ts:72; api-proxy.ts:758,767", "purpose": "static inject 'tools'；presentCall/presentResult 视图"},
+        {"plugin_id": "dsh-user-questions", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:97-100", "purpose": "AskUserQuestion* 类型"},
+        {"plugin_id": "dsh-user-questions", "mechanism": "E2", "evidence": "packages/host/apiproxy/src/index.ts:72", "purpose": "static inject 'userQuestions'"},
+        {"plugin_id": "dsh-settings", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:81-83", "purpose": "settingsNamespace/SettingsDescriptor（settings.* 域）"},
+        {"plugin_id": "dsh-settings", "mechanism": "E2", "evidence": "packages/host/apiproxy/src/api-proxy.ts:1983,3262", "purpose": "ctx.get('settings') 命名空间读写"},
+        {"plugin_id": "dsh-credentials", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:83-84", "purpose": "credentialRef（credentials.* 域）"},
+        {"plugin_id": "dsh-credentials", "mechanism": "E2", "evidence": "packages/host/apiproxy/src/api-proxy.ts:3323-3338", "purpose": "ctx.get('credentials') 凭据域"},
+        {"plugin_id": "dsh-skill", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:24,77", "purpose": "isUserInvocable（skills 域）"},
+        {"plugin_id": "dsh-skill", "mechanism": "E2", "evidence": "packages/host/apiproxy/src/api-proxy.ts:3236", "purpose": "ctx.get('skills') 技能目录"},
+        {"plugin_id": "dsh-goal", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:68-69", "purpose": "GoalError/GoalRef（goals 域）"},
+        {"plugin_id": "dsh-goal", "mechanism": "E2", "evidence": "packages/host/apiproxy/src/api-proxy.ts:1798", "purpose": "ctx.get('goals') 目标服务"},
+        {"plugin_id": "dsh-jobs", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:62-64", "purpose": "Context merge（ctx.tasks）；JobSnapshot"},
+        {"plugin_id": "dsh-jobs", "mechanism": "E2", "evidence": "packages/host/apiproxy/src/api-proxy.ts:3461", "purpose": "ctx.get('jobs') 后台任务域"},
+        {"plugin_id": "dsh-cordis-host-runner", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:76", "purpose": "type-only 引用 client-safe ./types（动态包转发事件，避免环）"},
+        {"plugin_id": "dsh-api-remotes", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:102-110", "purpose": "ApiRemote* 会话/子代理转发事件"},
+        {"plugin_id": "dsh-host-directory-picker", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:101", "purpose": "DirectoryPickerError"},
+        {"plugin_id": "dsh-host-directory-picker", "mechanism": "E2", "evidence": "packages/host/apiproxy/src/index.ts:71", "purpose": "static inject 'directoryPicker'"},
+        {"plugin_id": "dsh-session-title", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:84-85", "purpose": "SessionTitleInvalidError"},
+        {"plugin_id": "dsh-session-title", "mechanism": "E2", "evidence": "packages/host/apiproxy/src/api-proxy.ts:2337", "purpose": "ctx.get('sessionTitle') 重命名校验"},
+        {"plugin_id": "dsh-user-approval", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:88-91", "purpose": "ApprovalOutcome/ApprovalRequestId"},
+        {"plugin_id": "dsh-user-approval", "mechanism": "E2", "evidence": "packages/host/apiproxy/src/api-proxy.ts:1414", "purpose": "ctx.get('approval') 审批瀑布（可选组合）"},
+        {"plugin_id": "dsh-scope", "mechanism": "E1", "evidence": "packages/host/apiproxy/src/api-proxy.ts:87", "purpose": "ScopeKey 类型"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-session-log-export", "evidence": "packages/session-query/session-log-export/src/client/controller.ts:114; packages/host/apiproxy/src/api-proxy.ts:3639-3689", "purpose": "浏览器下载控制器消费网关 downloads.sessionLog 端点（/api/session.export）"},
+        {"plugin_id": "dsh-client-connection", "evidence": "packages/bundle/web-app/cordis.patch.yml:154-157", "purpose": "E3：connection 行 node half 把网关绑定到 webserver 的 /api 下"}
+      ]
+    },
+    {
+      "id": "dsh-cordis-host-runner",
+      "name": "@deepseek-ai/dsh-cordis-host-runner",
+      "implementation": "DynamicCordisRunnerService（TypertRemote）：define/undefine/run/stop 模型装配的动态双半 Cordis 插件包；sandbox.ts VM 求值 host code + guard 门禁，lifecycle.ts 把 host 半挂入 cordis-dynamic group 子 fiber；发 cordis/request-run 审批事件；另提供 cordisInspect 注册表（inspect-registry.ts）。",
+      "provides": ["ctx.dynamicCordisRunner（define/undefine/run/stop/approval）", "ctx.cordisInspect（CordisInspectRegistryService）", "cordis/request-run 事件", "dynamic 相关 Typert Remote"],
+      "depends_on": [
+        {"plugin_id": "dsh-tools", "mechanism": "E1", "evidence": "packages/extensions/cordis-host-runner/src/inspect-registry.ts:8; package.json:63", "purpose": "assertSupportedJsonSchema/JsonSchemaNode（inspect manifest 校验）"},
+        {"plugin_id": "dsh-tools", "mechanism": "E2", "evidence": "packages/extensions/cordis-host-runner/src/index.ts:125", "purpose": "static inject ['tools']"},
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/extensions/cordis-host-runner/package.json:57; src/index.ts:10", "purpose": "Agent 类型（会话所有权）"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/extensions/cordis-host-runner/package.json:60; src/index.ts:11", "purpose": "createUserMessage 注入用户上下文"},
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/extensions/cordis-host-runner/package.json:62; src/inspect-registry.ts:6-7", "purpose": "snapshotJsonValue/JsonValue"},
+        {"plugin_id": "dsh-typert-protocol", "mechanism": "E1", "evidence": "packages/extensions/cordis-host-runner/package.json:64; src/index.ts:13", "purpose": "TypertRemoteService/@Remote"},
+        {"plugin_id": "dsh-scope", "mechanism": "E1", "evidence": "packages/extensions/cordis-host-runner/package.json:61", "purpose": "peerDependencies（宿主/客户端作用域）"},
+        {"plugin_id": "dsh-cordis", "mechanism": "E1", "evidence": "packages/extensions/cordis-host-runner/package.json:56; src/index.ts:7-9", "purpose": "Context/Fiber 与 ctx.emit('cordis/request-run')（index.ts:291）"},
+        {"plugin_id": "dsh-web-app", "mechanism": "E3", "evidence": "packages/bundle/web-app/cordis.patch.yml:102-103", "purpose": "insert 行装配"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-api-remotes", "evidence": "packages/api/remotes/src/client/index.ts:6,109", "purpose": "client Remote 装配挂载 dynamicRemote 命名空间"},
+        {"plugin_id": "dsh-host-apiproxy", "evidence": "packages/host/apiproxy/src/api-proxy.ts:76", "purpose": "type-only 引用 client-safe ./types（转发事件签名）"}
+      ]
+    },
+    {
+      "id": "dsh-host-webserver",
+      "name": "@deepseek-ai/dsh-host-webserver",
+      "implementation": "node:http 服务器 + ctx.webServer 服务：exact/prefix 路由表 register、upgrade 路由 registerUpgrade、单占用 fallback 兜底座 registerFallback、index 变换 tapIndex；监听即激活，bind host/port 来自行配置表达式（webStartup 提供）；不感知 harness 概念、不打印 URL。",
+      "provides": ["ctx.webServer（WebServer：register/registerUpgrade/registerFallback/tapIndex，port/host getter）"],
+      "depends_on": [
+        {"plugin_id": "dsh-cordis", "mechanism": "E1", "evidence": "packages/host/webserver/src/index.ts:15-16", "purpose": "Cordis Service 基类与 ctx.webServer 声明合并"},
+        {"plugin_id": "dsh-web-app", "mechanism": "E3", "evidence": "packages/bundle/web-app/cordis.patch.yml:115-120", "purpose": "E3 装配注入：inject: [webStartup]（:117），host/port 表达式 ctx.webStartup.host ?? '127.0.0.1'（:119-120）"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-host-directory-picker-auto", "evidence": "packages/host/directory-picker-auto/src/index.ts:29,64", "purpose": "inject ['webServer']；ctx.webServer.host 解析目录选择器后端"},
+        {"plugin_id": "dsh-web-app", "evidence": "packages/bundle/web-app/src/index.ts:35,110,136,167", "purpose": "inject ['webServer']；host/port 解析 webRuntime 信任与 URL"},
+        {"plugin_id": "dsh-client-connection", "evidence": "packages/bundle/web-app/cordis.patch.yml:154-157", "purpose": "E3：connection 行 node half 把网关绑定到 webserver /api 下"}
+      ]
+    },
+    {
+      "id": "dsh-web-app",
+      "name": "@deepseek-ai/dsh-web-app",
+      "implementation": "双入口合并：web-startup（@deepseek-ai/dsh-web-app/startup）解析 --host/--port/--trusted-host 后 ctx.provide webStartup 服务；web-runtime（主插件）解析前端 dist（@deepseek-ai/dsh-web-frontend），ctx.plugin(FrontendStatic) 挂 fallback 兜底，注册 app:web-surface prompt 段与 DSH_WEB_URL shell 变量，采样 LAN 信任后提供 webRuntime，Loader 就绪后打印 URL 行。",
+      "provides": ["webStartup 服务（web-startup 入口）", "webRuntime 服务（web-runtime 入口）", "app:web-surface prompt 段", "DSH_WEB_URL bash 变量", "frontend-static fallback 兜底", "URL 就绪行"],
+      "depends_on": [
+        {"plugin_id": "dsh-cmdline", "mechanism": "E1", "evidence": "packages/bundle/web-app/src/startup.ts:11,81", "purpose": "parseCmdline 解析 web flag 族"},
+        {"plugin_id": "dsh-cmdline-args", "mechanism": "E2", "evidence": "packages/bundle/web-app/src/startup.ts:17", "purpose": "inject ['cmdlineArgs']：命令行动作回调依赖其已解析"},
+        {"plugin_id": "dsh-host-webserver", "mechanism": "E1", "evidence": "packages/bundle/web-app/src/index.ts:21", "purpose": "Context merge（ctx.webServer）"},
+        {"plugin_id": "dsh-host-webserver", "mechanism": "E2", "evidence": "packages/bundle/web-app/src/index.ts:35,110,136,167", "purpose": "inject ['webServer']；host/port 采样 LAN 信任与 URL"},
+        {"plugin_id": "dsh-host-frontend-static", "mechanism": "E1", "evidence": "packages/bundle/web-app/src/index.ts:19", "purpose": "FrontendStatic 插件导入"},
+        {"plugin_id": "dsh-host-frontend-static", "mechanism": "E2", "evidence": "packages/bundle/web-app/src/index.ts:139", "purpose": "ctx.plugin(FrontendStatic, { distIndex }) 挂载 dist fallback"},
+        {"plugin_id": "dsh-app-boot", "mechanism": "E1", "evidence": "packages/bundle/web-app/src/index.ts:18,142", "purpose": "addHarnessSourceSection 注册 harness-source prompt 段"},
+        {"plugin_id": "dsh-system-prompt", "mechanism": "E1", "evidence": "packages/bundle/web-app/package.json:111; src/index.ts:22", "purpose": "Context merge（ctx.systemPrompt）"},
+        {"plugin_id": "dsh-system-prompt", "mechanism": "E2", "evidence": "packages/bundle/web-app/src/index.ts:141-147", "purpose": "ctx.inject(['systemPrompt']) 注册 app:web-surface 段"},
+        {"plugin_id": "dsh-shell-env", "mechanism": "E1", "evidence": "packages/bundle/web-app/package.json:109; src/index.ts:23", "purpose": "Context merge（ctx.shellEnv）"},
+        {"plugin_id": "dsh-shell-env", "mechanism": "E2", "evidence": "packages/bundle/web-app/src/index.ts:149-157", "purpose": "ctx.inject(['shellEnv']) 注册 DSH_WEB_URL 变量"},
+        {"plugin_id": "dsh-cordis-plugin-loader", "mechanism": "E1", "evidence": "packages/bundle/web-app/package.json:108; src/index.ts:20", "purpose": "Context merge（ctx.loader）"},
+        {"plugin_id": "dsh-cordis-plugin-loader", "mechanism": "E2", "evidence": "packages/bundle/web-app/src/index.ts:173", "purpose": "ctx.get('loader')?.await() 就绪后才打印 URL"},
+        {"plugin_id": "dsh-web-frontend", "mechanism": "E1", "evidence": "packages/bundle/web-app/src/index.ts:116-124; package.json:88", "purpose": "require.resolve dist/index.html 定位前端产物"},
+        {"plugin_id": "dsh-cordis", "mechanism": "E1", "evidence": "packages/bundle/web-app/package.json:112", "purpose": "peerDependencies"},
+        {"plugin_id": "dsh-web-app", "mechanism": "E3", "evidence": "packages/bundle/web-app/cordis.patch.yml:107-137", "purpose": "E3：web-startup 行（:107-108）+ web-runtime 行（:130-136，inject: [webStartup] :132，trustedHosts 表达式 :136）归并"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-host-webserver", "evidence": "packages/bundle/web-app/cordis.patch.yml:115-120", "purpose": "E3：webserver 行 inject: [webStartup]（:117），host/port 读 ctx.webStartup"},
+        {"plugin_id": "dsh-client-connection", "evidence": "packages/bundle/web-app/cordis.patch.yml:156-163", "purpose": "E3：connection 行 inject: [webRuntime]（:158），trustedHosts 读 ctx.webRuntime（:163）"}
+      ]
+    },
+    {
+      "id": "dsh-agent-presets",
+      "name": "@deepseek-ai/dsh-agent-presets",
+      "implementation": "AgentPresets 服务（ctx.agentPresets）：discovery 扫描配置根+用户根，preset 组合文件按 preset 单飞 standing mount（standing map），mount() 经 bindScopeParent 把 agent scope 父链到挂载；settings 命名空间存默认 preset（热重载）；监听 agent/created 告警未入册 agent、转发 agent-preset/selected 事件。",
+      "provides": ["ctx.agentPresets（list/resolve/mount/composeFrom/read/copy/roots）", "agent-preset/selected 事件", "settings 命名空间 'agent-presets'"],
+      "depends_on": [
+        {"plugin_id": "dsh-cordis-plugin-loader", "mechanism": "E2", "evidence": "packages/preset/agent-presets/src/index.ts:83", "purpose": "static inject ['loader']（standing mount 装配入口）"},
+        {"plugin_id": "dsh-scope", "mechanism": "E1", "evidence": "packages/preset/agent-presets/package.json:46; src/index.ts:27", "purpose": "bindScopeParent/createScope/scopeOf"},
+        {"plugin_id": "dsh-scope", "mechanism": "E2", "evidence": "packages/preset/agent-presets/src/index.ts:286,323", "purpose": "bindScopeParent 把 agent scope 父链到 standing 挂载"},
+        {"plugin_id": "dsh-settings", "mechanism": "E1", "evidence": "packages/preset/agent-presets/package.json:48; src/index.ts:30", "purpose": "settingsNamespace/SettingsScope"},
+        {"plugin_id": "dsh-settings", "mechanism": "E2", "evidence": "packages/preset/agent-presets/src/index.ts:141-147", "purpose": "ctx.inject(['settings'])；settings.register 默认 preset 命名空间"},
+        {"plugin_id": "dsh-home-paths", "mechanism": "E1", "evidence": "packages/preset/agent-presets/package.json:45; src/index.ts:31", "purpose": "dshHomePath(USER_PRESET_DIR) 用户根"},
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/preset/agent-presets/package.json:42; src/index.ts:29", "purpose": "Context merge（agent/created 事件）"},
+        {"plugin_id": "dsh-agent", "mechanism": "E2", "evidence": "packages/preset/agent-presets/src/index.ts:166-174", "purpose": "ctx.on('agent/created') 告警未加入 preset 的 agent"},
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/preset/agent-presets/package.json:47", "purpose": "peerDependencies（session/event）"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/preset/agent-presets/src/index.ts:178-181", "purpose": "ctx.on('session/event') agent-preset/selected 转发为宿主事件"},
+        {"plugin_id": "dsh-atomic-write", "mechanism": "E1", "evidence": "packages/preset/agent-presets/package.json:43", "purpose": "peerDependencies（authoring 原子写）"},
+        {"plugin_id": "dsh-system-prompt", "mechanism": "E1", "evidence": "packages/preset/agent-presets/package.json:49", "purpose": "peerDependencies（preset 组合内 prompt 段）"},
+        {"plugin_id": "dsh-web-app", "mechanism": "E3", "evidence": "packages/bundle/web-app/cordis.patch.yml:420-424", "purpose": "insert 行装配，config.default: standard（:424）"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-host-apiproxy", "evidence": "packages/host/apiproxy/src/api-proxy.ts:31-36,1231,1602,1797", "purpose": "E1 值导入 + E2 ctx.get('agentPresets') 服务 agentPresets.* 域"},
+        {"plugin_id": "dsh-agent", "evidence": "packages/preset/agent-presets/src/index.ts:18-20,275-288", "purpose": "agent 工厂 setup(agentCtx) 是唯一受支持的 mount 调用点，组成失败回滚 agent 创建"}
+      ]
+    }
+  ]
+}

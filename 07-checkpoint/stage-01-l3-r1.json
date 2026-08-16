@@ -1,0 +1,180 @@
+[
+  {
+    "id": "dsh-fs-e2b",
+    "name": "@deepseek-ai/dsh-fs-e2b",
+    "implementation": "E2BFileSystem extends FileSystem seam (src/index.ts:171), static inject ['e2b'] (:172) pulls ctx.e2b sandbox; 所有 fs 操作(resolve/read/write/edit/list/stat) 经 sandbox.files/sandbox.commands 执行，canonicalPath 用 realpath+base64 传输 (:443-454)，写入走 staging 目录+原子 rename/guarded ln 发布 (:510-579)，per-targetKey 锁 (:431-441)，版本用 entry 事实 sha256 (:122-133)，含 CRLF/二进制检测。",
+    "provides": ["ctx.fs (FileSystem seam 的 E2B 远程后端，E2BFileSystem extends FileSystem)"],
+    "depends_on": [
+      {"plugin_id": "dsh-e2b", "mechanism": "E1+E2", "evidence": "package.json:35 peerDep + src/index.ts:21-28 import；E2: src/index.ts:172 static inject=['e2b']、:181 ctx.e2b.getSandbox()、:179 ctx.e2b.cwd", "purpose": "共享远程沙箱访问与控制环境变量"},
+      {"plugin_id": "dsh-fs", "mechanism": "E1", "evidence": "package.json:36 peerDep + src/index.ts:10 import { FileSystem, FsError, FsTargetKey }", "purpose": "FileSystem 能力 seam 抽象基座"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E1", "evidence": "package.json:37 peerDep", "purpose": "断言/不变量工具"},
+      {"plugin_id": "cordis", "mechanism": "E1", "evidence": "package.json:38 peerDep", "purpose": "Cordis 插件框架"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-subprocess-e2b",
+    "name": "@deepseek-ai/dsh-subprocess-e2b",
+    "implementation": "E2BSubprocessRuntime extends SubprocessRuntime (src/index.ts:52)，static inject ['e2b'] (:53) 注册 ctx.subprocess；spawn 在 ctx.e2b.runtimeRoot/processes 下建 stateDir 生成 E2BSubprocessHandle (:150-151)，spawnTerminal 走 spawnE2BTerminal (:180)，pollMs 控制面轮询 (:69-73)，dispose 统一终止 live handles/terminals (:74-99)，resolveExecutable 经 sandbox.commands.run 解析 PATH (:110-137)。",
+    "provides": ["ctx.subprocess (SubprocessRuntime seam 的 E2B provider)"],
+    "depends_on": [
+      {"plugin_id": "dsh-e2b", "mechanism": "E1+E2", "evidence": "package.json:35 peerDep + src/index.ts:19 import { e2bControlEnvs, quoteE2BShellArg }；E2: :53 inject=['e2b']、:110 ctx.e2b.getSandbox()、:150 ctx.e2b.runtimeRoot", "purpose": "共享远程沙箱与命令执行"},
+      {"plugin_id": "dsh-subprocess", "mechanism": "E1", "evidence": "package.json:37 peerDep + src/index.ts:11 import { SubprocessRuntime }", "purpose": "SubprocessRuntime 能力 seam 基座"},
+      {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "package.json:38 peerDep + src/index.ts:12 import { MAX_TIMER_DELAY_MS }；:46 用于 graceMs 上限校验", "purpose": "远程 grace 期限上限"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E1", "evidence": "package.json:36 peerDep", "purpose": "断言工具"},
+      {"plugin_id": "cordis", "mechanism": "E1", "evidence": "package.json:39 peerDep + src/index.ts:9 import Context", "purpose": "Cordis 插件框架"},
+      {"plugin_id": "schemastery", "mechanism": "E1", "evidence": "package.json:42 deps + src/index.ts:10 import z", "purpose": "配置 schema (pollMs)"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-terminal-bash",
+    "name": "@deepseek-ai/dsh-terminal-bash",
+    "implementation": "BashTerminalBackend implements TerminalBackend (src/index.ts:102)，apply 经 ctx.terminals.registerBackend (:152) 注册 'shell' backend；spawn 解析 sandboxPolicy (:122)、danger-full-access 外经 ctx.sandbox.confine 包裹 argv (:74-79)、subprocess.spawnTerminal 生成 SubprocessTerminalHandle (:125)、LocalPtySession 封装 (:134)；ensureSandboxModeFence 在存活 PTY 期间拒绝 sandbox/mode 切换 (:34-53)；childEnvironment 注入 DSH_* 环境 (:55-69)。",
+    "provides": ["ctx.terminals 的 PTY backend type='shell'（config.ts:45 backendType 默认 'shell'）"],
+    "depends_on": [
+      {"plugin_id": "dsh-terminal", "mechanism": "E1+E2", "evidence": "package.json:37 peerDep + src/index.ts:10-11 import { TerminalBackend }；E2: :25 inject=['terminals','sandboxPolicy','subprocess']、:152 ctx.terminals.registerBackend", "purpose": "终端能力 seam 后端注册"},
+      {"plugin_id": "dsh-subprocess", "mechanism": "E1+E2", "evidence": "package.json:41 peerDep + src/index.ts:12 import SubprocessTerminalHandle；E2: :110 ctx.subprocess.spawnTerminal(spec)", "purpose": "PTY 进程基座（本地 subprocess-local 或远程 subprocess-e2b）"},
+      {"plugin_id": "dsh-sandbox", "mechanism": "E1+E2", "evidence": "package.json:38 peerDep + src/index.ts:13 import SandboxExecutionPolicy；E2: :74 ctx.get('sandbox')、:79 sandbox.confine(argv)", "purpose": "非 full-access 模式下 argv 沙箱包裹"},
+      {"plugin_id": "dsh-sandbox-policy", "mechanism": "E1+E2", "evidence": "package.json:39 peerDep + src/index.ts:14 import effectiveSandboxMode；E2: :25 inject、:122 ctx.sandboxPolicy.resolve", "purpose": "沙箱模式决策与默认模式"},
+      {"plugin_id": "dsh-session", "mechanism": "E1+E2", "evidence": "package.json:40 peerDep + src/index.ts:9 import Session/SessionEvent；E2: :45-46 owner.ctx.on('internal/dispatch','session/event') 订阅 sandbox/mode", "purpose": "会话事件驱动模式围栏"},
+      {"plugin_id": "dsh-agent", "mechanism": "E1+E2", "evidence": "package.json:35 peerDep + src/index.ts:8 import type Agent；E2: :43 owner.ctx.on、:47 owner.session", "purpose": "owner 隔离与 agent 事件上下文"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E1", "evidence": "package.json:36 peerDep", "purpose": "断言工具"},
+      {"plugin_id": "cordis", "mechanism": "E1", "evidence": "package.json:42 peerDep + src/index.ts:7 import Context", "purpose": "Cordis 插件框架"},
+      {"plugin_id": "schemastery", "mechanism": "E1", "evidence": "package.json:44 deps + src/config.ts:44 Config schema", "purpose": "后端配置校验"}
+    ],
+    "dependents": [
+      {"plugin_id": "dsh-tool-terminal", "evidence": "E2 运行时：tool-terminal/src/index.ts:184-188 ctx.terminals.spawn(owner,{type:args.type}) 消费 'shell' backend；本包 config.ts:45 注册该 type", "purpose": "六种 terminal_* 工具的 PTY 后端"},
+      {"plugin_id": "dsh-tool-bash-persistent", "evidence": "E2 运行时：tool-bash-persistent/src/index.ts:418,427 backendType 默认 'shell'，:234 ctx.terminals.spawn", "purpose": "持久 bash 工具的 PTY 后端"},
+      {"plugin_id": "dsh-e2b（测试）", "evidence": "e2b/e2b/tests/composition.e2e.ts:15 import { BashTerminalBackend }（仅测试引用，非生产）", "purpose": "E2B 组合 e2e 验证"}
+    ]
+  },
+  {
+    "id": "dsh-tool-terminal",
+    "name": "@deepseek-ai/dsh-tool-terminal",
+    "implementation": "注册六个 model-facing 工具 terminal_open/send/read/signal/close/list (src/index.ts:162-398)，inject ['terminals','tools','systemPrompt'] (:27)；owner=exec.agent 隔离 (:118,:184)；run_in_background 经 ctx.get('jobs') 起 pty-send job (:252-275)，declare module 扩展 JobKindMap (:18-22)；maxResultBytes 输出上限 (:30,:45)；systemPrompt.section 引导 (:156-160)。",
+    "provides": ["tools: terminal_open/terminal_send/terminal_read/terminal_signal/terminal_close/terminal_list", "dsh-jobs JobKindMap 扩展 'pty-send'"],
+    "depends_on": [
+      {"plugin_id": "dsh-terminal", "mechanism": "E1+E2", "evidence": "package.json:41 peerDep + src/index.ts:11-12 import TerminalSessionId/TerminalSendResult；E2: :27 inject、:184 ctx.terminals.spawn、:261 ctx.terminals.startSend、:349 ctx.terminals.signal", "purpose": "PTY 会话服务"},
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "package.json:45 peerDep + src/index.ts:14-15 import defineTool；E2: :27 inject、:162 ctx.tools.register", "purpose": "工具注册与 ToolDefinition"},
+      {"plugin_id": "dsh-agent", "mechanism": "E1+E2", "evidence": "package.json:38 peerDep + src/index.ts:9 import type Agent；E2: :118 requireAgent(exec.agent)", "purpose": "owner 隔离与 agent 上下文"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "package.json:40 peerDep + src/index.ts:10 import type ContentBlock", "purpose": "输出内容块类型"},
+      {"plugin_id": "dsh-jobs", "mechanism": "E1+E2", "evidence": "package.json:44 peerDep + src/index.ts:13,18-22 JobKindMap 扩展；E2: :252 ctx.get('jobs')、:255 jobs.start", "purpose": "run_in_background 后台任务"},
+      {"plugin_id": "dsh-system-prompt", "mechanism": "E1+E2", "evidence": "package.json:43 peerDep + src/index.ts:27 inject；E2: :156 ctx.systemPrompt.section", "purpose": "终端使用 prompt 引导"},
+      {"plugin_id": "dsh-output-retention", "mechanism": "E1", "evidence": "package.json:42 peerDep", "purpose": "输出保留策略"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E1", "evidence": "package.json:39 peerDep", "purpose": "断言工具"},
+      {"plugin_id": "cordis", "mechanism": "E1", "evidence": "package.json:46 peerDep + src/index.ts:7 import Context", "purpose": "Cordis 插件框架"},
+      {"plugin_id": "schemastery", "mechanism": "E1", "evidence": "package.json:34 deps + src/index.ts:8 import z、:43 Config schema", "purpose": "配置 schema"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-bash-persistent",
+    "name": "@deepseek-ai/dsh-tool-bash-persistent",
+    "implementation": "注册单个持久 `bash` 工具 (src/index.ts:374-398)；persistentShells 以 WeakMap/Map 缓存 owner→PTY session (:200-270)，经 ctx.terminals.spawn(backendType) (:234) 创建、stty/PS1 初始化 (:246-250)；命令以 nonce 起止标记包裹 (:62-83)，轮询 scrollback 收尾 (:145-168)，deadline 超时→reset (:280,:307-321)，shell 退出→reset (:330-341)；per-owner 串行队列 (:362-372)；inject ['tools','terminals'] (:402)。",
+    "provides": ["tool: bash（owner 作用域持久 shell）"],
+    "depends_on": [
+      {"plugin_id": "dsh-terminal", "mechanism": "E1+E2", "evidence": "package.json:36 peerDep + src/index.ts:10 import TerminalReadResult/TerminalSendResult；E2: :402 inject=['tools','terminals']、:234 ctx.terminals.spawn、:246 ctx.terminals.startSend、:306 ctx.terminals.read、:209 ctx.terminals.kill", "purpose": "PTY 会话服务"},
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "package.json:38 peerDep + src/index.ts:12 import defineTool；E2: :374 ctx.tools.register", "purpose": "工具注册"},
+      {"plugin_id": "dsh-agent", "mechanism": "E1+E2", "evidence": "package.json:34 peerDep + src/index.ts:9 import type Agent；E2: :391 exec.agent owner、:201-204 per-owner 缓存", "purpose": "owner 隔离与 shell 生命周期"},
+      {"plugin_id": "dsh-timeout", "mechanism": "E1+E2", "evidence": "package.json:37 peerDep + src/index.ts:11 import { deadline, timeoutOf }；E2: :280 using commandDeadline = deadline(...)", "purpose": "单命令超时控制"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E1", "evidence": "package.json:35 peerDep", "purpose": "断言工具"},
+      {"plugin_id": "cordis", "mechanism": "E1", "evidence": "package.json:39 peerDep + src/index.ts:7 import Context", "purpose": "Cordis 插件框架"},
+      {"plugin_id": "schemastery", "mechanism": "E1", "evidence": "package.json:41 deps + src/index.ts:8 import z、:417 Config schema", "purpose": "配置 schema"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-schedule",
+    "name": "@deepseek-ai/dsh-schedule",
+    "implementation": "inject ['agents','sessions','tools','sessionPersistence'] (src/index.ts:35)；apply 订阅 agent/created (:45)，仅对 root agents 创建 ScheduleRuntime (:47) 并注册 schedule_create/list/delete 工具 (:49，tools.ts:318/400/420)，监听 agent/status idle→runtime.requestDrive (:50-54)；基于 session event log 的 durable after/at/fixed-rate 提醒，持久化经 sessionPersistence seam。",
+    "provides": ["tools: schedule_create/schedule_list/schedule_delete", "每 root agent 的 ScheduleRuntime 实例"],
+    "depends_on": [
+      {"plugin_id": "dsh-agent", "mechanism": "E1+E2", "evidence": "package.json:35 peerDep + src/index.ts:7 import type Agent；E2: :45 ctx.on('agent/created')、:46 ctx.agents.roots()、:47 new ScheduleRuntime(ctx, agent)", "purpose": "root agent 生命周期与 owner 作用域"},
+      {"plugin_id": "dsh-session", "mechanism": "E1+E2", "evidence": "package.json:39 peerDep + src/index.ts:8 import type Session/SessionEvent；E2: :51 agent.session.events 读 schedule/change 事件", "purpose": "session 事件日志（提醒持久化载体）"},
+      {"plugin_id": "dsh-session-persistence", "mechanism": "E1+E2", "evidence": "package.json:40 peerDep + src/index.ts:8 import type {}（side-effect merge）；E2: :35 inject=['agents','sessions','tools','sessionPersistence']", "purpose": "session 持久化 seam"},
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "package.json:41 peerDep + src/tools.ts:9 import defineTool；E2: src/index.ts:49 registerScheduleTools(ctx,...)", "purpose": "工具注册"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "package.json:38 peerDep", "purpose": "提醒渲染类型"},
+      {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "package.json:36 peerDep", "purpose": "品牌命名"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E1", "evidence": "package.json:37 peerDep", "purpose": "断言工具"},
+      {"plugin_id": "cordis", "mechanism": "E1", "evidence": "package.json:42 peerDep + src/index.ts:6 import Context", "purpose": "Cordis 插件框架"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-host-directory-picker",
+    "name": "@deepseek-ai/dsh-host-directory-picker",
+    "implementation": "目录选择能力 seam 抽象：DirectoryPicker extends Service (src/index.ts:131) 注册 ctx.directoryPicker (:133)；capability() 返回判别联合 native|browse (:17-97,:140)；DirectoryPickerError 封闭错误码 (:103-116)；DirectoryPickerCapabilities merge-extensible 注册表 (:94-100)；消费方按 kind 分支，未知 kind 默认隐藏选择入口。",
+    "provides": ["ctx.directoryPicker 抽象服务（native|browse 判别能力）"],
+    "depends_on": [
+      {"plugin_id": "cordis", "mechanism": "E1", "evidence": "package.json:36 peerDep + src/index.ts:14 import { Context, Service }；:133 super(ctx,'directoryPicker')", "purpose": "Cordis Service 基座"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E1", "evidence": "package.json:35 peerDep", "purpose": "断言工具"}
+    ],
+    "dependents": [
+      {"plugin_id": "dsh-host-directory-picker-browse", "evidence": "E1: browse/package.json:35 deps + browse/src/index.ts:18-19 import；E2: browse/src/index.ts:187 extends DirectoryPicker、:206 super(ctx)", "purpose": "browse 能力后端实现"},
+      {"plugin_id": "dsh-host-directory-picker-native", "evidence": "E1: native/package.json:40 deps + native/src/index.ts:12-13 import；E2: native/src/index.ts:20 extends DirectoryPicker", "purpose": "native 能力后端实现"},
+      {"plugin_id": "dsh-host-apiproxy（L2）", "evidence": "E1: apiproxy/package.json:56 deps + apiproxy/src/api-proxy.ts:101 import DirectoryPickerError；E2: apiproxy/src/api-proxy.ts:2942/2970/2993 ctx.directoryPicker.capability()", "purpose": "/api workspace 目录选择 RPC 消费 seam（L2 已分析确认）"},
+      {"plugin_id": "dsh-host-directory-picker-auto", "evidence": "E1: auto/package.json:50 devDep；E2: auto/src/index.ts:37-40 BACKEND_PACKAGES 引用 browse/native 包名经 loader.create(:87) 挂载，间接消费 seam", "purpose": "web-app 装配的适配选择器（间接经 browse/native）"}
+    ]
+  },
+  {
+    "id": "dsh-host-directory-picker-browse",
+    "name": "@deepseek-ai/dsh-host-directory-picker-browse",
+    "implementation": "BrowseDirectoryPicker extends DirectoryPicker (src/index.ts:187)，capability() 返回稳定 browse 能力 (:199-215)；list 以 opendir 流式读入 name 排序有界窗口（O(keep) 内存，:76-96），raceAbort 竞速 caller signal (:108-134)，fullyQualified 全限定围栏 (:50-54)，ancestryCrumbs 面包屑 (:28-38)；createDirectory 单段校验+EEXIST 映射 (:299-323)；maxEntries 默认 1000 (:195-197)。",
+    "provides": ["ctx.directoryPicker（browse capability: list/createDirectory）"],
+    "depends_on": [
+      {"plugin_id": "dsh-host-directory-picker", "mechanism": "E1+E2", "evidence": "package.json:35 deps + src/index.ts:18-19 import { DirectoryPicker, DirectoryPickerError }；E2: :187 extends DirectoryPicker、:206 super(ctx)", "purpose": "seam 基座与错误词汇"},
+      {"plugin_id": "schemastery", "mechanism": "E1", "evidence": "package.json:36 deps + src/index.ts:16 import z、:195 Config schema", "purpose": "maxEntries 配置 schema"},
+      {"plugin_id": "cordis", "mechanism": "E1", "evidence": "package.json:40 peerDep + src/index.ts:15 import Context", "purpose": "Cordis 插件框架"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E1", "evidence": "package.json:39 peerDep", "purpose": "断言工具"}
+    ],
+    "dependents": [
+      {"plugin_id": "dsh-host-directory-picker-auto", "evidence": "E1: auto/package.json:39 peerDep + auto/src/index.ts:39 BACKEND_PACKAGES['browse']；E2: auto/src/index.ts:87 ctx.loader.create({name}) 运行时挂载", "purpose": "web 装配按宿主机况选择 browse 后端（远程客户端场景）"}
+    ]
+  },
+  {
+    "id": "dsh-host-directory-picker-native",
+    "name": "@deepseek-ai/dsh-host-directory-picker-native",
+    "implementation": "NativeDirectoryPicker extends DirectoryPicker (src/index.ts:20)，native capability pick→pickNativeDirectory (:21-25)；打开系统级目录选择器：macOS osascript、Linux Zenity+KDialog 回退、Windows 经 koffi 驱动 IFileOpenDialog 于 spawn 子进程 COM 对话（头注释 :1-10）；native-picker.ts + win32-dialog-* 多文件实现 worker 隔离。",
+    "provides": ["ctx.directoryPicker（native capability: pick）"],
+    "depends_on": [
+      {"plugin_id": "dsh-host-directory-picker", "mechanism": "E1+E2", "evidence": "package.json:40 deps + src/index.ts:12-13 import { DirectoryPicker }；E2: :20 extends DirectoryPicker", "purpose": "seam 基座"},
+      {"plugin_id": "dsh-native-command", "mechanism": "E1", "evidence": "package.json:41 deps", "purpose": "osascript/zenity 原生命令执行"},
+      {"plugin_id": "koffi", "mechanism": "E1", "evidence": "package.json:42 deps \"koffi\": \"^3.1.0\"", "purpose": "Windows IFileOpenDialog COM FFI"},
+      {"plugin_id": "cordis", "mechanism": "E1", "evidence": "package.json:45 peerDep", "purpose": "Cordis 插件框架"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E1", "evidence": "package.json:44 peerDep", "purpose": "断言工具"}
+    ],
+    "dependents": [
+      {"plugin_id": "dsh-host-directory-picker-auto", "evidence": "E1: auto/package.json:40 peerDep + auto/src/index.ts:38 BACKEND_PACKAGES['native']；E2: auto/src/index.ts:87 ctx.loader.create({name}) 运行时挂载", "purpose": "web 装配按宿主机况选择 native 后端（本机操作者场景）"}
+    ]
+  },
+  {
+    "id": "dsh-host-frontend-static",
+    "name": "@deepseek-ai/dsh-host-frontend-static",
+    "implementation": "SPA dist 静态服务器：apply 经 ctx.webServer.registerFallback 认领 fallback seat (src/index.ts:98-109)；serveStatic (:56-86) 目录穿越 403 (:64-67)、miss 回退 index.html 200 (SPA 路由 :82-85)、MIME 表 (:37-45)、非 GET/HEAD 405 (:101-105)；renderIndex 经 webServer.applyIndexTaps 注入 boot-manifest (:96-97)；inject ['webServer'] (:25)；distIndex 为装配知识 (:28-35)。",
+    "provides": ["webserver fallback seat（SPA dist 静态托管 + index tap 注入）"],
+    "depends_on": [
+      {"plugin_id": "dsh-host-webserver", "mechanism": "E1+E2", "evidence": "package.json:35 peerDep + src/index.ts:19 import type {}（side-effect merge）；E2: :25 inject=['webServer']、:97 ctx.webServer.applyIndexTaps、:98 ctx.webServer.registerFallback", "purpose": "HTTP 服务器与 index taps 注册"},
+      {"plugin_id": "schemastery", "mechanism": "E1", "evidence": "package.json:39 deps + src/index.ts:18 import z、:33 Config schema", "purpose": "distIndex 配置 schema"},
+      {"plugin_id": "cordis", "mechanism": "E1", "evidence": "package.json:36 peerDep + src/index.ts:17 import Context", "purpose": "Cordis 插件框架"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E1", "evidence": "package.json:37 peerDep", "purpose": "断言工具"}
+    ],
+    "dependents": [
+      {"plugin_id": "dsh-web-app（bundle 装配）", "evidence": "E1+E2: web-app/src/index.ts:19 import * as FrontendStatic、:139 ctx.plugin(FrontendStatic,{distIndex:...}) 运行时组合；E3: bundle/web-app/cordis.patch.yml:131 装配 web-app 行（web 层）", "purpose": "Web GUI bundle 托管前端 dist（唯一生产消费方）"}
+    ]
+  },
+  {
+    "id": "dsh-tool-ask-user",
+    "name": "@deepseek-ai/dsh-tool-ask-user",
+    "implementation": "注册 ask_user_question 工具 (src/index.ts:20-100)，inject ['tools','userQuestions'] (:14)；execute 转发 ctx.userQuestions.ask (:81)，将 id/question/header/options/multiSelect 映射后传入 (:82-91)，answers 归一返回 (:92-98)；output schema+render JSON 文本 (:58-79)；name 'tool-ask-user' (:13)。",
+    "provides": ["tool: ask_user_question"],
+    "depends_on": [
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "package.json:37 peerDep + src/index.ts:10 import defineTool；E2: :14 inject=['tools','userQuestions']、:20 ctx.tools.register", "purpose": "工具注册"},
+      {"plugin_id": "dsh-user-questions", "mechanism": "E1+E2", "evidence": "package.json:38 peerDep + src/index.ts:11 import '@deepseek-ai/dsh-user-questions'（side-effect merge）；E2: :14 inject、:81 ctx.userQuestions.ask", "purpose": "用户提问能力 seam"},
+      {"plugin_id": "dsh-agent", "mechanism": "E1+E2", "evidence": "package.json:35 peerDep + src/index.ts:9 import type Context 无关（agent 类型经 dsh-tools exec 传递）；E2: :89 exec.agent 传入 ask", "purpose": "agent 上下文透传"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E1", "evidence": "package.json:36 peerDep", "purpose": "断言工具"},
+      {"plugin_id": "cordis", "mechanism": "E1", "evidence": "package.json:39 peerDep + src/index.ts:9 import Context", "purpose": "Cordis 插件框架"}
+    ],
+    "dependents": []
+  }
+]

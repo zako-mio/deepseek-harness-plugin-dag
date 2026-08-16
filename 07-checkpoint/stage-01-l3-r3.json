@@ -1,0 +1,556 @@
+[
+    {
+        "id":  "dsh-web-fetch-http",
+        "name":  "@deepseek-ai/dsh-web-fetch-http",
+        "implementation":  "匿名公开 HTTP(S) WebFetchProvider：src/index.ts apply() 以 schemastery Config 校验并填充限额（maxUrlLength=2048/maxResponseBytes=5MB/maxBodyChars=100k/timeoutMs=30s/maxRedirects=5/userAgent），构造 HttpFetchProvider 后 ctx.web.registerFetchProvider() 注册进 ctx.web 的 fetch 注册表（inject [\u0027web\u0027]）。provider.ts 实现 WebFetchProvider：available() 恒 true（匿名无凭证）；fetch() 用 dsh-timeout 的 deadline 建立统一 abort 信号（WEB_FETCH_TIMEOUT）；followAndRead() 手动跟随仅同源重定向（maxRedirects 预算 + isSameOrigin 校验，跨源即 WEB_REDIRECT_BLOCKED）；requestOnce() 用 redirect:\u0027manual\u0027 + 显式 User-Agent（deepseek-harness 产品代理，非浏览器伪装）；readBody() 按 content-type 分类（html/text）、parseCharset+decoderForCharset 解码、maxResponseBytes 截断字节与 maxBodyChars 截断字符并标记 truncated。注释明确：无私网/SSRF 保护，不可在能触达敏感内部目标的环境启用。函数/命名空间插件，不拥有 ctx.web 键，仅向 seam 注册。",
+        "provides":  [
+                         "ctx.web.registerFetchProvider 注册的 \u0027http\u0027 后端（WebFetchProvider id=\u0027http\u0027）",
+                         "LOCAL_FETCH_PROVIDER_ID 常量",
+                         "HttpFetchProvider 类（fetch: WebFetchRequest→WebFetchResult）",
+                         "匿名公开 HTTP(S) 抓取能力（无凭证/无 cookie）"
+                     ],
+        "depends_on":  [
+                           {
+                               "plugin_id":  "dsh-web",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/web/web-fetch-http/src/index.ts:12 import type {} from \u0027@deepseek-ai/dsh-web\u0027；provider.ts:11-12 WebError/WebFetchProvider/WebFetchRequest/WebFetchResult；src/index.ts:100 ctx.web.registerFetchProvider",
+                               "purpose":  "Web seam 能力缝：registerFetchProvider 注册 API + WebFetchProvider 接口/WebError 契约"
+                           },
+                           {
+                               "plugin_id":  "dsh-timeout",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/web/web-fetch-http/src/provider.ts:13 deadline/timeoutOf（dsh-timeout）；package.json:36 peerDependencies",
+                               "purpose":  "deadline 建立 fetch 超时/中止的统一信号，TimeoutReason 区分本 provider 超时与外部取消"
+                           },
+                           {
+                               "plugin_id":  "dsh-invariants",
+                               "mechanism":  "E2",
+                               "evidence":  "packages/web/web-fetch-http/src/invariant.ts:7-8 InvariantInstaller + peerDependencies:35",
+                               "purpose":  "伴随 invariant 插件注册（web-fetch-http-invariant）"
+                           },
+                           {
+                               "plugin_id":  "dsh-cordis",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/web/web-fetch-http/src/index.ts:10 import type { Context } + peerDependencies:38",
+                               "purpose":  "Cordis 插件上下文与 inject/apply 生命周期"
+                           },
+                           {
+                               "plugin_id":  "dsh-bundle-base",
+                               "mechanism":  "E3",
+                               "evidence":  "packages/bundle/base/cordis.patch.yml:404-417 web 行 fetch:false 注释\u0027no fetch provider is mounted: that provider defers SSRF protection\u0027；tool-web/tests/integration.spec.ts:17,41 装配 LOCAL_FETCH_PROVIDER_ID",
+                               "purpose":  "base bundle 默认不挂载本插件（SSRF 默认关闭）；测试/覆盖层按需装配"
+                           }
+                       ],
+        "dependents":  [
+                           {
+                               "plugin_id":  "dsh-tool-web",
+                               "evidence":  "packages/web/tool-web/src/fetch.ts:3,481 ctx.web.fetch() 消费 fetch 后端；tests/integration.spec.ts:41 以 LOCAL_FETCH_PROVIDER_ID 集成真实抓取后端",
+                               "purpose":  "web_fetch 工具经 ctx.web.fetch 路由到本 provider 实现抓取"
+                           },
+                           {
+                               "plugin_id":  "dsh-web-search-deepseek",
+                               "evidence":  "web seam 搜索/抓取注册表同源模式（web/src/index.ts:103-115 registerSearchProvider/registerFetchProvider 并列）",
+                               "purpose":  "同 seam 注册表兄弟插件，模式参照"
+                           }
+                       ]
+    },
+    {
+        "id":  "dsh-web-search-exa",
+        "name":  "@deepseek-ai/dsh-web-search-exa",
+        "implementation":  "Exa 搜索 provider：src/index.ts apply() 经 launchEnvironmentOf(ctx).get(\u0027EXA_API_KEY\u0027) 从启动环境取 key（config 可覆盖），填默认 baseURL=api.exa.ai/searchType=auto/highlightsPerResult=1，构造 ExaSearchProvider 后 ctx.web.registerSearchProvider() 注册（inject [\u0027web\u0027]）。provider.ts：EXA_PROVIDER_ID=\u0027exa\u0027；available() 要求 apiKey 非空 + baseURL 合法 + 正数约束；search() POST /search（highlightsPerUrl 参数），mapExaResponse 将 results[] 归一化：首个非空 highlight→snippet、publishedDate→publishedAt，无 snippet 的条目丢弃（seam 无其他字段可派生），Exa 无生成答案故省略 content、truncated:false。映射顺序/裁剪语义与 dsh-web-search-deepseek 同模式（注册进 seam 的 search 注册表，不拥有 ctx.web 键）。",
+        "provides":  [
+                         "ctx.web.registerSearchProvider 注册的 \u0027exa\u0027 后端（WebSearchProvider id=\u0027exa\u0027）",
+                         "EXA_PROVIDER_ID/EXA_DEFAULT_BASE_URL/EXA_DEFAULT_SEARCH_TYPE/EXA_DEFAULT_HIGHLIGHTS_PER_RESULT 常量",
+                         "ExaSearchProvider 类（search: WebSearchRequest→WebSearchResult）",
+                         "Exa 搜索归一化映射（highlight→snippet, publishedDate→publishedAt）"
+                     ],
+        "depends_on":  [
+                           {
+                               "plugin_id":  "dsh-web",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/web/web-search-exa/src/provider.ts:9-15 WebError + WebSearchProvider/WebSearchRequest/WebSearchResult/WebSearchSource；index.ts:61 ctx.web.registerSearchProvider",
+                               "purpose":  "Web seam 能力缝：registerSearchProvider 注册 API + WebSearchProvider 接口契约"
+                           },
+                           {
+                               "plugin_id":  "dsh-launch-environment",
+                               "mechanism":  "E2",
+                               "evidence":  "packages/web/web-search-exa/src/index.ts:12,64 launchEnvironmentOf(ctx).get(\u0027EXA_API_KEY\u0027)；package.json:35 peerDependencies",
+                               "purpose":  "每环境层可命名的启动环境取值（apiKey 回退链：config → 环境 → 空=不可用）"
+                           },
+                           {
+                               "plugin_id":  "dsh-invariants",
+                               "mechanism":  "E2",
+                               "evidence":  "packages/web/web-search-exa/src/invariant.ts:7-8 + peerDependencies:36",
+                               "purpose":  "伴随 invariant 插件注册"
+                           },
+                           {
+                               "plugin_id":  "dsh-cordis",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/web/web-search-exa/src/index.ts:10 + peerDependencies:38",
+                               "purpose":  "Cordis 插件上下文与 apply 生命周期"
+                           },
+                           {
+                               "plugin_id":  "dsh-web-search-deepseek",
+                               "mechanism":  "E3",
+                               "evidence":  "同 web seam 注册表模式（web/src/index.ts:103 registerSearchProvider）；tool-web/tests/integration.spec.ts:41 以 EXA_PROVIDER_ID 装配",
+                               "purpose":  "搜索 provider 参照实现：注册方式/归一化语义/装配路径同模式"
+                           }
+                       ],
+        "dependents":  [
+                           {
+                               "plugin_id":  "dsh-tool-web",
+                               "evidence":  "packages/web/tool-web/src/search.ts:261 ctx.web.search() 消费搜索后端；tests/integration.spec.ts:41 EXA_PROVIDER_ID 装配",
+                               "purpose":  "web_search 工具经 ctx.web.search 路由到本 provider"
+                           },
+                           {
+                               "plugin_id":  "dsh-web-search-perplexity",
+                               "evidence":  "packages/web/web-search-perplexity/src/index.ts 同构 apply()（launchEnvironmentOf+registerSearchProvider）",
+                               "purpose":  "兄弟 provider 变体，同一 seam 注册模式"
+                           }
+                       ]
+    },
+    {
+        "id":  "dsh-web-search-perplexity",
+        "name":  "@deepseek-ai/dsh-web-search-perplexity",
+        "implementation":  "Perplexity 搜索 provider：src/index.ts apply() 经 launchEnvironmentOf(ctx).get(\u0027PERPLEXITY_API_KEY\u0027) 取 key，默认 baseURL=api.perplexity.ai/model=sonar/maxTokens=1024，可选 searchRecency（day/week/month/year→search_recency_filter），构造 PerplexitySearchProvider 后 ctx.web.registerSearchProvider() 注册（inject [\u0027web\u0027]）。provider.ts：PERPLEXITY_PROVIDER_ID=\u0027perplexity\u0027；search() 调 /chat/completions，模型返回生成答案→content，结果经 citations/sources 归一化为 WebSearchSource；available() 要求 apiKey+baseURL+maxTokens 正数。与 dsh-web-search-exa/deepseek 同为注册进 ctx.web search 注册表的 provider 变体。",
+        "provides":  [
+                         "ctx.web.registerSearchProvider 注册的 \u0027perplexity\u0027 后端（WebSearchProvider id=\u0027perplexity\u0027）",
+                         "PERPLEXITY_PROVIDER_ID/PERPLEXITY_DEFAULT_BASE_URL/PERPLEXITY_DEFAULT_MODEL/PERPLEXITY_DEFAULT_MAX_TOKENS 常量",
+                         "PerplexitySearchProvider 类（含 search_recency_filter 支持）",
+                         "Perplexity 搜索归一化（生成答案→content + 引文 sources）"
+                     ],
+        "depends_on":  [
+                           {
+                               "plugin_id":  "dsh-web",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/web/web-search-perplexity/src/provider.ts:9-15 WebError + WebSearchProvider 契约；index.ts:55 ctx.web.registerSearchProvider",
+                               "purpose":  "Web seam 能力缝：registerSearchProvider 注册 API + 搜索接口契约"
+                           },
+                           {
+                               "plugin_id":  "dsh-launch-environment",
+                               "mechanism":  "E2",
+                               "evidence":  "packages/web/web-search-perplexity/src/index.ts:11,58 launchEnvironmentOf(ctx).get(\u0027PERPLEXITY_API_KEY\u0027)；package.json:35",
+                               "purpose":  "启动环境取值：config → 环境变量 → 空=不可用"
+                           },
+                           {
+                               "plugin_id":  "dsh-invariants",
+                               "mechanism":  "E2",
+                               "evidence":  "packages/web/web-search-perplexity/src/invariant.ts:7-8 + peerDependencies:36",
+                               "purpose":  "伴随 invariant 插件注册"
+                           },
+                           {
+                               "plugin_id":  "dsh-cordis",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/web/web-search-perplexity/src/index.ts:10 + peerDependencies:38",
+                               "purpose":  "Cordis 插件上下文与 apply 生命周期"
+                           },
+                           {
+                               "plugin_id":  "dsh-web-search-deepseek",
+                               "mechanism":  "E3",
+                               "evidence":  "同 seam 注册表模式（web/src/index.ts:103 registerSearchProvider）与归一化语义参照",
+                               "purpose":  "搜索 provider 参照实现（同 dsh-web-search-exa 的变体）"
+                           }
+                       ],
+        "dependents":  [
+                           {
+                               "plugin_id":  "dsh-tool-web",
+                               "evidence":  "packages/web/tool-web/src/search.ts:261 ctx.web.search()；search provider 经 seam 名解析（如 EXA/PERPLEXITY）",
+                               "purpose":  "web_search 工具消费搜索后端"
+                           }
+                       ]
+    },
+    {
+        "id":  "dsh-session-reference",
+        "name":  "@deepseek-ai/dsh-session-reference",
+        "implementation":  "跨会话快照服务 ctx.sessionReferenceResolver（SessionReferenceResolver extends Service，static inject [\u0027sessionQuery\u0027]）。主机把会话 mention 适配为结构化引用，本服务拥有精确读取/投影/预算/持久上下文。listCandidates()：按工作目录亲和度（candidateRank）排序引用候选，排除自身，支持 session-id/cwd/title 子串过滤，经 sessionQuery.readTitleSnapshots 补标签。prepare()：引用去重+排除目标自身+maxReferences 上限，并行 readSurface 读每个被引用会话的 surface 快照，renderSources 经 projection.ts 的 retainReferencedSession（TextRetainer 字节预算 maxReferenceBytes + isCompactCheckpointSource 识别压缩检查点）投影用户/助手对话（排除工具/推理/注入），渲染为带 PROMPT_PREFIX 的 \u0027## Referenced sessions\u0027 untrusted 只读快照 JSON，封装为 source.kind=\u0027session-reference\u0027 的 UserMessage 附加上下文。提供 encode/decodeSessionReferenceUri、formatSessionReferenceMention、parseSessionReferenceText（SESSION_REFERENCE_SCHEME）。",
+        "provides":  [
+                         "ctx.sessionReferenceResolver（SessionReferenceResolver 服务）",
+                         "listCandidates(): SessionReferenceCandidate[]（cwd 亲和排序）",
+                         "prepare(): PreparedReferencedMessage（detached content + additionalContext 引用快照）",
+                         "会话引用 URI 编解码（encode/decodeSessionReferenceUri/formatMention/parseText）",
+                         "SESSION_REFERENCE_SCHEME/MAX_REFERENCES/DEFAULT_CANDIDATE_LIMIT/DEFAULT_MAX_REFERENCE_BYTES",
+                         "untrusted 只读 \u0027Referenced sessions\u0027 prompt 前缀"
+                     ],
+        "depends_on":  [
+                           {
+                               "plugin_id":  "dsh-session-query",
+                               "mechanism":  "E2",
+                               "evidence":  "packages/context/session-reference/src/index.ts:71 static inject [\u0027sessionQuery\u0027]；123,133,184 ctx.sessionQuery.listSessions/readTitleSnapshots/readSurface；package.json:44",
+                               "purpose":  "sessionQuery 服务：候选列举/标题观测/精确 surface 快照读取"
+                           },
+                           {
+                               "plugin_id":  "dsh-session",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/context/session-reference/src/index.ts:13 SessionId 类型 + package.json:43 peerDependencies",
+                               "purpose":  "SessionId branded 类型与 SessionHeader（cwd/createdAt）契约"
+                           },
+                           {
+                               "plugin_id":  "dsh-agent",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/context/session-reference/src/index.ts:10 Agent 类型（agent.session.header.cwd, agent.id）",
+                               "purpose":  "目标 agent 身份与工作目录（cwd 亲和排序/排除自身）"
+                           },
+                           {
+                               "plugin_id":  "dsh-compaction",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/context/session-reference/src/projection.ts:3 isCompactCheckpointSource",
+                               "purpose":  "识别压缩检查点源事件以投影引用对话"
+                           },
+                           {
+                               "plugin_id":  "dsh-output-retention",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/context/session-reference/src/projection.ts:6 TextRetainer",
+                               "purpose":  "字节预算内保留完整字符串的 TextRetainer（maxReferenceBytes 预算）"
+                           },
+                           {
+                               "plugin_id":  "dsh-llm",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/context/session-reference/src/index.ts:11 createUserMessage + ContentBlock/UserMessage 类型；projection.ts:5 assertNever",
+                               "purpose":  "构造附加 UserMessage 载荷与事件类型穷尽"
+                           },
+                           {
+                               "plugin_id":  "dsh-invariants",
+                               "mechanism":  "E2",
+                               "evidence":  "packages/context/session-reference/src/invariant.ts + package.json:40",
+                               "purpose":  "伴随 invariant 插件注册"
+                           },
+                           {
+                               "plugin_id":  "dsh-cordis",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/context/session-reference/src/index.ts:8 Context/Service 基类 + declare module 扩展 ctx",
+                               "purpose":  "Cordis Service 生命周期与 Context 声明合并"
+                           }
+                       ],
+        "dependents":  [
+                           {
+                               "plugin_id":  "dsh-tool-session-query",
+                               "evidence":  "同 sessionQuery 消费者（tool-session-query/src/workspace-access.ts:83-143 filterSessions/readTitleSnapshots）",
+                               "purpose":  "共享 sessionQuery 服务，host 端引用补全的候选/标签来源"
+                           }
+                       ]
+    },
+    {
+        "id":  "dsh-time-context",
+        "name":  "@deepseek-ai/dsh-time-context",
+        "implementation":  "opt-in 请求时钟上下文插件：apply() 注册 prepend 的 \u0027agent/pre-step\u0027 监听器（inject [\u0027agents\u0027]）。每个符合条件 step 在决定消息中附加持久、来源归属（source.kind=\u0027plugin\u0027, form=\u0027snapshot\u0027）的 UserMessage：当前时间（Intl.DateTimeFormat 按选定时区格式化）+ 距上一条模型可见消息（step=1）或上一次 step 上下文（step\u003e1）的 elapsed 时长。浏览器时区感知：deriveBrowserTimeZoneContext 从请求消息中解析浏览器时区，无唯一浏览器 zone 时回退进程时区（config.timeZone 可覆盖）；refreshIntervalMs 提供会话内最小注入间隔（读 raw durable 事件找上次注入，避免进程本地缓存）。验证：非法 refreshIntervalMs/无法解析时区即插件加载失败。precedingMessageTime 只统计 user/message|assistant/message|tool/result 模型可见事件。",
+        "provides":  [
+                         "agent/pre-step prepend 监听器（每次请求注入时间快照 UserMessage）",
+                         "持久时间上下文（turn/step + 时区 + elapsed 时长 + 浏览器时区检测）",
+                         "source.kind=\u0027plugin\u0027 form=\u0027snapshot\u0027 的会话事件写入"
+                     ],
+        "depends_on":  [
+                           {
+                               "plugin_id":  "dsh-agent",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/context/time-context/src/index.ts:10 Agent/PreStepDecision 类型；170 ctx.on(\u0027agent/pre-step\u0027)；package.json:38",
+                               "purpose":  "agent/pre-step 事件词表与 PreStepDecision 注入契约"
+                           },
+                           {
+                               "plugin_id":  "dsh-llm",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/context/time-context/src/index.ts:11 createUserMessage + UserMessage 类型",
+                               "purpose":  "构造注入的 UserMessage 载荷"
+                           },
+                           {
+                               "plugin_id":  "dsh-session",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/context/time-context/src/index.ts:59 agent.session.events 事件重放（user/message/tool/result/turn/start）+ package.json:40",
+                               "purpose":  "扫描会话事件定位前序消息/上次注入/requestMessages"
+                           },
+                           {
+                               "plugin_id":  "dsh-invariants",
+                               "mechanism":  "E2",
+                               "evidence":  "packages/context/time-context/src/invariant.ts + package.json:39",
+                               "purpose":  "伴随 invariant 插件注册"
+                           },
+                           {
+                               "plugin_id":  "dsh-cordis",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/context/time-context/src/index.ts:8 Context + 145 apply(ctx)",
+                               "purpose":  "Cordis 插件上下文与生命周期"
+                           }
+                       ],
+        "dependents":  [
+
+                       ]
+    },
+    {
+        "id":  "dsh-tmux-context",
+        "name":  "@deepseek-ai/dsh-tmux-context",
+        "implementation":  "opt-in tmux 位置上下文插件：apply() 注册 prepend 的 \u0027agent/pre-step\u0027 监听器（inject [\u0027agents\u0027]），仅 step===1（每 turn 首次请求）通过 ctx.shell（ShellExecutor）运行只读命令拉取 tmux 状态。queryTmuxLocation() 组合 bash 脚本：TMUX_PANE 存在校验 → ps -o tty= 取本进程控制终端 → tmux display-message 取 #{pane_tty} → 两者相等才继续（防止从 tmux 祖先继承 $TMUX/$TMUX_PANE 的 VS Code 集成终端误判）→ exec tmux display-message 输出 tab 分隔的 8 字段（session/window/pane/layout/active）。仅当渲染状态（renderState，不含 volatile turn 前缀）相比上次注入变化时重注入，refreshIntervalMs 为注入下限（latestInjectedState 从 raw durable 事件扫描，跨 compaction/恢复存活）；executor 拒绝/查询失败是 no-op 仅 warn，绝不使 turn 失败。注入为 source.kind=\u0027plugin\u0027 form=\u0027snapshot\u0027 的 UserMessage。",
+        "provides":  [
+                         "agent/pre-step prepend 监听器（step=1 注入 tmux 位置快照）",
+                         "tmux 位置上下文（session/window/pane/layout + active 标志 + tty 真伪校验）",
+                         "状态变化驱动的重注入 + refreshIntervalMs 下限",
+                         "source.kind=\u0027plugin\u0027 form=\u0027snapshot\u0027 会话事件写入"
+                     ],
+        "depends_on":  [
+                           {
+                               "plugin_id":  "dsh-agent",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/context/tmux-context/src/index.ts:23 Agent/PreStepDecision 类型；218 ctx.on(\u0027agent/pre-step\u0027)；package.json:38",
+                               "purpose":  "agent/pre-step 事件词表与 PreStepDecision 注入契约"
+                           },
+                           {
+                               "plugin_id":  "dsh-shell",
+                               "mechanism":  "E2",
+                               "evidence":  "packages/context/tmux-context/src/index.ts:24 ShellExecutor/ShellRunResult 类型；224 ctx.get(\u0027shell\u0027) 可选解析；124 bash.resolve/run",
+                               "purpose":  "shell executor 服务：运行只读 tmux/ps 命令（可选注入，缺失即 no-op）"
+                           },
+                           {
+                               "plugin_id":  "dsh-session",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/context/tmux-context/src/index.ts:182 agent.session.events 扫描 + package.json:41",
+                               "purpose":  "扫描持久事件定位上次注入状态（latestInjectedState）"
+                           },
+                           {
+                               "plugin_id":  "dsh-llm",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/context/tmux-context/src/index.ts:25 createUserMessage",
+                               "purpose":  "构造注入的 UserMessage 载荷"
+                           },
+                           {
+                               "plugin_id":  "dsh-invariants",
+                               "mechanism":  "E2",
+                               "evidence":  "packages/context/tmux-context/src/invariant.ts + package.json:40",
+                               "purpose":  "伴随 invariant 插件注册"
+                           },
+                           {
+                               "plugin_id":  "dsh-cordis",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/context/tmux-context/src/index.ts:21 Context/LoggerService + 214 apply(ctx)",
+                               "purpose":  "Cordis 插件上下文与 logger 服务"
+                           }
+                       ],
+        "dependents":  [
+
+                       ]
+    },
+    {
+        "id":  "dsh-session-persistence-sqlite",
+        "name":  "@deepseek-ai/dsh-session-persistence-sqlite",
+        "implementation":  "SQLite 持久会话存储后端：SqliteSessionPersistence extends dsh-session-persistence 的 SessionPersistence 抽象类，实现 PersistenceBackend\u003cnumber\u003e（static inject [\u0027sessions\u0027]）。openDb() 异步建目录(0o700)+owner-only 建库文件(0o600)+openDatabase 应用 schema（persistence_state/store_id 单例身份 + sessions 元数据 + events 1:1 行，SCHEMA_VERSION=15，APP_ID=0x44534850，journal_mode=wal 默认）；storeIdentity 由 file:dev:ino:birthtimeNs 或 memory: 复合。写路径全部委托 PersistenceCoordinator（session/created|event|flush|disposed 监听→缓冲/合写/追写），locate() 返回 undefined（无独立 per-session 工件）；create/append/prepare/load/inspect/readFrom 为 coordinator 直通；后端钩子 loadStored/readStoredRevision/loadStoredFrom 实现 seek-capable 后缀读（SQL seq\u003e=fromSeq 直接选取）与 torn-tail 标记（scanRows 返回需删除的 seq）。supportsRawArtifacts=false；与 JSONL 后端同样具备 crash-tail-on-load 语义。",
+        "provides":  [
+                         "ctx.sessionPersistence 的 SQLite 后端实现（PersistenceBackend\u003cnumber\u003e）",
+                         "单库 sessions+events 表 + store 身份（store_id/incarnation/revision）",
+                         "PersistenceCoordinator 写路径（会话事件合写/追写）",
+                         "seek-capable loadStoredFrom + torn-tail 崩溃尾部语义",
+                         "SCHEMA_VERSION=15 / journalMode 可配"
+                     ],
+        "depends_on":  [
+                           {
+                               "plugin_id":  "dsh-session-persistence",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/session/session-persistence-sqlite/src/index.ts:16-22 SessionPersistence/SessionPersistenceRevision/PersistenceCoordinator/PersistenceBackend + extends SessionPersistence(99)；package.json:37",
+                               "purpose":  "抽象基类与服务契约（ctx.sessionPersistence）+ 写路径协调器"
+                           },
+                           {
+                               "plugin_id":  "dsh-session",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/session/session-persistence-sqlite/src/index.ts:23 SessionEvent/SurfaceEventType/SessionId/SessionHeader/SessionPreparation 类型；schema.ts:13；static inject [\u0027sessions\u0027](102)",
+                               "purpose":  "会话事件/头类型契约与 sessions 服务注入"
+                           },
+                           {
+                               "plugin_id":  "dsh-invariants",
+                               "mechanism":  "E2",
+                               "evidence":  "packages/session/session-persistence-sqlite/src/invariant.ts:7-8 + package.json:35",
+                               "purpose":  "伴随 invariant 插件注册"
+                           },
+                           {
+                               "plugin_id":  "dsh-cordis",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/session/session-persistence-sqlite/src/index.ts:9 Context + package.json:38",
+                               "purpose":  "Cordis 插件上下文与 Service 生命周期"
+                           },
+                           {
+                               "plugin_id":  "dsh-bundle-base",
+                               "mechanism":  "E3",
+                               "evidence":  "packages/bundle/base/cordis.patch.yml:98-101 装配 session-persistence-jsonl（root=dshHomePath(\u0027sessions\u0027)）；本插件为同插槽可选替换后端",
+                               "purpose":  "持久化后端插槽：jsonl 为 base 默认，sqlite 为同服务键替换变体"
+                           }
+                       ],
+        "dependents":  [
+                           {
+                               "plugin_id":  "dsh-session-query",
+                               "evidence":  "packages/session-query/session-query/src/corpus.ts:5,40-46,253-274 可选注入 sessionPersistence 做 list/inspect 持久化精确读取",
+                               "purpose":  "sessionQuery 经 ctx.sessionPersistence 列出/检查持久会话（任一后端）"
+                           },
+                           {
+                               "plugin_id":  "dsh-tool-session-query",
+                               "evidence":  "tool-session-query 经 sessionQuery 精确读事件（operations.ts:177-228 traceSession/traceEvent/readEvent）",
+                               "purpose":  "会话查询工具消费持久会话数据链"
+                           }
+                       ]
+    },
+    {
+        "id":  "dsh-storage-sqlite",
+        "name":  "@deepseek-ai/dsh-storage-sqlite",
+        "implementation":  "SQLite 存储后端：SqliteStorageBackend implements StorageBackend，只提供 kv facet（document-per-row: key TEXT PRIMARY KEY / value TEXT NOT NULL, STRICT 表）。apply() 在 storage 中枢 ctx.storage.backend.register(\u0027sqlite\u0027, backend) 注册 + ctx.provide(storageBackendServiceKey(\u0027sqlite\u0027)) 暴露后端生命周期服务键，disposer 先 unregister 再 close（inject [\u0027storage\u0027]）。openUnit() 校验 UNIT_NAME_RE（unit/table 名）+ 防 double-open（units Map 同步占位）+ units 表 per-unit version 印章校验（不匹配即 StorageError version-mismatch）+ CREATE TABLE IF NOT EXISTS 建记录表。schema.ts 与 session-persistence-sqlite/session-query-sqlite 同构 open 序列（owner-only 建库、PRAGMA foreign_keys/journal_mode=wal、user_version=1 版本印章、零迁移拒绝非当前版本）。close() 幂等关闭所有 unit 并释放连接。config 仅 path（:memory: 支持）+ journalMode。",
+        "provides":  [
+                         "storage.backend \u0027sqlite\u0027 后端（kv facet: KvUnit open）",
+                         "storageBackendServiceKey(\u0027sqlite\u0027) 后端生命周期服务键",
+                         "per-unit version 印章 + UNIT_NAME_RE 校验 + double-open 防护",
+                         "SqliteKvUnit（key/value STRICT 表）"
+                     ],
+        "depends_on":  [
+                           {
+                               "plugin_id":  "dsh-storage",
+                               "mechanism":  "E2",
+                               "evidence":  "packages/storage/storage-sqlite/src/index.ts:11-12 StorageError/UNIT_NAME_RE/storageBackendServiceKey + StorageBackend/KvFacet；21 inject [\u0027storage\u0027]；161 ctx.storage.backend.register(\u0027sqlite\u0027, backend)；167 ctx.provide(storageBackendServiceKey)",
+                               "purpose":  "存储中枢：后端注册表 + 服务键提供"
+                           },
+                           {
+                               "plugin_id":  "dsh-invariants",
+                               "mechanism":  "E2",
+                               "evidence":  "packages/storage/storage-sqlite/src/invariant.ts:7-8 + package.json:35",
+                               "purpose":  "伴随 invariant 插件注册"
+                           },
+                           {
+                               "plugin_id":  "dsh-cordis",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/storage/storage-sqlite/src/index.ts:8 Context + package.json:37",
+                               "purpose":  "Cordis 插件上下文与 effect/dispose 生命周期"
+                           },
+                           {
+                               "plugin_id":  "dsh-storage-json",
+                               "mechanism":  "E3",
+                               "evidence":  "storage-sqlite 为 storage-json 同插槽的 SQLite 变体（storage-json/src/index.ts:107 同样 register(\u0027json\u0027) 模式）",
+                               "purpose":  "后端注册模式参照：与 json 后端并列的 kv facet 后端实现"
+                           }
+                       ],
+        "dependents":  [
+                           {
+                               "plugin_id":  "dsh-storage-domain",
+                               "evidence":  "storage-domain/src/index.ts:44,107 经 ctx.storage.backend.get 路由打开后端（routes/backend 配置）",
+                               "purpose":  "domain 数据形式可按 routes 路由到 \u0027sqlite\u0027 后端"
+                           }
+                       ]
+    },
+    {
+        "id":  "dsh-session-title-all-prompts-llm",
+        "name":  "@deepseek-ai/dsh-session-title-all-prompts-llm",
+        "implementation":  "全人类消息 LLM 标题 provider：apply() 调 dsh-session-title-llm 的 registerSessionTitleLlmProvider(ctx, config, name=\u0027session-title-all-prompts-llm\u0027, automatic=\u0027all-prompts\u0027, selectMessages=messages=\u003emessages)，即选择全部人类消息作为标题生成输入（与 first-prompt 变体仅选择首个 prompt 对照）。inject [\u0027sessionTitle\u0027,\u0027llm\u0027,\u0027sessions\u0027]。Config 复用 SessionTitleLlmConfigFields（targetWords/targetCjkCharacters/maxInputBytes/maxOutputTokens/timeoutMs/provider/model，required LLM 策略，无默认）。registerSessionTitleLlmProvider 内部：resolveSessionTitleLlmConfig 校验并 deepFreeze 配置 → ctx.sessionTitle.register({id: SessionTitleProviderId, automatic, generate})；generate 经 llm 发辅助请求（systemPrompt 语言感知 + frameMessages JSON 围栏防 prompt 注入），route 回退 request/header 捕获的 provider/model。",
+        "provides":  [
+                         "ctx.sessionTitle 注册的 \u0027all-prompts\u0027 自动标题 provider（automatic=\u0027all-prompts\u0027）",
+                         "全部人类消息选择器（selectMessages=identity）",
+                         "LLM 生成标题（语言感知 system prompt + JSON 围栏）"
+                     ],
+        "depends_on":  [
+                           {
+                               "plugin_id":  "dsh-session-title",
+                               "mechanism":  "E2",
+                               "evidence":  "packages/session/session-title-all-prompts-llm/src/index.ts:12 inject [\u0027sessionTitle\u0027]；registerSessionTitleLlmProvider 内部 ctx.sessionTitle.register（session-title-llm/src/index.ts:162）；package.json:33",
+                               "purpose":  "标题服务：provider 注册契约（SessionTitleProviderId/automatic/generate）"
+                           },
+                           {
+                               "plugin_id":  "dsh-session-title-llm",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/session/session-title-all-prompts-llm/src/index.ts:5-9 registerSessionTitleLlmProvider + SessionTitleLlmConfigFields/SessionTitleLlmConfig；package.json:34",
+                               "purpose":  "LLM provider 共享注册/配置校验/调用策略（resolveSessionTitleLlmConfig/frameMessages/systemPrompt）"
+                           },
+                           {
+                               "plugin_id":  "dsh-llm",
+                               "mechanism":  "E2",
+                               "evidence":  "packages/session/session-title-all-prompts-llm/src/index.ts:12 inject [\u0027llm\u0027]；session-title-llm/src/index.ts generateSessionTitleWithLlm 发辅助请求",
+                               "purpose":  "llm 服务：辅助模型调用生成标题"
+                           },
+                           {
+                               "plugin_id":  "dsh-session",
+                               "mechanism":  "E2",
+                               "evidence":  "packages/session/session-title-all-prompts-llm/src/index.ts:12 inject [\u0027sessions\u0027]；session-title/src/index.ts:262 static inject [\u0027sessions\u0027]",
+                               "purpose":  "会话事件流：标题生成时机（事件驱动）"
+                           },
+                           {
+                               "plugin_id":  "dsh-invariants",
+                               "mechanism":  "E2",
+                               "evidence":  "packages/session/session-title-all-prompts-llm/src/invariant.ts:7-8 + package.json:30",
+                               "purpose":  "伴随 invariant 插件注册"
+                           },
+                           {
+                               "plugin_id":  "dsh-cordis",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/session/session-title-all-prompts-llm/src/index.ts:3 Context + package.json:35",
+                               "purpose":  "Cordis 插件上下文"
+                           },
+                           {
+                               "plugin_id":  "dsh-bundle-base",
+                               "mechanism":  "E3",
+                               "evidence":  "packages/bundle/base/cordis.patch.yml:46-53 装配 session-title-llm 行（first-prompt 变体为 base 默认，all-prompts 为同插槽替换）",
+                               "purpose":  "标题 provider 插槽：base 默认 first-prompt，本插件为 all-prompts 变体"
+                           }
+                       ],
+        "dependents":  [
+
+                       ]
+    },
+    {
+        "id":  "dsh-tool-session-query",
+        "name":  "@deepseek-ai/dsh-tool-session-query",
+        "implementation":  "模型面向、工作区授权的会话历史搜索/读取工具：apply() 注册 5 个工具到 ctx.tools + 一个 systemPrompt section（order 113，\u0027tool:session-query\u0027 指南，inject [\u0027tools\u0027,\u0027systemPrompt\u0027,\u0027sessionQuery\u0027]）。工具：session_search（跨会话最强匹配事件）、session_event_search（单会话事件搜索）、session_trace（会话血统/祖先后代）、session_event_trace（事件血统）、session_event_read（未删节事件+相邻 raw 摘要），均 TEXT_OUTPUT 渲染。operations.ts：executeSessionSearch 先 workspaceAccess.callerOf 取调用者 cwd（无 cwd 即 SESSION_QUERY_TOOL_UNAUTHORIZED），authorizeSessionIds 授权父会话/命中会话，经 serviceBoundary.call 包装后调 ctx.sessionQuery.searchSessions/searchEvents/traceSession/traceEvent/readEvent（cursor 分页 collectPages，maxSearchResults=100 默认封顶，searchTimeoutMs=30s 协作超时）；workspace 作用域（cwd filter）强制注入。isConcurrencySafe 标记只读工具。",
+        "provides":  [
+                         "ctx.tools 注册 5 个工具：session_search/session_event_search/session_trace/session_event_trace/session_event_read",
+                         "ctx.systemPrompt section \u0027tool:session-query\u0027（order 113 使用指南）",
+                         "工作区授权（cwd 作用域 + authorizeSessionIds）与 cursor 分页 collectPages",
+                         "TEXT_OUTPUT 文本渲染（presentation.formatSessionSearch 等）"
+                     ],
+        "depends_on":  [
+                           {
+                               "plugin_id":  "dsh-session-query",
+                               "mechanism":  "E2",
+                               "evidence":  "packages/session-query/tool-session-query/src/index.ts:20 inject [\u0027sessionQuery\u0027]；operations.ts:94,154,177,210,228 ctx.sessionQuery.searchSessions/searchEvents/traceSession/traceEvent/readEvent；workspace-access.ts:83-143 filterSessions/readTitleSnapshots；package.json:38",
+                               "purpose":  "sessionQuery 服务：搜索/血统/事件读取全部能力"
+                           },
+                           {
+                               "plugin_id":  "dsh-tools",
+                               "mechanism":  "E2",
+                               "evidence":  "packages/session-query/tool-session-query/src/index.ts:20 inject [\u0027tools\u0027]；66-122 ctx.tools.register(defineTool(...))；package.json:41",
+                               "purpose":  "工具注册表：defineTool 契约与注册"
+                           },
+                           {
+                               "plugin_id":  "dsh-system-prompt",
+                               "mechanism":  "E2",
+                               "evidence":  "packages/session-query/tool-session-query/src/index.ts:20 inject [\u0027systemPrompt\u0027]；60-64 ctx.systemPrompt.section({name:\u0027tool:session-query\u0027, order:113})；package.json:39",
+                               "purpose":  "系统提示 section 注册：模型面向的工具使用指南"
+                           },
+                           {
+                               "plugin_id":  "dsh-timeout",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/session-query/tool-session-query/src/index.ts:9 MAX_TIMER_DELAY_MS；package.json:40",
+                               "purpose":  "搜索超时上限校验（searchTimeoutMs ≤ MAX_TIMER_DELAY_MS）"
+                           },
+                           {
+                               "plugin_id":  "dsh-llm",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/session-query/tool-session-query/src/operations.ts:8 HarnessError（SESSION_QUERY_TOOL_UNAUTHORIZED）",
+                               "purpose":  "HarnessError 错误契约（工作区未授权报错）"
+                           },
+                           {
+                               "plugin_id":  "dsh-session",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/session-query/tool-session-query/src/operations.ts:9 SessionId 类型；package.json:36",
+                               "purpose":  "SessionId branded 类型与会话头（cwd）"
+                           },
+                           {
+                               "plugin_id":  "dsh-invariants",
+                               "mechanism":  "E2",
+                               "evidence":  "packages/session-query/tool-session-query/src/invariant.ts:15 inject [\u0027invariants\u0027]；package.json:33",
+                               "purpose":  "伴随 invariant 插件注册"
+                           },
+                           {
+                               "plugin_id":  "dsh-cordis",
+                               "mechanism":  "E1",
+                               "evidence":  "packages/session-query/tool-session-query/src/index.ts:8 Context + package.json:42",
+                               "purpose":  "Cordis 插件上下文"
+                           },
+                           {
+                               "plugin_id":  "dsh-session-query-sqlite",
+                               "mechanism":  "E3",
+                               "evidence":  "package.json devDependencies:55 dsh-session-query-sqlite（集成宿主）＋ base/cordis.patch.yml:117-118 装配 session-query-sqlite 提供 ctx.sessionQuery",
+                               "purpose":  "宿主装配：session-query-sqlite 提供本工具依赖的 ctx.sessionQuery 服务实现"
+                           }
+                       ],
+        "dependents":  [
+
+                       ]
+    }
+]

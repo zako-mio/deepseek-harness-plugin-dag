@@ -1,0 +1,27 @@
+<mxfile host="app.diagrams.net" agent="drawio-worker" version="24.0.0" type="device">
+  <diagram id="dsh-web-search-exa" name="dsh-web-search-exa">
+    <mxGraphModel dx="0" dy="0" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1170" pageHeight="661" math="0" shadow="0">
+      <root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="gUp" value="上游依赖 upstream (E1/E2/E3)" style="swimlane;startSize=28;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="190" height="233" as="geometry"/></mxCell>
+<mxCell id="u1" value="dsh-web&amp;#xa;(E1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="gUp"><mxGeometry x="50" y="60" width="170" height="60" as="geometry"/></mxCell>
+<mxCell id="u2" value="dsh-web-search-deepseek&amp;#xa;(E3)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="gUp"><mxGeometry x="50" y="135" width="170" height="60" as="geometry"/></mxCell>
+<mxCell id="gDown" value="下游被依赖 dependents" style="swimlane;startSize=28;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="1"><mxGeometry x="640" y="20" width="490" height="90" as="geometry"/></mxCell>
+<mxCell id="dnote" value="… 无下游依赖（L3 扩展点，共 0 个）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff9e6;strokeColor=#d6b656;fontColor=#888888;dashed=1;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="gDown"><mxGeometry x="10" y="45" width="470" height="40" as="geometry"/></mxCell>
+<mxCell id="center" value="@deepseek-ai/dsh-web-search-exa" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="1"><mxGeometry x="360" y="101" width="200" height="70" as="geometry"/></mxCell>
+<mxCell id="gP" value="提供服务 provides（关键项）" style="swimlane;startSize=28;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="1"><mxGeometry x="160" y="293" width="780" height="338" as="geometry"/></mxCell>
+<mxCell id="p1" value="ctx.web.registerSearchProvider 注册的 'exa' 后端（WebSearchProvider id='exa'）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="gP"><mxGeometry x="20" y="12" width="740" height="58" as="geometry"/></mxCell>
+<mxCell id="p2" value="EXA_PROVIDER_ID/EXA_DEFAULT_BASE_URL/EXA_DEFAULT_SEARCH_TYPE/EXA_DEFAULT_HIGHLIGHTS_PER_RESULT 常量" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="gP"><mxGeometry x="20" y="84" width="740" height="58" as="geometry"/></mxCell>
+<mxCell id="p3" value="ExaSearchProvider 类（search: WebSearchRequest→WebSearchResult）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="gP"><mxGeometry x="20" y="156" width="740" height="58" as="geometry"/></mxCell>
+<mxCell id="p4" value="Exa 搜索归一化映射（highlight→snippet, publishedDate→publishedAt）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="gP"><mxGeometry x="20" y="228" width="740" height="58" as="geometry"/></mxCell>
+<mxCell id="eU1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;endArrow=classic;fontSize=11;" edge="1" parent="1" source="u1" target="center"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="eU2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;endArrow=classic;fontSize=11;" edge="1" parent="1" source="u2" target="center"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="eP1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#b85450;endArrow=classic;fontSize=11;dashed=1;" edge="1" parent="1" source="center" target="p1"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="eP2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#b85450;endArrow=classic;fontSize=11;dashed=1;" edge="1" parent="1" source="center" target="p2"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="eP3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#b85450;endArrow=classic;fontSize=11;dashed=1;" edge="1" parent="1" source="center" target="p3"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="eP4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#b85450;endArrow=classic;fontSize=11;dashed=1;" edge="1" parent="1" source="center" target="p4"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

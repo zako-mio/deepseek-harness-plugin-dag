@@ -1,0 +1,10 @@
+# 临时/缓存
+*.log
+.DS_Store
+Thumbs.db
+
+# 截图（门控验证产物，不入库）
+07-checkpoint/screenshots/
+
+# 临时脚本
+D:\Temp\opencode\

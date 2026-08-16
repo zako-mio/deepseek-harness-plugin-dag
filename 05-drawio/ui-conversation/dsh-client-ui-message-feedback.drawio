@@ -1,0 +1,30 @@
+<mxfile host="app.diagrams.net" agent="drawio-worker" version="24.0.0" type="device">
+<diagram id="diagram-dsh-client-ui-message-feedback" name="dsh-client-ui-message-feedback">
+<mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1060" pageHeight="790" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="11" value="上游依赖 depends_on (E1/E2/E3)" style="text;html=1;fontSize=12;fontStyle=4;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontColor=#b8860b;" vertex="1" parent="1"><mxGeometry x="40" y="30" width="200" height="22" as="geometry"/></mxCell>
+<mxCell id="12" value="下游被依赖 dependents" style="text;html=1;fontSize=12;fontStyle=4;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontColor=#5a7d4a;" vertex="1" parent="1"><mxGeometry x="770" y="30" width="250" height="22" as="geometry"/></mxCell>
+<mxCell id="13" value="&lt;b&gt;dsh-client-ui-message-feedback&lt;/b&gt;&lt;br&gt;&lt;font style=&#x27;font-size:11px&#x27;&gt;@deepseek-ai/dsh-client-ui-message-feedback&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fontFamily=Microsoft YaHei;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f3b57;" vertex="1" parent="1"><mxGeometry x="428" y="302" width="260" height="96" as="geometry"/></mxCell>
+<mxCell id="20" value="dsh-api-remotes&lt;br&gt;E2 host messageFeed…" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="40" y="70" width="200" height="56" as="geometry"/></mxCell>
+<mxCell id="21" value="dsh-client-connection&lt;br&gt;E2 消息 id 类型与连接重置重同步" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="40" y="142" width="200" height="56" as="geometry"/></mxCell>
+<mxCell id="22" value="dsh-client-locale&lt;br&gt;E1 feedback 命名空间字典" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="40" y="214" width="200" height="56" as="geometry"/></mxCell>
+<mxCell id="23" value="dsh-client-runtime&lt;br&gt;E1 会话上下文与对象层挂载" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="40" y="286" width="200" height="56" as="geometry"/></mxCell>
+<mxCell id="24" value="dsh-client-ui-conversation&lt;br&gt;E1 消费 assistant-act…" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="40" y="358" width="200" height="56" as="geometry"/></mxCell>
+<mxCell id="25" value="dsh-client-ui-primitives&lt;br&gt;E1 UI atoms" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="40" y="430" width="200" height="56" as="geometry"/></mxCell>
+<mxCell id="26" value="dsh-client-ui-slots&lt;br&gt;E1 props 类型与 slot 注…" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="40" y="502" width="200" height="56" as="geometry"/></mxCell>
+<mxCell id="27" value="dsh-message-feedback&lt;br&gt;E1 feedback 域 wire …" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="40" y="574" width="200" height="56" as="geometry"/></mxCell>
+<mxCell id="28" value="&lt;b&gt;provides 关键项&lt;/b&gt;&lt;br&gt;• conversation.chat.assistant-actions id=feedback（MessageFeedbackActions）&lt;br&gt;• MessageFeedbackController（每 Session 一层，status cold/loading/ready/error）" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#7a4d00;align=left;verticalAlign=middle;spacing=8;" vertex="1" parent="1"><mxGeometry x="40" y="680" width="980" height="70" as="geometry"/></mxCell>
+<mxCell id="29" edge="1" parent="1" source="20" target="13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="30" edge="1" parent="1" source="21" target="13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="31" edge="1" parent="1" source="22" target="13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="32" edge="1" parent="1" source="23" target="13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="33" edge="1" parent="1" source="24" target="13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="34" edge="1" parent="1" source="25" target="13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="35" edge="1" parent="1" source="26" target="13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="36" edge="1" parent="1" source="27" target="13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+</mxfile>

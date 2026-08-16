@@ -1,0 +1,28 @@
+<mxfile host="app.diagrams.net" agent="drawio-worker" version="24.0.0" type="device">
+<diagram id="diagram-dsh-client-ui-theme" name="dsh-client-ui-theme">
+<mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1056" pageHeight="514" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="11" value="上游依赖 depends_on (E1/E2/E3)" style="text;html=1;fontSize=12;fontStyle=4;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontColor=#b8860b;" vertex="1" parent="1"><mxGeometry x="40" y="30" width="168" height="22" as="geometry"/></mxCell>
+<mxCell id="12" value="下游被依赖 dependents" style="text;html=1;fontSize=12;fontStyle=4;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontColor=#5a7d4a;" vertex="1" parent="1"><mxGeometry x="770" y="30" width="216" height="22" as="geometry"/></mxCell>
+<mxCell id="13" value="&lt;b&gt;dsh-client-ui-theme&lt;/b&gt;&lt;br&gt;&lt;font style=&#x27;font-size:11px&#x27;&gt;@deepseek-ai/dsh-client-ui-theme&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fontFamily=Microsoft YaHei;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f3b57;" vertex="1" parent="1"><mxGeometry x="428" y="154" width="248" height="86" as="geometry"/></mxCell>
+<mxCell id="14" value="dsh-client-ui-layout&lt;br&gt;E2 ctx.theme 服务与主题事件流" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="40" y="60" width="168" height="50" as="geometry"/></mxCell>
+<mxCell id="15" value="dsh-cordis-client-runner&lt;br&gt;E2 动态包可经 ctx.theme.overrideToken…" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="40" y="116" width="168" height="50" as="geometry"/></mxCell>
+<mxCell id="16" value="dsh-api-remotes&lt;br&gt;E2 settings 刷新 remote 通道" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#2d4a25;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="770" y="60" width="216" height="50" as="geometry"/></mxCell>
+<mxCell id="17" value="dsh-client-connection&lt;br&gt;E2 传输/remote 通道" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#2d4a25;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="770" y="116" width="216" height="50" as="geometry"/></mxCell>
+<mxCell id="18" value="dsh-client-locale&lt;br&gt;E1 locale Context 合并（ctx.locale）" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#2d4a25;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="770" y="172" width="216" height="50" as="geometry"/></mxCell>
+<mxCell id="19" value="dsh-client-runtime&lt;br&gt;E1 ClientContext/slots 服务" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#2d4a25;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="770" y="228" width="216" height="50" as="geometry"/></mxCell>
+<mxCell id="20" value="dsh-client-ui-settings&lt;br&gt;E2 持久化主题偏好（settings 文档）" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#2d4a25;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="770" y="284" width="216" height="50" as="geometry"/></mxCell>
+<mxCell id="20" value="&lt;b&gt;provides 关键项&lt;/b&gt;&lt;br&gt;• ctx.theme（ThemeRuntime/ThemeSnapsho…&lt;br&gt;• 事件：theme/change&lt;br&gt;• boot-theme 内联脚本（tapIndex 注入）&lt;br&gt;• settings.general.item slot 行（id: 'a…&lt;br&gt;• 命名空间：settings.theme&lt;br&gt;• --dsw-* token stylesheets" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Microsoft YaHei;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#7a4d00;align=left;verticalAlign=middle;spacing=8;" vertex="1" parent="1"><mxGeometry x="96" y="354" width="704" height="130" as="geometry"/></mxCell>
+<mxCell id="21" edge="1" parent="1" source="14" target="13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="22" edge="1" parent="1" source="15" target="13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="23" edge="1" parent="1" source="13" target="16" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="24" edge="1" parent="1" source="13" target="17" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="25" edge="1" parent="1" source="13" target="18" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="26" edge="1" parent="1" source="13" target="19" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="27" edge="1" parent="1" source="13" target="20" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+</mxfile>

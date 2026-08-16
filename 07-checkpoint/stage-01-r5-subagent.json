@@ -1,0 +1,236 @@
+{
+  "route": "R5-subagent",
+  "scope": "子代理与工作流域 14 插件",
+  "plugins": [
+    {
+      "id": "dsh-subagent",
+      "name": "@deepseek-ai/dsh-subagent",
+      "implementation": "子代理能力缝(capability seam)的服务定义：SubagentRuntime extends Service 注册为 ctx.subagents，维护命名 provider 注册表。start() 先做能力校验与描述符快照再委派给 provider，并用 observeRun 发布 subagent/start、subagent/end 生命周期事件。构造时 ctx.inject(['agents']) 创建 SubagentContinuationManager 支撑可续聊子代理，ctx.inject(['sessionProjections']) 注册 subagentTiming/Identity 投影。",
+      "provides": ["ctx.subagents(SubagentRuntime)", "subagent/provider-added|removed|start|end 事件", "SubagentContinuationManager", "subagent 标识/时序 sessionProjections", "SubagentRunId/descriptor 折叠/快照"],
+      "depends_on": [
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/subagent/subagent/src/index.ts:186", "purpose": "ctx.inject(['agents']) 建立 ContinuationManager"},
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/subagent/subagent/src/list-children.ts:201,231", "purpose": "ctx.get('sessions') 枚举子代理"},
+        {"plugin_id": "dsh-session-projection + dsh-session-persistence", "mechanism": "E3", "evidence": "packages/subagent/subagent/src/list-children.ts:188,209", "purpose": "冷子代理身份解析(optional)"},
+        {"plugin_id": "dsh-tools", "mechanism": "E1", "evidence": "packages/subagent/subagent/src/index.ts:37", "purpose": "assertObjectJsonSchema 校验"},
+        {"plugin_id": "dsh-llm / dsh-agent / dsh-scope", "mechanism": "E1", "evidence": "packages/subagent/subagent/src/index.ts:34-38", "purpose": "ContentBlock/Agent/SessionId 类型"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-subagent-spawn-in-process", "evidence": "packages/subagent/subagent-spawn-in-process/src/index.ts:22,63", "purpose": "注册 spawn provider"},
+        {"plugin_id": "dsh-subagent-fork-in-process", "evidence": "packages/subagent/subagent-fork-in-process/src/index.ts:28,93", "purpose": "注册 fork provider"},
+        {"plugin_id": "dsh-tool-subagent", "evidence": "packages/subagent/tool-subagent/src/index.ts:23,440-447", "purpose": "委派工具挂载"},
+        {"plugin_id": "dsh-tool-subagent-control", "evidence": "packages/subagent/tool-subagent-control/src/index.ts:19,66,116", "purpose": "send_message/interrupt_agent"},
+        {"plugin_id": "dsh-workflow-worker-thread", "evidence": "packages/workflow/workflow-worker-thread/src/host.ts:352", "purpose": "worker 子代理启动"}
+      ]
+    },
+    {
+      "id": "dsh-subagent-spawn-in-process",
+      "name": "@deepseek-ai/dsh-subagent-spawn-in-process",
+      "implementation": "ctx.subagents 的 spawn provider 后端：apply 直接 ctx.subagents.registerProvider(new SpawnInProcessProvider(config.providerName))。声明全部 4 项能力(outputSchema/depthLimit/toolFilter/persona)，inheritsParentContext=false；start() 委托共享驱动 startInProcessRun 走 ctx.agents.create 全新子代理；prepareContinuable 返回空 spec。",
+      "provides": ["ctx.subagents 命名 provider 'spawn'", "子代理能力声明: outputSchema/depthLimit/toolFilter/persona"],
+      "depends_on": [
+        {"plugin_id": "dsh-subagent", "mechanism": "E1", "evidence": "packages/subagent/subagent-spawn-in-process/src/index.ts:22,63", "purpose": "inject subagents 注册 provider"},
+        {"plugin_id": "dsh-subagent-in-process-driver", "mechanism": "E1", "evidence": "packages/subagent/subagent-spawn-in-process/src/index.ts:17,52", "purpose": "startInProcessRun 共享驱动"},
+        {"plugin_id": "dsh-agent", "mechanism": "E3", "evidence": "packages/subagent/subagent-spawn-in-process/package.json:45", "purpose": "子代理经 ctx.agents 工厂创建"},
+        {"plugin_id": "dsh-tools", "mechanism": "E3", "evidence": "packages/subagent/subagent-spawn-in-process/src/index.ts:20-21", "purpose": "子代理工具链由 agents 工厂提供"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-tool-subagent", "evidence": "packages/bundle/base/cordis.patch.yml:313-318", "purpose": "base 组合 provider: spawn"},
+        {"plugin_id": "dsh-workflow-worker-thread", "evidence": "packages/workflow/workflow-worker-thread/src/index.ts:116,146", "purpose": "engine 默认 provider='spawn'"},
+        {"plugin_id": "dsh-tool-ralph", "evidence": "packages/workflow/tool-ralph/src/index.ts:35,445", "purpose": "Ralph 默认 subagentProvider='spawn'"}
+      ]
+    },
+    {
+      "id": "dsh-subagent-fork-in-process",
+      "name": "@deepseek-ai/dsh-subagent-fork-in-process",
+      "implementation": "ctx.subagents 的 fork provider 后端：apply 注册 ForkInProcessProvider。start() 通过 completedTurnPrefix(parent) 截取父会话截至最后 turn/end 的完整事件前缀作为种子，再调 startInProcessRun(request, {seed}) 创建继承父上下文的子代理；inheritsParentContext=true。",
+      "provides": ["ctx.subagents 命名 provider 'fork'", "继承父上下文能力声明"],
+      "depends_on": [
+        {"plugin_id": "dsh-subagent", "mechanism": "E1", "evidence": "packages/subagent/subagent-fork-in-process/src/index.ts:28,93", "purpose": "inject subagents 注册 provider"},
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/subagent/subagent-fork-in-process/src/index.ts:12,49", "purpose": "parent.session.events 截取种子"},
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/subagent/subagent-fork-in-process/src/index.ts:13,49", "purpose": "Agent 类型与 parent.session.header"},
+        {"plugin_id": "dsh-subagent-in-process-driver", "mechanism": "E1", "evidence": "packages/subagent/subagent-fork-in-process/src/index.ts:21,70", "purpose": "startInProcessRun 携带 seed"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-tool-subagent", "evidence": "packages/bundle/base/cordis.patch.yml:324-329", "purpose": "base 组合第二实例 fork/one-shot"}
+      ]
+    },
+    {
+      "id": "dsh-tool-subagent",
+      "name": "@deepseek-ai/dsh-tool-subagent",
+      "implementation": "模型可见的 subagent 委派工具：apply 通过 ctx.tools.register 注册(config.toolName ?? 'subagent')。工具 mount 随 provider 生命周期动态挂载/卸载(监听 subagent/provider-added|removed)；execute 区分前台、one-shot 后台(jobs.start)与 continuable 后台(ctx.subagents.startContinuable)。",
+      "provides": ["模型工具 'subagent'", "systemPrompt section tool:subagent", "后台委派作业路由(dsh-jobs + continuable)"],
+      "depends_on": [
+        {"plugin_id": "dsh-subagent", "mechanism": "E1", "evidence": "packages/subagent/tool-subagent/src/index.ts:17,23,425", "purpose": "start/startContinuable/getProvider"},
+        {"plugin_id": "dsh-tools", "mechanism": "E1", "evidence": "packages/subagent/tool-subagent/src/index.ts:13,297", "purpose": "defineTool + register"},
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/subagent/tool-subagent/src/index.ts:14,370", "purpose": "exec.agent 委派 parent"},
+        {"plugin_id": "dsh-jobs", "mechanism": "E1", "evidence": "packages/subagent/tool-subagent/src/index.ts:19,400-403", "purpose": "one-shot 后台 jobs.start"},
+        {"plugin_id": "dsh-system-prompt", "mechanism": "E1", "evidence": "packages/subagent/tool-subagent/src/index.ts:20,459", "purpose": "systemPrompt.section 注册指引"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/cordis.patch.yml:313-329", "purpose": "base 装载两个实例"}
+      ]
+    },
+    {
+      "id": "dsh-tool-subagent-control",
+      "name": "@deepseek-ai/dsh-tool-subagent-control",
+      "implementation": "全局命名控制工具：apply 注册 send_message(ctx.subagents.followup 转发)与 interrupt_agent(ctx.subagents.interrupt 转发)；list-agents 子入口注册 list_agents(listChildren/listDescendants + agents 实时状态)。工具名全局唯一。",
+      "provides": ["模型工具 send_message/interrupt_agent", "可独立加载的 list_agents"],
+      "depends_on": [
+        {"plugin_id": "dsh-subagent", "mechanism": "E1", "evidence": "packages/subagent/tool-subagent-control/src/index.ts:19,66", "purpose": "followup/interrupt"},
+        {"plugin_id": "dsh-tools", "mechanism": "E1", "evidence": "packages/subagent/tool-subagent-control/src/index.ts:13,26", "purpose": "defineTool + register"},
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/subagent/tool-subagent-control/src/index.ts:15,68", "purpose": "SessionId 品牌化入参"},
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/subagent/tool-subagent-control/src/list-agents.ts:18,60", "purpose": "list_agents inject agents"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/subagent/tool-subagent-control/src/list-agents.ts:14", "purpose": "assertNever"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/cordis.patch.yml:307-311", "purpose": "base 装载 control 与 /list-agents"}
+      ]
+    },
+    {
+      "id": "dsh-tool-subagent-report",
+      "name": "@deepseek-ai/dsh-tool-subagent-report",
+      "implementation": "子作用域 report 工具：apply 通过 ctx.subagents.registerContinuableSetup(childCtx => installReportTool(childCtx, ctx, reportDelivery)) 将 report 工具与 prompt 指引装入每个可续聊子代理的未发布 childCtx。installReportTool 注册 childCtx.tools 的 'report' 工具(调 ctx.subagents.reportFrom)，仅对 continuable in-process 子代理可见。",
+      "provides": ["子代理作用域模型工具 'report'", "子代理 systemPrompt section tool:report", "父调度策略 reportDelivery: quiet|wakeup"],
+      "depends_on": [
+        {"plugin_id": "dsh-subagent", "mechanism": "E1", "evidence": "packages/subagent/tool-subagent-report/src/index.ts:21,140", "purpose": "registerContinuableSetup + reportFrom"},
+        {"plugin_id": "dsh-tools", "mechanism": "E1", "evidence": "packages/subagent/tool-subagent-report/src/index.ts:15,65", "purpose": "childCtx.tools.register"},
+        {"plugin_id": "dsh-system-prompt", "mechanism": "E1", "evidence": "packages/subagent/tool-subagent-report/src/index.ts:14,54", "purpose": "childCtx.systemPrompt.section"},
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/subagent/tool-subagent-report/src/index.ts:11,98", "purpose": "exec.agent 报告发送方"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/cordis.patch.yml:332-333", "purpose": "base 装载 report 通道"}
+      ]
+    },
+    {
+      "id": "dsh-workflow-worker-thread",
+      "name": "@deepseek-ai/dsh-workflow-worker-thread",
+      "implementation": "worker-thread workflow 引擎：WorkerThreadWorkflowEngine extends WorkflowEngine 注册为 ctx.workflowEngine。start() 同步校验 meta、宿主侧 body 预解析、解析 subagent provider 路由与并发上限，随后在独立 worker 线程执行模型编写的脚本，worker 内 agent() 经 ChildRpcBridge RPC 回宿主，宿主 startChild 调 this.subagents.start(provider) 启动子代理并把结果结构化克隆回 worker；发布 workflow/start|phase|log|agent-start|agent-end|end 事件。",
+      "provides": ["ctx.workflowEngine(WorkerThreadWorkflowEngine)", "workflow/* 事件", "WorkerRun/materializeFromRealm/validateMeta"],
+      "depends_on": [
+        {"plugin_id": "dsh-subagent", "mechanism": "E1", "evidence": "packages/workflow/workflow-worker-thread/src/host.ts:352", "purpose": "startChild 经 subagents.start(provider)"},
+        {"plugin_id": "dsh-workflow", "mechanism": "E1", "evidence": "packages/workflow/workflow-worker-thread/src/index.ts:14,127,157", "purpose": "继承 WorkflowEngine 抽象"},
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/workflow/workflow-worker-thread/src/index.ts:14,177", "purpose": "request.parent Agent"},
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/workflow/workflow-worker-thread/src/host.ts:16,393", "purpose": "snapshotJsonValue 序列化跨 worker"},
+        {"plugin_id": "dsh-tools", "mechanism": "E1", "evidence": "packages/workflow/workflow-worker-thread/package.json:46", "purpose": "agent() 选项 schema"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-tool-workflow", "evidence": "packages/workflow/tool-workflow/src/index.ts:30,284", "purpose": "inject workflowEngine 执行"},
+        {"plugin_id": "dsh-tool-ralph", "evidence": "packages/workflow/tool-ralph/src/index.ts:20,447", "purpose": "RALPH_SCRIPT 经 engine.start"},
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/cordis.patch.yml:335-341", "purpose": "base 装载 workflow"}
+      ]
+    },
+    {
+      "id": "dsh-tool-workflow",
+      "name": "@deepseek-ai/dsh-tool-workflow",
+      "implementation": "模型可见 workflow 工具：apply 注册 defineTool({name: config.toolName ?? 'workflow'})。execute 校验 exec.agent 后调 ctx.workflowEngine.start，桥接 exec.signal→run.cancel，await run.result 后按 stopReason 映射错误；createWorkflowRecorder 监听 workflow/agent-start|end 把 tool-workflow/run-start 等 4 类事件追加进父 Session。",
+      "provides": ["模型工具 'workflow'", "systemPrompt section tool:workflow", "Session 事件 tool-workflow/run-start|agent-start|agent-end|run-end"],
+      "depends_on": [
+        {"plugin_id": "dsh-workflow-worker-thread", "mechanism": "E1", "evidence": "packages/workflow/tool-workflow/package.json:61", "purpose": "ctx.workflowEngine 具体实现"},
+        {"plugin_id": "dsh-workflow", "mechanism": "E1", "evidence": "packages/workflow/tool-workflow/src/index.ts:21,46,284", "purpose": "WorkflowResult 类型 + seam"},
+        {"plugin_id": "dsh-tools", "mechanism": "E1", "evidence": "packages/workflow/tool-workflow/src/index.ts:15,30,217", "purpose": "defineTool + register"},
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/workflow/tool-workflow/src/index.ts:18,87", "purpose": "Session.append 记录运行事件"},
+        {"plugin_id": "dsh-system-prompt", "mechanism": "E1", "evidence": "packages/workflow/tool-workflow/src/index.ts:27,30,212", "purpose": "systemPrompt.section"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-client/ui-workflow-run", "evidence": "packages/client/ui-workflow-run/package.json:64,77", "purpose": "UI 层渲染"},
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/cordis.patch.yml:340-342", "purpose": "base 装载"}
+      ]
+    },
+    {
+      "id": "dsh-tool-ralph",
+      "name": "@deepseek-ai/dsh-tool-ralph",
+      "implementation": "模型可见 Ralph 循环工具：apply 注册 'ralph' 工具，execute 经 ctx.workflowEngine.start 执行固定 RALPH_SCRIPT。脚本每轮调 agent(prompt, {schema}) 启动 fresh structured-output 子代理，仅携带不可变 objective 与上轮受限结构化 handoff；requireFreshProvider 强制 provider 具备 outputSchema 且不继承父上下文。",
+      "provides": ["模型工具 'ralph'", "RALPH_SCRIPT/RALPH_META 固定编排", "systemPrompt section tool:ralph", "子代理路由校验(fresh+outputSchema)"],
+      "depends_on": [
+        {"plugin_id": "dsh-subagent", "mechanism": "E1", "evidence": "packages/workflow/tool-ralph/src/index.ts:12,20,221", "purpose": "getProvider 校验 fresh provider"},
+        {"plugin_id": "dsh-workflow-worker-thread", "mechanism": "E1", "evidence": "packages/workflow/tool-ralph/package.json:61", "purpose": "ctx.workflowEngine 具体实现"},
+        {"plugin_id": "dsh-workflow", "mechanism": "E1", "evidence": "packages/workflow/tool-ralph/src/index.ts:15,20,447", "purpose": "WorkflowResult + seam"},
+        {"plugin_id": "dsh-tools", "mechanism": "E1", "evidence": "packages/workflow/tool-ralph/src/index.ts:13,20,412", "purpose": "defineTool + register"},
+        {"plugin_id": "dsh-system-prompt", "mechanism": "E1", "evidence": "packages/workflow/tool-ralph/src/index.ts:17,20,407", "purpose": "systemPrompt.section"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/cordis.patch.yml:377-382", "purpose": "base 装载(provider spawn, maxRounds 64)"}
+      ]
+    },
+    {
+      "id": "dsh-tool-call-timeout-policy",
+      "name": "@deepseek-ai/dsh-tool-call-timeout-policy",
+      "implementation": "工具调用超时 guard：apply 在 'tools/execute' 事件链上包装。读取 ctx.tools.get(exec.name, exec.agent)?.timeoutMs，用 dsh-timeout 的 deadline 派生 deadline 信号临时替换 exec.signal 后委托 next()，超时则以 toolTimeoutResult 生成 TOOL_TIMEOUT 错误结果替换，finally 恢复上游信号。",
+      "provides": ["tools/execute 包装(per-tool deadline + TOOL_TIMEOUT)", "常量 TOOL_TIMEOUT"],
+      "depends_on": [
+        {"plugin_id": "dsh-tools", "mechanism": "E2", "evidence": "packages/guard/timeout-policy/src/index.ts:31,56-57", "purpose": "inject tools; 监听 tools/execute"},
+        {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "packages/guard/timeout-policy/src/index.ts:15,61", "purpose": "deadline/timeoutOf"},
+        {"plugin_id": "dsh-llm", "mechanism": "E3", "evidence": "packages/guard/timeout-policy/package.json:36", "purpose": "ToolExecutionResult 类型"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-tool-web", "evidence": "packages/web/tool-web/src/index.ts:75-78", "purpose": "web 工具附 timeoutMs 交本策略强制"},
+        {"plugin_id": "dsh-lsp/tool-lsp", "evidence": "packages/lsp/tool-lsp/package.json:57", "purpose": "lsp 工具声明依赖"},
+        {"plugin_id": "dsh-session-query/tool-session-query", "evidence": "packages/session-query/tool-session-query/package.json:59", "purpose": "session-query 工具依赖"},
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/cordis.patch.yml:343-344", "purpose": "base 装载"}
+      ]
+    },
+    {
+      "id": "dsh-repeat-tool-reminder",
+      "name": "@deepseek-ai/dsh-repeat-tool-reminder",
+      "implementation": "重复工具调用提醒 guard：apply 维护 WeakMap<Agent, Chain> 连续重复链。在 'tools/post-execute' 上 observe，参数深排序 canonicalize 后按 [name, canonical] 计数，命中 thresholds 则注入提醒 UserMessage 到 additionalContexts(只 enrich 不 veto)；'agent/pre-step' 在用户消息出现时重置链。",
+      "provides": ["tools/post-execute 观察者(重复提醒注入)", "agent/pre-step 重置钩子", "配置 thresholds/include/exclude"],
+      "depends_on": [
+        {"plugin_id": "dsh-tools", "mechanism": "E2", "evidence": "packages/guard/repeat-tool-reminder/src/index.ts:15,213", "purpose": "监听 tools/post-execute"},
+        {"plugin_id": "dsh-agent", "mechanism": "E2", "evidence": "packages/guard/repeat-tool-reminder/src/index.ts:11,229", "purpose": "监听 agent/pre-step"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/guard/repeat-tool-reminder/src/index.ts:12,203", "purpose": "createUserMessage"},
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/guard/repeat-tool-reminder/src/index.ts:14,203", "purpose": "UserMessage 类型"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/cordis.patch.yml:390-394", "purpose": "base 装载([3,5,8])"}
+      ]
+    },
+    {
+      "id": "dsh-web",
+      "name": "@deepseek-ai/dsh-web",
+      "implementation": "web 能力缝服务定义：WebRuntime extends Service 注册为 ctx.web，维护 searchProviders/fetchProviders 两个命名注册表。search()/fetch() 在调用时按配置 id→注册→available() 优先级解析唯一 provider，无配置时恰好一个可用自动选中；search 结果按 maxResults 截断。",
+      "provides": ["ctx.web(WebRuntime)", "registerSearchProvider/registerFetchProvider", "WebError 错误分类学", "searchProvider/fetchProvider 选择配置"],
+      "depends_on": [
+        {"plugin_id": "dsh-llm", "mechanism": "E3", "evidence": "packages/web/web/package.json:36", "purpose": "类型/错误基类声明依赖"},
+        {"plugin_id": "cordis", "mechanism": "E1", "evidence": "packages/web/web/src/index.ts:9,91", "purpose": "Service/Context 基座"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-web-search-deepseek", "evidence": "packages/web/web-search-deepseek/src/index.ts:41,137", "purpose": "注册 deepseek-official provider"},
+        {"plugin_id": "dsh-web-search-exa / perplexity / web-fetch-http", "evidence": "packages/web/web-search-exa/package.json:37", "purpose": "备选 provider"},
+        {"plugin_id": "dsh-tool-web", "evidence": "packages/web/tool-web/src/index.ts:24,261", "purpose": "web_search/web_fetch 工具"},
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/cordis.patch.yml:404-407", "purpose": "base 装载 web 服务"}
+      ]
+    },
+    {
+      "id": "dsh-web-search-deepseek",
+      "name": "@deepseek-ai/dsh-web-search-deepseek",
+      "implementation": "DeepSeek 官方搜索 provider：apply 通过 ctx.web.registerSearchProvider 注册 id='deepseek-official'。search() 每次操作快照 options 后向 Anthropic 兼容 Messages API 发原生 web_search_20250305 工具请求，mapAnthropicResponse 合并引用为 WebSearchResult；apiKey 经 dsh-credentials resolveApiKey 解析，并把脱密请求体记入 session 事件 'web/deepseek-search-llm-request'。",
+      "provides": ["ctx.web 搜索 provider 'deepseek-official'", "settings 段 web-search-deepseek", "Session 事件 web/deepseek-search-llm-request"],
+      "depends_on": [
+        {"plugin_id": "dsh-web", "mechanism": "E1", "evidence": "packages/web/web-search-deepseek/src/index.ts:41,137", "purpose": "registerSearchProvider + WebError"},
+        {"plugin_id": "dsh-credentials", "mechanism": "E1", "evidence": "packages/web/web-search-deepseek/src/index.ts:11,102-104", "purpose": "resolve DEEPSEEK_API_KEY"},
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/web/web-search-deepseek/src/index.ts:14,117-122", "purpose": "session.append 记录搜索请求"},
+        {"plugin_id": "dsh-settings + dsh-launch-environment", "mechanism": "E1", "evidence": "packages/web/web-search-deepseek/src/index.ts:12-13,110-112", "purpose": "settings 热更新 + 环境回退"},
+        {"plugin_id": "dsh-agent", "mechanism": "E3", "evidence": "packages/web/web-search-deepseek/package.json:35", "purpose": "currentInitiator 归属"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/cordis.patch.yml:409-412", "purpose": "base 装载(apiKeyEnv DEEPSEEK_API_KEY)"}
+      ]
+    },
+    {
+      "id": "dsh-tool-web",
+      "name": "@deepseek-ai/dsh-tool-web",
+      "implementation": "模型可见 web 工具套件：apply 按 config 决定注册 web_search(经 ctx.web.search 执行并投影 WebSearchResult)与 web_fetch(经 ctx.web.fetch 执行后由 turndown 把 HTML 转 markdown，带深度上限)。两工具把 config 的 timeoutMs 附到 ToolDefinition.timeoutMs 交 timeout-policy 强制。",
+      "provides": ["模型工具 web_search/web_fetch", "systemPrompt sections tool:web_search", "presentation meta: WebSearchMeta/WebFetchMeta"],
+      "depends_on": [
+        {"plugin_id": "dsh-web", "mechanism": "E1", "evidence": "packages/web/tool-web/src/index.ts:24,261", "purpose": "ctx.web.search/fetch"},
+        {"plugin_id": "dsh-tools", "mechanism": "E1", "evidence": "packages/web/tool-web/src/index.ts:24", "purpose": "defineTool + register"},
+        {"plugin_id": "dsh-tool-call-timeout-policy", "mechanism": "E2", "evidence": "packages/web/tool-web/src/index.ts:75-78", "purpose": "timeoutMs 交策略强制"},
+        {"plugin_id": "dsh-system-prompt", "mechanism": "E1", "evidence": "packages/web/tool-web/src/index.ts:24", "purpose": "systemPrompt.section"},
+        {"plugin_id": "dsh-llm", "mechanism": "E3", "evidence": "packages/web/tool-web/src/index.ts:37", "purpose": "ContentBlock/assertNever 类型"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/cordis.patch.yml:414-418", "purpose": "base 装载(fetch:false, searchTimeoutMs 60000)"}
+      ]
+    }
+  ]
+}

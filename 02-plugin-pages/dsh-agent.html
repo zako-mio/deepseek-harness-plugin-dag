@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dsh-agent · @deepseek-ai/dsh-agent · DeepSeek Harness 插件 DAG</title>
+<style>
+:root{--bg:#0f1117;--panel:#161a22;--border:#2a2f3a;--text:#e6e8ee;--dim:#9aa3b2;--accent:#4f8cff;--ext:#b48a3c;--ok:#2fb98a;--dis:#c0504d;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+header{background:var(--panel);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+header h1{font-size:17px;font-weight:600;}
+header .crumb{color:var(--dim);font-size:13px;}
+header .crumb a{color:var(--accent);text-decoration:none;}
+.badge{background:#20324f;color:#7fb0ff;padding:2px 10px;border-radius:20px;font-size:12px;}
+.badge.ext{background:#3a2f1a;color:#e0b25e;}
+.badge.layer{background:#1d2a24;color:#5fc9a0;}
+.badge.l2{background:#2f2440;color:#b48ae0;}
+.badge.l3{background:#1d3a30;color:#5fd0a8;}
+.badge.dis{background:#3a1d1d;color:#e08584;}
+main{padding:24px;max-width:1200px;margin:0 auto;}
+h2{font-size:18px;margin:26px 0 12px;color:#cfd6e4;border-bottom:1px solid var(--border);padding-bottom:8px;}
+h3{font-size:15px;margin:18px 0 8px;color:#b8c2d4;}
+p,li{font-size:14px;}
+ul{padding-left:22px;}
+.dep-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;margin:10px 0;}
+.dep-item{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 12px;}
+.dep-item .name{font-weight:600;color:var(--accent);}
+.dep-item .mech{display:inline-block;font-size:11px;background:#1d2a3f;color:#7fb0ff;border-radius:4px;padding:1px 6px;margin-left:6px;}
+.dep-item .evi{font-size:12px;color:var(--dim);margin-top:4px;font-family:Consolas,monospace;word-break:break-all;}
+.dep-item .purpose{font-size:13px;margin-top:4px;}
+.ext .name{color:var(--ext);}
+.dis .name{color:var(--dis);}
+.provides li{font-size:13px;margin:3px 0;}
+.evidence{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-family:Consolas,monospace;font-size:12px;color:#9fb0c3;margin:6px 0;word-break:break-all;}
+.dagnav{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:14px 0;}
+.dagnav .label{font-size:12px;color:var(--dim);margin-bottom:6px;}
+.dagnav .chips{display:flex;flex-wrap:wrap;gap:6px;}
+.chip{font-size:12px;background:#1d2a3f;border:1px solid #2b3d5f;border-radius:6px;padding:2px 8px;color:#7fb0ff;text-decoration:none;}
+.chip:hover{background:#2b3d5f;}
+.chip.ext{background:#3a2f1a;border-color:#5a4422;color:#e0b25e;}
+.chip.dis{background:#3a1d1d;border-color:#6a3231;color:#e08584;}
+.chip.l2{background:#2f2440;border-color:#4a3560;color:#b48ae0;}
+.chip.l3{background:#1d3a30;border-color:#2f5a4a;color:#5fd0a8;}
+.chip.self{background:#20324f;border-color:#4f8cff;color:#fff;cursor:default;}
+.treenav{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:14px 0;display:flex;flex-wrap:wrap;gap:4px 14px;}
+.treenav a{color:var(--dim);font-size:13px;text-decoration:none;}
+.treenav a:hover{color:var(--accent);}
+.treenav .sep{color:#3a3f4a;}
+.layernav{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}
+.layernav a{font-size:12px;background:#161d2c;border:1px solid var(--border);border-radius:6px;padding:2px 8px;color:var(--dim);text-decoration:none;}
+.layernav a.cur{background:#20324f;color:#7fb0ff;border-color:#4f8cff;}
+footer{margin-top:40px;padding:16px 24px;border-top:1px solid var(--border);color:var(--dim);font-size:12px;text-align:center;}
+table{border-collapse:collapse;width:100%;margin:10px 0;}
+th,td{border:1px solid var(--border);padding:6px 10px;font-size:13px;text-align:left;}
+th{background:var(--panel);color:#b8c2d4;}
+</style>
+</head>
+<body>
+<header>
+  <span class="crumb"><a href="../index.html">DAG总览</a> / <a href="../03-groups/index.html">组目录</a> / G03 核心服务</span>
+  <h1>dsh-agent · @deepseek-ai/dsh-agent</h1>
+  <span class="badge">Layer 2</span><span class="badge">G03</span>
+</header>
+<main>
+<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">运行时框架</a><a href="../03-groups/G02.html">类型契约</a><a href="../03-groups/G03.html">核心服务</a><a href="../03-groups/G04.html">LLM核心</a><a href="../03-groups/G05.html">LLM适配</a><a href="../03-groups/G06.html">LLM治理</a><a href="../03-groups/G07.html">会话持久化</a><a href="../03-groups/G08.html">会话展示</a><a href="../03-groups/G09.html">审批权限</a><a href="../03-groups/G10.html">命令交互</a><a href="../03-groups/G11.html">凭据设置</a><a href="../03-groups/G12.html">附件</a><a href="../03-groups/G13.html">文件系统</a><a href="../03-groups/G14.html">Shell工具</a><a href="../03-groups/G15.html">沙箱执行</a><a href="../03-groups/G16.html">作业</a><a href="../03-groups/G17.html">目标计划</a><a href="../03-groups/G18.html">技能</a><a href="../03-groups/G19.html">子代理</a><a href="../03-groups/G20.html">工作流</a><a href="../03-groups/G21.html">上下文治理</a><a href="../03-groups/G22.html">上下文注入</a><a href="../03-groups/G23.html">工具守卫</a><a href="../03-groups/G24.html">Web搜索</a><a href="../03-groups/G25.html">宿主服务</a><a href="../03-groups/G26.html">客户端runtime</a><a href="../03-groups/G27.html">会话交互UI</a><a href="../03-groups/G28.html">设置输入UI</a><a href="../03-groups/G29.html">UI底座</a><a href="../03-groups/G30.html">外部执行后端</a><a href="../03-groups/G31.html">协议与SDK</a><a href="../03-groups/G32.html">LSP集成</a><a href="../03-groups/G33.html">子代理外部后端</a><a href="../03-groups/G34.html">Web上下文扩展</a><a href="../03-groups/G35.html">会话存储变体</a><a href="../03-groups/G36.html">Hooks工具扩展</a><a href="../03-groups/G37.html">示例与框架</a></div><div class="dagnav"><div class="label">依赖链 · 上游（该插件依赖的前驱）：</div><div class="chips"><a class="chip" href="dsh-llm.html">dsh-llm</a><a class="chip" href="dsh-session.html">dsh-session</a><a class="chip" href="dsh-system-prompt.html">dsh-system-prompt</a><a class="chip" href="dsh-typert-registry.html">dsh-typert-registry</a></div><div class="label" style="margin-top:8px;">依赖链 · 下游（依赖该插件的节点）：</div><div class="chips"><a class="chip" href="dsh-agent-default-model.html">dsh-agent-default-model</a><a class="chip" href="dsh-agent-instructions.html">dsh-agent-instructions</a><a class="chip" href="dsh-agent-loop.html">dsh-agent-loop</a><a class="chip l2" href="dsh-agent-presets.html">dsh-agent-presets</a><a class="chip l3" href="dsh-agent-spine-demo.html">dsh-agent-spine-demo</a><a class="chip l2" href="dsh-api-remotes.html">dsh-api-remotes</a><a class="chip l2" href="dsh-client-ui-conversation.html">dsh-client-ui-conversation</a><a class="chip l2" href="dsh-client-ui-trajectory.html">dsh-client-ui-trajectory</a><a class="chip" href="dsh-commands.html">dsh-commands</a><a class="chip" href="dsh-compaction-basic.html">dsh-compaction-basic</a><a class="chip l2" href="dsh-cordis-host-runner.html">dsh-cordis-host-runner</a><a class="chip" href="dsh-goal.html">dsh-goal</a><a class="chip" href="dsh-goal-round-driver.html">dsh-goal-round-driver</a><a class="chip l3" href="dsh-hooks-claude-code.html">dsh-hooks-claude-code</a><a class="chip l3" href="dsh-hooks-codex.html">dsh-hooks-codex</a><a class="chip l2" href="dsh-host-apiproxy.html">dsh-host-apiproxy</a><a class="chip" href="dsh-jobs-local.html">dsh-jobs-local</a><a class="chip" href="dsh-llm-retry.html">dsh-llm-retry</a><a class="chip" href="dsh-repeat-tool-reminder.html">dsh-repeat-tool-reminder</a><a class="chip" href="dsh-sandbox-policy.html">dsh-sandbox-policy</a><a class="chip l3" href="dsh-schedule.html">dsh-schedule</a><a class="chip l3" href="dsh-sdk-jsonrpc-server.html">dsh-sdk-jsonrpc-server</a><a class="chip" href="dsh-session-checkpoint-policy.html">dsh-session-checkpoint-policy</a><a class="chip l3" href="dsh-session-reference.html">dsh-session-reference</a><a class="chip" href="dsh-subagent.html">dsh-subagent</a><a class="chip" href="dsh-subagent-fork-in-process.html">dsh-subagent-fork-in-process</a><a class="chip" href="dsh-subagent-spawn-in-process.html">dsh-subagent-spawn-in-process</a><a class="chip l3" href="dsh-terminal-bash.html">dsh-terminal-bash</a><a class="chip l3" href="dsh-time-context.html">dsh-time-context</a><a class="chip l3" href="dsh-tmux-context.html">dsh-tmux-context</a><a class="chip l3" href="dsh-tool-ask-user.html">dsh-tool-ask-user</a><a class="chip" href="dsh-tool-bash.html">dsh-tool-bash</a><a class="chip l3" href="dsh-tool-bash-persistent.html">dsh-tool-bash-persistent</a><a class="chip l3" href="dsh-tool-cordis.html">dsh-tool-cordis</a><a class="chip" href="dsh-tool-goal.html">dsh-tool-goal</a><a class="chip" href="dsh-tool-jobs.html">dsh-tool-jobs</a><a class="chip" href="dsh-tool-skill.html">dsh-tool-skill</a><a class="chip" href="dsh-tool-subagent.html">dsh-tool-subagent</a><a class="chip" href="dsh-tool-subagent-control.html">dsh-tool-subagent-control</a><a class="chip" href="dsh-tool-subagent-report.html">dsh-tool-subagent-report</a><a class="chip l3" href="dsh-tool-terminal.html">dsh-tool-terminal</a><a class="chip" href="dsh-tool-todo.html">dsh-tool-todo</a><a class="chip" href="dsh-tools.html">dsh-tools</a><a class="chip" href="dsh-user-approval.html">dsh-user-approval</a><a class="chip" href="dsh-user-questions.html">dsh-user-questions</a><a class="chip" href="dsh-web-search-deepseek.html">dsh-web-search-deepseek</a><a class="chip" href="dsh-workflow-worker-thread.html">dsh-workflow-worker-thread</a></div><div class="label" style="margin-top:8px;">同一拓扑层（Layer 2，层次遍历层序）：</div><div class="chips"><a class="chip self" href="dsh-agent.html">dsh-agent</a><a class="chip" href="dsh-code-runtime-worker-thread.html">dsh-code-runtime-worker-thread</a><a class="chip" href="dsh-fs-observation-policy.html">dsh-fs-observation-policy</a><a class="chip" href="dsh-persona.html">dsh-persona</a><a class="chip" href="dsh-sandbox-local.html">dsh-sandbox-local</a><a class="chip" href="dsh-sdk-client.html">dsh-sdk-client</a><a class="chip" href="dsh-session-persistence-jsonl.html">dsh-session-persistence-jsonl</a><a class="chip" href="dsh-session-persistence-sqlite.html">dsh-session-persistence-sqlite</a><a class="chip" href="dsh-session-projection.html">dsh-session-projection</a><a class="chip" href="dsh-session-query-sqlite.html">dsh-session-query-sqlite</a><a class="chip" href="dsh-session-telemetry-otel.html">dsh-session-telemetry-otel</a><a class="chip" href="dsh-skill-badge.html">dsh-skill-badge</a><a class="chip" href="dsh-skill-filesystem.html">dsh-skill-filesystem</a><a class="chip" href="dsh-storage-domain.html">dsh-storage-domain</a><a class="chip" href="dsh-storage-sqlite.html">dsh-storage-sqlite</a><a class="chip" href="dsh-web-fetch-http.html">dsh-web-fetch-http</a></div></div><div class="layernav"><a href="cordis-plugin-hmr.html">↑ Layer 1（16 插件）</a><span class="chip self">Layer 2</span><a href="dsh-agent-default-model.html">↓ Layer 3（19 插件）</a></div><h2>插件信息</h2><table><tr><th>包名</th><td>@deepseek-ai/dsh-agent</td></tr><tr><th>分组</th><td>G03 · 核心服务</td></tr><tr><th>拓扑层</th><td>Layer 2（层次遍历：被依赖方先于依赖方）</td></tr><tr><th>源码路径</th><td><code>packages/core/agent</code></td></tr></table>
+<style>
+#dyn-dag{width:100%;min-height:420px;height:auto;max-height:900px;background:var(--panel);border:1px solid var(--border);border-radius:8px;margin:12px 0;}
+#dyn-dag-label{font-size:12px;color:var(--dim);margin:10px 0 4px;}
+#dyn-dag-legend{display:flex;gap:16px;font-size:12px;color:var(--dim);margin:6px 0 2px;flex-wrap:wrap;}
+#dyn-dag-legend .item{display:flex;align-items:center;gap:5px;}
+#dyn-dag-legend .dot{width:10px;height:10px;border-radius:3px;display:inline-block;}
+.dyn-entry{background:#4f8cff;}
+.dyn-module{background:#2f6fd0;}
+.dyn-leaf{background:#5a6b8c;}
+</style>
+
+<h2 style="margin-top:26px;">模块内部结构（源码 DAG）</h2>
+<div id="dyn-dag-label">本插件 src 下各文件（模块）的 import 依赖关系，蓝色=入口/被引用多 · 深蓝=普通模块 · 灰=叶子</div>
+<div id="dyn-dag-legend">
+  <span class="item"><span class="dot dyn-entry"></span>入口/核心</span>
+  <span class="item"><span class="dot dyn-module"></span>模块</span>
+  <span class="item"><span class="dot dyn-leaf"></span>叶子/被引用</span>
+</div>
+<div id="dyn-dag"></div>
+
+<script src="../04-interactive/vendor/cytoscape.min.js"></script>
+<script src="../04-interactive/vendor/cytoscape-dagre.min.js"></script>
+<script>
+(function(){
+  const raw = {"elements": [{"data": {"id": "consumed-work.ts", "label": "consumed-work.ts", "full": "consumed-work.ts", "cls": "#5a6b8c", "kind": "leaf"}}, {"data": {"id": "dispatch.ts", "label": "dispatch.ts", "full": "dispatch.ts", "cls": "#2f6fd0", "kind": "module"}}, {"data": {"id": "inbox.ts", "label": "inbox.ts", "full": "inbox.ts", "cls": "#2f6fd0", "kind": "module"}}, {"data": {"id": "index.ts", "label": "index.ts", "full": "index.ts", "cls": "#4f8cff", "kind": "entry"}}, {"data": {"id": "invariant.ts", "label": "invariant.ts", "full": "invariant.ts", "cls": "#5a6b8c", "kind": "leaf"}}, {"data": {"id": "model-selection.ts", "label": "model-selection.ts", "full": "model-selection.ts", "cls": "#5a6b8c", "kind": "leaf"}}, {"data": {"id": "runtime-types.ts", "label": "runtime-types.ts", "full": "runtime-types.ts", "cls": "#2f6fd0", "kind": "module"}}, {"data": {"id": "types.ts", "label": "types.ts", "full": "types.ts", "cls": "#5a6b8c", "kind": "leaf"}}, {"data": {"id": "dispatch.ts->runtime-types.ts", "source": "dispatch.ts", "target": "runtime-types.ts"}}, {"data": {"id": "inbox.ts->types.ts", "source": "inbox.ts", "target": "types.ts"}}, {"data": {"id": "index.ts->runtime-types.ts", "source": "index.ts", "target": "runtime-types.ts"}}, {"data": {"id": "index.ts->dispatch.ts", "source": "index.ts", "target": "dispatch.ts"}}, {"data": {"id": "index.ts->types.ts", "source": "index.ts", "target": "types.ts"}}, {"data": {"id": "index.ts->consumed-work.ts", "source": "index.ts", "target": "consumed-work.ts"}}, {"data": {"id": "index.ts->model-selection.ts", "source": "index.ts", "target": "model-selection.ts"}}, {"data": {"id": "index.ts->inbox.ts", "source": "index.ts", "target": "inbox.ts"}}, {"data": {"id": "runtime-types.ts->inbox.ts", "source": "runtime-types.ts", "target": "inbox.ts"}}, {"data": {"id": "runtime-types.ts->types.ts", "source": "runtime-types.ts", "target": "types.ts"}}]};
+  const cy = cytoscape({
+    container: document.getElementById('dyn-dag'),
+    elements: raw.elements,
+    style: [
+      {
+        selector: 'node',
+        style: {
+          'label': 'data(label)',
+          'background-color': 'data(cls)',
+          'color': '#e6e8ee',
+          'font-size': 10,
+          'text-valign': 'bottom',
+          'text-margin-y': 4,
+          'width': 42,
+          'height': 42,
+          'shape': 'round-rectangle',
+          'border-width': 1.5,
+          'border-color': '#3a4150'
+        }
+      },
+      {
+        selector: 'node[kind="entry"]',
+        style: {
+          'border-width': 3,
+          'border-color': '#7fb0ff',
+          'font-weight': 700
+        }
+      },
+      {
+        selector: 'edge',
+        style: {
+          'width': 1.2,
+          'line-color': '#556080',
+          'target-arrow-color': '#556080',
+          'target-arrow-shape': 'triangle',
+          'curve-style': 'bezier',
+          'arrow-scale': 0.8
+        }
+      }
+    ],
+    layout: {
+      name: 'dagre',
+      rankDir: 'LR',
+      nodeSep: 45,
+      rankSep: 40,
+      padding: 25,
+      spacingFactor: 1.0
+    },
+    wheelSensitivity: 0.2,
+    minZoom: 0.2,
+    maxZoom: 2.5
+  });
+  // 排版优化: 初始布局即按节点数选择方向 (LR 横排防狭长), 并 fit 到容器
+  (function(){
+    const nodeCount = raw.elements.filter(el => el.data && el.data.cls).length;
+    const chooseLayout = function(){
+      const el = document.getElementById('dyn-dag');
+      const w = el.clientWidth || 900, h = el.clientHeight || 500;
+      const landscape = (nodeCount >= 12) || (w > h * 1.1 && nodeCount >= 5);
+      return {
+        name: 'dagre',
+        rankDir: landscape ? 'LR' : 'TB',
+        nodeSep: landscape ? 45 : 30,
+        rankSep: landscape ? 40 : 80,
+        padding: 25,
+        spacingFactor: 1.0
+      };
+    };
+    const first = chooseLayout();
+    cy.layout(first).run();
+    setTimeout(() => {
+      try { cy.fit(undefined, 30); } catch(e) {}
+    }, 350);
+    window.addEventListener('resize', () => {
+      cy.resize();
+      const next = chooseLayout();
+      cy.layout(next).run();
+      setTimeout(() => {
+        try { cy.fit(undefined, 30); } catch(e) {}
+      }, 300);
+    });
+  })();
+  cy.on('tap', 'node', (evt) => {
+    const full = evt.target.data('full');
+    document.getElementById('dyn-dag-label').textContent = '当前模块: ' + full;
+  });
+  setTimeout(() => cy.resize(), 100);
+})();
+</script>
+
+<h2>① 实现逻辑</h2><p>Agent 服务(ctx.agents)：live 注册表 + initiator scope(AsyncLocalStorage 因果归属) + 工厂委派。AgentRegistry 只跟踪/生命周期管理，具体 create/resume 由 dsh-agent-loop 实现 AgentFactory 通过 setFactory 注入。提供 agentEvents/emitAgentEvent 事件派发(agent/created、agent/disposed、agent/status、agent/request、agent/request-error 等主题事件词表)；model-selection.ts 将模型选择耦合到 system-prompt/assemble 与 agent/request 瀑布。</p><h2>② 注册/提供（provides）</h2><ul class="provides"><li>ctx.agents(AgentRegistry)</li><li>ctx.agent(DX accessor)</li><li>agent/created|disposed|status 事件</li><li>agent/inbox/* 事件</li><li>agent/session-start|pre-step|request|request-error|turn-stopping|error 事件词表</li><li>AgentFactory 接口(由 agent-loop 实现)</li><li>Inbox 类</li><li>typert lookups: agent</li><li>ModelSelection/installModelSelection</li></ul><h2>③ 依赖（depends_on · 上游前驱）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-llm.html">dsh-llm</a></span><span class="mech">E1</span><div class="purpose">LlmCallConfig/ReasoningEffortId 类型</div><div class="evi">packages/core/agent/package.json:41, packages/core/agent/src/model-selection.ts:7</div></div><div class="dep-item"><span class="name"><a href="dsh-session.html">dsh-session</a></span><span class="mech">E2</span><div class="purpose">Agent 以 SessionId 为 id</div><div class="evi">packages/core/agent/src/index.ts:14, 268-280</div></div><div class="dep-item"><span class="name"><a href="dsh-system-prompt.html">dsh-system-prompt</a></span><span class="mech">E2</span><div class="purpose">监听 system-prompt/assemble 注入模型变量</div><div class="evi">packages/core/agent/src/model-selection.ts:40-53</div></div><div class="dep-item"><span class="name"><a href="dsh-typert-registry.html">dsh-typert-registry</a></span><span class="mech">E2</span><div class="purpose">ctx.inject([&#x27;typert&#x27;]) 注册 agent 查找器</div><div class="evi">packages/core/agent/src/index.ts:268-281</div></div></div><h2>④ 被依赖（dependents · 下游消费者）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-agent-default-model.html">dsh-agent-default-model</a></span><div class="purpose">ModelSelection 类型</div><div class="evi">packages/core/agent-default-model/src/index.ts:9</div></div><div class="dep-item"><span class="name"><a href="dsh-agent-instructions.html">dsh-agent-instructions</a></span><div class="purpose">订阅 agent/pre-step waterfall</div><div class="evi">packages/context/agent-instructions/src/index.ts:322</div></div><div class="dep-item"><span class="name"><a href="dsh-agent-loop.html">dsh-agent-loop</a></span><div class="purpose">static inject agents + setFactory</div><div class="evi">packages/core/agent-loop/src/index.ts:297, 350, 559-562</div></div><div class="dep-item"><span class="name"><a href="dsh-agent-presets.html">dsh-agent-presets</a></span><div class="purpose">Context merge（agent/created 事件）</div><div class="evi">packages/preset/agent-presets/package.json:42; src/index.ts:29</div></div><div class="dep-item"><span class="name"><a href="dsh-agent-spine-demo.html">dsh-agent-spine-demo</a></span><div class="purpose">ctx.plugin(AgentRegistry) agent 注册表</div><div class="evi">packages/examples/agent-spine-demo/src/index.ts:237</div></div><div class="dep-item"><span class="name"><a href="dsh-api-remotes.html">dsh-api-remotes</a></span><div class="purpose">Agent 类型与 ctx.agents.get/resume/isOwnedBy 服务（:70-71,128,162）</div><div class="evi">packages/api/remotes/src/agent-lookup.ts:4（import type { Agent… } from &#x27;@deepseek-ai/dsh-agent&#x27;）；peerDependencies</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-conversation.html">dsh-client-ui-conversation</a></span><div class="purpose">inbox/agent 事件类型契约（agent/inbox/spliced）</div><div class="evi">conversation-nodes/inbox.ts:5 InboxTarget + package.json peerDependencies:57</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-trajectory.html">dsh-client-ui-trajectory</a></span><div class="purpose">agent/inbox/spliced 等事件类型</div><div class="evi">trajectory-message-definitions.ts:9 dsh-agent/types + package.json:52 peerDependencies</div></div><div class="dep-item"><span class="name"><a href="dsh-commands.html">dsh-commands</a></span><div class="purpose">命令执行目标 agent</div><div class="evi">packages/interaction/commands/src/index.ts:7,260</div></div><div class="dep-item"><span class="name"><a href="dsh-compaction-basic.html">dsh-compaction-basic</a></span><div class="purpose">订阅 agent/pre-step|request-error|status</div><div class="evi">packages/compaction/compaction-basic/src/index.ts:147,179</div></div><div class="dep-item"><span class="name"><a href="dsh-cordis-host-runner.html">dsh-cordis-host-runner</a></span><div class="purpose">Agent 类型（会话所有权）</div><div class="evi">packages/extensions/cordis-host-runner/package.json:57; src/index.ts:10</div></div><div class="dep-item"><span class="name"><a href="dsh-goal.html">dsh-goal</a></span><div class="purpose">agent 身份与 goal/changed</div><div class="evi">packages/goal/goal/src/index.ts:12,198,415,557</div></div><div class="dep-item"><span class="name"><a href="dsh-goal-round-driver.html">dsh-goal-round-driver</a></span><div class="purpose">agent 事件与 followup</div><div class="evi">packages/goal/goal-round-driver/src/index.ts:9,106-107,192,215,435</div></div><div class="dep-item"><span class="name"><a href="dsh-hooks-claude-code.html">dsh-hooks-claude-code</a></span><div class="purpose">agent 类型与 pre-step 决策契约</div><div class="evi">packages/hooks/hooks-claude-code/src/index.ts:15 (Agent/PreStepDecision 类型); package.json:38 (peerDep)</div></div><div class="dep-item"><span class="name"><a href="dsh-hooks-codex.html">dsh-hooks-codex</a></span><div class="purpose">agent 类型与决策契约</div><div class="evi">packages/hooks/hooks-codex/src/index.ts:18 (Agent/PreStepDecision); package.json:38 (peerDep)</div></div><div class="dep-item"><span class="name"><a href="dsh-host-apiproxy.html">dsh-host-apiproxy</a></span><div class="purpose">installModelSelection/Agent 类型，模型切换实现</div><div class="evi">packages/host/apiproxy/src/api-proxy.ts:10-11</div></div><div class="dep-item"><span class="name"><a href="dsh-jobs-local.html">dsh-jobs-local</a></span><div class="purpose">job owner 生命周期</div><div class="evi">packages/jobs/jobs-local/src/index.ts:14,46</div></div><div class="dep-item"><span class="name"><a href="dsh-llm-retry.html">dsh-llm-retry</a></span><div class="purpose">inject [&#x27;agents&#x27;]；订阅 agent/request-error</div><div class="evi">packages/llm/llm-retry/src/index.ts:21, 210-219</div></div><div class="dep-item"><span class="name"><a href="dsh-repeat-tool-reminder.html">dsh-repeat-tool-reminder</a></span><div class="purpose">监听 agent/pre-step</div><div class="evi">packages/guard/repeat-tool-reminder/src/index.ts:11,229</div></div><div class="dep-item"><span class="name"><a href="dsh-sandbox-policy.html">dsh-sandbox-policy</a></span><div class="purpose">类型依赖</div><div class="evi">packages/sandbox/sandbox-policy/src/index.ts:24</div></div><div class="dep-item"><span class="name"><a href="dsh-schedule.html">dsh-schedule</a></span><div class="purpose">root agent 生命周期与 owner 作用域</div><div class="evi">package.json:35 peerDep + src/index.ts:7 import type Agent；E2: :45 ctx.on(&#x27;agent/created&#x27;)、:46 ctx.agents.roots()、:47 new ScheduleRuntime(ctx, agent)</div></div><div class="dep-item"><span class="name"><a href="dsh-sdk-jsonrpc-server.html">dsh-sdk-jsonrpc-server</a></span><div class="purpose">inject [&#x27;agents&#x27;] + Agent/AgentHandle 类型与 ctx.agents 工厂</div><div class="evi">packages/sdk/server/src/index.ts:22, packages/sdk/server/src/server.ts:10</div></div><div class="dep-item"><span class="name"><a href="dsh-session-checkpoint-policy.html">dsh-session-checkpoint-policy</a></span><div class="purpose">PreStepDecision 类型</div><div class="evi">packages/session/session-checkpoint-policy/src/index.ts:11</div></div><div class="dep-item"><span class="name"><a href="dsh-session-reference.html">dsh-session-reference</a></span><div class="purpose">目标 agent 身份与工作目录（cwd 亲和排序/排除自身）</div><div class="evi">packages/context/session-reference/src/index.ts:10 Agent 类型（agent.session.header.cwd, agent.id）</div></div><div class="dep-item"><span class="name"><a href="dsh-subagent.html">dsh-subagent</a></span><div class="purpose">ctx.inject([&#x27;agents&#x27;]) 建立 ContinuationManager</div><div class="evi">packages/subagent/subagent/src/index.ts:186</div></div><div class="dep-item"><span class="name"><a href="dsh-subagent-fork-in-process.html">dsh-subagent-fork-in-process</a></span><div class="purpose">Agent 类型与 parent.session.header</div><div class="evi">packages/subagent/subagent-fork-in-process/src/index.ts:13,49</div></div><div class="dep-item"><span class="name"><a href="dsh-subagent-spawn-in-process.html">dsh-subagent-spawn-in-process</a></span><div class="purpose">子代理经 ctx.agents 工厂创建</div><div class="evi">packages/subagent/subagent-spawn-in-process/package.json:45</div></div><div class="dep-item"><span class="name"><a href="dsh-terminal-bash.html">dsh-terminal-bash</a></span><div class="purpose">owner 隔离与 agent 事件上下文</div><div class="evi">package.json:35 peerDep + src/index.ts:8 import type Agent；E2: :43 owner.ctx.on、:47 owner.session</div></div><div class="dep-item"><span class="name"><a href="dsh-time-context.html">dsh-time-context</a></span><div class="purpose">agent/pre-step 事件词表与 PreStepDecision 注入契约</div><div class="evi">packages/context/time-context/src/index.ts:10 Agent/PreStepDecision 类型；170 ctx.on(&#x27;agent/pre-step&#x27;)；package.json:38</div></div><div class="dep-item"><span class="name"><a href="dsh-tmux-context.html">dsh-tmux-context</a></span><div class="purpose">agent/pre-step 事件词表与 PreStepDecision 注入契约</div><div class="evi">packages/context/tmux-context/src/index.ts:23 Agent/PreStepDecision 类型；218 ctx.on(&#x27;agent/pre-step&#x27;)；package.json:38</div></div><div class="dep-item"><span class="name"><a href="dsh-tool-ask-user.html">dsh-tool-ask-user</a></span><div class="purpose">agent 上下文透传</div><div class="evi">package.json:35 peerDep + src/index.ts:9 import type Context 无关（agent 类型经 dsh-tools exec 传递）；E2: :89 exec.agent 传入 ask</div></div><div class="dep-item"><span class="name"><a href="dsh-tool-bash.html">dsh-tool-bash</a></span><div class="purpose">Agent 类型与 job owner</div><div class="evi">packages/shell/tool-bash/src/index.ts:17,149</div></div><div class="dep-item"><span class="name"><a href="dsh-tool-bash-persistent.html">dsh-tool-bash-persistent</a></span><div class="purpose">owner 隔离与 shell 生命周期</div><div class="evi">package.json:34 peerDep + src/index.ts:9 import type Agent；E2: :391 exec.agent owner、:201-204 per-owner 缓存</div></div><div class="dep-item"><span class="name"><a href="dsh-tool-cordis.html">dsh-tool-cordis</a></span><div class="purpose">agent 类型与 pre-step 决策</div><div class="evi">packages/extensions/tool-cordis/src/index.ts:7 (Agent/PreStepDecision); package.json:35 (peerDep)</div></div><div class="dep-item"><span class="name"><a href="dsh-tool-goal.html">dsh-tool-goal</a></span><div class="purpose">调用者认证</div><div class="evi">packages/goal/tool-goal/src/authority.ts:55-62</div></div><div class="dep-item"><span class="name"><a href="dsh-tool-jobs.html">dsh-tool-jobs</a></span><div class="purpose">completion 通知投递</div><div class="evi">packages/jobs/tool-jobs/src/index.ts:19,294-299</div></div><div class="dep-item"><span class="name"><a href="dsh-tool-skill.html">dsh-tool-skill</a></span><div class="purpose">pre-step 注入钩子</div><div class="evi">packages/skill/tool-skill/src/index.ts:10,177,213</div></div><div class="dep-item"><span class="name"><a href="dsh-tool-subagent.html">dsh-tool-subagent</a></span><div class="purpose">exec.agent 委派 parent</div><div class="evi">packages/subagent/tool-subagent/src/index.ts:14,370</div></div><div class="dep-item"><span class="name"><a href="dsh-tool-subagent-control.html">dsh-tool-subagent-control</a></span><div class="purpose">list_agents inject agents</div><div class="evi">packages/subagent/tool-subagent-control/src/list-agents.ts:18,60</div></div><div class="dep-item"><span class="name"><a href="dsh-tool-subagent-report.html">dsh-tool-subagent-report</a></span><div class="purpose">exec.agent 报告发送方</div><div class="evi">packages/subagent/tool-subagent-report/src/index.ts:11,98</div></div><div class="dep-item"><span class="name"><a href="dsh-tool-terminal.html">dsh-tool-terminal</a></span><div class="purpose">owner 隔离与 agent 上下文</div><div class="evi">package.json:38 peerDep + src/index.ts:9 import type Agent；E2: :118 requireAgent(exec.agent)</div></div><div class="dep-item"><span class="name"><a href="dsh-tool-todo.html">dsh-tool-todo</a></span><div class="purpose">owning session 归属</div><div class="evi">packages/todo/tool-todo/src/index.ts:208-212</div></div><div class="dep-item"><span class="name"><a href="dsh-tools.html">dsh-tools</a></span><div class="purpose">ToolExecutionInput.agent 关联调用归属</div><div class="evi">packages/core/tools/src/index.ts:13</div></div><div class="dep-item"><span class="name"><a href="dsh-user-approval.html">dsh-user-approval</a></span><div class="purpose">携带 live agent 路由 answerer</div><div class="evi">packages/interaction/user-approval/src/index.ts:10,159,230</div></div><div class="dep-item"><span class="name"><a href="dsh-user-questions.html">dsh-user-questions</a></span><div class="purpose">调用者身份边界</div><div class="evi">packages/interaction/user-questions/src/index.ts:11,101-112</div></div><div class="dep-item"><span class="name"><a href="dsh-web-search-deepseek.html">dsh-web-search-deepseek</a></span><div class="purpose">currentInitiator 归属</div><div class="evi">packages/web/web-search-deepseek/package.json:35</div></div><div class="dep-item"><span class="name"><a href="dsh-workflow-worker-thread.html">dsh-workflow-worker-thread</a></span><div class="purpose">request.parent Agent</div><div class="evi">packages/workflow/workflow-worker-thread/src/index.ts:14,177</div></div></div>
+</main>
+<footer>DeepSeek Harness 插件级 DAG 依赖链分析 · L1 核心集 + L2 web-app + L3 其余插件 · 源码三依据(E1编译/E2运行时/E3组合)逐条溯源</footer>
+</body>
+</html>

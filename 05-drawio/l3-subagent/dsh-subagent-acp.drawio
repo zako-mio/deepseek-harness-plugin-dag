@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" agent="drawio-worker" version="24.0.0" type="device">
+  <diagram id="dsh-subagent-acp" name="dsh-subagent-acp">
+    <mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1170" pageHeight="911" math="0" shadow="0">
+      <root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="l_up" value="上游依赖 upstream (E1/E2/E3)" style="swimlane;startSize=28;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="1"><mxGeometry x="40" y="40" width="190" height="525" as="geometry"/></mxCell>
+<mxCell id="l_pr" value="提供服务 provides（关键项）" style="swimlane;startSize=28;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontStyle=1;fontFamily=Microsoft YaHei;fontSize=12;" vertex="1" parent="1"><mxGeometry x="160" y="595" width="780" height="276" as="geometry"/></mxCell>
+<mxCell id="central" value="&lt;b&gt;dsh-subagent-acp&lt;/b&gt;&lt;br&gt;&lt;font style=&#x27;font-size:11px&#x27;&gt;@deepseek-ai/dsh-subagent-acp&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;fontFamily=Microsoft YaHei;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f3b57;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="360" y="267" width="200" height="70" as="geometry"/></mxCell>
+<mxCell id="u0" value="dsh-invariants (seam)&amp;#xa;E2 invariant 伴随插件" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;fontSize=12;fontFamily=Microsoft YaHei;" vertex="1" parent="l_up"><mxGeometry x="10" y="60" width="170" height="64" as="geometry"/></mxCell>
+<mxCell id="u1" value="dsh-subprocess (seam)&amp;#xa;E2 inject ['subprocess'] sp…" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;fontSize=12;fontFamily=Microsoft YaHei;" vertex="1" parent="l_up"><mxGeometry x="10" y="135" width="170" height="64" as="geometry"/></mxCell>
+<mxCell id="u2" value="dsh-timeout (seam)&amp;#xa;E1 MAX_TIMER_DELAY_MS 超时" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;fontSize=12;fontFamily=Microsoft YaHei;" vertex="1" parent="l_up"><mxGeometry x="10" y="210" width="170" height="64" as="geometry"/></mxCell>
+<mxCell id="u3" value="dsh-llm&amp;#xa;E1 ContentBlock 类型" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;fontSize=12;fontFamily=Microsoft YaHei;" vertex="1" parent="l_up"><mxGeometry x="10" y="285" width="170" height="64" as="geometry"/></mxCell>
+<mxCell id="u4" value="dsh-session&amp;#xa;E1 SessionId 类型" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;fontSize=12;fontFamily=Microsoft YaHei;" vertex="1" parent="l_up"><mxGeometry x="10" y="360" width="170" height="64" as="geometry"/></mxCell>
+<mxCell id="u5" value="dsh-subagent&amp;#xa;E2 inject ['subagents'] 注册…" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5b00;align=center;verticalAlign=middle;fontSize=12;fontFamily=Microsoft YaHei;" vertex="1" parent="l_up"><mxGeometry x="10" y="435" width="170" height="64" as="geometry"/></mxCell>
+<mxCell id="p0" value="ctx.subagents 命名 provider 'acp'" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#7a2e2a;align=left;verticalAlign=middle;fontSize=12;fontFamily=Microsoft YaHei;spacing=12;" vertex="1" parent="l_pr"><mxGeometry x="20" y="40" width="740" height="58" as="geometry"/></mxCell>
+<mxCell id="p1" value="startAcpRun 进程外驱动" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#7a2e2a;align=left;verticalAlign=middle;fontSize=12;fontFamily=Microsoft YaHei;spacing=12;" vertex="1" parent="l_pr"><mxGeometry x="20" y="112" width="740" height="58" as="geometry"/></mxCell>
+<mxCell id="p2" value="PermissionPolicy 权限应答" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#7a2e2a;align=left;verticalAlign=middle;fontSize=12;fontFamily=Microsoft YaHei;spacing=12;" vertex="1" parent="l_pr"><mxGeometry x="20" y="184" width="740" height="58" as="geometry"/></mxCell>
+<mxCell id="e0" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;endArrow=classic;fontSize=11;" edge="1" parent="1" source="u0" target="central"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;endArrow=classic;fontSize=11;" edge="1" parent="1" source="u1" target="central"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;endArrow=classic;fontSize=11;" edge="1" parent="1" source="u2" target="central"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;endArrow=classic;fontSize=11;" edge="1" parent="1" source="u3" target="central"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;endArrow=classic;fontSize=11;" edge="1" parent="1" source="u4" target="central"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#666666;endArrow=classic;fontSize=11;" edge="1" parent="1" source="u5" target="central"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#b85450;endArrow=classic;dashed=1;fontSize=11;" edge="1" parent="1" source="central" target="p0"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#b85450;endArrow=classic;dashed=1;fontSize=11;" edge="1" parent="1" source="central" target="p1"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#b85450;endArrow=classic;dashed=1;fontSize=11;" edge="1" parent="1" source="central" target="p2"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

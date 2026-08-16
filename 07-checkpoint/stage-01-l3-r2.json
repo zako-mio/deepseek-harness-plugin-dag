@@ -1,0 +1,136 @@
+[
+  {
+    "id": "dsh-sdk-client",
+    "name": "@deepseek-ai/dsh-sdk-client",
+    "implementation": "TypeScript 客户端 SDK（纯库，不注册 Cordis 服务）：spawn 子进程运行 dsh-jsonrpc-agent runtime，经 stdio JSON-RPC 驱动 agent turns。DeepSeekHarness 为高层 turn API，HarnessClient 为底层协议客户端；封装 dsh-sdk-protocol 的 JsonRpcLineTransport 请求-响应帧并扇出 notifications（订阅过滤）；invariant.ts 注册包属伴随插件。",
+    "provides": ["DeepSeekHarness/HarnessSession 高层 turn API", "HarnessClient 底层协议客户端", "JsonRpcResponseError 再导出", "RunOptions/HarnessClientOptions/HarnessNotification 类型", "sdk-client-invariant 伴随插件"],
+    "depends_on": [
+      {"plugin_id": "dsh-sdk-protocol", "mechanism": "E1", "evidence": "packages/sdk/client/package.json:36, packages/sdk/client/src/client.ts:18-22, packages/sdk/client/src/index.ts:21", "purpose": "JsonRpcResponseError/请求-响应帧 wire 协议"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/sdk/client/src/client.ts:23, packages/sdk/client/src/types.ts:8", "purpose": "ContentBlock 类型"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/sdk/client/src/api.ts:12, packages/sdk/client/src/types.ts:9", "purpose": "SessionEvent 类型"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/sdk/client/src/invariant.ts:7-8", "purpose": "invariant 伴随插件注册(ctx.inject['invariants'])"}
+    ],
+    "dependents": [
+      {"plugin_id": "dsh-subagent-dsh-sdk", "evidence": "packages/subagent/subagent-dsh-sdk/src/run.ts:15", "purpose": "DeepSeekHarness 驱动子 runtime"}
+    ]
+  },
+  {
+    "id": "dsh-sdk-jsonrpc-server",
+    "name": "@deepseek-ai/dsh-sdk-jsonrpc-server",
+    "implementation": "SDK 面向的 stdio JSON-RPC 服务插件（由外部 cordis.yml 决定加载）：HarnessSdkJsonRpcServer 持 JsonRpcLineTransport 处理 initialize/agent 生命周期/turn/subagent 等请求，订阅 session/agent/subagent 生命周期事件并向客户端 notify；shutdown 应答后 dispose 整个 root runtime 并 exit 0。stdout 保留给协议帧，不得挂 stdout logger。inject=['agents']，LLM seam 经 ctx.get() 可选读取。",
+    "provides": ["sdk-jsonrpc-server 插件(name/inject['agents'])", "HarnessSdkJsonRpcServer 服务", "SDK 请求处理 + 生命周期 notify(subagent.started/subagent.finished)", "shutdown 协议控制进程退出"],
+    "depends_on": [
+      {"plugin_id": "dsh-sdk-protocol", "mechanism": "E1", "evidence": "packages/sdk/server/src/index.ts:15, packages/sdk/server/src/server.ts:26", "purpose": "JsonRpcLineTransport/协议消息帧"},
+      {"plugin_id": "dsh-agent", "mechanism": "E2", "evidence": "packages/sdk/server/src/index.ts:22, packages/sdk/server/src/server.ts:10", "purpose": "inject ['agents'] + Agent/AgentHandle 类型与 ctx.agents 工厂"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/sdk/server/src/server.ts:11", "purpose": "createUserMessage 构造消息"},
+      {"plugin_id": "dsh-scope", "mechanism": "E1", "evidence": "packages/sdk/server/src/server.ts:12", "purpose": "carrierKeyOf/Scoped 子代理归属解析"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/sdk/server/src/server.ts:13", "purpose": "SessionId 类型"},
+      {"plugin_id": "dsh-subagent", "mechanism": "E2", "evidence": "packages/sdk/server/src/server.ts:14-15, 87-88", "purpose": "SubagentRuntime 类型 + ctx.on('subagent/end') 订阅生命周期"},
+      {"plugin_id": "dsh-llm-deepseek", "mechanism": "E1", "evidence": "packages/sdk/server/src/server.ts:16", "purpose": "默认 provider 初始化"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/sdk/server/src/invariant.ts:8", "purpose": "invariant 伴随插件"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-lsp-stdio",
+    "name": "@deepseek-ai/dsh-lsp-stdio",
+    "implementation": "通用 stdio language-server 后端插件，为 ctx.lsp capability seam 提供服务：一个插件实例按命名表配置多条 server 命令并各注册独立 provider；每 provider 按 canonical workspace 懒启动/单飞一个 server 进程，服务 transient-open 查询(goToDefinition/findReferences/goToImplementation/hover)；源码经 ctx.fs 读取、进程经 ctx.subprocess 启动（local/remote 实现共享同一 host）。命名导出插件，effect 作用域生命周期，dispose 时从 ctx.lsp 注销并拆除全部 live server。",
+    "provides": ["ctx.lsp 命名 provider 表(lsp-stdio)", "LspInstance/LspConnection", "framing(encodeMessage/MessageDecoder)/translate(normalizeLocations/hover/negotiatePositionEncoding) 工具", "transient-open 只读查询服务"],
+    "depends_on": [
+      {"plugin_id": "dsh-lsp", "mechanism": "E2", "evidence": "packages/lsp/lsp-stdio/src/index.ts:16-21,47, packages/lsp/lsp-stdio/src/translate.ts:13-14, packages/lsp/lsp-stdio/src/instance.ts:10,15", "purpose": "inject ['lsp'] 注册 provider；LspProvider/LspError/LspProviderId 类型(E1)"},
+      {"plugin_id": "dsh-fs", "mechanism": "E2", "evidence": "packages/lsp/lsp-stdio/src/index.ts:47, packages/lsp/lsp-stdio/src/host.ts:4", "purpose": "inject ['fs'] 经 ctx.fs 读取 host 源文件"},
+      {"plugin_id": "dsh-subprocess", "mechanism": "E2", "evidence": "packages/lsp/lsp-stdio/src/index.ts:47, packages/lsp/lsp-stdio/src/connection.ts:14", "purpose": "inject ['subprocess'] 启动 server 进程"},
+      {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "packages/lsp/lsp-stdio/src/abort.ts:6, packages/lsp/lsp-stdio/src/instance.ts:16, packages/lsp/lsp-stdio/src/index.ts:22", "purpose": "timeoutOf/deadline/MAX_TIMER_DELAY_MS 超时预算"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/lsp/lsp-stdio/src/translate.ts:15", "purpose": "assertNever 穷尽检查"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/lsp/lsp-stdio/src/invariant.ts:7-8", "purpose": "invariant 伴随插件"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-lsp",
+    "name": "@deepseek-ai/dsh-tool-lsp",
+    "implementation": "模型可见的 lsp 工具（基于 ctx.lsp seam）：一个只读工具带 4 操作(goToDefinition/findReferences/goToImplementation/hover)；模型端 one-based UTF-16 光标坐标转 seam zero-based 位置，要求 session workspace 无回退，截断渲染结果(MAX_LOCATIONS/MAX_RESULT_CHARS)，附加可配置超时预算(DEFAULT_LSP_TOOL_TIMEOUT_MS)交 dsh-tool-call-timeout-policy 执行。运行时仅注入 tools/lsp/systemPrompt，不 import 任何 provider。",
+    "provides": ["模型工具 'lsp'(4 只读操作)", "LSP_PROMPT_TEXT 系统提示词指引", "render.ts 渲染/归一化工具导出(parseLspArgs/presentLspCall)"],
+    "depends_on": [
+      {"plugin_id": "dsh-lsp", "mechanism": "E2", "evidence": "packages/lsp/tool-lsp/src/index.ts:17-18,48, packages/lsp/tool-lsp/src/render.ts:10", "purpose": "inject ['lsp'] 经 seam 发查询；LspError/LspOperation/LspPosition 类型(E1)"},
+      {"plugin_id": "dsh-tools", "mechanism": "E2", "evidence": "packages/lsp/tool-lsp/src/index.ts:15,48, packages/lsp/tool-lsp/src/render.ts:9, packages/lsp/tool-lsp/src/session-cwd.ts:10", "purpose": "inject ['tools'] 注册工具；defineTool/GenericCallView/ToolExecution 类型(E1)"},
+      {"plugin_id": "dsh-system-prompt", "mechanism": "E2", "evidence": "packages/lsp/tool-lsp/src/index.ts:19,48", "purpose": "inject ['systemPrompt'] 注册指引 section；type-only 模块增强(E1)"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/lsp/tool-lsp/src/index.ts:16", "purpose": "assertNever"},
+      {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "packages/lsp/tool-lsp/src/index.ts:20", "purpose": "MAX_TIMER_DELAY_MS 超时预算"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/lsp/tool-lsp/src/invariant.ts:15", "purpose": "invariant 伴随插件"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-subagent-acp",
+    "name": "@deepseek-ai/dsh-subagent-acp",
+    "implementation": "进程外 ACP 子代理后端：在独立子进程中按 Agent Client Protocol 驱动子 agent，子进程拥有自己的 process/session/model/tools，不共享父 Cordis context、不声明父强制的 start capabilities；唯一读取 request.parent 的是 session workspace cwd(resolveCwd)。permission 策略自动应答 session/request_permission(reject 默认/allow)。经外部 @agentclientprotocol/sdk(0.25.1) 通信——不依赖 dsh-acp seam。",
+    "provides": ["ctx.subagents 命名 provider 'acp'", "startAcpRun 进程外驱动", "PermissionPolicy 权限应答"],
+    "depends_on": [
+      {"plugin_id": "dsh-subagent", "mechanism": "E2", "evidence": "packages/subagent/subagent-acp/src/index.ts:14-19,24, packages/subagent/subagent-acp/src/run.ts:27-28", "purpose": "inject ['subagents'] 注册 provider；SubagentProvider/ResolvedSubagentStartRequest/AssistantOutputFold 类型(E1)"},
+      {"plugin_id": "dsh-subprocess", "mechanism": "E2", "evidence": "packages/subagent/subagent-acp/src/index.ts:24, packages/subagent/subagent-acp/src/run.ts:29", "purpose": "inject ['subprocess'] spawn 子进程"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/subagent/subagent-acp/src/run.ts:25", "purpose": "ContentBlock 类型"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/subagent/subagent-acp/src/run.ts:26", "purpose": "SessionId 类型"},
+      {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "packages/subagent/subagent-acp/src/index.ts:20", "purpose": "MAX_TIMER_DELAY_MS 超时"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/subagent/subagent-acp/src/invariant.ts:8", "purpose": "invariant 伴随插件"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-subagent-claude-code",
+    "name": "@deepseek-ai/dsh-subagent-claude-code",
+    "implementation": "固定 Claude Code one-shot 子代理 provider：每次被接受的 run 经官方 Agent SDK 在委派 Session 的 workspace 启动真实 CLI 子进程，置于共享 subprocess owner 之下；declares NO_START_CAPABILITIES(inheritsParentContext=false)。经外部 @anthropic-ai/sdk(0.93.0)+@anthropic-ai/claude-agent-sdk(0.3.220) 通信，env 显式条目层叠在 subprocess seam 的 credential-scrubbed 父环境之上。",
+    "provides": ["ctx.subagents 命名 provider 'claude-code'(one-shot)", "startClaudeCodeRun", "disposeGraceMs 进程树终止控制"],
+    "depends_on": [
+      {"plugin_id": "dsh-subagent", "mechanism": "E2", "evidence": "packages/subagent/subagent-claude-code/src/index.ts:12-19,27, packages/subagent/subagent-claude-code/src/run.ts:27", "purpose": "inject ['subagents'] 注册 provider；SubagentProvider/ResolvedSubagentStartRequest 类型(E1)"},
+      {"plugin_id": "dsh-subprocess", "mechanism": "E2", "evidence": "packages/subagent/subagent-claude-code/src/index.ts:27, packages/subagent/subagent-claude-code/src/run.ts:32, packages/subagent/subagent-claude-code/src/process.ts:18", "purpose": "inject ['subprocess'] 共享 subprocess owner"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/subagent/subagent-claude-code/src/run.ts:18", "purpose": "ContentBlock 类型"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/subagent/subagent-claude-code/src/run.ts:19", "purpose": "SessionId 类型"},
+      {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "packages/subagent/subagent-claude-code/src/index.ts:11", "purpose": "MAX_TIMER_DELAY_MS 超时"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/subagent/subagent-claude-code/src/invariant.ts:9", "purpose": "invariant 伴随插件"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-subagent-codex",
+    "name": "@deepseek-ai/dsh-subagent-codex",
+    "implementation": "固定 Codex one-shot 子代理 provider：每次被接受的 run 在委派 Session 的 workspace 启动官方 codex app-server --stdio 子进程，仅在 ephemeral thread 存在后发布；declares NO_START_CAPABILITIES。wire.ts 复用 dsh-sdk-protocol 的 JsonRpcLineTransport 实现 app-server 帧协议，外部 @openai/codex(0.147.0) 提供 CLI 类型。",
+    "provides": ["ctx.subagents 命名 provider 'codex'(one-shot)", "startCodexRun", "wire.ts: JsonRpcLineTransport 帧适配"],
+    "depends_on": [
+      {"plugin_id": "dsh-subagent", "mechanism": "E2", "evidence": "packages/subagent/subagent-codex/src/index.ts:12-19,27, packages/subagent/subagent-codex/src/run.ts:20, packages/subagent/subagent-codex/src/wire.ts:12", "purpose": "inject ['subagents'] 注册 provider；SubagentProvider/SubagentResult 类型(E1)"},
+      {"plugin_id": "dsh-subprocess", "mechanism": "E2", "evidence": "packages/subagent/subagent-codex/src/index.ts:27, packages/subagent/subagent-codex/src/run.ts:21", "purpose": "inject ['subprocess'] spawn app-server"},
+      {"plugin_id": "dsh-sdk-protocol", "mechanism": "E1", "evidence": "packages/subagent/subagent-codex/src/wire.ts:13", "purpose": "JsonRpcLineTransport 复用实现 codex 帧协议"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/subagent/subagent-codex/src/wire.ts:11, packages/subagent/subagent-codex/src/run.ts:11", "purpose": "ContentBlock 类型"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/subagent/subagent-codex/src/run.ts:12", "purpose": "SessionId 类型"},
+      {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "packages/subagent/subagent-codex/src/index.ts:11", "purpose": "MAX_TIMER_DELAY_MS 超时"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/subagent/subagent-codex/src/invariant.ts:8", "purpose": "invariant 伴随插件"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-subagent-dsh-sdk",
+    "name": "@deepseek-ai/dsh-subagent-dsh-sdk",
+    "implementation": "进程外 SDK 子代理后端：每个 child 是完整 DeepSeek Harness runtime（自有 cordis.yml 组合/session/model/tools），经 dsh-sdk-client 的 DeepSeekHarness 高层 API 通过 stdio JSON-RPC 驱动；不共享父 Cordis context、不声明父强制 start capabilities；唯一读取 request.parent 的是 session workspace cwd。inject=['subagents']，subprocess 仅经 scrubbedParentEnv 值导入使用。",
+    "provides": ["ctx.subagents 命名 provider 'dsh-sdk'(one-shot)", "startSdkRun(DeepSeekHarness 驱动)", "子 runtime provider/model/maxTokens 配置"],
+    "depends_on": [
+      {"plugin_id": "dsh-subagent", "mechanism": "E2", "evidence": "packages/subagent/subagent-dsh-sdk/src/index.ts:15-16,26, packages/subagent/subagent-dsh-sdk/src/run.ts:18-19", "purpose": "inject ['subagents'] 注册 provider；SubagentProvider/SubagentResult/settleRunResult 类型与工具(E1)"},
+      {"plugin_id": "dsh-sdk-client", "mechanism": "E1", "evidence": "packages/subagent/subagent-dsh-sdk/src/run.ts:15,118", "purpose": "DeepSeekHarness/HarnessNotification 驱动子 runtime"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/subagent/subagent-dsh-sdk/src/run.ts:16", "purpose": "ContentBlock 类型"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/subagent/subagent-dsh-sdk/src/run.ts:17", "purpose": "SessionId/SessionEvent/TurnEndReason 类型"},
+      {"plugin_id": "dsh-subprocess", "mechanism": "E1", "evidence": "packages/subagent/subagent-dsh-sdk/src/run.ts:20", "purpose": "scrubbedParentEnv 环境清洗(值导入，无 inject)"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/subagent/subagent-dsh-sdk/src/invariant.ts:8", "purpose": "invariant 伴随插件"}
+    ],
+    "dependents": []
+  },
+  {
+    "seam_referred_by": [
+      {"seam_id": "dsh-acp", "referred_by": [], "mechanisms": [], "note": "8 插件无一依赖；仅 packages/examples/acp-demo/src/index.ts:17 import * as acp。dsh-subagent-acp 走外部 @agentclientprotocol/sdk，不走本 seam"},
+      {"seam_id": "dsh-e2b", "referred_by": [], "mechanisms": [], "note": "8 插件无一依赖；实引方为 packages/e2b/subprocess-e2b 与 packages/e2b/fs-e2b(其他路插件)"},
+      {"seam_id": "dsh-hook-protocol", "referred_by": [], "mechanisms": [], "note": "8 插件无一依赖；实引方为 packages/hooks/hooks-codex 与 hooks-claude-code(其他路插件)"},
+      {"seam_id": "dsh-lsp", "referred_by": ["dsh-lsp-stdio", "dsh-tool-lsp"], "mechanisms": ["E1", "E2"], "note": "E1=类型导入(LspError/LspProvider 等)；E2=inject ['lsp'] 注册/消费 seam 服务"},
+      {"seam_id": "dsh-mcp-client", "referred_by": [], "mechanisms": [], "note": "8 插件无一依赖；实引方为 mcp 工具类插件(其他路)"},
+      {"seam_id": "dsh-sdk-protocol", "referred_by": ["dsh-sdk-client", "dsh-sdk-jsonrpc-server", "dsh-subagent-codex"], "mechanisms": ["E1"], "note": "E1=JsonRpcLineTransport/JsonRpcResponseError 直接导入；server 端另经 SDK 客户端间接复用"},
+      {"seam_id": "dsh-terminal", "referred_by": [], "mechanisms": [], "note": "8 插件无一依赖；实引方为 packages/terminal/tool-terminal、terminal-bash、packages/shell/tool-bash-persistent(其他路插件)"}
+    ]
+  }
+]
