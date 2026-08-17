@@ -6,6 +6,12 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-trajectory`
 
+## 为什么需要它（设计初衷）
+轨迹事件账本 + 交互式时间轴概览：纯消费者插件，注册进 conversation ViewMap（无服务）。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-trajectory/package.json
+
 ## 实现逻辑
 轨迹展示（纯消费者，无服务）。注册 conversation.view id=trajectory（order=10, label thunk）的 TrajectoryView（Table+Timeline+Toolbar，含 @tanstack/react-virtual 虚拟行、search index、duration store）；6 个轨迹 Definition（trajectory-inbox-next-step/message/assistant/tool/compaction/request-header）注册进 conversationEvents（target 'trajectory'），trajectory 专用 ConversationViewBuilder 注册进 conversationViews 组装 TrajectorySnapshot；loadOlder 走 session.loadOlder 分页。
 

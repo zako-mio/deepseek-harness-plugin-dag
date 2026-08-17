@@ -6,6 +6,15 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-slots`
 
+## 为什么需要它（设计初衷）
+Web shell 插槽系统的纯核心：声明合并的 SlotMap、单次 register 组合 API、四共享 props 类型族与 store-seat 类型族。一次 register 调用即完成组件进槽、子槽声明（声明=渲染授权=运行时规格）、store 座位与业务面注册；React-free 且 cordis-free，register 时校验未声明槽/重复声明/跨作用域共享等错误。
+
+发展史：2026-08-10 以 0.0.1-rc.1 随 dsh 第一批客户端包发布；为浏览器 UI 插件体系提供类型安全插槽注册与 renderer 安装契约，实现在 web-react 与 shell boot。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-slots/README.md
+- https://www.npmjs.com/package/@deepseek-ai/dsh-client-ui-slots
+
 ## 实现逻辑
 slot 渲染桥梁/注册表纯核心（零运行时依赖，仅 React 类型）。定义 SlotMap（owners 经 declare module 合并）、LocaleNamespaceMap、SlotKind(single/list/keyed/chain)、SlotScope(root/session-maybe/session)、SlotEntryDef、ChildrenDecl、四份 props share 类型（PropsRuntime/PropsLocale/PropsRenderSlots/PropsStore）与 store 座位（defineStore/BoundActions/HostObservable）。不注册任何 slot/service，是所有 UI 插件 slot 注册的类型与 API 底座。
 

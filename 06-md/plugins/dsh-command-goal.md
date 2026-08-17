@@ -6,6 +6,14 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/goal/command-goal`
 
+## 为什么需要它（设计初衷）
+面向用户的 /goal 命令控制，基于 ctx.goals 持久 goal 栈：无需模型轮次即可展示/创建/编辑/暂停/恢复/清除目标，并将完成度、Round 计数与续行（autocontinue）状态暴露给 UI 与同会话驱动器，解决长任务『目标不可见、无续跑机制』的问题。
+
+发展史：通过 ctx.commands 注册全局命令，由 2026-07-19 的 human-goal-command Agent Note 决策演进而来；仅纯文本交互，适配器专用徽标等 UI 化能力列为暂缓。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/goal/command-goal/README.zh.md
+
 ## 实现逻辑
 apply() 在 ctx.commands 注册 /goal 命令。handler 解析 show/create/edit/pause/resume/clear 语法，通过 ctx.goals.get/create/edit/pause/resume/clear(compare-and-set ref) 执行，GoalView 渲染为多行 CommandResult。
 

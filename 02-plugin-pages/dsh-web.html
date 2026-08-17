@@ -54,6 +54,13 @@ footer{margin-top:40px;padding:16px 24px;border-top:1px solid var(--border);colo
 table{border-collapse:collapse;width:100%;margin:10px 0;}
 th,td{border:1px solid var(--border);padding:6px 10px;font-size:13px;text-align:left;}
 th{background:var(--panel);color:#b8c2d4;}
+.whybox{background:#0d1a14;border:1px solid #2f5a4a;border-radius:8px;padding:14px 18px;margin:10px 0;}
+.whybox .tag{color:#5fc9a0;font-size:12px;font-weight:600;letter-spacing:1px;}
+.whybox p{font-size:14px;color:#cfe8dd;margin:6px 0;}
+.whybox .hist{font-size:13px;color:var(--dim);margin-top:8px;}
+.whybox .src{font-size:11px;color:var(--dim);margin-top:8px;}
+.whybox .src a{color:#7fb0ff;text-decoration:none;word-break:break-all;}
+.whybox .src a:hover{text-decoration:underline;}
 </style>
 </head>
 <body>
@@ -63,123 +70,7 @@ th{background:var(--panel);color:#b8c2d4;}
   <span class="badge">Layer 1</span><span class="badge">G24</span>
 </header>
 <main>
-<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">运行时框架</a><a href="../03-groups/G02.html">类型契约</a><a href="../03-groups/G03.html">核心服务</a><a href="../03-groups/G04.html">LLM核心</a><a href="../03-groups/G05.html">LLM适配</a><a href="../03-groups/G06.html">LLM治理</a><a href="../03-groups/G07.html">会话持久化</a><a href="../03-groups/G08.html">会话展示</a><a href="../03-groups/G09.html">审批权限</a><a href="../03-groups/G10.html">命令交互</a><a href="../03-groups/G11.html">凭据设置</a><a href="../03-groups/G12.html">附件</a><a href="../03-groups/G13.html">文件系统</a><a href="../03-groups/G14.html">Shell工具</a><a href="../03-groups/G15.html">沙箱执行</a><a href="../03-groups/G16.html">作业</a><a href="../03-groups/G17.html">目标计划</a><a href="../03-groups/G18.html">技能</a><a href="../03-groups/G19.html">子代理</a><a href="../03-groups/G20.html">工作流</a><a href="../03-groups/G21.html">上下文治理</a><a href="../03-groups/G22.html">上下文注入</a><a href="../03-groups/G23.html">工具守卫</a><a href="../03-groups/G24.html">Web搜索</a><a href="../03-groups/G25.html">宿主服务</a><a href="../03-groups/G26.html">客户端runtime</a><a href="../03-groups/G27.html">会话交互UI</a><a href="../03-groups/G28.html">设置输入UI</a><a href="../03-groups/G29.html">UI底座</a><a href="../03-groups/G30.html">外部执行后端</a><a href="../03-groups/G31.html">协议与SDK</a><a href="../03-groups/G32.html">LSP集成</a><a href="../03-groups/G33.html">子代理外部后端</a><a href="../03-groups/G34.html">Web上下文扩展</a><a href="../03-groups/G35.html">会话存储变体</a><a href="../03-groups/G36.html">Hooks工具扩展</a><a href="../03-groups/G37.html">示例与框架</a></div><div class="dagnav"><div class="label">依赖链 · 上游（该插件依赖的前驱）：</div><div class="chips"><a class="chip" href="dsh-llm.html">dsh-llm</a></div><div class="label" style="margin-top:8px;">依赖链 · 下游（依赖该插件的节点）：</div><div class="chips"><a class="chip" href="dsh-tool-web.html">dsh-tool-web</a><a class="chip l3" href="dsh-web-fetch-http.html">dsh-web-fetch-http</a><a class="chip" href="dsh-web-search-deepseek.html">dsh-web-search-deepseek</a><a class="chip l3" href="dsh-web-search-exa.html">dsh-web-search-exa</a><a class="chip l3" href="dsh-web-search-perplexity.html">dsh-web-search-perplexity</a></div><div class="label" style="margin-top:8px;">同一拓扑层（Layer 1，层次遍历层序）：</div><div class="chips"><a class="chip" href="cordis-plugin-hmr.html">cordis-plugin-hmr</a><a class="chip" href="dsh-api-gateway.html">dsh-api-gateway</a><a class="chip" href="dsh-client-ui-attachment.html">dsh-client-ui-attachment</a><a class="chip" href="dsh-host-directory-picker-auto.html">dsh-host-directory-picker-auto</a><a class="chip" href="dsh-host-directory-picker-browse.html">dsh-host-directory-picker-browse</a><a class="chip" href="dsh-host-directory-picker-native.html">dsh-host-directory-picker-native</a><a class="chip" href="dsh-host-frontend-static.html">dsh-host-frontend-static</a><a class="chip" href="dsh-llm-deepseek.html">dsh-llm-deepseek</a><a class="chip" href="dsh-llm-pi-ai.html">dsh-llm-pi-ai</a><a class="chip" href="dsh-lsp-stdio.html">dsh-lsp-stdio</a><a class="chip" href="dsh-session.html">dsh-session</a><a class="chip" href="dsh-skill.html">dsh-skill</a><a class="chip" href="dsh-storage-json.html">dsh-storage-json</a><a class="chip" href="dsh-system-prompt.html">dsh-system-prompt</a><a class="chip" href="dsh-typert-loader.html">dsh-typert-loader</a><a class="chip self" href="dsh-web.html">dsh-web</a></div></div><div class="layernav"><a href="cordis-plugin-timer.html">↑ Layer 0（19 插件）</a><span class="chip self">Layer 1</span><a href="dsh-agent.html">↓ Layer 2（16 插件）</a></div><h2>插件信息</h2><table><tr><th>包名</th><td>@deepseek-ai/dsh-web</td></tr><tr><th>分组</th><td>G24 · Web搜索</td></tr><tr><th>拓扑层</th><td>Layer 1（层次遍历：被依赖方先于依赖方）</td></tr><tr><th>源码路径</th><td><code>packages/web/web</code></td></tr></table>
-<style>
-#dyn-dag{width:100%;min-height:420px;height:auto;max-height:900px;background:var(--panel);border:1px solid var(--border);border-radius:8px;margin:12px 0;}
-#dyn-dag-label{font-size:12px;color:var(--dim);margin:10px 0 4px;}
-#dyn-dag-legend{display:flex;gap:16px;font-size:12px;color:var(--dim);margin:6px 0 2px;flex-wrap:wrap;}
-#dyn-dag-legend .item{display:flex;align-items:center;gap:5px;}
-#dyn-dag-legend .dot{width:10px;height:10px;border-radius:3px;display:inline-block;}
-.dyn-entry{background:#4f8cff;}
-.dyn-module{background:#2f6fd0;}
-.dyn-leaf{background:#5a6b8c;}
-</style>
-
-<h2 style="margin-top:26px;">模块内部结构（源码 DAG）</h2>
-<div id="dyn-dag-label">本插件 src 下各文件（模块）的 import 依赖关系，蓝色=入口/被引用多 · 深蓝=普通模块 · 灰=叶子</div>
-<div id="dyn-dag-legend">
-  <span class="item"><span class="dot dyn-entry"></span>入口/核心</span>
-  <span class="item"><span class="dot dyn-module"></span>模块</span>
-  <span class="item"><span class="dot dyn-leaf"></span>叶子/被引用</span>
-</div>
-<div id="dyn-dag"></div>
-
-<script src="../04-interactive/vendor/cytoscape.min.js"></script>
-<script src="../04-interactive/vendor/cytoscape-dagre.min.js"></script>
-<script>
-(function(){
-  const raw = {"elements": [{"data": {"id": "index.ts", "label": "index.ts", "full": "index.ts", "cls": "#4f8cff", "kind": "entry"}}, {"data": {"id": "invariant.ts", "label": "invariant.ts", "full": "invariant.ts", "cls": "#5a6b8c", "kind": "leaf"}}, {"data": {"id": "types.ts", "label": "types.ts", "full": "types.ts", "cls": "#5a6b8c", "kind": "leaf"}}, {"data": {"id": "index.ts->types.ts", "source": "index.ts", "target": "types.ts"}}]};
-  const cy = cytoscape({
-    container: document.getElementById('dyn-dag'),
-    elements: raw.elements,
-    style: [
-      {
-        selector: 'node',
-        style: {
-          'label': 'data(label)',
-          'background-color': 'data(cls)',
-          'color': '#e6e8ee',
-          'font-size': 10,
-          'text-valign': 'bottom',
-          'text-margin-y': 4,
-          'width': 42,
-          'height': 42,
-          'shape': 'round-rectangle',
-          'border-width': 1.5,
-          'border-color': '#3a4150'
-        }
-      },
-      {
-        selector: 'node[kind="entry"]',
-        style: {
-          'border-width': 3,
-          'border-color': '#7fb0ff',
-          'font-weight': 700
-        }
-      },
-      {
-        selector: 'edge',
-        style: {
-          'width': 1.2,
-          'line-color': '#556080',
-          'target-arrow-color': '#556080',
-          'target-arrow-shape': 'triangle',
-          'curve-style': 'bezier',
-          'arrow-scale': 0.8
-        }
-      }
-    ],
-    layout: {
-      name: 'dagre',
-      rankDir: 'LR',
-      nodeSep: 45,
-      rankSep: 40,
-      padding: 25,
-      spacingFactor: 1.0
-    },
-    wheelSensitivity: 0.2,
-    minZoom: 0.2,
-    maxZoom: 2.5
-  });
-  // 排版优化: 初始布局即按节点数选择方向 (LR 横排防狭长), 并 fit 到容器
-  (function(){
-    const nodeCount = raw.elements.filter(el => el.data && el.data.cls).length;
-    const chooseLayout = function(){
-      const el = document.getElementById('dyn-dag');
-      const w = el.clientWidth || 900, h = el.clientHeight || 500;
-      const landscape = (nodeCount >= 12) || (w > h * 1.1 && nodeCount >= 5);
-      return {
-        name: 'dagre',
-        rankDir: landscape ? 'LR' : 'TB',
-        nodeSep: landscape ? 45 : 30,
-        rankSep: landscape ? 40 : 80,
-        padding: 25,
-        spacingFactor: 1.0
-      };
-    };
-    const first = chooseLayout();
-    cy.layout(first).run();
-    setTimeout(() => {
-      try { cy.fit(undefined, 30); } catch(e) {}
-    }, 350);
-    window.addEventListener('resize', () => {
-      cy.resize();
-      const next = chooseLayout();
-      cy.layout(next).run();
-      setTimeout(() => {
-        try { cy.fit(undefined, 30); } catch(e) {}
-      }, 300);
-    });
-  })();
-  cy.on('tap', 'node', (evt) => {
-    const full = evt.target.data('full');
-    document.getElementById('dyn-dag-label').textContent = '当前模块: ' + full;
-  });
-  setTimeout(() => cy.resize(), 100);
-})();
-</script>
-
-<h2>① 实现逻辑</h2><p>web 能力缝服务定义：WebRuntime extends Service 注册为 ctx.web，维护 searchProviders/fetchProviders 两个命名注册表。search()/fetch() 在调用时按配置 id→注册→available() 优先级解析唯一 provider，无配置时恰好一个可用自动选中；search 结果按 maxResults 截断。</p><h2>② 注册/提供（provides）</h2><ul class="provides"><li>ctx.web(WebRuntime)</li><li>registerSearchProvider/registerFetchProvider</li><li>WebError 错误分类学</li><li>searchProvider/fetchProvider 选择配置</li></ul><h2>③ 依赖（depends_on · 上游前驱）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-llm.html">dsh-llm</a></span><span class="mech">E3</span><div class="purpose">类型/错误基类声明依赖</div><div class="evi">packages/web/web/package.json:36</div></div></div><h2>④ 被依赖（dependents · 下游消费者）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-tool-web.html">dsh-tool-web</a></span><div class="purpose">ctx.web.search/fetch</div><div class="evi">packages/web/tool-web/src/index.ts:24,261</div></div><div class="dep-item"><span class="name"><a href="dsh-web-fetch-http.html">dsh-web-fetch-http</a></span><div class="purpose">Web seam 能力缝：registerFetchProvider 注册 API + WebFetchProvider 接口/WebError 契约</div><div class="evi">packages/web/web-fetch-http/src/index.ts:12 import type {} from &#x27;@deepseek-ai/dsh-web&#x27;；provider.ts:11-12 WebError/WebFetchProvider/WebFetchRequest/WebFetchResult；src/index.ts:100 ctx.web.registerFetchProvider</div></div><div class="dep-item"><span class="name"><a href="dsh-web-search-deepseek.html">dsh-web-search-deepseek</a></span><div class="purpose">registerSearchProvider + WebError</div><div class="evi">packages/web/web-search-deepseek/src/index.ts:41,137</div></div><div class="dep-item"><span class="name"><a href="dsh-web-search-exa.html">dsh-web-search-exa</a></span><div class="purpose">Web seam 能力缝：registerSearchProvider 注册 API + WebSearchProvider 接口契约</div><div class="evi">packages/web/web-search-exa/src/provider.ts:9-15 WebError + WebSearchProvider/WebSearchRequest/WebSearchResult/WebSearchSource；index.ts:61 ctx.web.registerSearchProvider</div></div><div class="dep-item"><span class="name"><a href="dsh-web-search-perplexity.html">dsh-web-search-perplexity</a></span><div class="purpose">Web seam 能力缝：registerSearchProvider 注册 API + 搜索接口契约</div><div class="evi">packages/web/web-search-perplexity/src/provider.ts:9-15 WebError + WebSearchProvider 契约；index.ts:55 ctx.web.registerSearchProvider</div></div></div>
+<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">运行时框架</a><a href="../03-groups/G02.html">类型契约</a><a href="../03-groups/G03.html">核心服务</a><a href="../03-groups/G04.html">LLM核心</a><a href="../03-groups/G05.html">LLM适配</a><a href="../03-groups/G06.html">LLM治理</a><a href="../03-groups/G07.html">会话持久化</a><a href="../03-groups/G08.html">会话展示</a><a href="../03-groups/G09.html">审批权限</a><a href="../03-groups/G10.html">命令交互</a><a href="../03-groups/G11.html">凭据设置</a><a href="../03-groups/G12.html">附件</a><a href="../03-groups/G13.html">文件系统</a><a href="../03-groups/G14.html">Shell工具</a><a href="../03-groups/G15.html">沙箱执行</a><a href="../03-groups/G16.html">作业</a><a href="../03-groups/G17.html">目标计划</a><a href="../03-groups/G18.html">技能</a><a href="../03-groups/G19.html">子代理</a><a href="../03-groups/G20.html">工作流</a><a href="../03-groups/G21.html">上下文治理</a><a href="../03-groups/G22.html">上下文注入</a><a href="../03-groups/G23.html">工具守卫</a><a href="../03-groups/G24.html">Web搜索</a><a href="../03-groups/G25.html">宿主服务</a><a href="../03-groups/G26.html">客户端runtime</a><a href="../03-groups/G27.html">会话交互UI</a><a href="../03-groups/G28.html">设置输入UI</a><a href="../03-groups/G29.html">UI底座</a><a href="../03-groups/G30.html">外部执行后端</a><a href="../03-groups/G31.html">协议与SDK</a><a href="../03-groups/G32.html">LSP集成</a><a href="../03-groups/G33.html">子代理外部后端</a><a href="../03-groups/G34.html">Web上下文扩展</a><a href="../03-groups/G35.html">会话存储变体</a><a href="../03-groups/G36.html">Hooks工具扩展</a><a href="../03-groups/G37.html">示例与框架</a></div><div class="dagnav"><div class="label">依赖链 · 上游（该插件依赖的前驱）：</div><div class="chips"><a class="chip" href="dsh-llm.html">dsh-llm</a></div><div class="label" style="margin-top:8px;">依赖链 · 下游（依赖该插件的节点）：</div><div class="chips"><a class="chip" href="dsh-tool-web.html">dsh-tool-web</a><a class="chip l3" href="dsh-web-fetch-http.html">dsh-web-fetch-http</a><a class="chip" href="dsh-web-search-deepseek.html">dsh-web-search-deepseek</a><a class="chip l3" href="dsh-web-search-exa.html">dsh-web-search-exa</a><a class="chip l3" href="dsh-web-search-perplexity.html">dsh-web-search-perplexity</a></div><div class="label" style="margin-top:8px;">同一拓扑层（Layer 1，层次遍历层序）：</div><div class="chips"><a class="chip" href="cordis-plugin-hmr.html">cordis-plugin-hmr</a><a class="chip" href="dsh-api-gateway.html">dsh-api-gateway</a><a class="chip" href="dsh-client-ui-attachment.html">dsh-client-ui-attachment</a><a class="chip" href="dsh-host-directory-picker-auto.html">dsh-host-directory-picker-auto</a><a class="chip" href="dsh-host-directory-picker-browse.html">dsh-host-directory-picker-browse</a><a class="chip" href="dsh-host-directory-picker-native.html">dsh-host-directory-picker-native</a><a class="chip" href="dsh-host-frontend-static.html">dsh-host-frontend-static</a><a class="chip" href="dsh-llm-deepseek.html">dsh-llm-deepseek</a><a class="chip" href="dsh-llm-pi-ai.html">dsh-llm-pi-ai</a><a class="chip" href="dsh-lsp-stdio.html">dsh-lsp-stdio</a><a class="chip" href="dsh-session.html">dsh-session</a><a class="chip" href="dsh-skill.html">dsh-skill</a><a class="chip" href="dsh-storage-json.html">dsh-storage-json</a><a class="chip" href="dsh-system-prompt.html">dsh-system-prompt</a><a class="chip" href="dsh-typert-loader.html">dsh-typert-loader</a><a class="chip self" href="dsh-web.html">dsh-web</a></div></div><div class="layernav"><a href="cordis-plugin-timer.html">↑ Layer 0（19 插件）</a><span class="chip self">Layer 1</span><a href="dsh-agent.html">↓ Layer 2（16 插件）</a></div><h2>插件信息</h2><table><tr><th>包名</th><td>@deepseek-ai/dsh-web</td></tr><tr><th>分组</th><td>G24 · Web搜索</td></tr><tr><th>拓扑层</th><td>Layer 1（层次遍历：被依赖方先于依赖方）</td></tr><tr><th>源码路径</th><td><code>packages/web/web</code></td></tr></table><div class="whybox"><span class="tag">为什么需要它 · 设计初衷</span><p>网页能力族：把搜索与抓取合并到单一 provider 选择缝（ctx.web），并提供 provider 中立（Exa/Perplexity/DeepSeek 原生/HTTP fetch）以及模型面对工具 web_search/web_fetch。解耦「提供者」与「消费工具」——换一次 provider 全产品切换，且工具可见性不依赖后端可用性（enablement 而非 availability）。</p><div class="hist">📜 2026-06-24 web capability seam 决策记录为何搜索与抓取共享一个 provider 选择服务；明确推迟 SSRF 防护。工具侧演化出 web result card 渲染。</div><div class="src">📚 来源：<br><a href="https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/web" target="_blank">https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/web</a><br><a href="https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-06-24-web-capability-seam.md" target="_blank">https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-06-24-web-capability-seam.md</a><br><a href="https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/subsystems/web.md" target="_blank">https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/subsystems/web.md</a><br></div></div><h2>① 实现逻辑</h2><p>web 能力缝服务定义：WebRuntime extends Service 注册为 ctx.web，维护 searchProviders/fetchProviders 两个命名注册表。search()/fetch() 在调用时按配置 id→注册→available() 优先级解析唯一 provider，无配置时恰好一个可用自动选中；search 结果按 maxResults 截断。</p><h2>② 注册/提供（provides）</h2><ul class="provides"><li>ctx.web(WebRuntime)</li><li>registerSearchProvider/registerFetchProvider</li><li>WebError 错误分类学</li><li>searchProvider/fetchProvider 选择配置</li></ul><h2>③ 依赖（depends_on · 上游前驱）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-llm.html">dsh-llm</a></span><span class="mech">E3</span><div class="purpose">类型/错误基类声明依赖</div><div class="evi">packages/web/web/package.json:36</div></div></div><h2>④ 被依赖（dependents · 下游消费者）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-tool-web.html">dsh-tool-web</a></span><div class="purpose">ctx.web.search/fetch</div><div class="evi">packages/web/tool-web/src/index.ts:24,261</div></div><div class="dep-item"><span class="name"><a href="dsh-web-fetch-http.html">dsh-web-fetch-http</a></span><div class="purpose">Web seam 能力缝：registerFetchProvider 注册 API + WebFetchProvider 接口/WebError 契约</div><div class="evi">packages/web/web-fetch-http/src/index.ts:12 import type {} from &#x27;@deepseek-ai/dsh-web&#x27;；provider.ts:11-12 WebError/WebFetchProvider/WebFetchRequest/WebFetchResult；src/index.ts:100 ctx.web.registerFetchProvider</div></div><div class="dep-item"><span class="name"><a href="dsh-web-search-deepseek.html">dsh-web-search-deepseek</a></span><div class="purpose">registerSearchProvider + WebError</div><div class="evi">packages/web/web-search-deepseek/src/index.ts:41,137</div></div><div class="dep-item"><span class="name"><a href="dsh-web-search-exa.html">dsh-web-search-exa</a></span><div class="purpose">Web seam 能力缝：registerSearchProvider 注册 API + WebSearchProvider 接口契约</div><div class="evi">packages/web/web-search-exa/src/provider.ts:9-15 WebError + WebSearchProvider/WebSearchRequest/WebSearchResult/WebSearchSource；index.ts:61 ctx.web.registerSearchProvider</div></div><div class="dep-item"><span class="name"><a href="dsh-web-search-perplexity.html">dsh-web-search-perplexity</a></span><div class="purpose">Web seam 能力缝：registerSearchProvider 注册 API + 搜索接口契约</div><div class="evi">packages/web/web-search-perplexity/src/provider.ts:9-15 WebError + WebSearchProvider 契约；index.ts:55 ctx.web.registerSearchProvider</div></div></div>
 </main>
 <footer>DeepSeek Harness 插件级 DAG 依赖链分析 · L1 核心集 + L2 web-app + L3 其余插件 · 源码三依据(E1编译/E2运行时/E3组合)逐条溯源</footer>
 </body>

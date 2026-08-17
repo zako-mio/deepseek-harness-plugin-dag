@@ -6,6 +6,13 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/compaction/compaction-basic`
 
+## 为什么需要它（设计初衷）
+token-meter 驱动的压缩策略 + LLM 摘要后端，compaction 能力族默认实现。
+
+来源：
+- https://registry.npmjs.org/@deepseek-ai/dsh-compaction-basic
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/compaction/compaction-basic
+
 ## 实现逻辑
 以 BasicCompactionEngine 类(extends CompactionEngine)默认导出，static inject=['llm','tokenMeter','sessions']。auto 时注册 agent/pre-step 压力压缩、agent/request-error 溢出恢复(CONTEXT_WINDOW_EXCEEDED)、agent/status idle 重置。compactIfNeeded 用 ctx.tokenMeter.measure 定价，可选 ctx.get('toolResultPruner') 先裁剪，再 compactSurfaceRegion(append compaction/start|summary|end + user/message surfaceOp replace)；summarize 经 ctx.llm.stream() 复用 KV 前缀缓存。
 

@@ -6,6 +6,15 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-settings`
 
+## 为什么需要它（设计初衷）
+设置域的基础层插件（无自绘 UI 的两角色包）：提供 ctx.settingsScope（每个偏好行绑定的 Host 传输通道/命名空间作用域）并声明 settings.trigger/header/close/action/section/plugins.tab/onboarding 等 slot 契约，让任意拥有偏好的功能包都能读写其命名空间设置。解决'浏览器偏好如何分域、并发安全地读写 Host 设置文档'的机制问题。
+
+发展史：设置域的 base 契约层，与 ui-settings-general（shell 外壳）刻意分离以避免 ui-sidebar→ui-layout→ui-theme 的引用图环。RPC 仅 loopback、单字段写入等限制明确记录为 deferred work。版本 0.1.0-rc.5。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-settings/README.md
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-settings/package.json
+
 ## 实现逻辑
 Settings 域基础插件：browser 半注册 ctx.settingsScope 服务（SettingsScopeBinder，settings-scope.ts:227-232），定义 settings 表面规范 slot 契约（contract/slots.ts:53-88：settings.section/plugins.tab/onboarding/general.item）。host 半为空 apply。不依赖任何 ui-* 呈现包，任意偏好拥有者经 ctx.settingsScope.bind 读写 Host settings 命名空间（api.settings.mutate）。
 

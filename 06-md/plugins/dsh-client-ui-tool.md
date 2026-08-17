@@ -6,6 +6,12 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-tool`
 
+## 为什么需要它（设计初衷）
+客户端工具调用展示：调度 tool-call 节点与原子 toolview 渲染（terminal/read/diff 等卡片）。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-tool/README.md
+
 ## 实现逻辑
 工具调用树 + 业务 Tool 视图。apply() 注册：conversation.chat.node keyed 'tool-call'（ToolCallTree，含 child slot tool.call.toolview keyed dispatch）、conversation.details.tool（ToolDetails 渲染选中调用输出）；再以 7 个独立 registrant plugin（bash/read/file-mutation/search/web/todo/ask-question toolviews）注册 keyed 'tool.call.toolview' 原子视图，未覆盖的 toolName 由 GenericToolCard fallback。declares slot 'tool.call.toolview'（keyed，open key 域，toolName 即 key）。
 

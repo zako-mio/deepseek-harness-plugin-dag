@@ -6,6 +6,12 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/session/session-checkpoint-policy`
 
+## 为什么需要它（设计初衷）
+语义持久化检查点策略：在模型请求前/工具副作用前/pre-step 边界强制刷新事件日志，失败即拒，防止崩溃丢事件。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/session/session-checkpoint-policy
+
 ## 实现逻辑
 纯 apply(ctx) 函数插件，inject=['llm','sessionPersistence','sessions','tools']。在三处语义边界前强制 ctx.sessions.flush：llm/stream 包装器在延迟构造模型流之前 flush(失败即阻止 adapter dispatch)；tools/execute 在顶层工具分发前 flush；agent/pre-step 在每步请求前 flush。
 

@@ -6,6 +6,12 @@
 - 来源层: L3 其余
 - 源码路径: `packages/typert/generator`
 
+## 为什么需要它（设计初衷）
+构建期 TypeScript 工程分析器，把类型树转编译器无关模型并生成 Zod 运行时产物。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/typert/generator/README.md
+
 ## 实现逻辑
 Typert 生成工具链：WorkspaceAnalyzer(analyzer.ts) 基于 typescript 编译器做 workspace 级程序分析，产出 compiler-independent Typert 模型(model.ts)；FaceModelEmitter(emitter.ts) 用 @jridgewell/gen-mapping 生成 sourcemap 感知的 host/client 面反射工件；TypeGraphRenderer(renderer.ts) 渲染类型图；WorkspaceTypertGenerator(workspace.ts) 组合 discover→analyze→emit 并校验 package.json exports/files 契约(./typert、./client/typert、./remote)；cordis-catalog.ts 做 Cordis 目录投影与 type-link 违规门控。tsdown-plugin.ts 暴露 typertPlugin(transform 降级装饰器 + writeBundle 生成工件)，供根 tsdown.config.ts 以 workspace 模式接入构建。
 

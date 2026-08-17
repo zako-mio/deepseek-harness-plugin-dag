@@ -1,0 +1,93 @@
+[
+  {
+    "id": "dsh-agent-tool-presentation",
+    "why": "解决「工具注册表无法下沉进 preset」的矛盾：工具的消费者（agent-loop 调度器、apiproxy 的 presenter、各工具插件）全在宿主平面，preset 唯一能拥有的只是这份注册表的呈现方式。该插件作为 agent preset 中一行声明，指定模型看到的工具是 native（全 schema）、code（仅 run_code + 生成 TypeScript SDK）还是 both，使 Code Mode 会话可与 native 会话同进程并存。code 模式同时决定可调用面：注册表把模型直呼其他工具名解析为 UNKNOWN_TOOL，保证通告面与可调用面一致。",
+    "history": "位于 packages/core/agent-tool-presentation，agent 平面呈现选择器，0.1.0-rc.6（2026-08-13）由 @deepseek-ai 发布，2026-08-12 首版 0.0.1-rc.3。强调 mode 必填、每个 agent 只声明一次，第二次声明会被拒绝而非合并。",
+    "sources": [
+      "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/core/agent-tool-presentation/README.zh.md",
+      "https://registry.npmjs.org/@deepseek-ai/dsh-agent-tool-presentation"
+    ]
+  },
+  {
+    "id": "dsh-tool-subagent",
+    "why": "给模型提供基于 ctx.subagents seam 的委派工具，解耦传输与执行约定：更换提供方（spawn/fork/acp 等）只改传输不改变执行约定。支持前台等待与后台运行（one-shot 经通用 Task 接口收集、continuable 返回持久化 subagentId），并发安全（同级委派可并行重叠执行、结果按模型顺序提交），并支持 persona、toolFilter、maxDepth 等每子 agent 独立配置。子 agent 在各自会话中工作，一次运行绝不变更父会话。",
+    "history": "位于 packages/subagent/tool-subagent，随 DeepSeek Harness monorepo 于 2026-08-10 首版 0.0.1-rc.1，0.1.0-rc.6（2026-08-13）转 MIT 并公开发布。核心设计源自多个 Agent Note：后台子任务（2026-07-08）、可继续对话（2026-07-28）、后台优先委派（2026-08-11）。",
+    "sources": [
+      "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/subagent/tool-subagent/README.zh.md",
+      "https://registry.npmjs.org/@deepseek-ai/dsh-tool-subagent"
+    ]
+  },
+  {
+    "id": "dsh-tool-lsp",
+    "why": "给模型提供基于 ctx.lsp 能力 seam 的只读 lsp 工具，做精确代码导航：单工具四种操作（goToDefinition/findReferences/goToImplementation/hover），1 起始 UTF-16 光标坐标并自动转换 seam 的 0 起始位置。用于文本匹配歧义或改动前需要精确定义/实现/引用时，补充 search/read 的不足。不导入任何提供方，携带模型 schema、提示词指引（顺序 112）、结果限制（maxLocations=100/maxResultChars=16000）与 UI 呈现。",
+    "history": "位于 packages/lsp/tool-lsp，随 monorepo 2026-08-10 首版 0.0.1-rc.1，0.1.0-rc.6（2026-08-13）公开发布。设计依据 seam Agent Note（2026-07-15），明确不承诺跨语言/服务器的完整性。",
+    "sources": [
+      "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/lsp/tool-lsp/README.zh.md",
+      "https://registry.npmjs.org/@deepseek-ai/dsh-tool-lsp"
+    ]
+  },
+  {
+    "id": "dsh-tool-jobs",
+    "why_short": "给模型提供后台任务控制工具（job_output/job_list/job_kill），管理 ctx.jobs 注册表中的通用后台任务。",
+    "sources": [
+      "https://registry.npmjs.org/@deepseek-ai/dsh-tool-jobs",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/jobs/tool-jobs/README.zh.md"
+    ]
+  },
+  {
+    "id": "dsh-tool-skill",
+    "why_short": "DeepSeek Harness 的模型侧技能加载工具，让模型按需加载 skill 能力（提供方注册表 + 本地提供方 + 目录/loader）。",
+    "sources": [
+      "https://registry.npmjs.org/@deepseek-ai/dsh-tool-skill",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/skill/tool-skill/README.zh.md"
+    ]
+  },
+  {
+    "id": "dsh-subagent-spawn-in-process",
+    "why_short": "进程内 spawn 子 agent 后端：在 ctx.agents 上运行全新子 agent，是 subagent 提供方的一种进程内实现（spawn 模式传输层）。",
+    "sources": [
+      "https://registry.npmjs.org/@deepseek-ai/dsh-subagent-spawn-in-process",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/subagent/subagent-spawn-in-process/README.zh.md"
+    ]
+  },
+  {
+    "id": "dsh-tool-subagent-report",
+    "why_short": "面向子 agent 的 report 工具，基于 ctx.subagents 可继续会话提供子作用域报告通道，支撑后台可继续子 agent 的结算/汇报。",
+    "sources": [
+      "https://registry.npmjs.org/@deepseek-ai/dsh-tool-subagent-report",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/subagent/tool-subagent-report/README.zh.md"
+    ]
+  },
+  {
+    "id": "dsh-tool-web",
+    "why_short": "给模型提供 Web 工具（web_search/web_fetch），封装 ctx.web 能力 seam，用 turndown+GFM 插件把 HTML 转 Markdown 供模型读取。",
+    "sources": [
+      "https://registry.npmjs.org/@deepseek-ai/dsh-tool-web",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/web/tool-web/README.zh.md"
+    ]
+  },
+  {
+    "id": "dsh-sdk-jsonrpc-demo",
+    "why_short": "示例 bin（dsh-jsonrpc-agent），引导外部 Cordis 配置启动 stdio JSON-RPC SDK 运行时，演示进程外 SDK 集成方式。",
+    "sources": [
+      "https://registry.npmjs.org/@deepseek-ai/dsh-sdk-jsonrpc-demo",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/examples/jsonrpc-demo/README.zh.md"
+    ]
+  },
+  {
+    "id": "dsh-tool-ralph",
+    "why_short": "给模型提供 fresh-agent Ralph 循环工具，基于 workflow 与 subagent 双 seam 运行全新子 agent 做独立任务编排。",
+    "sources": [
+      "https://registry.npmjs.org/@deepseek-ai/dsh-tool-ralph",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/workflow/tool-ralph/README.zh.md"
+    ]
+  },
+  {
+    "id": "dsh-client-web-react",
+    "why_short": "Web GUI 浏览器侧的 React 胶水库（createSlotRenderer/SessionProvider/bindSnapshotSelector/useInvoke），供宿主 UI 插件渲染工具卡与交互。",
+    "sources": [
+      "https://registry.npmjs.org/@deepseek-ai/dsh-client-web-react",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/web-react/README.zh.md"
+    ]
+  }
+]

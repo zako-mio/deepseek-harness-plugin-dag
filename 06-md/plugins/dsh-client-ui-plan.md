@@ -6,6 +6,13 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-plan`
 
+## 为什么需要它（设计初衷）
+Plan 模式状态芯片（纯浏览器表面插件）：占 conversation.input.plan seat，渲染 plan 投影并执行 /plan off。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-plan/README.md
+- https://www.npmjs.com/package/@deepseek-ai/dsh-client-ui-plan
+
 ## 实现逻辑
 Composer plan seat：注册 conversation.input.plan 槽的 PlanChip（index.ts:52-64），经 useProjection('plan') 读 plan-mode 会话投影决定显隐（PlanModeControl.tsx:20,32-34），退出时 ctx.remote.commands.execute(sessionId, '/plan off')（index.ts:58-62）。host 半注释明确 plan 行为本体归 dsh-plan-mode（src/index.ts:5-7）。
 

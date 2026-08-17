@@ -29,39 +29,38 @@
 <body>
 <header>
   <h1>DeepSeek Harness 插件级 DAG 依赖链分析</h1>
-  <p>以 cordis 插件为最小分析单元，三硬依据（E1 编译 / E2 运行时 / E3 组合）+ 源码行引用逐条溯源，回答每个插件「实现了什么」「依赖谁」「被谁依赖」。L1 核心集（base bundle）+ L2 web-app bundle（宿主层/前端 runtime/ui-*）已完成。</p>
+  <p>以 cordis 插件为最小分析单元，三硬依据（E1 编译 / E2 运行时 / E3 组合）+ 源码行引用逐条溯源，回答每个插件「实现了什么」「依赖谁」「被谁依赖」。L1 核心集（base bundle）+ L2 web-app bundle（宿主层/前端 runtime/ui-*）+ L3 其余（examples/hooks/web 变体/e2b/lsp/sdk/子代理外部后端）已全部完成。</p>
 </header>
 <main>
   <h2>核心统计</h2>
   <div>
-    <div class="stat"><b>134</b><span>核心/Web 插件</span></div>
-    <div class="stat"><b>36</b><span>外部 seam 基座</span></div>
-    <div class="stat"><b>434</b><span>依赖边</span></div>
+    <div class="stat"><b>173</b><span>插件节点（76 L1 + 58 L2 + 39 L3）</span></div>
+    <div class="stat"><b>49</b><span>外部 seam 基座</span></div>
+    <div class="stat"><b>545</b><span>依赖边（含 22 个 web 变体 disabled 标注）</span></div>
     <div class="stat"><b>17</b><span>拓扑层</span></div>
-    <div class="stat"><b>29</b><span>分组</span></div>
-    <div class="stat"><b>170</b><span>HTML 插件页</span></div>
+    <div class="stat"><b>37</b><span>分组</span></div>
+    <div class="stat"><b>221</b><span>HTML 插件页（173 DAG 节点 + 49 seam，1 个双身份共享页）</span></div>
   </div>
 
   <h2>入口导航</h2>
   <div class="links">
     <a href="04-interactive/index.html">交互 DAG 总览（组级视图+点击下钻）</a>
     <a href="03-groups/index.html">分组目录</a>
-    <a href="06-md/00-index.md">MD 镜像总览</a>
     <a href="05-drawio/host/">drawio 图集（host）</a>
     <a href="05-drawio/ui-conversation/">drawio 图集（UI）</a>
   </div>
 
   <h2>查看方式</h2>
   <div class="cards">
-    <div class="card"><h3>交互图</h3><p>cytoscape 本地渲染，组级视图 30 节点（29 组 + EXT）彩色，点击组节点下钻组内插件 DAG；disabled 插件灰显红边。<a href="04-interactive/index.html">打开 →</a></p></div>
-    <div class="card"><h3>插件页</h3><p>每插件一页：实现逻辑 + provides + 上游/下游 DAG 链式导航 + 源码引用。<a href="02-plugin-pages/dsh-session.html">示例 dsh-session →</a></p></div>
-    <div class="card"><h3>分组索引</h3><p>29 组索引（L1 24 组 + L2 5 组），每组列出组内插件与拓扑层。<a href="03-groups/index.html">打开 →</a></p></div>
-    <div class="card"><h3>MD 镜像</h3><p>AI 友好 Markdown 简表，供检索。<a href="06-md/00-index.md">打开 →</a></p></div>
-    <div class="card"><h3>drawio 图集</h3><p>每插件内部结构图（上游/下游/provides），135 张。<a href="05-drawio/">浏览 →</a></p></div>
+    <div class="card"><h3>交互图</h3><p>cytoscape 本地渲染，组级视图 38 节点（37 组 + EXT）彩色，点击组节点下钻组内插件 DAG；disabled 插件灰显红边。<a href="04-interactive/index.html">打开 →</a></p></div>
+    <div class="card"><h3>插件页</h3><p>每插件一页：设计初衷 + 实现逻辑 + provides + 上游/下游 DAG 链式导航 + 源码引用。<a href="02-plugin-pages/dsh-session.html">示例 dsh-session →</a></p></div>
+    <div class="card"><h3>分组索引</h3><p>37 组索引（L1 24 组 + L2 5 组 + L3 8 组），每组列出组内插件与拓扑层。<a href="03-groups/index.html">打开 →</a></p></div>
+    <div class="card"><h3>MD 镜像</h3><p>AI 友好 Markdown 简表，供检索与二次加工（非人类浏览入口，见 README）。</p></div>
+    <div class="card"><h3>drawio 图集</h3><p>每插件内部结构图（上游/下游/provides），174 张。<a href="05-drawio/">浏览 →</a></p></div>
   </div>
 
   <h2>方法说明</h2>
-  <p>依赖判定三硬依据：<b>E1 编译依赖</b>（package.json peerDependencies / import）、<b>E2 运行时依赖</b>（ctx 服务注入 / ctx.get / 事件订阅）、<b>E3 组合依赖</b>（cordis.patch.yml 装配）。拓扑分层采用层次遍历：被依赖方先于依赖方（Layer 0 为基础能力，Layer 16 为最外层 UI 插件）。L2 另标注 22 个 web 变体 disabled 插件（模型侧工具移到 agent presets）。</p>
+  <p>依赖判定三硬依据：<b>E1 编译依赖</b>（package.json peerDependencies / import）、<b>E2 运行时依赖</b>（ctx 服务注入 / ctx.get / 事件订阅）、<b>E3 组合依赖</b>（cordis.patch.yml 装配）。拓扑分层采用层次遍历：被依赖方先于依赖方（Layer 0 为基础能力，Layer 16 为最外层 UI 插件）。L2 另标注 22 个 web 变体 disabled 插件（模型侧工具移到 agent presets）。L3 追加 8 组（外部执行后端/协议与SDK/LSP集成/子代理外部后端/Web上下文扩展/会话存储变体/Hooks工具扩展/示例与框架）+ 4 特殊模块页（base/headless/app-boot/cmdline）。</p>
 </main>
 </body>
 </html>

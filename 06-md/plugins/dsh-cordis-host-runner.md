@@ -6,6 +6,13 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/extensions/cordis-host-runner`
 
+## 为什么需要它（设计初衷）
+模型动态加载 Cordis 插件的 host 侧：define/run/stop 生命周期、node:vm 沙箱求值、浏览器半的 run 往返与 invoke 路由。
+
+来源：
+- https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/extensions/cordis-host-runner/README.zh.md
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/extensions
+
 ## 实现逻辑
 DynamicCordisRunnerService（TypertRemote）：define/undefine/run/stop 模型装配的动态双半 Cordis 插件包；sandbox.ts VM 求值 host code + guard 门禁，lifecycle.ts 把 host 半挂入 cordis-dynamic group 子 fiber；发 cordis/request-run 审批事件；另提供 cordisInspect 注册表（inspect-registry.ts）。
 

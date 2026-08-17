@@ -50,6 +50,21 @@ for nid, n in nodes.items():
     lines.append(f"- 来源层: {LAYER_LABEL.get(src, src)}")
     lines.append(f"- 源码路径: `{n.get('path','')}`")
     lines.append("")
+    # 为什么需要它（设计初衷）
+    why_data = n.get("why", {})
+    if why_data and why_data.get("text"):
+        lines.append("## 为什么需要它（设计初衷）")
+        lines.append(why_data["text"])
+        if why_data.get("history"):
+            lines.append("")
+            lines.append(f"发展史：{why_data['history']}")
+        srcs = why_data.get("sources", [])
+        if srcs:
+            lines.append("")
+            lines.append("来源：")
+            for s in srcs:
+                lines.append(f"- {s}")
+        lines.append("")
     lines.append("## 实现逻辑")
     lines.append(n["implementation"])
     lines.append("")

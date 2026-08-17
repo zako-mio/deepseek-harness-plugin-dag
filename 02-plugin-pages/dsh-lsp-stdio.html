@@ -54,6 +54,13 @@ footer{margin-top:40px;padding:16px 24px;border-top:1px solid var(--border);colo
 table{border-collapse:collapse;width:100%;margin:10px 0;}
 th,td{border:1px solid var(--border);padding:6px 10px;font-size:13px;text-align:left;}
 th{background:var(--panel);color:#b8c2d4;}
+.whybox{background:#0d1a14;border:1px solid #2f5a4a;border-radius:8px;padding:14px 18px;margin:10px 0;}
+.whybox .tag{color:#5fc9a0;font-size:12px;font-weight:600;letter-spacing:1px;}
+.whybox p{font-size:14px;color:#cfe8dd;margin:6px 0;}
+.whybox .hist{font-size:13px;color:var(--dim);margin-top:8px;}
+.whybox .src{font-size:11px;color:var(--dim);margin-top:8px;}
+.whybox .src a{color:#7fb0ff;text-decoration:none;word-break:break-all;}
+.whybox .src a:hover{text-decoration:underline;}
 </style>
 </head>
 <body>
@@ -63,123 +70,7 @@ th{background:var(--panel);color:#b8c2d4;}
   <span class="badge">Layer 1</span><span class="badge">G32</span><span class="badge l3">L3 其余</span>
 </header>
 <main>
-<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">运行时框架</a><a href="../03-groups/G02.html">类型契约</a><a href="../03-groups/G03.html">核心服务</a><a href="../03-groups/G04.html">LLM核心</a><a href="../03-groups/G05.html">LLM适配</a><a href="../03-groups/G06.html">LLM治理</a><a href="../03-groups/G07.html">会话持久化</a><a href="../03-groups/G08.html">会话展示</a><a href="../03-groups/G09.html">审批权限</a><a href="../03-groups/G10.html">命令交互</a><a href="../03-groups/G11.html">凭据设置</a><a href="../03-groups/G12.html">附件</a><a href="../03-groups/G13.html">文件系统</a><a href="../03-groups/G14.html">Shell工具</a><a href="../03-groups/G15.html">沙箱执行</a><a href="../03-groups/G16.html">作业</a><a href="../03-groups/G17.html">目标计划</a><a href="../03-groups/G18.html">技能</a><a href="../03-groups/G19.html">子代理</a><a href="../03-groups/G20.html">工作流</a><a href="../03-groups/G21.html">上下文治理</a><a href="../03-groups/G22.html">上下文注入</a><a href="../03-groups/G23.html">工具守卫</a><a href="../03-groups/G24.html">Web搜索</a><a href="../03-groups/G25.html">宿主服务</a><a href="../03-groups/G26.html">客户端runtime</a><a href="../03-groups/G27.html">会话交互UI</a><a href="../03-groups/G28.html">设置输入UI</a><a href="../03-groups/G29.html">UI底座</a><a href="../03-groups/G30.html">外部执行后端</a><a href="../03-groups/G31.html">协议与SDK</a><a href="../03-groups/G32.html">LSP集成</a><a href="../03-groups/G33.html">子代理外部后端</a><a href="../03-groups/G34.html">Web上下文扩展</a><a href="../03-groups/G35.html">会话存储变体</a><a href="../03-groups/G36.html">Hooks工具扩展</a><a href="../03-groups/G37.html">示例与框架</a></div><div class="dagnav"><div class="label">依赖链 · 上游（该插件依赖的前驱）：</div><div class="chips"><a class="chip" href="dsh-llm.html">dsh-llm</a></div><div class="label" style="margin-top:8px;">依赖链 · 下游（依赖该插件的节点）：</div><div class="chips"><span style="color:var(--dim);font-size:12px;">无下游（叶子/被消费端）</span></div><div class="label" style="margin-top:8px;">同一拓扑层（Layer 1，层次遍历层序）：</div><div class="chips"><a class="chip" href="cordis-plugin-hmr.html">cordis-plugin-hmr</a><a class="chip" href="dsh-api-gateway.html">dsh-api-gateway</a><a class="chip" href="dsh-client-ui-attachment.html">dsh-client-ui-attachment</a><a class="chip" href="dsh-host-directory-picker-auto.html">dsh-host-directory-picker-auto</a><a class="chip" href="dsh-host-directory-picker-browse.html">dsh-host-directory-picker-browse</a><a class="chip" href="dsh-host-directory-picker-native.html">dsh-host-directory-picker-native</a><a class="chip" href="dsh-host-frontend-static.html">dsh-host-frontend-static</a><a class="chip" href="dsh-llm-deepseek.html">dsh-llm-deepseek</a><a class="chip" href="dsh-llm-pi-ai.html">dsh-llm-pi-ai</a><a class="chip self" href="dsh-lsp-stdio.html">dsh-lsp-stdio</a><a class="chip" href="dsh-session.html">dsh-session</a><a class="chip" href="dsh-skill.html">dsh-skill</a><a class="chip" href="dsh-storage-json.html">dsh-storage-json</a><a class="chip" href="dsh-system-prompt.html">dsh-system-prompt</a><a class="chip" href="dsh-typert-loader.html">dsh-typert-loader</a><a class="chip" href="dsh-web.html">dsh-web</a></div></div><div class="layernav"><a href="cordis-plugin-timer.html">↑ Layer 0（19 插件）</a><span class="chip self">Layer 1</span><a href="dsh-agent.html">↓ Layer 2（16 插件）</a></div><h2>插件信息</h2><table><tr><th>包名</th><td>@deepseek-ai/dsh-lsp-stdio</td></tr><tr><th>分组</th><td>G32 · LSP集成</td></tr><tr><th>拓扑层</th><td>Layer 1（层次遍历：被依赖方先于依赖方）</td></tr><tr><th>源码路径</th><td><code>packages/lsp/lsp-stdio</code></td></tr><tr><th>来源层</th><td>L3 其余插件（独立于 bundle 装配的扩展/变体/示例）</td></tr></table>
-<style>
-#dyn-dag{width:100%;min-height:420px;height:auto;max-height:900px;background:var(--panel);border:1px solid var(--border);border-radius:8px;margin:12px 0;}
-#dyn-dag-label{font-size:12px;color:var(--dim);margin:10px 0 4px;}
-#dyn-dag-legend{display:flex;gap:16px;font-size:12px;color:var(--dim);margin:6px 0 2px;flex-wrap:wrap;}
-#dyn-dag-legend .item{display:flex;align-items:center;gap:5px;}
-#dyn-dag-legend .dot{width:10px;height:10px;border-radius:3px;display:inline-block;}
-.dyn-entry{background:#4f8cff;}
-.dyn-module{background:#2f6fd0;}
-.dyn-leaf{background:#5a6b8c;}
-</style>
-
-<h2 style="margin-top:26px;">模块内部结构（源码 DAG）</h2>
-<div id="dyn-dag-label">本插件 src 下各文件（模块）的 import 依赖关系，蓝色=入口/被引用多 · 深蓝=普通模块 · 灰=叶子</div>
-<div id="dyn-dag-legend">
-  <span class="item"><span class="dot dyn-entry"></span>入口/核心</span>
-  <span class="item"><span class="dot dyn-module"></span>模块</span>
-  <span class="item"><span class="dot dyn-leaf"></span>叶子/被引用</span>
-</div>
-<div id="dyn-dag"></div>
-
-<script src="../04-interactive/vendor/cytoscape.min.js"></script>
-<script src="../04-interactive/vendor/cytoscape-dagre.min.js"></script>
-<script>
-(function(){
-  const raw = {"elements": [{"data": {"id": "abort.ts", "label": "abort.ts", "full": "abort.ts", "cls": "#5a6b8c", "kind": "leaf"}}, {"data": {"id": "connection.ts", "label": "connection.ts", "full": "connection.ts", "cls": "#2f6fd0", "kind": "module"}}, {"data": {"id": "framing.ts", "label": "framing.ts", "full": "framing.ts", "cls": "#5a6b8c", "kind": "leaf"}}, {"data": {"id": "host.ts", "label": "host.ts", "full": "host.ts", "cls": "#2f6fd0", "kind": "module"}}, {"data": {"id": "index.ts", "label": "index.ts", "full": "index.ts", "cls": "#4f8cff", "kind": "entry"}}, {"data": {"id": "instance.ts", "label": "instance.ts", "full": "instance.ts", "cls": "#2f6fd0", "kind": "module"}}, {"data": {"id": "invariant.ts", "label": "invariant.ts", "full": "invariant.ts", "cls": "#5a6b8c", "kind": "leaf"}}, {"data": {"id": "protocol.ts", "label": "protocol.ts", "full": "protocol.ts", "cls": "#5a6b8c", "kind": "leaf"}}, {"data": {"id": "translate.ts", "label": "translate.ts", "full": "translate.ts", "cls": "#5a6b8c", "kind": "leaf"}}, {"data": {"id": "connection.ts->framing.ts", "source": "connection.ts", "target": "framing.ts"}}, {"data": {"id": "host.ts->abort.ts", "source": "host.ts", "target": "abort.ts"}}, {"data": {"id": "index.ts->framing.ts", "source": "index.ts", "target": "framing.ts"}}, {"data": {"id": "index.ts->connection.ts", "source": "index.ts", "target": "connection.ts"}}, {"data": {"id": "index.ts->abort.ts", "source": "index.ts", "target": "abort.ts"}}, {"data": {"id": "index.ts->instance.ts", "source": "index.ts", "target": "instance.ts"}}, {"data": {"id": "index.ts->host.ts", "source": "index.ts", "target": "host.ts"}}, {"data": {"id": "instance.ts->connection.ts", "source": "instance.ts", "target": "connection.ts"}}, {"data": {"id": "instance.ts->abort.ts", "source": "instance.ts", "target": "abort.ts"}}, {"data": {"id": "instance.ts->protocol.ts", "source": "instance.ts", "target": "protocol.ts"}}, {"data": {"id": "instance.ts->host.ts", "source": "instance.ts", "target": "host.ts"}}]};
-  const cy = cytoscape({
-    container: document.getElementById('dyn-dag'),
-    elements: raw.elements,
-    style: [
-      {
-        selector: 'node',
-        style: {
-          'label': 'data(label)',
-          'background-color': 'data(cls)',
-          'color': '#e6e8ee',
-          'font-size': 10,
-          'text-valign': 'bottom',
-          'text-margin-y': 4,
-          'width': 42,
-          'height': 42,
-          'shape': 'round-rectangle',
-          'border-width': 1.5,
-          'border-color': '#3a4150'
-        }
-      },
-      {
-        selector: 'node[kind="entry"]',
-        style: {
-          'border-width': 3,
-          'border-color': '#7fb0ff',
-          'font-weight': 700
-        }
-      },
-      {
-        selector: 'edge',
-        style: {
-          'width': 1.2,
-          'line-color': '#556080',
-          'target-arrow-color': '#556080',
-          'target-arrow-shape': 'triangle',
-          'curve-style': 'bezier',
-          'arrow-scale': 0.8
-        }
-      }
-    ],
-    layout: {
-      name: 'dagre',
-      rankDir: 'LR',
-      nodeSep: 45,
-      rankSep: 40,
-      padding: 25,
-      spacingFactor: 1.0
-    },
-    wheelSensitivity: 0.2,
-    minZoom: 0.2,
-    maxZoom: 2.5
-  });
-  // 排版优化: 初始布局即按节点数选择方向 (LR 横排防狭长), 并 fit 到容器
-  (function(){
-    const nodeCount = raw.elements.filter(el => el.data && el.data.cls).length;
-    const chooseLayout = function(){
-      const el = document.getElementById('dyn-dag');
-      const w = el.clientWidth || 900, h = el.clientHeight || 500;
-      const landscape = (nodeCount >= 12) || (w > h * 1.1 && nodeCount >= 5);
-      return {
-        name: 'dagre',
-        rankDir: landscape ? 'LR' : 'TB',
-        nodeSep: landscape ? 45 : 30,
-        rankSep: landscape ? 40 : 80,
-        padding: 25,
-        spacingFactor: 1.0
-      };
-    };
-    const first = chooseLayout();
-    cy.layout(first).run();
-    setTimeout(() => {
-      try { cy.fit(undefined, 30); } catch(e) {}
-    }, 350);
-    window.addEventListener('resize', () => {
-      cy.resize();
-      const next = chooseLayout();
-      cy.layout(next).run();
-      setTimeout(() => {
-        try { cy.fit(undefined, 30); } catch(e) {}
-      }, 300);
-    });
-  })();
-  cy.on('tap', 'node', (evt) => {
-    const full = evt.target.data('full');
-    document.getElementById('dyn-dag-label').textContent = '当前模块: ' + full;
-  });
-  setTimeout(() => cy.resize(), 100);
-})();
-</script>
-
-<h2>① 实现逻辑</h2><p>通用 stdio language-server 后端插件，为 ctx.lsp capability seam 提供服务：一个插件实例按命名表配置多条 server 命令并各注册独立 provider；每 provider 按 canonical workspace 懒启动/单飞一个 server 进程，服务 transient-open 查询(goToDefinition/findReferences/goToImplementation/hover)；源码经 ctx.fs 读取、进程经 ctx.subprocess 启动（local/remote 实现共享同一 host）。命名导出插件，effect 作用域生命周期，dispose 时从 ctx.lsp 注销并拆除全部 live server。</p><h2>② 注册/提供（provides）</h2><ul class="provides"><li>ctx.lsp 命名 provider 表(lsp-stdio)</li><li>LspInstance/LspConnection</li><li>framing(encodeMessage/MessageDecoder)/translate(normalizeLocations/hover/negotiatePositionEncoding) 工具</li><li>transient-open 只读查询服务</li></ul><h2>③ 依赖（depends_on · 上游前驱）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-llm.html">dsh-llm</a></span><span class="mech">E1</span><div class="purpose">assertNever 穷尽检查</div><div class="evi">packages/lsp/lsp-stdio/src/translate.ts:15</div></div></div><h2>④ 被依赖（dependents · 下游消费者）</h2><p style="color:var(--dim);">无下游（叶子/被消费端）</p>
+<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">运行时框架</a><a href="../03-groups/G02.html">类型契约</a><a href="../03-groups/G03.html">核心服务</a><a href="../03-groups/G04.html">LLM核心</a><a href="../03-groups/G05.html">LLM适配</a><a href="../03-groups/G06.html">LLM治理</a><a href="../03-groups/G07.html">会话持久化</a><a href="../03-groups/G08.html">会话展示</a><a href="../03-groups/G09.html">审批权限</a><a href="../03-groups/G10.html">命令交互</a><a href="../03-groups/G11.html">凭据设置</a><a href="../03-groups/G12.html">附件</a><a href="../03-groups/G13.html">文件系统</a><a href="../03-groups/G14.html">Shell工具</a><a href="../03-groups/G15.html">沙箱执行</a><a href="../03-groups/G16.html">作业</a><a href="../03-groups/G17.html">目标计划</a><a href="../03-groups/G18.html">技能</a><a href="../03-groups/G19.html">子代理</a><a href="../03-groups/G20.html">工作流</a><a href="../03-groups/G21.html">上下文治理</a><a href="../03-groups/G22.html">上下文注入</a><a href="../03-groups/G23.html">工具守卫</a><a href="../03-groups/G24.html">Web搜索</a><a href="../03-groups/G25.html">宿主服务</a><a href="../03-groups/G26.html">客户端runtime</a><a href="../03-groups/G27.html">会话交互UI</a><a href="../03-groups/G28.html">设置输入UI</a><a href="../03-groups/G29.html">UI底座</a><a href="../03-groups/G30.html">外部执行后端</a><a href="../03-groups/G31.html">协议与SDK</a><a href="../03-groups/G32.html">LSP集成</a><a href="../03-groups/G33.html">子代理外部后端</a><a href="../03-groups/G34.html">Web上下文扩展</a><a href="../03-groups/G35.html">会话存储变体</a><a href="../03-groups/G36.html">Hooks工具扩展</a><a href="../03-groups/G37.html">示例与框架</a></div><div class="dagnav"><div class="label">依赖链 · 上游（该插件依赖的前驱）：</div><div class="chips"><a class="chip" href="dsh-llm.html">dsh-llm</a></div><div class="label" style="margin-top:8px;">依赖链 · 下游（依赖该插件的节点）：</div><div class="chips"><span style="color:var(--dim);font-size:12px;">无下游（叶子/被消费端）</span></div><div class="label" style="margin-top:8px;">同一拓扑层（Layer 1，层次遍历层序）：</div><div class="chips"><a class="chip" href="cordis-plugin-hmr.html">cordis-plugin-hmr</a><a class="chip" href="dsh-api-gateway.html">dsh-api-gateway</a><a class="chip" href="dsh-client-ui-attachment.html">dsh-client-ui-attachment</a><a class="chip" href="dsh-host-directory-picker-auto.html">dsh-host-directory-picker-auto</a><a class="chip" href="dsh-host-directory-picker-browse.html">dsh-host-directory-picker-browse</a><a class="chip" href="dsh-host-directory-picker-native.html">dsh-host-directory-picker-native</a><a class="chip" href="dsh-host-frontend-static.html">dsh-host-frontend-static</a><a class="chip" href="dsh-llm-deepseek.html">dsh-llm-deepseek</a><a class="chip" href="dsh-llm-pi-ai.html">dsh-llm-pi-ai</a><a class="chip self" href="dsh-lsp-stdio.html">dsh-lsp-stdio</a><a class="chip" href="dsh-session.html">dsh-session</a><a class="chip" href="dsh-skill.html">dsh-skill</a><a class="chip" href="dsh-storage-json.html">dsh-storage-json</a><a class="chip" href="dsh-system-prompt.html">dsh-system-prompt</a><a class="chip" href="dsh-typert-loader.html">dsh-typert-loader</a><a class="chip" href="dsh-web.html">dsh-web</a></div></div><div class="layernav"><a href="cordis-plugin-timer.html">↑ Layer 0（19 插件）</a><span class="chip self">Layer 1</span><a href="dsh-agent.html">↓ Layer 2（16 插件）</a></div><h2>插件信息</h2><table><tr><th>包名</th><td>@deepseek-ai/dsh-lsp-stdio</td></tr><tr><th>分组</th><td>G32 · LSP集成</td></tr><tr><th>拓扑层</th><td>Layer 1（层次遍历：被依赖方先于依赖方）</td></tr><tr><th>源码路径</th><td><code>packages/lsp/lsp-stdio</code></td></tr><tr><th>来源层</th><td>L3 其余插件（独立于 bundle 装配的扩展/变体/示例）</td></tr></table><div class="whybox"><span class="tag">为什么需要它 · 设计初衷</span><p>解决 agent 需要语言服务器能力却无法直接驱动 LSP 的问题：提供 ctx.lsp 的通用 stdio 语言服务器后端，按命名服务器表惰性 single-flight 启动独立服务器进程，以兼容性优先的「临时打开」序列（didOpen→操作→didClose）经 ctx.fs 读取源文件执行导航/hover 查询。其核心价值是把 LSP 变成通过 ctx.subprocess/ctx.fs 执行世界一致挂载的可组合服务，而不污染提示词或工具 schema。</p><div class="hist">📜 位于 packages/lsp/lsp-stdio，与 lsp 抽象、tool-lsp 构成 LSP 子系统；定位为「通用宿主而非目录/安装器」，强调部署显式配置服务器映射，是 agent 获取类型感知能力的安全封装层。</div><div class="src">📚 来源：<br><a href="https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/lsp/lsp-stdio/README.zh.md" target="_blank">https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/lsp/lsp-stdio/README.zh.md</a><br><a href="https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/lsp" target="_blank">https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/lsp</a><br></div></div><h2>① 实现逻辑</h2><p>通用 stdio language-server 后端插件，为 ctx.lsp capability seam 提供服务：一个插件实例按命名表配置多条 server 命令并各注册独立 provider；每 provider 按 canonical workspace 懒启动/单飞一个 server 进程，服务 transient-open 查询(goToDefinition/findReferences/goToImplementation/hover)；源码经 ctx.fs 读取、进程经 ctx.subprocess 启动（local/remote 实现共享同一 host）。命名导出插件，effect 作用域生命周期，dispose 时从 ctx.lsp 注销并拆除全部 live server。</p><h2>② 注册/提供（provides）</h2><ul class="provides"><li>ctx.lsp 命名 provider 表(lsp-stdio)</li><li>LspInstance/LspConnection</li><li>framing(encodeMessage/MessageDecoder)/translate(normalizeLocations/hover/negotiatePositionEncoding) 工具</li><li>transient-open 只读查询服务</li></ul><h2>③ 依赖（depends_on · 上游前驱）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-llm.html">dsh-llm</a></span><span class="mech">E1</span><div class="purpose">assertNever 穷尽检查</div><div class="evi">packages/lsp/lsp-stdio/src/translate.ts:15</div></div></div><h2>④ 被依赖（dependents · 下游消费者）</h2><p style="color:var(--dim);">无下游（叶子/被消费端）</p>
 </main>
 <footer>DeepSeek Harness 插件级 DAG 依赖链分析 · L1 核心集 + L2 web-app + L3 其余插件 · 源码三依据(E1编译/E2运行时/E3组合)逐条溯源</footer>
 </body>

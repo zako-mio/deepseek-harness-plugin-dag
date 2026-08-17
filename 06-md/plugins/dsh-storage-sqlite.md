@@ -6,6 +6,12 @@
 - 来源层: L3 其余
 - 源码路径: `packages/storage/storage-sqlite`
 
+## 为什么需要它（设计初衷）
+存储中心的 SQLite 后端，node:sqlite 提供 kv facet，单文件或 :memory:，为高频变更领域提供行级原子写。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/storage/storage-sqlite/README.zh.md
+
 ## 实现逻辑
 SQLite 存储后端：SqliteStorageBackend implements StorageBackend，只提供 kv facet（document-per-row: key TEXT PRIMARY KEY / value TEXT NOT NULL, STRICT 表）。apply() 在 storage 中枢 ctx.storage.backend.register('sqlite', backend) 注册 + ctx.provide(storageBackendServiceKey('sqlite')) 暴露后端生命周期服务键，disposer 先 unregister 再 close（inject ['storage']）。openUnit() 校验 UNIT_NAME_RE（unit/table 名）+ 防 double-open（units Map 同步占位）+ units 表 per-unit version 印章校验（不匹配即 StorageError version-mismatch）+ CREATE TABLE IF NOT EXISTS 建记录表。schema.ts 与 session-persistence-sqlite/session-query-sqlite 同构 open 序列（owner-only 建库、PRAGMA foreign_keys/journal_mode=wal、user_version=1 版本印章、零迁移拒绝非当前版本）。close() 幂等关闭所有 unit 并释放连接。config 仅 path（:memory: 支持）+ journalMode。
 

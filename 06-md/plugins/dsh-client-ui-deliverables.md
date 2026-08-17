@@ -6,6 +6,12 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-deliverables`
 
+## 为什么需要它（设计初衷）
+产物文件 turn tail 与可点击的最终回复文件引用，展示 Agent 生成的可交付文件。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-deliverables/package.json
+
 ## 实现逻辑
 turn tail 产物行。deliverablesDefinition（kind 'deliverables'，match tool/result 且 callView 为 diff/edit 的 mutation locations，累积 Turn 内 produced 路径）注册进 ConversationEventRegistry；ProducedFiles 以 selector selectProducedFiles（关闭 turn 有产物才认领）注册进 conversation.chat.turnTail 链，inject 经 connection 提供 isLoopback/hostDescription；另 provide('chatFileMentions') 服务，让 ChatView 的闭合散文渲染 produced 文件内联提及（MarkdownFileMentions）。
 

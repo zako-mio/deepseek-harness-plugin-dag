@@ -6,6 +6,13 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/subagent/subagent-spawn-in-process`
 
+## 为什么需要它（设计初衷）
+进程内 spawn 子 agent 后端：在 ctx.agents 上运行全新子 agent，是 subagent 提供方的一种进程内实现（spawn 模式传输层）。
+
+来源：
+- https://registry.npmjs.org/@deepseek-ai/dsh-subagent-spawn-in-process
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/subagent/subagent-spawn-in-process/README.zh.md
+
 ## 实现逻辑
 ctx.subagents 的 spawn provider 后端：apply 直接 ctx.subagents.registerProvider(new SpawnInProcessProvider(config.providerName))。声明全部 4 项能力(outputSchema/depthLimit/toolFilter/persona)，inheritsParentContext=false；start() 委托共享驱动 startInProcessRun 走 ctx.agents.create 全新子代理；prepareContinuable 返回空 spec。
 

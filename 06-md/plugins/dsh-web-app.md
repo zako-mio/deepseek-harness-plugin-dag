@@ -6,6 +6,12 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/bundle/web-app`
 
+## 为什么需要它（设计初衷）
+dsh 浏览器表面 bundle：在 base 之上插入 Web host 行与浏览器插件册，提供 web-runtime。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/bundle/web-app/README.md
+
 ## 实现逻辑
 双入口合并：web-startup（@deepseek-ai/dsh-web-app/startup）解析 --host/--port/--trusted-host 后 ctx.provide webStartup 服务；web-runtime（主插件）解析前端 dist（@deepseek-ai/dsh-web-frontend），ctx.plugin(FrontendStatic) 挂 fallback 兜底，注册 app:web-surface prompt 段与 DSH_WEB_URL shell 变量，采样 LAN 信任后提供 webRuntime，Loader 就绪后打印 URL 行。
 

@@ -6,6 +6,15 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/core/system-prompt`
 
+## 为什么需要它（设计初衷）
+解决「系统提示词由谁来拼、按什么顺序拼」的横切问题：提供有序系统提示词组装注册表，插件可贡献段/工具schema/具名变量，每次循环统一组装渲染。其核心价值是把提示词拼装从 agent 循环内部抽离为可组合、可遮蔽、KV缓存稳定的公共服务，保证 harness 身份、persona、工具引导等多方贡献的确定性编排。
+
+发展史：自仓库早期即为 core 层核心插件（packages/core/system-prompt），随 harness 从集成式架构转向「一切皆插件」持续演进，衍生出 prompt variables（2026-07-05）、显式工具顺序（2026-07-06）、系统提示词源路径（2026-07-21）等多项 Agent Note 记录的设计决策。
+
+来源：
+- https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/core/system-prompt/README.zh.md
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-07-05-prompt-variables-and-tool-guidance-ownership.md
+
 ## 实现逻辑
 系统提示词装配注册表(ctx.systemPrompt)。SystemPrompt 服务管理分层的 sections/contexts/tools/variables 注册(PromptLayer + ScopedLayers 支持 agent 作用域遮蔽)，assemble() 收集全局+作用域层、按 order 排序、toolOrder 规范工具顺序、插值 {{variable}}，再跑 system-prompt/assemble 瀑布允许插件改写；renderPrompt/renderContextSections 产出最终模型输入。
 

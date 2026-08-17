@@ -6,6 +6,13 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/workflow/tool-ralph`
 
+## 为什么需要它（设计初衷）
+给模型提供 fresh-agent Ralph 循环工具，基于 workflow 与 subagent 双 seam 运行全新子 agent 做独立任务编排。
+
+来源：
+- https://registry.npmjs.org/@deepseek-ai/dsh-tool-ralph
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/workflow/tool-ralph/README.zh.md
+
 ## 实现逻辑
 模型可见 Ralph 循环工具：apply 注册 'ralph' 工具，execute 经 ctx.workflowEngine.start 执行固定 RALPH_SCRIPT。脚本每轮调 agent(prompt, {schema}) 启动 fresh structured-output 子代理，仅携带不可变 objective 与上轮受限结构化 handoff；requireFreshProvider 强制 provider 具备 outputSchema 且不继承父上下文。
 

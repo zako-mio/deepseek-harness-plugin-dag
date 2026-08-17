@@ -6,6 +6,12 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-message-feedback`
 
+## 为什么需要它（设计初衷）
+逐条消息点赞/点踩反馈的浏览器插件，经 CAS 写 Host 侧对比版本。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-message-feedback/README.md
+
 ## 实现逻辑
 Like/Dislike + 备注。每 Session 一个 MessageFeedbackController 作对象层（list 一次读取 seed 整份 transcript；mutation 经 messageFeedback Remote list/put/delete，host 持有 per-item CAS，version-conflict 由应答对账）；MessageFeedbackActions 注册进 conversation.chat.assistant-actions（id=feedback, order=10），inject 暴露 ensure/rate/toggle/clearNote/clear；connection/reset 时对非 cold 控制器 resync。
 

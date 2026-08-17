@@ -6,6 +6,12 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-settings-models`
 
+## 为什么需要它（设计初衷）
+模型设置与共享产品引导对话框，叠在既有设置与凭据连接之上。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-settings-models/package.json
+
 ## 实现逻辑
 Models 设置页与产品 onboarding：注册 settings.section id=models order=10（ModelsSection，index.ts:118-124），settings.onboarding welcome-notice(order=-100) 与 deepseek-official(order=0) 两个对话框。ModelsSettingsStore/WelcomeNoticeStore 经 connection.api 读写 Host settings/credentials；订阅 settings/document-updated、credentials/updated、llm/adapters-updated 推送失效（:107-113）。
 

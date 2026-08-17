@@ -6,6 +6,12 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-agent-preset`
 
+## 为什么需要它（设计初衷）
+Agent 预设 UI：新会话默认预设、当前会话席位与组合编辑器，管理每个会话的能力集。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-agent-preset/package.json
+
 ## 实现逻辑
 Agent preset 四面体：settings.general.item AgentPresetRow 默认值（index.ts:207-213）、conversation.hero.agentPreset 新会话 chip（:165-169）、header 只读 label（:170-177）、settings.section 'agent-presets' 名录管理/复制/删除/默认 + composition 编辑器（:216-223）。控制器 AgentPresetSettingsController/SectionController/SeatController 经 connection.api 读写 host agent-presets 设置命名空间（settings-store.ts:14 AGENT_PRESET_SETTINGS_NS='agent-presets', :43 writeDefaultPreset）；订阅 settings/document-updated 与 agent-preset/selected 事件。
 

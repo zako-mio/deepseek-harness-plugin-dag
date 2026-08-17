@@ -6,6 +6,12 @@
 - 来源层: L3 其余
 - 源码路径: `packages/context/tmux-context`
 
+## 为什么需要它（设计初衷）
+可选持久上下文：命名本进程所在 tmux session/window/pane 及布局，每轮变化时注入；用 tty 比对排除从祖先继承 $TMUX 的情况。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/context/tmux-context
+
 ## 实现逻辑
 opt-in tmux 位置上下文插件：apply() 注册 prepend 的 'agent/pre-step' 监听器（inject ['agents']），仅 step===1（每 turn 首次请求）通过 ctx.shell（ShellExecutor）运行只读命令拉取 tmux 状态。queryTmuxLocation() 组合 bash 脚本：TMUX_PANE 存在校验 → ps -o tty= 取本进程控制终端 → tmux display-message 取 #{pane_tty} → 两者相等才继续（防止从 tmux 祖先继承 $TMUX/$TMUX_PANE 的 VS Code 集成终端误判）→ exec tmux display-message 输出 tab 分隔的 8 字段（session/window/pane/layout/active）。仅当渲染状态（renderState，不含 volatile turn 前缀）相比上次注入变化时重注入，refreshIntervalMs 为注入下限（latestInjectedState 从 raw durable 事件扫描，跨 compaction/恢复存活）；executor 拒绝/查询失败是 no-op 仅 warn，绝不使 turn 失败。注入为 source.kind='plugin' form='snapshot' 的 UserMessage。
 

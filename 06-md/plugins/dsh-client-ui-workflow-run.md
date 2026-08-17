@@ -6,6 +6,12 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-workflow-run`
 
+## 为什么需要它（设计初衷）
+把持久化顶层 workflow run 重建为独立 Chat 节点的浏览器插件。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-workflow-run/README.md
+
 ## 实现逻辑
 持久化工作流生命周期的独立 Chat 节点。workflowRunDefinition（target 'chat'，match tool-workflow/run-start|agent-start|agent-end|run-end）注册进 ConversationEventRegistry；WorkflowRunPanel 以 keyed 'workflow-run' 注册进 conversation.chat.node，渲染 phase/member 状态（running/completed/failed/cancelled/interrupted），inject 注入 openSession 跳转子会话；将 WorkflowRunChatData 合入 ui-conversation 的 ChatNodeDataMap。
 

@@ -6,6 +6,12 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-layout`
 
+## 为什么需要它（设计初衷）
+壳插件：三栏 AppFrame 带拖拽手柄 + ctx.layout 视图状态服务（导航+面板）。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-layout/package.json
+
 ## 实现逻辑
 三栏 AppFrame UI 底座。apply() 内一次 register('root') 贡献 AppFrame 并声明四个 child slot（sidebar/conversation/details/shell.overlay），seat 布局 store（面板几何），inject hook 将 bound actions attach 给 LayoutController 后 ctx.reflect.provide('layout')；第二个 effect 起 ThemePresenter 把 ctx.theme 快照投影到 document.body（theme/change 事件驱动，纯 DOM 写）。
 

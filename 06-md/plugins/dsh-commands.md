@@ -6,6 +6,15 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/interaction/commands`
 
+## 为什么需要它（设计初衷）
+插件拥有、供交互式 UI 适配器使用的用户斜杠命令注册表。命令在 UI 命令平面执行、结果绝不进入模型历史，让人类与模型交互分离，避免未知命令变成模型提示词；注册/移除通过 commands/change 通知运行中适配器刷新。
+
+发展史：位于 packages/interaction/commands，2026-08-10 首批发布，0.1.0-rc.6 转公开。随产品基础组合(dsh base)挂载，Web 客户端经其分派命令；无 UI 的 headless/ACP 不提供命令适配器。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/interaction/commands/README.zh.md
+- https://registry.npmjs.org/@deepseek-ai/dsh-commands
+
 ## 实现逻辑
 定义 ctx.commands CommandRuntime(TypertRemoteService 默认导出)，用 ScopedLayers 做全局+per-agent scope 命令注册。register() 校验名称/描述/handler；execute() 解析斜杠行，mint commandId、append 'command/run' 日志事件、调用 handler、settle 后 append 'command/done'。list()/find() 是 @Remote 导出，notifyChange 发 'commands/change'。
 

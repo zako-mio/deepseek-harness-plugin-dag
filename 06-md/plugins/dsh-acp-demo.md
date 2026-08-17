@@ -6,6 +6,12 @@
 - 来源层: L3 其余
 - 源码路径: `packages/examples/acp-demo`
 
+## 为什么需要它（设计初衷）
+ACP 自动化服务器 app 示例：JSON-RPC stdio 一键跑无 UI 的 agent 服务。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/examples/acp-demo/README.md
+
 ## 实现逻辑
 ACP 自动化服务器示例应用：apply(ctx, config) 在一个复合 effect('acp-demo.composition') 中按顺序 ctx.plugin 装配 agent-spine-demo(spine, 不预创建 agent) → JsonlSessionPersistence(JSONL 持久化) → sessionCheckpointPolicy(flush 屏障) → SqliteSessionQueryEngine(查询索引) → dsh-acp 传输桥(每 session/new 用 provider/model 创建 agent)；卸载按逆序保证 ACP 会话 quiesce 先于持久化 detach。bin.ts 经 dsh-app-boot 的 boot/loadEnv/resolveConfigPath 启动 stdio JSON-RPC ACP 服务，stdout 保持纯净(仅 stderr 诊断)。Config schema 由 schemastery 定义并转发各子插件配置。
 

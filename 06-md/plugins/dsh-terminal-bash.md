@@ -6,6 +6,12 @@
 - 来源层: L3 其余
 - 源码路径: `packages/terminal/terminal-bash`
 
+## 为什么需要它（设计初衷）
+ctx.terminals 的持久 shell 后端：基于 PTY 的交互式 bash 会话管理。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/terminal/terminal-bash/README.md
+
 ## 实现逻辑
 BashTerminalBackend implements TerminalBackend (src/index.ts:102)，apply 经 ctx.terminals.registerBackend (:152) 注册 'shell' backend；spawn 解析 sandboxPolicy (:122)、danger-full-access 外经 ctx.sandbox.confine 包裹 argv (:74-79)、subprocess.spawnTerminal 生成 SubprocessTerminalHandle (:125)、LocalPtySession 封装 (:134)；ensureSandboxModeFence 在存活 PTY 期间拒绝 sandbox/mode 切换 (:34-53)；childEnvironment 注入 DSH_* 环境 (:55-69)。
 

@@ -6,6 +6,15 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/api/remotes`
 
+## 为什么需要它（设计初衷）
+为 Web Host Remote 能力提供双侧 BFF：Host 侧负责 Agent/Session 身份查找策略（复用 live agent、恢复冷会话、并发去重、subagent ownership fence），Client 侧以运行时值挂载 /remote 产物。让客户端业务包依赖此外观，不依赖 Gateway 实现或单独 Remote 运行时入口，实现前后端远程能力解耦。
+
+发展史：位于 packages/api/remotes（npm 元数据最早标注 packages/api/api-remotes，后修正为 remotes），2026-08-10 发布，0.1.0-rc.6 转公开。仓库中唯一刻意拆分 Host/Client 双 TypeScript face 的包。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/api/remotes/README.zh.md
+- https://registry.npmjs.org/@deepseek-ai/dsh-api-remotes
+
 ## 实现逻辑
 Remote BFF 装配与 Host Agent/Session lookup 策略。index.ts（host 面）：空 apply，仅通过 API_REMOTE_FORWARDED_EVENTS satisfies TypertForwardableEvent[] 做编译期形状门（forwarded event 必须是已声明事件、不能绑定 Scope、必须单向）。agent-lookup.ts：createApiRemoteAgentResolver 构建共享解析器——live Agent 复用、cold session 经 inspectApiRemoteSession(持久化检查)后 resume 一次/身份、subagent-owned 身份保留 agent-busy fence；ctx.inject(['typert']) 配置 agent/session Typert lookups。client/index.ts：platform-neutral 装配——ctx.remote.$mount 挂载 commands/goals/dynamicCordisRunner/pluginInventory/messageFeedback 五个 Remote 命名空间，type-only 再导出传输与负载词汇。
 

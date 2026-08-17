@@ -6,6 +6,13 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/session-query/session-log-export`
 
+## 为什么需要它（设计初衷）
+Web 会话日志导出：/export 斜杠命令 + Header 按钮 + 共享下载对话框，经 host apiproxy 的 ZIP 端点下载。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/session-query/session-log-export/README.md
+- https://www.npmjs.com/package/@deepseek-ai/dsh-session-log-export
+
 ## 实现逻辑
 宿主侧（src/index.ts）在 commands 注册表注册 /export 命令（无路径参数，返回 success 提示）；同包浏览器侧（src/client）provide sessionLogDownload controller，订阅 command/executed 触发下载 /api/session.export，注入 conversation.session.header.utilities slot 挂共享下载对话框，locale 注册。
 

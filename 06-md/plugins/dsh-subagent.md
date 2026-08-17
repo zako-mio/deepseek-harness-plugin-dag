@@ -6,6 +6,16 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/subagent/subagent`
 
+## 为什么需要它（设计初衷）
+子 Agent 能力族的核心契约：定义 provider 注册、委派与续跑接口（ctx.subagents），让主 Agent 能把任务委派给子 Agent 并隔离上下文/token 成本。背后挂接多种 provider——进程内 spawn/fork、进程外 ACP、Claude Code/Codex、完整 DSH runtime，解决『一个接口背后变化极大的子 Agent 执行世界』问题。
+
+发展史：2026-06-21 子 Agent capability seam 决策确立契约；2026-07-21 引入 continuable background subagents（可续跑后台子代理）；2026-07-26 合并 subagent control service 简化控制面。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/subagent
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/subsystems/subagent.md
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-06-21-subagent-capability-seam.md
+
 ## 实现逻辑
 子代理能力缝(capability seam)的服务定义：SubagentRuntime extends Service 注册为 ctx.subagents，维护命名 provider 注册表。start() 先做能力校验与描述符快照再委派给 provider，并用 observeRun 发布 subagent/start、subagent/end 生命周期事件。构造时 ctx.inject(['agents']) 创建 SubagentContinuationManager 支撑可续聊子代理，ctx.inject(['sessionProjections']) 注册 subagentTiming/Identity 投影。
 

@@ -6,6 +6,15 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/goal/goal`
 
+## 为什么需要它（设计初衷）
+解决 agent 长任务执行缺乏「持久目标状态」的问题：在既有会话内维护一个事件溯源的当前目标（含 phase/revision/续行权限），提供 create/edit/pause/resume/complete/block/clear 等动词。其核心价值是让长期目标在会话恢复/fork 后仍保真，同时把目标与继续执行权限分离、绝不持久化续行状态，为 goal-round-driver 等策略层提供可靠状态底座。
+
+发展史：来自 packages/goal/goal，伴随 goal 领域（2026-07-19 同会话目标领域 Agent Note）从简单状态演进为事件溯源+严格回放校验的服务，与 tool-goal、goal-round-driver 构成目标子系统三件套。
+
+来源：
+- https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/goal/goal/README.zh.md
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-07-19-persisted-same-session-goal-domain.md
+
 ## 实现逻辑
 事件溯源 goal 域(ctx.goals GoalService，extends TypertRemoteService)。所有变更 append 'goal/change' 事件，per-session 缓存经 fold.ts 增量同步，compare-and-set ref 校验防 stale。create/edit/pause/resume/complete/block/clear 提交后经 agentEvents 发 'goal/changed'；'agent/session-start' 重置 activation=disarmed；注册 'goal' 投影单元；@Remote 导出。
 

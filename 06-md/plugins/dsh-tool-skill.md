@@ -6,6 +6,13 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/skill/tool-skill`
 
+## 为什么需要它（设计初衷）
+DeepSeek Harness 的模型侧技能加载工具，让模型按需加载 skill 能力（提供方注册表 + 本地提供方 + 目录/loader）。
+
+来源：
+- https://registry.npmjs.org/@deepseek-ai/dsh-tool-skill
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/skill/tool-skill/README.zh.md
+
 ## 实现逻辑
 apply() 注册 'skill' 模型工具(ctx.skills.list 查名、isModelInvocable 校验、ctx.skills.get 加载、renderSkillContent 渲染)。两个 agent/pre-step 监听：(1) 扫描 claimed user 消息首行 /<name> 的显式技能调用；(2) 按工具可见性发布/替换 'skill-catalog' catalog 目录消息。
 

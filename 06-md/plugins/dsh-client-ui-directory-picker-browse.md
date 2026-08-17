@@ -6,6 +6,13 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-directory-picker-browse`
 
+## 为什么需要它（设计初衷）
+应用内 Miller 分栏目录浏览对话框的浏览器半边，经 host.listDirectory/createDirectory 工作，无需本地 OS 对话框，服务远程浏览器。
+
+来源：
+- https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-directory-picker-browse/README.zh.md
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/host/directory-picker-browse
+
 ## 实现逻辑
 目录选择 browse 前端（in-app 对话框）。BrowseDirectoryFlow 以嵌套 slots.inject 事务性注册进 conversation.hero.workspace.directoryFlow 与 sidebar.workspaces.directoryFlow 两个洞；对话框（Select Workspace Directory figma 家族）驱动 host 的 workspaces.listDirectory/createDirectory 原语；locale 字典（zh/en）在包内注册（LOCALE_NS 'directory-browser'）。
 

@@ -6,6 +6,12 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/core/agent-default-model`
 
+## 为什么需要它（设计初衷）
+为无会话级模型选择的新建 agent 提供部署默认 provider/model（headless/ApiProxy 共用）。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/core/agent-default-model/README.md
+
 ## 实现逻辑
 默认模型选择服务(ctx.agentDefaultModel)。持有 provider/model/reasoningEffort 组成入口，通过 dsh-settings 的 installSettingsSection 绑定用户层可热更新默认选择；currentSelection() 投影为 dsh-agent 的 ModelSelection，saveSelection() 写回设置文档。
 

@@ -6,6 +6,12 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/extensions/cordis-client-runner`
 
+## 为什么需要它（设计初衷）
+动态双半插件包的浏览器半：把定义加载为实时浏览器插件并回退清理。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/extensions/cordis-client-runner/README.md
+
 ## 实现逻辑
 动态双半插件包的浏览器半运行引擎（node 半 apply 空，仅让行出现在 Loader）。DynamicCordisPackageRunner：把浏览器半源码 evaluateClientHalf（闭包求值）→ guard facade 包装 → 模块表注册 factory（moduleIdOf: 'dyn/<id>'）→ 创建 loader entry，复用静态插件的 inject 等待/fiber-effect 清理/status 投影；unload=loader entry 移除+factory 失效+样式移除。CordisRunOrchestrator：订阅 remote.dynamicCordisRunner 命名空间与 5 个 forwarded 事件（cordis/request-run 等），驱动 run/approve/decline/startUserRun。ClientCordisInspectRegistry：inspect manifest 同步/query 解析。provideClientTimer 提供 ClientTimerService。
 

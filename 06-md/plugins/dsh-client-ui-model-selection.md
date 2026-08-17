@@ -6,6 +6,13 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-model-selection`
 
+## 为什么需要它（设计初衷）
+浏览器侧模型选择：/model popup 与 composer 触发器共用一份会话级目录，经 session.models/selectModel 提交模型+推理强度。
+
+来源：
+- https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-model-selection/README.zh.md
+- https://github.com/deepseek-ai/deepseek-harness
+
 ## 实现逻辑
 模型选择双入口共享每会话 ModelDirectory：注册 ModelDirectoryResolver（ctx.modelDirectories，service.ts:34-47）与 /model popupSelect 贡献（command.register，index.ts:122-151）、conversation.input.model seat（:154-175）。目录经 session.models RPC 加载、session.selectModel 提交（directory.ts:67,98-105），Host 报告当前选择为唯一事实；向 composer 发布 routable=false 输入封锁（service.ts:88-103）。
 

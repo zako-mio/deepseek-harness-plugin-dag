@@ -6,6 +6,13 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/web`
 
+## 为什么需要它（设计初衷）
+Web shell 内核 bootWebShell（模块持有+种子表+两阶段启动+AppRoot 门+app-shell 组装入口），由 apps/web vite 入口消费。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/web-react/README.md
+- https://www.npmjs.com/package/@deepseek-ai/dsh-client-web
+
 ## 实现逻辑
 Web shell kernel（import 底座，无 cordis 行）。AppWebEntry.run() 两阶段启动：① module 面——parseBootManifest 解析 window.__DSH_BOOT__，构建 ClientModuleSystem（modules+staticModules seed 表+loadBundle seams），registerStatic(APP_SHELL_ID, AppShell) 与 MODULES_ID，渲染 AppRoot loading 页；② plugin 面——ctx.plugin(Loader) 后 loader.internal=modules（internal 契约先于任何 entry 注入），订阅 internal/status 投影，await immediately 层 prefetch，创建 [MODULES_ID, ...plugin rows, APP_SHELL_ID] 每行一个 loader entry，loader.await()+assertEntriesActive 全 ACTIVE sweep（fail-loud 列出 pending 缺服务），flip settled。AppRoot 门：boot settled 前只渲染 loading/failure 报告，settled 后调 app-shell 的 renderApp()→ctx.slots.renderSlot('root')。
 

@@ -6,6 +6,15 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/locale`
 
+## 为什么需要它（设计初衷）
+解决浏览器 UI 多语言需求：提供 zh/en 偏好存储（settings.yaml 中 locale.preference），并在浏览器端提供 ns×locale 字典注册表，支持框架注入的 t() 翻译座位，使 UI 文案可本地化并实时切换，是 Web 客户端的国际化基础设施。
+
+发展史：定位为 client 侧的 locale 运行时服务。2026-08-06 的 Host-backed preferences 决策确定了持久化边界（浏览器偏好由 Host settings 管理而非仅浏览器本地），早期部分界面仍保留内联文案。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/locale/README.md
+- https://www.npmjs.com/package/@deepseek-ai/dsh-client-locale
+
 ## 实现逻辑
 双面。node 半：ctx.inject(['settings']) 注册 LOCALE_SETTINGS_NAMESPACE 的 LocaleSettingsSchema（settingsNamespace）。browser 半：LocaleRuntime——字典注册（namespace×locale→dict，双语文档强制）、lookup 链（entry 命名空间 active→zh 回退→common 共享命名空间→key 原文）、bind(ns) 稳定 translate 引用、setLocale 写 settingsScope、浏览器语言检测（navigator.languages 主 subtag→zh/en，window 存在性测试防 node）。提供 LocaleFace（getSnapshot/subscribe/bind）经 ctx.slots.installLocale 装入渲染机制（t 座位），注册 'locale/change' 事件，并把 LanguageRow 注册进 settings.general.item slot（order 0）。
 

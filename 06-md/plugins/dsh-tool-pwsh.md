@@ -6,6 +6,13 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/shell/tool-pwsh`
 
+## 为什么需要它（设计初衷）
+面向模型的 pwsh 工具 over ctx.shell executor seam，专供 Windows 组合，行为逐调用镜像 dsh-tool-bash。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/shell/tool-pwsh/README.md
+- https://www.npmjs.com/package/@deepseek-ai/dsh-tool-pwsh
+
 ## 实现逻辑
 tool-bash 的 PowerShell 对偶:注册 pwsh 工具,逐调用镜像 bash 的 validate/escalation/standingPolicy/resolveWorkdir/shellEnv 收集/前台后台执行;升级经 ctx.get('approval'),后台经 ctx.jobs.start(kind:'pwsh');额外 declare module 扩展 dsh-jobs 的 JobKindMap 增加 pwsh kind。
 

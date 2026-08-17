@@ -6,6 +6,13 @@
 - 来源层: L3 其余
 - 源码路径: `packages/web/web-search-exa`
 
+## 为什么需要它（设计初衷）
+Exa 支撑的 ctx.web 能力 seam 搜索 provider：调用 Exa /search 并把结果映射为标准化 WebSearchResult。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/web/web-search-exa/README.md
+- https://www.npmjs.com/package/@deepseek-ai/dsh-web-search-exa
+
 ## 实现逻辑
 Exa 搜索 provider：src/index.ts apply() 经 launchEnvironmentOf(ctx).get('EXA_API_KEY') 从启动环境取 key（config 可覆盖），填默认 baseURL=api.exa.ai/searchType=auto/highlightsPerResult=1，构造 ExaSearchProvider 后 ctx.web.registerSearchProvider() 注册（inject ['web']）。provider.ts：EXA_PROVIDER_ID='exa'；available() 要求 apiKey 非空 + baseURL 合法 + 正数约束；search() POST /search（highlightsPerUrl 参数），mapExaResponse 将 results[] 归一化：首个非空 highlight→snippet、publishedDate→publishedAt，无 snippet 的条目丢弃（seam 无其他字段可派生），Exa 无生成答案故省略 content、truncated:false。映射顺序/裁剪语义与 dsh-web-search-deepseek 同模式（注册进 seam 的 search 注册表，不拥有 ctx.web 键）。
 

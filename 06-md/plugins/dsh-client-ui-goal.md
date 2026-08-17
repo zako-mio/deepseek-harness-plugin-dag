@@ -6,6 +6,12 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-goal`
 
+## 为什么需要它（设计初衷）
+会话目标 UI：停靠在作曲家上方的 GoalBar，从 goal 会话投影读取，展示同一会话内目标进度。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-goal/package.json
+
 ## 实现逻辑
 GoalBar 输入坞。投影模式 surface：goal 实时值经 session.projections.faceOf('goal') 读取（不持 store/事件监听）；goalCommandInputDefinition（match command/run name=goal）注册进 conversationEvents，以 keyed 'command-input' 渲染 /goal 命令行输入；GoalDock 注册进 conversation.input.dock（id=goal, order=10），inject 封装四个 mutation verb——onEdit/onPause/onResume/onClear 经 ctx.remote.goals.edit/pause/resume/clear（携带 CAS ref：goal.id+revision，由 host 对账）。
 

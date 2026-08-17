@@ -6,6 +6,13 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/fs/tool-fs-search`
 
+## 为什么需要它（设计初衷）
+面向模型的文件发现工具 glob/grep，由打包 ripgrep 二进制支持（经 ctx.subprocess），不依赖宿主 rg 安装。
+
+来源：
+- https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/fs/tool-fs-search/README.zh.md
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/fs
+
 ## 实现逻辑
 模型面向的 glob/grep 发现工具套件,基于 @vscode/ripgrep:apply() 注册两工具,执行经 ctx.subprocess.spawn() 以固定 argv 模板直接运行,无 shell 层;runRipgrep 完成 stdout 预算/退出码分类,超限结果经 ctx.get('spillStore') 尽力保存并附 recovery 提示;tools/post-execute 监听在 top-level 直接调用时替换投影以携带 spill 引用。
 

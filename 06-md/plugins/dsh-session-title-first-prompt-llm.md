@@ -6,6 +6,13 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/session/session-title-first-prompt-llm`
 
+## 为什么需要它（设计初衷）
+会话标题的 LLM 提供方插件：用首条消息生成标题。
+
+来源：
+- https://registry.npmjs.org/@deepseek-ai/dsh-session-title-first-prompt-llm
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/session/session-title-first-prompt-llm
+
 ## 实现逻辑
 首条人类消息的 LLM 标题 provider 薄插件。apply(ctx, config) 直接调用 @deepseek-ai/dsh-session-title-llm 的 registerSessionTitleLlmProvider，以 'first-prompt' 自动模式注册 provider，消息选择器取 messages[0]。
 

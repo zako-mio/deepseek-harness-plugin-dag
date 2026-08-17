@@ -6,6 +6,12 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/workspace/workspace`
 
+## 为什么需要它（设计初衷）
+工作区实体注册表：持久化工作区记录、顺序与最新优先的候选会话索引。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/workspace/workspace/README.md
+
 ## 实现逻辑
 工作区实体注册表 ctx.workspaceRegistry：storageDomain 打开 workspace 域（workspaces 表+全局顺序/归档集+pending-mutation 恢复）；sessionPersistence 建 canonical-cwd 头索引与一次性历史 bootstrap；create/get/list/delete/insertBefore/archiveSession，实体经 WorkspaceEntity 校验会话成员。
 

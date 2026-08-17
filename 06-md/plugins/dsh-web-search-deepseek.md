@@ -6,6 +6,13 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/web/web-search-deepseek`
 
+## 为什么需要它（设计初衷）
+DeepSeek 驱动的搜索提供方（经 Anthropic 兼容 API 的原生 web_search），web seam 的搜索实现。
+
+来源：
+- https://registry.npmjs.org/@deepseek-ai/dsh-web-search-deepseek
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/web/web-search-deepseek
+
 ## 实现逻辑
 DeepSeek 官方搜索 provider：apply 通过 ctx.web.registerSearchProvider 注册 id='deepseek-official'。search() 每次操作快照 options 后向 Anthropic 兼容 Messages API 发原生 web_search_20250305 工具请求，mapAnthropicResponse 合并引用为 WebSearchResult；apiKey 经 dsh-credentials resolveApiKey 解析，并把脱密请求体记入 session 事件 'web/deepseek-search-llm-request'。
 

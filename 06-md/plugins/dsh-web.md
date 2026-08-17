@@ -6,6 +6,16 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/web/web`
 
+## 为什么需要它（设计初衷）
+网页能力族：把搜索与抓取合并到单一 provider 选择缝（ctx.web），并提供 provider 中立（Exa/Perplexity/DeepSeek 原生/HTTP fetch）以及模型面对工具 web_search/web_fetch。解耦「提供者」与「消费工具」——换一次 provider 全产品切换，且工具可见性不依赖后端可用性（enablement 而非 availability）。
+
+发展史：2026-06-24 web capability seam 决策记录为何搜索与抓取共享一个 provider 选择服务；明确推迟 SSRF 防护。工具侧演化出 web result card 渲染。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/web
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-06-24-web-capability-seam.md
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/subsystems/web.md
+
 ## 实现逻辑
 web 能力缝服务定义：WebRuntime extends Service 注册为 ctx.web，维护 searchProviders/fetchProviders 两个命名注册表。search()/fetch() 在调用时按配置 id→注册→available() 优先级解析唯一 provider，无配置时恰好一个可用自动选中；search 结果按 maxResults 截断。
 

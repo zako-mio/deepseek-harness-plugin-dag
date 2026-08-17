@@ -6,6 +6,12 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/session/session-stats`
 
+## 为什么需要它（设计初衷）
+注册 sessionStats 投影单元，从日志折算 turn/step 数与各阶段耗时的会话统计。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/session/session-stats/README.md
+
 ## 实现逻辑
 函数插件：在 ctx.sessionProjections.register 注册 'sessionStats' 投影单元（projection.ts 纯 fold：turn/step 计数、llm/tool/ttft/decode 墙钟与输出 token，zod schema 校验状态），apply 按事件流 step/start、assistant/chunk、assistant/message、tool/call、tool/result 折叠；交付由投影 seam 负责。
 

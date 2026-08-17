@@ -6,6 +6,13 @@
 - 来源层: L3 其余
 - 源码路径: `packages/web/web-search-perplexity`
 
+## 为什么需要它（设计初衷）
+Perplexity 驱动的搜索提供方，web capability seam 的替代实现。
+
+来源：
+- https://registry.npmjs.org/@deepseek-ai/dsh-web-search-perplexity
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/web/web-search-perplexity
+
 ## 实现逻辑
 Perplexity 搜索 provider：src/index.ts apply() 经 launchEnvironmentOf(ctx).get('PERPLEXITY_API_KEY') 取 key，默认 baseURL=api.perplexity.ai/model=sonar/maxTokens=1024，可选 searchRecency（day/week/month/year→search_recency_filter），构造 PerplexitySearchProvider 后 ctx.web.registerSearchProvider() 注册（inject ['web']）。provider.ts：PERPLEXITY_PROVIDER_ID='perplexity'；search() 调 /chat/completions，模型返回生成答案→content，结果经 citations/sources 归一化为 WebSearchSource；available() 要求 apiKey+baseURL+maxTokens 正数。与 dsh-web-search-exa/deepseek 同为注册进 ctx.web search 注册表的 provider 变体。
 

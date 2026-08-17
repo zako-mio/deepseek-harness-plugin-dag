@@ -54,6 +54,13 @@ footer{margin-top:40px;padding:16px 24px;border-top:1px solid var(--border);colo
 table{border-collapse:collapse;width:100%;margin:10px 0;}
 th,td{border:1px solid var(--border);padding:6px 10px;font-size:13px;text-align:left;}
 th{background:var(--panel);color:#b8c2d4;}
+.whybox{background:#0d1a14;border:1px solid #2f5a4a;border-radius:8px;padding:14px 18px;margin:10px 0;}
+.whybox .tag{color:#5fc9a0;font-size:12px;font-weight:600;letter-spacing:1px;}
+.whybox p{font-size:14px;color:#cfe8dd;margin:6px 0;}
+.whybox .hist{font-size:13px;color:var(--dim);margin-top:8px;}
+.whybox .src{font-size:11px;color:var(--dim);margin-top:8px;}
+.whybox .src a{color:#7fb0ff;text-decoration:none;word-break:break-all;}
+.whybox .src a:hover{text-decoration:underline;}
 </style>
 </head>
 <body>
@@ -63,123 +70,7 @@ th{background:var(--panel);color:#b8c2d4;}
   <span class="badge">Layer 0</span><span class="badge">G37</span><span class="badge l3">L3 其余</span>
 </header>
 <main>
-<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">运行时框架</a><a href="../03-groups/G02.html">类型契约</a><a href="../03-groups/G03.html">核心服务</a><a href="../03-groups/G04.html">LLM核心</a><a href="../03-groups/G05.html">LLM适配</a><a href="../03-groups/G06.html">LLM治理</a><a href="../03-groups/G07.html">会话持久化</a><a href="../03-groups/G08.html">会话展示</a><a href="../03-groups/G09.html">审批权限</a><a href="../03-groups/G10.html">命令交互</a><a href="../03-groups/G11.html">凭据设置</a><a href="../03-groups/G12.html">附件</a><a href="../03-groups/G13.html">文件系统</a><a href="../03-groups/G14.html">Shell工具</a><a href="../03-groups/G15.html">沙箱执行</a><a href="../03-groups/G16.html">作业</a><a href="../03-groups/G17.html">目标计划</a><a href="../03-groups/G18.html">技能</a><a href="../03-groups/G19.html">子代理</a><a href="../03-groups/G20.html">工作流</a><a href="../03-groups/G21.html">上下文治理</a><a href="../03-groups/G22.html">上下文注入</a><a href="../03-groups/G23.html">工具守卫</a><a href="../03-groups/G24.html">Web搜索</a><a href="../03-groups/G25.html">宿主服务</a><a href="../03-groups/G26.html">客户端runtime</a><a href="../03-groups/G27.html">会话交互UI</a><a href="../03-groups/G28.html">设置输入UI</a><a href="../03-groups/G29.html">UI底座</a><a href="../03-groups/G30.html">外部执行后端</a><a href="../03-groups/G31.html">协议与SDK</a><a href="../03-groups/G32.html">LSP集成</a><a href="../03-groups/G33.html">子代理外部后端</a><a href="../03-groups/G34.html">Web上下文扩展</a><a href="../03-groups/G35.html">会话存储变体</a><a href="../03-groups/G36.html">Hooks工具扩展</a><a href="../03-groups/G37.html">示例与框架</a></div><div class="dagnav"><div class="label">依赖链 · 上游（该插件依赖的前驱）：</div><div class="chips"><span style="color:var(--dim);font-size:12px;">无依赖（基础插件）</span></div><div class="label" style="margin-top:8px;">依赖链 · 下游（依赖该插件的节点）：</div><div class="chips"><a class="chip l3" href="dsh-host-directory-picker-browse.html">dsh-host-directory-picker-browse</a><a class="chip l3" href="dsh-host-directory-picker-native.html">dsh-host-directory-picker-native</a></div><div class="label" style="margin-top:8px;">同一拓扑层（Layer 0，层次遍历层序）：</div><div class="chips"><a class="chip" href="cordis-plugin-timer.html">cordis-plugin-timer</a><a class="chip" href="dsh-attachment-local.html">dsh-attachment-local</a><a class="chip" href="dsh-client-schema-form.html">dsh-client-schema-form</a><a class="chip" href="dsh-client-ui-primitives.html">dsh-client-ui-primitives</a><a class="chip" href="dsh-client-ui-slots.html">dsh-client-ui-slots</a><a class="chip" href="dsh-credentials-local.html">dsh-credentials-local</a><a class="chip" href="dsh-fs-e2b.html">dsh-fs-e2b</a><a class="chip self" href="dsh-host-directory-picker.html">dsh-host-directory-picker</a><a class="chip" href="dsh-host-plugin-inventory.html">dsh-host-plugin-inventory</a><a class="chip" href="dsh-host-webserver.html">dsh-host-webserver</a><a class="chip" href="dsh-llm.html">dsh-llm</a><a class="chip" href="dsh-native-command.html">dsh-native-command</a><a class="chip" href="dsh-settings-file.html">dsh-settings-file</a><a class="chip" href="dsh-spill-local.html">dsh-spill-local</a><a class="chip" href="dsh-storage.html">dsh-storage</a><a class="chip" href="dsh-subprocess-e2b.html">dsh-subprocess-e2b</a><a class="chip" href="dsh-subprocess-local.html">dsh-subprocess-local</a><a class="chip" href="dsh-typert-generator.html">dsh-typert-generator</a><a class="chip" href="dsh-typert-registry.html">dsh-typert-registry</a></div></div><div class="layernav"><span class="chip self">Layer 0</span><a href="cordis-plugin-hmr.html">↓ Layer 1（16 插件）</a></div><h2>插件信息</h2><table><tr><th>包名</th><td>@deepseek-ai/dsh-host-directory-picker</td></tr><tr><th>分组</th><td>G37 · 示例与框架</td></tr><tr><th>拓扑层</th><td>Layer 0（层次遍历：被依赖方先于依赖方）</td></tr><tr><th>源码路径</th><td><code>packages/host/directory-picker</code></td></tr><tr><th>来源层</th><td>L3 其余插件（独立于 bundle 装配的扩展/变体/示例）</td></tr></table>
-<style>
-#dyn-dag{width:100%;min-height:420px;height:auto;max-height:900px;background:var(--panel);border:1px solid var(--border);border-radius:8px;margin:12px 0;}
-#dyn-dag-label{font-size:12px;color:var(--dim);margin:10px 0 4px;}
-#dyn-dag-legend{display:flex;gap:16px;font-size:12px;color:var(--dim);margin:6px 0 2px;flex-wrap:wrap;}
-#dyn-dag-legend .item{display:flex;align-items:center;gap:5px;}
-#dyn-dag-legend .dot{width:10px;height:10px;border-radius:3px;display:inline-block;}
-.dyn-entry{background:#4f8cff;}
-.dyn-module{background:#2f6fd0;}
-.dyn-leaf{background:#5a6b8c;}
-</style>
-
-<h2 style="margin-top:26px;">模块内部结构（源码 DAG）</h2>
-<div id="dyn-dag-label">本插件 src 下各文件（模块）的 import 依赖关系，蓝色=入口/被引用多 · 深蓝=普通模块 · 灰=叶子</div>
-<div id="dyn-dag-legend">
-  <span class="item"><span class="dot dyn-entry"></span>入口/核心</span>
-  <span class="item"><span class="dot dyn-module"></span>模块</span>
-  <span class="item"><span class="dot dyn-leaf"></span>叶子/被引用</span>
-</div>
-<div id="dyn-dag"></div>
-
-<script src="../04-interactive/vendor/cytoscape.min.js"></script>
-<script src="../04-interactive/vendor/cytoscape-dagre.min.js"></script>
-<script>
-(function(){
-  const raw = {"elements": [{"data": {"id": "index.ts", "label": "index.ts", "full": "index.ts", "cls": "#4f8cff", "kind": "entry"}}, {"data": {"id": "invariant.ts", "label": "invariant.ts", "full": "invariant.ts", "cls": "#5a6b8c", "kind": "leaf"}}]};
-  const cy = cytoscape({
-    container: document.getElementById('dyn-dag'),
-    elements: raw.elements,
-    style: [
-      {
-        selector: 'node',
-        style: {
-          'label': 'data(label)',
-          'background-color': 'data(cls)',
-          'color': '#e6e8ee',
-          'font-size': 10,
-          'text-valign': 'bottom',
-          'text-margin-y': 4,
-          'width': 42,
-          'height': 42,
-          'shape': 'round-rectangle',
-          'border-width': 1.5,
-          'border-color': '#3a4150'
-        }
-      },
-      {
-        selector: 'node[kind="entry"]',
-        style: {
-          'border-width': 3,
-          'border-color': '#7fb0ff',
-          'font-weight': 700
-        }
-      },
-      {
-        selector: 'edge',
-        style: {
-          'width': 1.2,
-          'line-color': '#556080',
-          'target-arrow-color': '#556080',
-          'target-arrow-shape': 'triangle',
-          'curve-style': 'bezier',
-          'arrow-scale': 0.8
-        }
-      }
-    ],
-    layout: {
-      name: 'dagre',
-      rankDir: 'LR',
-      nodeSep: 45,
-      rankSep: 40,
-      padding: 25,
-      spacingFactor: 1.0
-    },
-    wheelSensitivity: 0.2,
-    minZoom: 0.2,
-    maxZoom: 2.5
-  });
-  // 排版优化: 初始布局即按节点数选择方向 (LR 横排防狭长), 并 fit 到容器
-  (function(){
-    const nodeCount = raw.elements.filter(el => el.data && el.data.cls).length;
-    const chooseLayout = function(){
-      const el = document.getElementById('dyn-dag');
-      const w = el.clientWidth || 900, h = el.clientHeight || 500;
-      const landscape = (nodeCount >= 12) || (w > h * 1.1 && nodeCount >= 5);
-      return {
-        name: 'dagre',
-        rankDir: landscape ? 'LR' : 'TB',
-        nodeSep: landscape ? 45 : 30,
-        rankSep: landscape ? 40 : 80,
-        padding: 25,
-        spacingFactor: 1.0
-      };
-    };
-    const first = chooseLayout();
-    cy.layout(first).run();
-    setTimeout(() => {
-      try { cy.fit(undefined, 30); } catch(e) {}
-    }, 350);
-    window.addEventListener('resize', () => {
-      cy.resize();
-      const next = chooseLayout();
-      cy.layout(next).run();
-      setTimeout(() => {
-        try { cy.fit(undefined, 30); } catch(e) {}
-      }, 300);
-    });
-  })();
-  cy.on('tap', 'node', (evt) => {
-    const full = evt.target.data('full');
-    document.getElementById('dyn-dag-label').textContent = '当前模块: ' + full;
-  });
-  setTimeout(() => cy.resize(), 100);
-})();
-</script>
-
-<h2>① 实现逻辑</h2><p>目录选择能力 seam 抽象：DirectoryPicker extends Service (src/index.ts:131) 注册 ctx.directoryPicker (:133)；capability() 返回判别联合 native|browse (:17-97,:140)；DirectoryPickerError 封闭错误码 (:103-116)；DirectoryPickerCapabilities merge-extensible 注册表 (:94-100)；消费方按 kind 分支，未知 kind 默认隐藏选择入口。</p><h2>② 注册/提供（provides）</h2><ul class="provides"><li>ctx.directoryPicker 抽象服务（native|browse 判别能力）</li></ul><h2>③ 依赖（depends_on · 上游前驱）</h2><p style="color:var(--dim);">无依赖（基础插件）</p><h2>④ 被依赖（dependents · 下游消费者）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-host-directory-picker-browse.html">dsh-host-directory-picker-browse</a></span><div class="purpose">seam 基座与错误词汇</div><div class="evi">package.json:35 deps + src/index.ts:18-19 import { DirectoryPicker, DirectoryPickerError }；E2: :187 extends DirectoryPicker、:206 super(ctx)</div></div><div class="dep-item"><span class="name"><a href="dsh-host-directory-picker-native.html">dsh-host-directory-picker-native</a></span><div class="purpose">seam 基座</div><div class="evi">package.json:40 deps + src/index.ts:12-13 import { DirectoryPicker }；E2: :20 extends DirectoryPicker</div></div></div>
+<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">运行时框架</a><a href="../03-groups/G02.html">类型契约</a><a href="../03-groups/G03.html">核心服务</a><a href="../03-groups/G04.html">LLM核心</a><a href="../03-groups/G05.html">LLM适配</a><a href="../03-groups/G06.html">LLM治理</a><a href="../03-groups/G07.html">会话持久化</a><a href="../03-groups/G08.html">会话展示</a><a href="../03-groups/G09.html">审批权限</a><a href="../03-groups/G10.html">命令交互</a><a href="../03-groups/G11.html">凭据设置</a><a href="../03-groups/G12.html">附件</a><a href="../03-groups/G13.html">文件系统</a><a href="../03-groups/G14.html">Shell工具</a><a href="../03-groups/G15.html">沙箱执行</a><a href="../03-groups/G16.html">作业</a><a href="../03-groups/G17.html">目标计划</a><a href="../03-groups/G18.html">技能</a><a href="../03-groups/G19.html">子代理</a><a href="../03-groups/G20.html">工作流</a><a href="../03-groups/G21.html">上下文治理</a><a href="../03-groups/G22.html">上下文注入</a><a href="../03-groups/G23.html">工具守卫</a><a href="../03-groups/G24.html">Web搜索</a><a href="../03-groups/G25.html">宿主服务</a><a href="../03-groups/G26.html">客户端runtime</a><a href="../03-groups/G27.html">会话交互UI</a><a href="../03-groups/G28.html">设置输入UI</a><a href="../03-groups/G29.html">UI底座</a><a href="../03-groups/G30.html">外部执行后端</a><a href="../03-groups/G31.html">协议与SDK</a><a href="../03-groups/G32.html">LSP集成</a><a href="../03-groups/G33.html">子代理外部后端</a><a href="../03-groups/G34.html">Web上下文扩展</a><a href="../03-groups/G35.html">会话存储变体</a><a href="../03-groups/G36.html">Hooks工具扩展</a><a href="../03-groups/G37.html">示例与框架</a></div><div class="dagnav"><div class="label">依赖链 · 上游（该插件依赖的前驱）：</div><div class="chips"><span style="color:var(--dim);font-size:12px;">无依赖（基础插件）</span></div><div class="label" style="margin-top:8px;">依赖链 · 下游（依赖该插件的节点）：</div><div class="chips"><a class="chip l3" href="dsh-host-directory-picker-browse.html">dsh-host-directory-picker-browse</a><a class="chip l3" href="dsh-host-directory-picker-native.html">dsh-host-directory-picker-native</a></div><div class="label" style="margin-top:8px;">同一拓扑层（Layer 0，层次遍历层序）：</div><div class="chips"><a class="chip" href="cordis-plugin-timer.html">cordis-plugin-timer</a><a class="chip" href="dsh-attachment-local.html">dsh-attachment-local</a><a class="chip" href="dsh-client-schema-form.html">dsh-client-schema-form</a><a class="chip" href="dsh-client-ui-primitives.html">dsh-client-ui-primitives</a><a class="chip" href="dsh-client-ui-slots.html">dsh-client-ui-slots</a><a class="chip" href="dsh-credentials-local.html">dsh-credentials-local</a><a class="chip" href="dsh-fs-e2b.html">dsh-fs-e2b</a><a class="chip self" href="dsh-host-directory-picker.html">dsh-host-directory-picker</a><a class="chip" href="dsh-host-plugin-inventory.html">dsh-host-plugin-inventory</a><a class="chip" href="dsh-host-webserver.html">dsh-host-webserver</a><a class="chip" href="dsh-llm.html">dsh-llm</a><a class="chip" href="dsh-native-command.html">dsh-native-command</a><a class="chip" href="dsh-settings-file.html">dsh-settings-file</a><a class="chip" href="dsh-spill-local.html">dsh-spill-local</a><a class="chip" href="dsh-storage.html">dsh-storage</a><a class="chip" href="dsh-subprocess-e2b.html">dsh-subprocess-e2b</a><a class="chip" href="dsh-subprocess-local.html">dsh-subprocess-local</a><a class="chip" href="dsh-typert-generator.html">dsh-typert-generator</a><a class="chip" href="dsh-typert-registry.html">dsh-typert-registry</a></div></div><div class="layernav"><span class="chip self">Layer 0</span><a href="cordis-plugin-hmr.html">↓ Layer 1（16 插件）</a></div><h2>插件信息</h2><table><tr><th>包名</th><td>@deepseek-ai/dsh-host-directory-picker</td></tr><tr><th>分组</th><td>G37 · 示例与框架</td></tr><tr><th>拓扑层</th><td>Layer 0（层次遍历：被依赖方先于依赖方）</td></tr><tr><th>源码路径</th><td><code>packages/host/directory-picker</code></td></tr><tr><th>来源层</th><td>L3 其余插件（独立于 bundle 装配的扩展/变体/示例）</td></tr></table><div class="whybox"><span class="tag">为什么需要它 · 设计初衷</span><p>Web GUI host 工作区目录选择器的能力缝：抽象 DirectoryPicker 服务，capability() 返回判别联合描述操作者如何选目录——native 后端弹操作系统原生选择器、browse 后端为无法触达 OS 选择器的远程客户端提供 in-app 目录浏览/创建。消费者按 capability.kind 分支，未知 kind 则隐藏选目录功能而非失败。</p><div class="hist">📜 2026-07-28 directory-picker capability seam 决策记录设计理由与 ctx.fs 的分离；派生出 -native/-browse/-auto（启动时自动选后端）三实现，每个还带浏览器入口注册 UI 流程插槽。</div><div class="src">📚 来源：<br><a href="https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/host/directory-picker" target="_blank">https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/host/directory-picker</a><br><a href="https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-07-28-directory-picker-capability-seam.md" target="_blank">https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-07-28-directory-picker-capability-seam.md</a><br></div></div><h2>① 实现逻辑</h2><p>目录选择能力 seam 抽象：DirectoryPicker extends Service (src/index.ts:131) 注册 ctx.directoryPicker (:133)；capability() 返回判别联合 native|browse (:17-97,:140)；DirectoryPickerError 封闭错误码 (:103-116)；DirectoryPickerCapabilities merge-extensible 注册表 (:94-100)；消费方按 kind 分支，未知 kind 默认隐藏选择入口。</p><h2>② 注册/提供（provides）</h2><ul class="provides"><li>ctx.directoryPicker 抽象服务（native|browse 判别能力）</li></ul><h2>③ 依赖（depends_on · 上游前驱）</h2><p style="color:var(--dim);">无依赖（基础插件）</p><h2>④ 被依赖（dependents · 下游消费者）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-host-directory-picker-browse.html">dsh-host-directory-picker-browse</a></span><div class="purpose">seam 基座与错误词汇</div><div class="evi">package.json:35 deps + src/index.ts:18-19 import { DirectoryPicker, DirectoryPickerError }；E2: :187 extends DirectoryPicker、:206 super(ctx)</div></div><div class="dep-item"><span class="name"><a href="dsh-host-directory-picker-native.html">dsh-host-directory-picker-native</a></span><div class="purpose">seam 基座</div><div class="evi">package.json:40 deps + src/index.ts:12-13 import { DirectoryPicker }；E2: :20 extends DirectoryPicker</div></div></div>
 </main>
 <footer>DeepSeek Harness 插件级 DAG 依赖链分析 · L1 核心集 + L2 web-app + L3 其余插件 · 源码三依据(E1编译/E2运行时/E3组合)逐条溯源</footer>
 </body>

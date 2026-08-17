@@ -6,6 +6,13 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/storage/storage-json`
 
+## 为什么需要它（设计初衷）
+存储中心 JSON 后端：每个单元一个可读 `<unit>.json` 文件、整文件原子替换发布，可读性是存在理由，扩展交给 SQLite 后端。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/storage/storage-json
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/storage
+
 ## 实现逻辑
 JSON 文件后端：每 unit 一个 <root>/<unit>.json，原子整文件重写（atomic.ts），只提供 kv facet；apply 在 storage 中枢 ctx.storage.backend.register('json') 注册后端，并 ctx.provide(storageBackendServiceKey('json')) 供 domain 层注入等待激活；root 无默认值。
 

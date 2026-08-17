@@ -6,6 +6,13 @@
 - 来源层: L3 其余
 - 源码路径: `packages/session/session-persistence-sqlite`
 
+## 为什么需要它（设计初衷）
+SQLite 持久会话后端：SessionEvent 1:1 映射 events 行，事务化 append、延迟实体化、pristine schema 门控、WAL 模式。
+
+来源：
+- https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/session/session-persistence-sqlite/README.zh.md
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/session
+
 ## 实现逻辑
 SQLite 持久会话存储后端：SqliteSessionPersistence extends dsh-session-persistence 的 SessionPersistence 抽象类，实现 PersistenceBackend<number>（static inject ['sessions']）。openDb() 异步建目录(0o700)+owner-only 建库文件(0o600)+openDatabase 应用 schema（persistence_state/store_id 单例身份 + sessions 元数据 + events 1:1 行，SCHEMA_VERSION=15，APP_ID=0x44534850，journal_mode=wal 默认）；storeIdentity 由 file:dev:ino:birthtimeNs 或 memory: 复合。写路径全部委托 PersistenceCoordinator（session/created|event|flush|disposed 监听→缓冲/合写/追写），locate() 返回 undefined（无独立 per-session 工件）；create/append/prepare/load/inspect/readFrom 为 coordinator 直通；后端钩子 loadStored/readStoredRevision/loadStoredFrom 实现 seek-capable 后缀读（SQL seq>=fromSeq 直接选取）与 torn-tail 标记（scanRows 返回需删除的 seq）。supportsRawArtifacts=false；与 JSONL 后端同样具备 crash-tail-on-load 语义。
 

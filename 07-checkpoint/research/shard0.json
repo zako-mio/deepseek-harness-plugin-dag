@@ -1,0 +1,216 @@
+{
+  "shard": "shard0",
+  "project": "DeepSeek Harness (dsh) 插件 DAG 依赖链分析",
+  "research_type": "design-intent & history (为什么需要它)",
+  "researched": 30,
+  "core_done": 8,
+  "harness_overview": {
+    "name": "DeepSeek Harness (dsh)",
+    "design_intent": "DeepSeek 官方开源 agent harness（智能体框架），采用『一切皆插件』(everything is a plugin) 架构，由 Cordis 元框架驱动，将 LLM 适配器、工具注册表、会话日志、agent 循环本身全部做成可配置替换的插件，无特权核心可打补丁。",
+    "history": "仓库于 2026-08-13 创建并公开（首个可见提交即为『release: dsh@0.1.0-rc.5 & publish the dsh family publicly』），处于开发者预览阶段，快速迭代、未来有破坏性变更；当前 0.1.0-rc 系列，约 14 万 star，话题含 ai-agents/cordis/dsh/dsh-plugin。",
+    "sources": [
+      "https://github.com/deepseek-ai/deepseek-harness",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/master/README.zh.md",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/architecture.md",
+      "https://github.com/cordiverse/paper"
+    ]
+  },
+  "core_plugins": [
+    {
+      "id": "dsh-session",
+      "why": "解决 agent 交互历史的单一事实来源问题：以『事件溯源』(event-sourced) 追加日志 + 内存存储作为会话的唯一真实来源，LLM 消息历史从日志推导，surface 投影层支持增量推导与压缩。持久化刻意不在此实现，由订阅 session/event 的插件负责，保证可重放、可 fork、可恢复。",
+      "history": "dsh 的核心子系统之一（architecture.md 所列 core/session，ctx 键 sessions）。模型可见的输入必须被记录（model-visible means logged），运行时不可变检查保证该约束。支持 fork/resume/transcript/telemetry 全部从此日志流推导。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/core/session/README.md",
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/architecture.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-session"
+      ]
+    },
+    {
+      "id": "dsh-client-locale",
+      "why": "解决浏览器 UI 多语言需求：提供 zh/en 偏好存储（settings.yaml 中 locale.preference），并在浏览器端提供 ns×locale 字典注册表，支持框架注入的 t() 翻译座位，使 UI 文案可本地化并实时切换，是 Web 客户端的国际化基础设施。",
+      "history": "定位为 client 侧的 locale 运行时服务。2026-08-06 的 Host-backed preferences 决策确定了持久化边界（浏览器偏好由 Host settings 管理而非仅浏览器本地），早期部分界面仍保留内联文案。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/locale/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-client-locale"
+      ]
+    },
+    {
+      "id": "dsh-client-ui-primitives",
+      "why": "解决浏览器端 UI 原子组件复用问题：提供纯 React 原子组件库（零 cordis 依赖），包括按钮/弹窗/菜单、Markdown/TeX 渲染、终端输出、diff、read、search、web 结果等工具结果卡片，供各业务 UI 插件复用，保证对话区渲染一致性与安全性（对非可信模型输出做链接/HTML 消毒）。",
+      "history": "定位为 UI 基础层，独立于应用逻辑。含大量基于实现笔记的迭代（如 2026-07-28 web-terminal-card、2026-07-30 web-read/diff/search/result-card、2026-08-06 web-markdown-incremental-ast-renderer），持续强化流式渲染与安全。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-primitives/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-client-ui-primitives"
+      ]
+    },
+    {
+      "id": "dsh-host-webserver",
+      "why": "解决 Web 客户端与 harness 主进程的 HTTP 通信载体问题：提供 node:http 服务器，注册 HTTP 精确/前缀路由与 upgrade(WebSocket) 路由、fallback 处理器、index.html 转换钩子。不承载任何 harness 业务概念、不提供文件服务，仅作为路由注册基座，供连接插件、静态资源插件等挂载。",
+      "history": "定位为 dev-facing v1 的 Web 载体，仅绑定 127.0.0.1/0.0.0.0，明确不做 TLS/认证/源策略（部署加固交给反代）。Electron 走 file:// + IPC，不走此服务器。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/host/webserver/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-host-webserver"
+      ]
+    },
+    {
+      "id": "dsh-storage",
+      "why": "解决非会话数据（设置/工作区/领域 KV）的统一持久化枢纽问题：ctx.storage 作为后端注册表 + 数据形态(data-form)挂载点，自身不做 IO，后端各自拥有媒介（json/sqlite），数据形态拥有语义（如 domain 领域层），使持久化后端可插拔且可并存。",
+      "history": "定位为存储枢纽（storage hub）。设计依据见 2026-07-24 的 domain-KV-storage-and-workspace Agent Note。当前仅支持 kv 数据形态，forms 惰性解析。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/storage/storage/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-storage"
+      ]
+    },
+    {
+      "id": "dsh-jobs-local",
+      "why": "解决 agent 后台任务（jobs）的进程内注册表实现：提供 LocalJobRegistry，按所属者(owner)管理并发上限（默认 10），任务归属 owner/后端而非执行光纤，使生产者与控制器重载后任务不中断，为模型提供 job_kill/等待/重试等容错语义。",
+      "history": "定位为 @deepseek-ai/dsh-jobs 注册契约的进程本地方案。已知局限：任务随进程死亡，跨重启的持久化需独立后端实现同一 seam。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/jobs/jobs-local/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-jobs-local"
+      ]
+    },
+    {
+      "id": "dsh-agent-instructions",
+      "why": "解决 AGENTS.md 式工作区指令注入问题：按会话加载用户全局与项目指令链（$DSH_HOME/AGENTS.md + 项目根到 cwd 的候选文件），折叠进首个请求；并在成功的文件系统工具调用后增量发现嵌套文件、报告改动/删除，避免指令与磁盘漂移，是产品级 agent 上下文治理的关键。",
+      "history": "定位为 per-session 工作区指令加载插件，使用持久化 user/message 事件（system-reminder 包裹），支持 SHA-1 摘要去重、tombstone 删除标记、compaction 重装载。README 详细描述生命周期与状态刷新机制。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/context/agent-instructions/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-agent-instructions"
+      ]
+    },
+    {
+      "id": "dsh-persona",
+      "why": "解决『一个 agent 一个身份』的可组合问题：system-prompt 注册表持有 deployment persona 且无条件注册，进程内唯一；此插件提供可在 agent preset 作用域内挂载的 persona 行，遮蔽部署级 persona 或（complete 模式下）独占整个系统提示词，使不同 agent 拥有独立身份。",
+      "history": "定位为『可组合的 persona 行』，只能挂载在 agent preset 作用域内（scope-only），避免与注册表自身 deployment:persona 冲突。支持 text 模板与 includeRuntimeContext 开关。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/preset/persona/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-persona"
+      ]
+    }
+  ],
+  "light_plugins": [
+    {
+      "id": "dsh-client-schema-form",
+      "why_short": "设置编辑器提供 schema/draft 模型层，rehydrate 服务端 schema 做客户端校验，避免校验漂移。",
+      "sources": ["https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/schema-form/README.md"]
+    },
+    {
+      "id": "dsh-typert-generator",
+      "why_short": "构建期 TypeScript 工程分析器，把类型树转编译器无关模型并生成 Zod 运行时产物。",
+      "sources": ["https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/typert/generator/README.md"]
+    },
+    {
+      "id": "dsh-host-directory-picker-native",
+      "why_short": "directory-picker seam 的原生 OS 选择器后端（macOS osascript / Linux Zenity / Windows IFileOpenDialog）。",
+      "sources": ["https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/host/directory-picker-native/README.md"]
+    },
+    {
+      "id": "dsh-sandbox-local",
+      "why_short": "dsh-sandbox seam 的本地实现，自动选 bwrap/Landlock/Seatbelt/ACL 并 fail-closed 兜底。",
+      "sources": ["https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/sandbox/sandbox-local/README.md"]
+    },
+    {
+      "id": "dsh-agent-default-model",
+      "why_short": "为无会话级模型选择的新建 agent 提供部署默认 provider/model（headless/ApiProxy 共用）。",
+      "sources": ["https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/core/agent-default-model/README.md"]
+    },
+    {
+      "id": "dsh-session-stats",
+      "why_short": "注册 sessionStats 投影单元，从日志折算 turn/step 数与各阶段耗时的会话统计。",
+      "sources": ["https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/session/session-stats/README.md"]
+    },
+    {
+      "id": "dsh-workspace",
+      "why_short": "工作区实体注册表：持久化工作区记录、顺序与最新优先的候选会话索引。",
+      "sources": ["https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/workspace/workspace/README.md"]
+    },
+    {
+      "id": "dsh-fs-sandbox",
+      "why_short": "带沙箱执行策略的文件系统后端：对 write/edit 按模式加 per-call 围栏。",
+      "sources": ["https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/fs/fs-sandbox/README.md"]
+    },
+    {
+      "id": "dsh-terminal-bash",
+      "why_short": "ctx.terminals 的持久 shell 后端：基于 PTY 的交互式 bash 会话管理。",
+      "sources": ["https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/terminal/terminal-bash/README.md"]
+    },
+    {
+      "id": "dsh-host-apiproxy",
+      "why_short": "所有客户端共用的 API 网关：TS 契约 + fetch 载体 + 网关插件，承载 session/host/events RPC。",
+      "sources": ["https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/host/apiproxy/README.md"]
+    },
+    {
+      "id": "dsh-client-ui-tool",
+      "why_short": "客户端工具调用展示：调度 tool-call 节点与原子 toolview 渲染（terminal/read/diff 等卡片）。",
+      "sources": ["https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-tool/README.md"]
+    },
+    {
+      "id": "dsh-plan-mode",
+      "why_short": "per-agent 的日志化计划协作状态：/plan 命令、plan:policy 提示与 exit_plan_mode 退出。",
+      "sources": ["https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/plan/plan-mode/README.md"]
+    },
+    {
+      "id": "dsh-tool-bash-persistent",
+      "why_short": "模型面向的 bash() 工具，复用 owner-scoped 持久 shell（cwd/环境跨调用保留）。",
+      "sources": ["https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/shell/tool-bash-persistent/README.md"]
+    },
+    {
+      "id": "dsh-tool-session-query",
+      "why_short": "工作区授权的会话检索工具集：session_search/event_search/trace/read，默认不挂载。",
+      "sources": ["https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/session-query/tool-session-query/README.md"]
+    },
+    {
+      "id": "dsh-subagent-claude-code",
+      "why_short": "注册 claude-code 子代理 provider：在父会话工作区调用官方 Claude Agent SDK。",
+      "sources": ["https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/subagent/subagent-claude-code/README.md"]
+    },
+    {
+      "id": "dsh-tool-cordis",
+      "why_short": "自指式 Cordis 工具集：cordis_inspect/define/run/stop/undefine，操作进程内动态插件。",
+      "sources": ["https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/extensions/tool-cordis/README.md"]
+    },
+    {
+      "id": "dsh-web-app",
+      "why_short": "dsh 浏览器表面 bundle：在 base 之上插入 Web host 行与浏览器插件册，提供 web-runtime。",
+      "sources": ["https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/bundle/web-app/README.md"]
+    },
+    {
+      "id": "dsh-acp-demo",
+      "why_short": "ACP 自动化服务器 app 示例：JSON-RPC stdio 一键跑无 UI 的 agent 服务。",
+      "sources": ["https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/examples/acp-demo/README.md"]
+    },
+    {
+      "id": "dsh-cordis-client-runner",
+      "why_short": "动态双半插件包的浏览器半：把定义加载为实时浏览器插件并回退清理。",
+      "sources": ["https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/extensions/cordis-client-runner/README.md"]
+    },
+    {
+      "id": "dsh-client-ui-message-feedback",
+      "why_short": "逐条消息点赞/点踩反馈的浏览器插件，经 CAS 写 Host 侧对比版本。",
+      "sources": ["https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-message-feedback/README.md"]
+    },
+    {
+      "id": "dsh-client-ui-workflow-run",
+      "why_short": "把持久化顶层 workflow run 重建为独立 Chat 节点的浏览器插件。",
+      "sources": ["https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-workflow-run/README.md"]
+    },
+    {
+      "id": "dsh-client-ui-skill",
+      "why_short": "skill 调用入口浏览器半：/ 触发 source 注册 + skill 工具行的 toolview 渲染。",
+      "sources": ["https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-skill/README.md"]
+    }
+  ],
+  "notes": [
+    "仓库为 monorepo，packages/ 下约 150 个子包，全部通过 packages/ 内 README 反映；以上 30 个插件全部找到源码级 README。",
+    "历史信息：仓库 2026-08-13 公开（首个 commit 即发布 dsh@0.1.0-rc.5），tags/releases 为空，无更早公开历史，故发展史主要依赖 README 内实现笔记日期（2026-06~08）与架构文档。",
+    "Cordis 底层元框架由 cordiverse 维护（2017 年诞生、2026 年随 paper 重新发布），dsh 即其 'meta-framework of spatiotemporal composability' 思想的载体。"
+  ],
+  "design_intent_core": "DeepSeek Harness 的设计初衷 = 消除 agent 框架的特权核心。通过 Cordis 的可逆效果(revertible effects)+ 反应式余效(reactive coeffects)机制，使会话日志、LLM 适配器、工具注册表、agent 循环全部成为可配置替换的插件，任何注册在卸载时可完全回滚，从而支持热更新、动态组合与自演进 agent harness。",
+  "design_intent_sources": [
+    "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/architecture.md",
+    "https://github.com/cordiverse/paper",
+    "https://github.com/deepseek-ai/deepseek-harness/blob/master/README.zh.md"
+  ]
+}

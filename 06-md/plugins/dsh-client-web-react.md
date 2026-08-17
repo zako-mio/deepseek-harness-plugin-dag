@@ -6,6 +6,13 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/web-react`
 
+## 为什么需要它（设计初衷）
+Web GUI 浏览器侧的 React 胶水库（createSlotRenderer/SessionProvider/bindSnapshotSelector/useInvoke），供宿主 UI 插件渲染工具卡与交互。
+
+来源：
+- https://registry.npmjs.org/@deepseek-ai/dsh-client-web-react
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/web-react/README.zh.md
+
 ## 实现逻辑
 Shell 侧 React 胶水（import 底座，无 cordis 行）。createSlotRenderer：返回 SlotRenderer{renderRoot}——HostContext.Provider+SessionMaybeProvider+RootOutlet；renderer 由 runtime 的 ctx.slots.install 安装（app-shell 行执行）。createSlotRenderer 内部 SlotOutlet 用 useSyncExternalStore 订阅 host.subscribe(key)/getVersion + useLocaleRevision，SlotErrorBoundary 按 entry 隔离崩溃（SlotAssemblyError rethrow，其余走 onEntryError）。bindSnapshotSelector：唯一 hook 构造器——useSyncExternalStoreWithSelector 把裸 observable 源绑成类型化 selector hook（subscribe/getSnapshot 闭包缓存，Object.is 相等）。SessionProvider/SessionMaybeProvider：订阅 host.sessions.provideInfo，key={sessionId} 重建 session 子树，session-maybe 有 adoption 语义。useInvoke：异步动作稳定 trigger+pending（per-hook 外部 store）。
 

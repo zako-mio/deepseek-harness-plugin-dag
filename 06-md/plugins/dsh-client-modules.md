@@ -6,6 +6,12 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/modules`
 
+## 为什么需要它（设计初衷）
+客户端模块系统：node 半区组 __DSH_BOOT__ 入口图（dsh.client 扫描/打包路由），浏览器半区是 Cordis Loader 消费的懒加载 CJS 模块表。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/modules/package.json
+
 ## 实现逻辑
 双面插件。node 半：增量扫描 host Loader 条目的 package.json 中 dsh.client（platform=web）声明，按 exports['./client'] 解析 bundle 路径，sha1 短哈希做 rev，组合 window.__DSH_BOOT__ 图（WebBootEntry/WebBootGraph），serveBundle 提供 /plugins/<id>/client.js(+.map)，tapIndex 注入 boot manifest，并提供 clientModuleHost 服务（graph()/clientPath()/rebuilt()/onRebuilt()/onGraphChanged()）。browser 半：懒 CJS 模块表（ClientModuleSystem）——执行 bundle 只注册 factory，materialization 才跑副作用；提供 ctx.modules，被 vendored Loader 作为 internal 契约消费。
 

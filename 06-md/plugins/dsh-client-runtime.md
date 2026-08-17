@@ -6,6 +6,16 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/runtime`
 
+## 为什么需要它（设计初衷）
+Web 客户端（浏览器侧）的引导与运行核心。它把 Host 端广播的会话事件流扇出到 Session/Workspace 对象，维护 SlotRegistry（渲染数据源）与 SessionRuntime（会话列表/作用域状态/事件窗口/历史分页），使浏览器无需持有任何实体即可以投影方式渲染 Agent 会话。它是 dsh 前端所有 UI 包依赖的对象层地基，解决'浏览器如何复现并驱动远端 Agent 会话'的问题。
+
+发展史：dsh 插件化架构的客户端三大件之一（runtime/ui-settings/ui-conversation），api-contracts v3→v4 演进，SlotCore→SlotRegistry 封装，SessionRuntime 与 WorkspaceRuntime 逐步拆分为独立服务层。版本 0.1.0-rc.5，随仓库 2026-08 公开。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/runtime/README.md
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/architecture.md
+
 ## 实现逻辑
 客户端核心服务层（纯 browser，host apply 空）。SlotRegistry：cordis Service 包装 SlotCore——'slots/changed' 事件桥、register 经 ctx.effect 绑定 caller fiber、install()/renderSlot('root')/installLocale() boot-once、store-instance 轴（handle×scope→实例，session 实例随 scope death 清理）、hostFace 聚合 sessions/workspaces/locale。SessionRuntime：list snapshot store（manager 投影，current 持久化）、Agent scope 树（createScope：no-op fiber+ctx.extend tag，agent id===session id，lazy mint+stage-driven teardown）、SessionBinding 缓存、SessionProvideChannel。WorkspaceRuntime：workspace list + 双 baseline + 初始 selection。apply 启动 connection.start 双流，分发 mux/host 帧到 sessions/workspaces，host/remote-event 帧转 ctx.remote.$dispatch。
 

@@ -6,6 +6,13 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-workspace`
 
+## 为什么需要它（设计初衷）
+Workspace 浏览器与选择器插件：填充 sidebar 与 hero 槽，管理 Workspace/Session 分组、排序、搜索与 Fork。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-workspace/README.md
+- https://www.npmjs.com/package/@deepseek-ai/dsh-client-ui-workspace
+
 ## 实现逻辑
 工作区选择/切换。注册两处：sidebar.workspaces（WorkspaceBrowser，含 sidebar.workspaces.directoryFlow single child + workspace 视图 store）与 conversation.hero.workspace（WorkspacePicker，含 conversation.hero.workspace.directoryFlow child）。二者都通过框架 useWorkspaces hook 读 host Workspaces；inject face 封装 ctx.sessions.search/open/fork/rename/binding 与 ctx.workspaces.startSession/rename/delete/insertBefore/archiveSession/insertSessionBefore/create；flowSource 用 slots.entries/subscribe 观察 directoryFlow 洞是否被填（决定是否渲染目录流）。
 

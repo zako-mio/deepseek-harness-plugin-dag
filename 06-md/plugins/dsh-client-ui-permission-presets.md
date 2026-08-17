@@ -6,6 +6,12 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-permission-presets`
 
+## 为什么需要它（设计初衷）
+权限 UI：General 设置中的新会话默认权限 + 当前会话 /permission 弹窗（基于权限投影）。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-permission-presets/package.json
+
 ## 实现逻辑
 权限 preset 双面：注册 /permission popupSelect 装饰（command.decorate，index.ts:148-169），选项读会话 permissions 投影 faceOf('permissions')（:51-53），pick 提交 '/permission <preset>' 命令；Full access 行带确认门。另注册 settings.general.item 的 PermissionRow 写新会话默认 preset（:140-146），经 PermissionPresetSettingsController 读写 host Settings API（settings-store.ts:19 PERMISSION_SETTINGS_NS='permission'）。
 

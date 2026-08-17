@@ -6,6 +6,15 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/workflow/workflow-worker-thread`
 
+## 为什么需要它（设计初衷）
+WorkflowEngine 实现：每次运行一个 Node worker thread 执行模型编写的工作流编排脚本，子 agent 留在 host，经类型化协议通过 ctx.subagents 桥接。核心目的：同步脚本循环不阻塞 host 事件循环，且忽略取消的脚本可随 worker.terminate() 真正终止；明确非安全沙箱，worker 只做事件循环隔离、空环境与结构化克隆边界。
+
+发展史：2026-08-12 以 0.0.1-rc.3 发布，晚于首批基础包 2 天；作为 workflow seam 的 worker-thread 引擎，供 dsh-tool-workflow 面向模型消费。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/workflow/workflow-worker-thread/README.md
+- https://www.npmjs.com/package/@deepseek-ai/dsh-workflow-worker-thread
+
 ## 实现逻辑
 worker-thread workflow 引擎：WorkerThreadWorkflowEngine extends WorkflowEngine 注册为 ctx.workflowEngine。start() 同步校验 meta、宿主侧 body 预解析、解析 subagent provider 路由与并发上限，随后在独立 worker 线程执行模型编写的脚本，worker 内 agent() 经 ChildRpcBridge RPC 回宿主，宿主 startChild 调 this.subagents.start(provider) 启动子代理并把结果结构化克隆回 worker；发布 workflow/start|phase|log|agent-start|agent-end|end 事件。
 

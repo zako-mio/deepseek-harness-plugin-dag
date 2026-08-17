@@ -6,6 +6,13 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/llm/llm-retry`
 
+## 为什么需要它（设计初衷）
+按 provider 路由的 LLM 请求重试策略插件，为 LLM seam 注入容错。
+
+来源：
+- https://registry.npmjs.org/@deepseek-ai/dsh-llm-retry
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/llm/llm-retry
+
 ## 实现逻辑
 Provider 路由的 LLM 请求重试策略插件(inject ['agents'])。apply() 订阅 agent/request-error 瀑布事件，按 ResolvedRetryPolicy 判定重试：retryableCodes 匹配、maxRetries 上限(经 session 事件日志查历史重试次数)、指数退避+抖动、providerRetryAfterMs 优先；每次重试先 agent.session.append('llm/retry') 持久化再等待。
 

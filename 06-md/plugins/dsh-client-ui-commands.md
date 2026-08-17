@@ -6,6 +6,13 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-commands`
 
+## 为什么需要它（设计初衷）
+Web 端斜杠命令体系：会话级命令目录缓存、/ 命令 source、execute/popupSelect/leadingInput 三类派发，让业务包可注册自定义命令。
+
+来源：
+- https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-commands/README.zh.md
+- https://github.com/deepseek-ai/deepseek-harness
+
 ## 实现逻辑
 命令表面：CommandUiRuntime（ctx.commandUi）——capability 键控的全局目录缓存（CommandDirectory，commands.list RPC，service.ts:132-137）、'/' 命令 source（:140-148）、client 贡献注册表与 /host 命令装饰（register/decorate，:164-192）、每会话 popupSelect controller（popupFor，:202-224）。PopupSelectView 注册进 conversation.input.overlay（command-popup，order=1）。dispatch 决策表:菜单/空格/回车三列（:265-329）。
 

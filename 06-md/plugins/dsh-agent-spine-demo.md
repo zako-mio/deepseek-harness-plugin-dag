@@ -6,6 +6,13 @@
 - 来源层: L3 其余
 - 源码路径: `packages/examples/agent-spine-demo`
 
+## 为什么需要它（设计初衷）
+默认无执行器/无 UI 的 agent spine 作为单一 bundle 插件：装载每个 harness agent 所需的固定服务集，应用只加点与可换后端。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/examples/agent-spine-demo/README.md
+- https://www.npmjs.com/package/@deepseek-ai/dsh-agent-spine-demo
+
 ## 实现逻辑
 默认 executor-less/UI-less agent spine 组合插件。apply() 按依赖分层 ctx.plugin 装配：Timer/LlmRuntime/SessionStore/SessionTitleService/SystemPrompt/ToolRuntime 核心 → SkillRegistry+SkillFileSystem(skills 可选) → AgentRegistry+llmRetry → 可选 GoalService/toolGoal/goalSession → LocalJobRegistry+InvariantRegistry+4 个 invariant 伴随插件 → 可选 bashEnv+toolBash → workspaceContext → toolSkill/toolJobs → AgentLoop(agents 列表驱动)。Config 用 z.intersect 合并 AgentLoop.Config+SystemPrompt.Config+自有 schema；pickSpineConfig() 提取 bundle 属主字段供 app 包转发。只暴露命名导出(Loader 默认解包会丢 Config schema, 见 docs/postmortem/0001)。
 

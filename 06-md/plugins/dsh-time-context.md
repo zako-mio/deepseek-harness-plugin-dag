@@ -6,6 +6,13 @@
 - 来源层: L3 其余
 - 源码路径: `packages/context/time-context`
 
+## 为什么需要它（设计初衷）
+可选的按步骤持久上下文，注入当前时间与经过时间，供模型感知时间。
+
+来源：
+- https://registry.npmjs.org/@deepseek-ai/dsh-time-context
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/context/time-context
+
 ## 实现逻辑
 opt-in 请求时钟上下文插件：apply() 注册 prepend 的 'agent/pre-step' 监听器（inject ['agents']）。每个符合条件 step 在决定消息中附加持久、来源归属（source.kind='plugin', form='snapshot'）的 UserMessage：当前时间（Intl.DateTimeFormat 按选定时区格式化）+ 距上一条模型可见消息（step=1）或上一次 step 上下文（step>1）的 elapsed 时长。浏览器时区感知：deriveBrowserTimeZoneContext 从请求消息中解析浏览器时区，无唯一浏览器 zone 时回退进程时区（config.timeZone 可覆盖）；refreshIntervalMs 提供会话内最小注入间隔（读 raw durable 事件找上次注入，避免进程本地缓存）。验证：非法 refreshIntervalMs/无法解析时区即插件加载失败。precedingMessageTime 只统计 user/message|assistant/message|tool/result 模型可见事件。
 

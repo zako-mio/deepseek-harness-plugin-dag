@@ -6,6 +6,13 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/feedback/message-feedback`
 
+## 为什么需要它（设计初衷）
+生命周期绑定的逐消息评分与备注旁路数据（feedback 能力族）。
+
+来源：
+- https://registry.npmjs.org/@deepseek-ai/dsh-message-feedback
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/feedback/message-feedback
+
 ## 实现逻辑
 消息级 Like/Dislike+可选笔记 sidecar：MessageFeedbackService（TypertRemoteService）提供 @Remote list/put/delete；基于 storageDomain 打开 message-feedback 域表（sessions 表），经 sessionPersistence/sessions 校验会话生命周期与助手消息目标，version 乐观并发，note 字节上限（maxNoteBytes）配置。
 

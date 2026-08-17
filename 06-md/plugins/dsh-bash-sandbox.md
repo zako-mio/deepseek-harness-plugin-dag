@@ -6,6 +6,13 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/shell/bash-sandbox`
 
+## 为什么需要它（设计初衷）
+消费 ctx.sandbox 的 bash 执行器实现：每条命令经沙箱约束 spawn，报告拒绝/执行事实，无沙箱则 fail-closed。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/shell/bash-sandbox/README.md
+- https://www.npmjs.com/package/@deepseek-ai/dsh-bash-sandbox
+
 ## 实现逻辑
 沙箱消费型 bash 执行器(SandboxBashExecutor extends LocalBashExecutor,注册 ctx.shell 替代本地执行器):每条命令经 ctx.sandbox.confine(['bash','-c',command], policy) 包裹;resolve() 把 per-call sandboxPolicy 印入 spec;runner 失败抛 SANDBOX_UNAVAILABLE,settlement 按 denialSignatures 分类 denied 并附 enforcement 事实。
 

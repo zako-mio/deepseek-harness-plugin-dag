@@ -6,6 +6,12 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/interaction/permission-presets`
 
+## 为什么需要它（设计初衷）
+面向用户的权限预设服务，把 sandbox/mode 与 approval/policy 打包成可一键切换的预设选择器。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/interaction/permission-presets/README.zh.md
+
 ## 实现逻辑
 定义 ctx.permissionPresets 服务，把 sandbox 模式与 approval policy 两个旋钮捆绑成产品级 preset 表(read-only/workspace-write/danger-full-access)。set()/apply() 先 append 'permission/preset' 事件再经 setSandboxMode/setApprovalPolicy 写各旋钮；pinInitialPermission 在 session/created 时补齐缺省旋钮。经 installSettingsSection 注册 'permission' 默认 preset 设置，注册 'permissions' 投影单元与 /permission 命令。
 

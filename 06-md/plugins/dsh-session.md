@@ -6,6 +6,16 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/core/session`
 
+## 为什么需要它（设计初衷）
+解决 agent 交互历史的单一事实来源问题：以『事件溯源』(event-sourced) 追加日志 + 内存存储作为会话的唯一真实来源，LLM 消息历史从日志推导，surface 投影层支持增量推导与压缩。持久化刻意不在此实现，由订阅 session/event 的插件负责，保证可重放、可 fork、可恢复。
+
+发展史：dsh 的核心子系统之一（architecture.md 所列 core/session，ctx 键 sessions）。模型可见的输入必须被记录（model-visible means logged），运行时不可变检查保证该约束。支持 fork/resume/transcript/telemetry 全部从此日志流推导。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/core/session/README.md
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/architecture.md
+- https://www.npmjs.com/package/@deepseek-ai/dsh-session
+
 ## 实现逻辑
 事件溯源(Event-sourced)会话存储。SessionStore(ctx.sessions) 维护内存 Map 存 Session，append-only 事件日志由 Session 类持有；append() 同步通知，通过 session/created / session/event / session/flush / session/disposed 事件向外广播，持久化由外部插件订阅事件自行落盘。Session 提供 deriveMessages()(折叠 surface 派生 LLM 消息历史)、requestHeader()(折叠 request/header 事件)、prepare/enter/announce 三段式发布边界(配合 agent-loop 的复合 effect 保证拆解顺序)。
 

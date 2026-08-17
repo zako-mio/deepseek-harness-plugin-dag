@@ -632,7 +632,16 @@
         "Context 类型声明扩展"
       ],
       "path": "",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "Cordis 的 disposal-aware 定时器服务（ctx.timeout/interval/throttle/debounce）。定时器 handle 注册在当前 fiber，插件被 dispose 时自动清除——保证『一切皆插件』架构下挂载/卸载不泄漏定时器，是 dsh 组合层的基础设施。",
+        "history": "npm 包名 @deepseek-ai/cordis-plugin-timer，源码在 vendor/timer（上游为 @cordisjs/plugin-timer，vendored 进 dsh 仓库），2026-08-10 随 Cordis 一起发布，MIT 许可。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/vendor/timer/README.md",
+          "https://registry.npmjs.org/@deepseek-ai/cordis-plugin-timer"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-attachment-local",
@@ -647,7 +656,16 @@
         "detectImage/readImageFile 导出"
       ],
       "path": "packages/attachment/attachment-local",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "dsh-attachment 的私有本地实现：DSH_HOME 下基于内容寻址(sha256:)的对象存储，含崩溃安全(原子硬链接发布+目录同步)、图片解码准入校验、只允许所有者访问。会话日志只含引用与校验元数据、不含宿主路径，保证重启/fork 后历史图片可持久回放。",
+        "history": "位于 packages/attachment/attachment-local，2026-08-10 首批发布，0.1.0-rc.6 转公开。依赖 sharp 处理图片，dsh-attachment 定义身份/校验抽象，本包提供本地存储后端。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/attachment/attachment-local/README.zh.md",
+          "https://registry.npmjs.org/@deepseek-ai/dsh-attachment-local"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-client-schema-form",
@@ -661,7 +679,15 @@
         "SchemaNode 类型"
       ],
       "path": "packages/client/schema-form",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "设置编辑器提供 schema/draft 模型层，rehydrate 服务端 schema 做客户端校验，避免校验漂移。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/schema-form/README.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-primitives",
@@ -677,7 +703,16 @@
         "类型 MarkdownFileMentions/extractMarkdownPlainText"
       ],
       "path": "packages/client/ui-primitives",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "解决浏览器端 UI 原子组件复用问题：提供纯 React 原子组件库（零 cordis 依赖），包括按钮/弹窗/菜单、Markdown/TeX 渲染、终端输出、diff、read、search、web 结果等工具结果卡片，供各业务 UI 插件复用，保证对话区渲染一致性与安全性（对非可信模型输出做链接/HTML 消毒）。",
+        "history": "定位为 UI 基础层，独立于应用逻辑。含大量基于实现笔记的迭代（如 2026-07-28 web-terminal-card、2026-07-30 web-read/diff/search/result-card、2026-08-06 web-markdown-incremental-ast-renderer），持续强化流式渲染与安全。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-primitives/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-client-ui-primitives"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-client-ui-slots",
@@ -693,7 +728,16 @@
         "resolveSlotLabel/InjectFace/PropsLocale 等工具类型"
       ],
       "path": "packages/client/ui-slots",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "Web shell 插槽系统的纯核心：声明合并的 SlotMap、单次 register 组合 API、四共享 props 类型族与 store-seat 类型族。一次 register 调用即完成组件进槽、子槽声明（声明=渲染授权=运行时规格）、store 座位与业务面注册；React-free 且 cordis-free，register 时校验未声明槽/重复声明/跨作用域共享等错误。",
+        "history": "2026-08-10 以 0.0.1-rc.1 随 dsh 第一批客户端包发布；为浏览器 UI 插件体系提供类型安全插槽注册与 renderer 安装契约，实现在 web-react 与 shell boot。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-slots/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-client-ui-slots"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-credentials-local",
@@ -709,7 +753,16 @@
         "CREDENTIALS_FILENAME/resolveSpec"
       ],
       "path": "packages/credentials/credentials-local",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "凭证引用缝的本地提供者：配置只携带引用而非密钥，消费者在操作边界解析。四层单一优先级（进程环境 > $DSH_HOME/.credentials.yaml > 项目 .env > 用户 .env），环境层启动快照冻结、可写存储经原子写+0600/0700 权限+热重载。既支持『非侵入式读取』（进入 launch env 快照）又满足运行期覆盖意图。",
+        "history": "credentials 能力族缝（reference seam）+ env-over-.env 文件提供者；随 core spine 起步。明确把『模型可见路径』与『OS-keychain 隔离存储』标为后续工作——文件权限是谨慎性而非安全边界。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/credentials/credentials-local",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/subsystems/credentials.md"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-fs-e2b",
@@ -722,7 +775,16 @@
         "ctx.fs (FileSystem seam 的 E2B 远程后端，E2BFileSystem extends FileSystem)"
       ],
       "path": "packages/e2b/fs-e2b",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "E2B 云沙箱的 ctx.fs provider 实现：让文件工具观察与 E2B 支撑的 Bash 进程同一执行世界（远端 cwd + SDK handle），支持远端身份/元数据、UTF-8 流读、有界原始字节读、原子变更（staging 目录 + 同文件系统原子 rename）。解决'无头 Agent 如何操作远端沙箱文件系统'的问题，使文件工具整体随 provider 切换迁移到远端。",
+        "history": "dsh 的 fs provider 可替换接缝的远端实现，POC 性质（依赖 E2B 默认 Linux 镜像的 realpath/base64/atomic rename），明确不做 Host 工作区同步。与 fs-local 并列验证 seam 一处切换全线迁移的架构主张。版本 0.1.0-rc.5。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/e2b/fs-e2b/README.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/e2b/fs-e2b/package.json"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-host-directory-picker",
@@ -735,7 +797,16 @@
         "ctx.directoryPicker 抽象服务（native|browse 判别能力）"
       ],
       "path": "packages/host/directory-picker",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "Web GUI host 工作区目录选择器的能力缝：抽象 DirectoryPicker 服务，capability() 返回判别联合描述操作者如何选目录——native 后端弹操作系统原生选择器、browse 后端为无法触达 OS 选择器的远程客户端提供 in-app 目录浏览/创建。消费者按 capability.kind 分支，未知 kind 则隐藏选目录功能而非失败。",
+        "history": "2026-07-28 directory-picker capability seam 决策记录设计理由与 ctx.fs 的分离；派生出 -native/-browse/-auto（启动时自动选后端）三实现，每个还带浏览器入口注册 UI 流程插槽。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/host/directory-picker",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-07-28-directory-picker-capability-seam.md"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-host-plugin-inventory",
@@ -748,7 +819,16 @@
         "ctx.pluginInventory（pluginInventory Typert Remote：list）"
       ],
       "path": "packages/host/plugin-inventory",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "只读暴露当前 Cordis Loader 插件树的 host 端投影，供 UI 展示插件清单，无缓存/无变更/无 mutations。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/host/plugin-inventory/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-host-plugin-inventory"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-host-webserver",
@@ -761,7 +841,16 @@
         "ctx.webServer（WebServer：register/registerUpgrade/registerFallback/tapIndex，port/host getter）"
       ],
       "path": "packages/host/webserver",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "解决 Web 客户端与 harness 主进程的 HTTP 通信载体问题：提供 node:http 服务器，注册 HTTP 精确/前缀路由与 upgrade(WebSocket) 路由、fallback 处理器、index.html 转换钩子。不承载任何 harness 业务概念、不提供文件服务，仅作为路由注册基座，供连接插件、静态资源插件等挂载。",
+        "history": "定位为 dev-facing v1 的 Web 载体，仅绑定 127.0.0.1/0.0.0.0，明确不做 TLS/认证/源策略（部署加固交给反代）。Electron 走 file:// + IPC，不走此服务器。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/host/webserver/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-host-webserver"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-llm",
@@ -782,7 +871,17 @@
         "llm-invariant 伴随插件"
       ],
       "path": "packages/llm/llm",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "为 DeepSeek Harness 定义供应商中立的 LLM 词汇与抽象服务：消息/内容块/流式 chunk 协议 + LlmRuntime 适配器注册表与单一流式调用 API。agent loop、会话日志与所有插件都以它作为模型交互的规范语言；真实适配器（deepseek-official、pi-ai）实现同一 LlmAdapter 接口，llm/stream waterfall 事件供缓存/日志/路由拦截。",
+        "history": "dsh 家族首批基础包，2026-08-10 发布 0.0.1-rc.1；架构文档列为 core 包（ctx.llm），是模型适配器与一切上层能力（retry、工具、UI 流渲染）依赖的根 seam。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/llm/llm/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-llm",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/architecture.md"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-native-command",
@@ -797,7 +896,16 @@
         "native-command-invariant 伴随插件"
       ],
       "path": "packages/util/native-command",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "零依赖无 shell 的 execFile 运行器，支持 utf8 捕获、abort 传播与 Windows 隐藏窗口，用于宿主原生 OS 集成。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-native-command",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/util/native-command"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-settings-file",
@@ -812,7 +920,15 @@
         "settings/update→persist 实现"
       ],
       "path": "packages/settings/settings-file",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "基于文件的设置提供方，YAML/JSON 承载全 namespace 分节，读-改-写原子写回并热发布外部编辑。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/settings/settings-file/README.zh.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-spill-local",
@@ -827,7 +943,17 @@
         "traversal-safe 命名"
       ],
       "path": "packages/spill/spill-local",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "工具输出溢出存储的本地文件系统实现（ctx.spillStore）：把超大工具输出持久化到会话私有文件，inline 结果替换为有界预览+检索定位符（read/grep 该路径）。用随机十六进制前缀防 symlink 投毒、独占 owner-only 写入、0700 私有临时根，解决超大输出撑爆模型上下文与多用户本地的安全问题。",
+        "history": "2026-07-08 tool-output spill files 决策划定存储/保留/工具自有输出处理的边界；与保留策略（dsh-output-retention head/tail 截断）协作。后端无会话生命周期删除，留待外部清理。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/spill/spill-local",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-07-08-tool-output-spill-files.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/subsystems/spill.md"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-storage",
@@ -841,7 +967,16 @@
         "storageBackendServiceKey(name) 服务键生成器"
       ],
       "path": "packages/storage/storage",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "解决非会话数据（设置/工作区/领域 KV）的统一持久化枢纽问题：ctx.storage 作为后端注册表 + 数据形态(data-form)挂载点，自身不做 IO，后端各自拥有媒介（json/sqlite），数据形态拥有语义（如 domain 领域层），使持久化后端可插拔且可并存。",
+        "history": "定位为存储枢纽（storage hub）。设计依据见 2026-07-24 的 domain-KV-storage-and-workspace Agent Note。当前仅支持 kv 数据形态，forms 惰性解析。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/storage/storage/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-storage"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-subprocess-e2b",
@@ -854,7 +989,15 @@
         "ctx.subprocess (SubprocessRuntime seam 的 E2B provider)"
       ],
       "path": "packages/e2b/subprocess-e2b",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "subprocess seam 的 E2B（远程云沙箱）实现：以 Linux 进程组 + base64 帧投影 stdio + PTY 终端会话，让 Bash/PTY/LSP 消费方无需改动即可在共享远程沙箱执行，解决本地执行的安全隔离与主机资源占用问题。",
+        "history": "先加载 dsh-e2b 再替换 dsh-subprocess-local 即完成沙箱切换，是 dsh-subprocess seam 的远程替代后端；当前为 POC 级，仍受 E2B 无信号事实、无 Windows 支持等限制约束。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/e2b/subprocess-e2b/README.zh.md"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-subprocess-local",
@@ -868,7 +1011,15 @@
         "输出采集(spill 文件)/环境清洗/进程树终止"
       ],
       "path": "packages/subprocess/subprocess-local",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "subprocess seam 的本地 Service Provider，spawn 进程树/PTY 终端、升级式终止、有界 spill 输出与凭据清除。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/subprocess/subprocess-local/README.zh.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-typert-generator",
@@ -886,7 +1037,15 @@
         "typertPlugin(tsdown/rolldown 插件面)"
       ],
       "path": "packages/typert/generator",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "构建期 TypeScript 工程分析器，把类型树转编译器无关模型并生成 Zod 运行时产物。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/typert/generator/README.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-typert-registry",
@@ -903,7 +1062,16 @@
         "变更订阅(ChangeSource)"
       ],
       "path": "packages/typert/registry",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "Typert 生成产物的运行时注册中心：贡献者携带一个包面的业务反射与可选实时 Zod schema，ctx.typert 原子注册并在 fiber 卸载时撤回。按 <包>#<面> 键控包反射、按 <包>#<名> 键控 schema，JSON Schema 在消费端按需计算，为 host/client 跨进程类型安全 Remote 通信提供运行时支撑。",
+        "history": "2026-08-10 发布 0.0.1-rc.1；与 typert 生成器/loader/协议组包，构成 harness 类型反射与 Remote 通信机制的可替换组件。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/typert/registry/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-typert-registry"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "cordis-plugin-hmr",
@@ -918,7 +1086,16 @@
         "事件 hmr/change|hmr/reload|hmr/config-update-failed"
       ],
       "path": "",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "Cordis 客户端插件热重载：浏览器经 SSE 按 rebuilt 帧重载单插件，node 端轮询统计重构建，无需整页刷新。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/hmr/README.md",
+          "https://www.npmjs.com/package/cordis-plugin-hmr"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-api-gateway",
@@ -934,7 +1111,16 @@
         "Client 远程事件 $on/$dispatch"
       ],
       "path": "packages/api/gateway",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "Typert Remote Host 分派器与客户端 API 端点，是 api 能力族的 RPC 网关（dsh-api-remotes 的底层实现）。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-api-gateway",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/api"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-attachment",
@@ -951,7 +1137,15 @@
         "ImageLoader/MessageImageLabels 等类型"
       ],
       "path": "packages/client/ui-attachment",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "纯 React 附件原子组件（零 cordis 依赖）：草稿图片轨、消息图片画廊与原始图灯箱。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-attachment/package.json"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-host-directory-picker-auto",
@@ -964,7 +1158,16 @@
         "挂载 directoryPicker 后端（native|browse）+ 对应客户端 surface 为 Loader 条目"
       ],
       "path": "packages/host/directory-picker-auto",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "目录选择 seam 的自适应选择器：启动时一次采样判定 native/browse 后端并动态挂载，保证交互一致性。",
+        "history": "",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/host/directory-picker-auto/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-07-28-directory-picker-capability-seam.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-host-directory-picker-browse",
@@ -977,7 +1180,16 @@
         "ctx.directoryPicker（browse capability: list/createDirectory）"
       ],
       "path": "packages/host/directory-picker-browse",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "目录选择 seam 的应用内浏览后端：Node 标准库单层列举+子目录创建，无本地对话框，可服务远程客户端。",
+        "history": "",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/host/directory-picker-browse/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/host/directory-picker"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-host-directory-picker-native",
@@ -990,7 +1202,15 @@
         "ctx.directoryPicker（native capability: pick）"
       ],
       "path": "packages/host/directory-picker-native",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "directory-picker seam 的原生 OS 选择器后端（macOS osascript / Linux Zenity / Windows IFileOpenDialog）。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/host/directory-picker-native/README.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-host-frontend-static",
@@ -1003,7 +1223,16 @@
         "webserver fallback seat（SPA dist 静态托管 + index tap 注入）"
       ],
       "path": "packages/host/frontend-static",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "Web shell 的 SPA dist 静态服务器：占用 webserver 单 fallback seat，带 index-tap 注入、越界 403、SPA 路由回退。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/host/frontend-static/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-host-frontend-static"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-llm-deepseek",
@@ -1020,7 +1249,16 @@
         "DeepSeekAdapter 类导出"
       ],
       "path": "packages/llm/llm-deepseek",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "Harness LLM 接缝的 DeepSeek chat-completions 官方适配器：用原生 fetch + SSE（eventsource-parser）把官方 wire 格式翻译成 StreamChunk 协议，注册 deepseek-official provider 路由，支持 thinking/reasoning_effort、KV-cache 记账、动态配置（settings+credentials 分离）、稳定错误码。解决'DeepSeek API 如何以流式、可重试、可审计方式接入 harness'的问题。",
+        "history": "与 pi-ai 库级实现 dsh-llm-pi-ai 并列为同一接缝的双实现，刻意用 deepseek-official 路由名与 pi-ai 的 deepseek 区分以便同仓共存。在 0.1.0-rc.x 迭代中增加思考模式序列化、reasoning passback、app attribution 头、compaction 标记等。版本 0.1.0-rc.5。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/llm/llm-deepseek/README.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/llm/llm-deepseek/package.json"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-llm-pi-ai",
@@ -1037,7 +1275,16 @@
         "PiAiAdapter 类导出"
       ],
       "path": "packages/llm/llm-pi-ai",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "pi-ai 支持的 DeepSeek 适配器，作为 dsh-llm-deepseek 的设计验证孪生实现，挂在 LLM seam 上。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-llm-pi-ai",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/llm/llm-pi-ai"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-lsp-stdio",
@@ -1053,7 +1300,16 @@
         "transient-open 只读查询服务"
       ],
       "path": "packages/lsp/lsp-stdio",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "解决 agent 需要语言服务器能力却无法直接驱动 LSP 的问题：提供 ctx.lsp 的通用 stdio 语言服务器后端，按命名服务器表惰性 single-flight 启动独立服务器进程，以兼容性优先的「临时打开」序列（didOpen→操作→didClose）经 ctx.fs 读取源文件执行导航/hover 查询。其核心价值是把 LSP 变成通过 ctx.subprocess/ctx.fs 执行世界一致挂载的可组合服务，而不污染提示词或工具 schema。",
+        "history": "位于 packages/lsp/lsp-stdio，与 lsp 抽象、tool-lsp 构成 LSP 子系统；定位为「通用宿主而非目录/安装器」，强调部署显式配置服务器映射，是 agent 获取类型感知能力的安全封装层。",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/lsp/lsp-stdio/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/lsp"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-session",
@@ -1075,7 +1331,17 @@
         "deepFreeze 冻结的不可变事件契约"
       ],
       "path": "packages/core/session",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "解决 agent 交互历史的单一事实来源问题：以『事件溯源』(event-sourced) 追加日志 + 内存存储作为会话的唯一真实来源，LLM 消息历史从日志推导，surface 投影层支持增量推导与压缩。持久化刻意不在此实现，由订阅 session/event 的插件负责，保证可重放、可 fork、可恢复。",
+        "history": "dsh 的核心子系统之一（architecture.md 所列 core/session，ctx 键 sessions）。模型可见的输入必须被记录（model-visible means logged），运行时不可变检查保证该约束。支持 fork/resume/transcript/telemetry 全部从此日志流推导。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/core/session/README.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/architecture.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-session"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-skill",
@@ -1091,7 +1357,16 @@
         "renderSkillContent/escapeText + skill-invocation MessageSourceMap"
       ],
       "path": "packages/skill/skill",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "纯 agent skill 提供方注册表（ctx.skills）：宿主+按 scope 分层结构，不感知来源（本地/嵌入式/HTTP），提供方经 registerProvider 注册；按 modelInvocable/userInvocable 策略区分目录。为 harness 提供可插拔的技能发现/加载能力，是 skill 能力族的注册中心。",
+        "history": "位于 packages/skill/skill，2026-08-10 首批发布，0.1.0-rc.6 转公开。本地实现为 dsh-skill-filesystem；面向模型的 skill 工具由 dsh-tool-skill 消费，注册表本身不渲染模型指引。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/skill/skill/README.zh.md",
+          "https://registry.npmjs.org/@deepseek-ai/dsh-skill"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-storage-json",
@@ -1105,7 +1380,16 @@
         "storage.backend.json 服务键"
       ],
       "path": "packages/storage/storage-json",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "存储中心 JSON 后端：每个单元一个可读 `<unit>.json` 文件、整文件原子替换发布，可读性是存在理由，扩展交给 SQLite 后端。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/storage/storage-json",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/storage"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-system-prompt",
@@ -1124,7 +1408,16 @@
         "system-prompt-invariant 伴随插件"
       ],
       "path": "packages/core/system-prompt",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "解决「系统提示词由谁来拼、按什么顺序拼」的横切问题：提供有序系统提示词组装注册表，插件可贡献段/工具schema/具名变量，每次循环统一组装渲染。其核心价值是把提示词拼装从 agent 循环内部抽离为可组合、可遮蔽、KV缓存稳定的公共服务，保证 harness 身份、persona、工具引导等多方贡献的确定性编排。",
+        "history": "自仓库早期即为 core 层核心插件（packages/core/system-prompt），随 harness 从集成式架构转向「一切皆插件」持续演进，衍生出 prompt variables（2026-07-05）、显式工具顺序（2026-07-06）、系统提示词源路径（2026-07-21）等多项 Agent Note 记录的设计决策。",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/core/system-prompt/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-07-05-prompt-variables-and-tool-guidance-ownership.md"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-typert-loader",
@@ -1139,7 +1432,16 @@
         "validateTypertManifest/TYPERT_HOST_EXPORT"
       ],
       "path": "packages/typert/loader",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "Typert Loader 集成：扫描 Loader 条目并注册生成的主机类型产物进运行时 registry，喂给 typert 类型图（ctx.typert）。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/typert/loader",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/typert"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-web",
@@ -1155,7 +1457,17 @@
         "searchProvider/fetchProvider 选择配置"
       ],
       "path": "packages/web/web",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "网页能力族：把搜索与抓取合并到单一 provider 选择缝（ctx.web），并提供 provider 中立（Exa/Perplexity/DeepSeek 原生/HTTP fetch）以及模型面对工具 web_search/web_fetch。解耦「提供者」与「消费工具」——换一次 provider 全产品切换，且工具可见性不依赖后端可用性（enablement 而非 availability）。",
+        "history": "2026-06-24 web capability seam 决策记录为何搜索与抓取共享一个 provider 选择服务；明确推迟 SSRF 防护。工具侧演化出 web result card 渲染。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/web",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-06-24-web-capability-seam.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/subsystems/web.md"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-agent",
@@ -1176,7 +1488,17 @@
         "ModelSelection/installModelSelection"
       ],
       "path": "packages/core/agent",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "定义 Agent 接口、实时注册表、发起方(initiator)作用域与 agent/* 事件词汇，是产品 API 脊柱。所有插件（UI、钩子、编排器）面向此 Agent handle 编程而不依赖具体循环，因此循环(agent-loop)可整体替换，从根本上落实『一切皆插件』。",
+        "history": "位于 packages/core/agent，随 2026-08-10 首批 rc 发布（BSD-3-Clause），后转 MIT，0.1.0-rc.6 转公开。保持稳定 API，注册表可复用稳定路由载体，为 dsh-agent-loop 等循环实现提供替换缝隙。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/core/agent/README.zh.md",
+          "https://registry.npmjs.org/@deepseek-ai/dsh-agent",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/architecture.md"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-code-runtime-worker-thread",
@@ -1189,7 +1511,16 @@
         "ctx.codeRuntime（CodeRuntime 后端，language=typescript, isolation=worker-thread）"
       ],
       "path": "packages/code-runtime/code-runtime-worker-thread",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "code-runtime seam 的 worker 线程实现：每次运行全新 Worker，隔离非安全边界，含 computeMs/maxWallMs 双预算与 JSON 边界验证。",
+        "history": "",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/code-runtime/code-runtime-worker-thread/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/code-runtime"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-fs-observation-policy",
@@ -1204,7 +1535,16 @@
         "FS_NOT_OBSERVED/FS_NOT_FOUND 守卫语义"
       ],
       "path": "packages/fs/fs-observation-policy",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "文件系统策略层第三块：在 ctx.fs provider 契约之上通过 fs/* 事件门（而非方法服务）增加'observed-state（先观察）→ read-before-edit（先读后改）→ version-guarded（版本守卫的写/改）'策略。它让模型必须先读文件才能改，杜绝盲写导致的版本丢失，是'以 fs/* 事件门替代强制方法服务'设计的示范实现。",
+        "history": "源自 2026-06-26 fsspec-style fs-seam 简化决策，把策略从 FileSystem provider 基类拆出，形成 tool-fs/fs-observation-policy/fs/fs-local 四层栈。无服务 API，仅注册三个 fs/* 监听器，可优雅地加减装。观察状态不跨会话持久化为已知限制。版本 0.1.0-rc.5。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/fs/fs-observation-policy/README.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/fs/fs-observation-policy/package.json"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-persona",
@@ -1219,7 +1559,16 @@
         "includeRuntimeContext 抑制能力"
       ],
       "path": "packages/preset/persona",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "解决『一个 agent 一个身份』的可组合问题：system-prompt 注册表持有 deployment persona 且无条件注册，进程内唯一；此插件提供可在 agent preset 作用域内挂载的 persona 行，遮蔽部署级 persona 或（complete 模式下）独占整个系统提示词，使不同 agent 拥有独立身份。",
+        "history": "定位为『可组合的 persona 行』，只能挂载在 agent preset 作用域内（scope-only），避免与注册表自身 deployment:persona 冲突。支持 text 模板与 includeRuntimeContext 开关。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/preset/persona/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-persona"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-sandbox-local",
@@ -1234,7 +1583,15 @@
         "windows-acl 写授权物化"
       ],
       "path": "packages/sandbox/sandbox-local",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "dsh-sandbox seam 的本地实现，自动选 bwrap/Landlock/Seatbelt/ACL 并 fail-closed 兜底。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/sandbox/sandbox-local/README.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-sdk-client",
@@ -1251,7 +1608,16 @@
         "sdk-client-invariant 伴随插件"
       ],
       "path": "packages/sdk/client",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "解决外部程序如何驱动 harness 的问题：提供以子进程方式经 stdio JSON-RPC 驱动 harness 运行时的 TypeScript 客户端 SDK，分 DeepSeekHarness（高层运行 API）与 HarnessClient（低层协议客户端）两层。其核心价值是让自动化、subagent 后端等非浏览器消费方无需 HTTP/浏览器层即可启动完整 harness 会话并收集结果，与 Python SDK 构成设计孪生。",
+        "history": "位于 packages/sdk/client，与 protocol/server 同属 SDK 三件套；起步即定位为 Python SDK 的 TS 设计孪生，共享同一运行时对端与协议分层，启动规格显式化（command/args），为 headless 与 CI 自动化铺路。",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/sdk/client/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/python"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-session-persistence-jsonl",
@@ -1267,7 +1633,16 @@
         "locate/readRaw/listSnapshots"
       ],
       "path": "packages/session/session-persistence-jsonl",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "JSONL 持久会话后端：每会话仅追加逻辑日志（默认 .jsonl.zstd），延迟实体化、崩溃恢复、项目/会话目录布局。",
+        "history": "",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/session/session-persistence-jsonl/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-06-14-session-persistence.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-session-persistence-sqlite",
@@ -1284,7 +1659,16 @@
         "SCHEMA_VERSION=15 / journalMode 可配"
       ],
       "path": "packages/session/session-persistence-sqlite",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "SQLite 持久会话后端：SessionEvent 1:1 映射 events 行，事务化 append、延迟实体化、pristine schema 门控、WAL 模式。",
+        "history": "",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/session/session-persistence-sqlite/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/session"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-session-projection",
@@ -1300,7 +1684,17 @@
         "ProjectionChangeListener"
       ],
       "path": "packages/session/session-projection",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "会话投影 seam：拥有合并可扩展的投影类型表、provider 契约与 ctx.sessionProjections 注册表，将已提交的会话事件驱动到每个注册投影单元（init/apply/view 三个纯函数）并输出完整当前值，供 api-proxy 历史尾页与 session/projection push 帧消费。领域注册纯数学，框架负责驱动，事件日志为唯一真源，UI 读模型由此派生。",
+        "history": "由 2026-07-27 session-projection RFC 定案设计（框架驱动/领域计算、同引用即无工作、全量值规则）；2026-08-10 发布 0.0.1-rc.1。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/session/session-projection/README.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/proposed/architecture/2026-07-27-session-projection-and-command-log.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-session-projection"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-session-query-sqlite",
@@ -1315,7 +1709,16 @@
         "launcherSessionQueryPath 可选槽位"
       ],
       "path": "packages/session-query/session-query-sqlite",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "解决会话历史检索缺少高性能全文搜索的问题：作为 ctx.sessionQuery 的 SQLite 具体提供方，用 FTS5(unicode61) 实现 searchSessions/searchEvents 两个全文方法，支持跨会话/会话内分页、元数据过滤与实时+持久化双层语料库对账。其核心价值是为插件与工具提供不加载完整日志的可检索会话历史，并严格规避注入（FTS5 语法当数据、参数化谓词、谓词预算）。",
+        "history": "承接 2026-07-10 session-query-service 与 2026-07-23 unified-session-query-service 两次架构统一后，成为首个/默认的具体后端（packages/session-query/session-query-sqlite），与抽象服务 session-query 分离，采用「继承精确读取+自有全文实现」的分层结构。",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/session-query/session-query-sqlite/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-07-10-sqlite-session-query-provider.md"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-session-telemetry-otel",
@@ -1331,7 +1734,16 @@
         "feedback/record 捕获监听"
       ],
       "path": "packages/session/session-telemetry-otel",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "telemetry seam 的 OpenTelemetry 后端，把捕获的会话记录交给 OTel JS SDK 日志管道。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-session-telemetry-otel",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/session/session-telemetry-otel"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-skill-badge",
@@ -1344,7 +1756,15 @@
         "ctx.skills 的 'dsh-badge' bundled provider"
       ],
       "path": "packages/skill/skill-badge",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "可选内置 skill 提供方，贡献官方『powered by dsh』Markdown 片段与随包 PNG 徽标，默认禁用需显式启用。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/skill/skill-badge/README.zh.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-skill-filesystem",
@@ -1359,7 +1779,15 @@
         "frontmatter 解析与 watch 失效"
       ],
       "path": "packages/skill/skill-filesystem",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "ctx.skills 注册表的本地文件系统提供方：扫描项目/.dsh/用户级多个 skill 根目录，解析 SKILL.md 或平铺 Markdown 并注册，Chokidar 热监视目录变化实现动态发现，解决 skill 跨项目共享、编辑即生效、多根 rank 合并的问题。",
+        "history": "与 dsh-skill（注册表）、dsh-tool-skill（模型加载工具）分层：本包只做发现与解析；项目根以最近 .git 祖先界定，限定一层发现深度，monorepo 子项目选择暂缓。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/skill/skill-filesystem/README.zh.md"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-storage-domain",
@@ -1374,7 +1802,17 @@
         "domain/changed 事件"
       ],
       "path": "packages/storage/storage-domain",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "存储中心的领域数据形态：在配置的后端上提供 schema 校验、事件发射的 KV 领域（ctx.storageDomain / ctx.storage.domain 投影）。领域以 defineDomain + zod 记录 schema 声明，内存为权威、读同步、写按领域串行化，先落盘后更新内存并发射 domain/changed。用于存放非会话数据（workspace 记录、未来会话 sidecar）。",
+        "history": "由 2026-07-24 domain-kv-storage Agent Note 定案（storage/domain 分层）；2026-08-10 发布 0.0.1-rc.1，补足会话日志之外的结构化存储形态。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/storage/storage-domain/README.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/proposed/architecture/2026-07-24-domain-kv-storage-and-workspace.zh.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-storage-domain"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-storage-sqlite",
@@ -1390,7 +1828,15 @@
         "SqliteKvUnit（key/value STRICT 表）"
       ],
       "path": "packages/storage/storage-sqlite",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "存储中心的 SQLite 后端，node:sqlite 提供 kv facet，单文件或 :memory:，为高频变更领域提供行级原子写。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/storage/storage-sqlite/README.zh.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-web-fetch-http",
@@ -1406,7 +1852,16 @@
         "匿名公开 HTTP(S) 抓取能力（无凭证/无 cookie）"
       ],
       "path": "packages/web/web-fetch-http",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "匿名公共 HTTP(S) WebFetchProvider，web 能力 seam(ctx.web) 的实现包。负责安全资源获取（URL 校验、重定向策略、超时、字节上限、charset 解码、二进制拒绝）；SSRF/私有网络防护明确列为暂缓事项，注明是 SSRF 原语，敏感内网部署禁止启用。",
+        "history": "位于 packages/web/web-fetch-http，2026-08-10 首批发布，0.1.0-rc.6 转公开。与 dsh-tool-web（呈现）职责分离；属于实现包，注册 ctx.web 提供方但不拥有该键、不注册模型工具。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/web/web-fetch-http/README.zh.md",
+          "https://registry.npmjs.org/@deepseek-ai/dsh-web-fetch-http"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-agent-default-model",
@@ -1422,7 +1877,15 @@
         "AGENT_DEFAULT_MODEL_SETTINGS_NAMESPACE"
       ],
       "path": "packages/core/agent-default-model",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "为无会话级模型选择的新建 agent 提供部署默认 provider/model（headless/ApiProxy 共用）。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/core/agent-default-model/README.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-agent-presets",
@@ -1437,7 +1900,16 @@
         "settings 命名空间 'agent-presets'"
       ],
       "path": "packages/preset/agent-presets",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "按 preset 目录（agent.cordis.yml）做每会话 agent 组合，会话经 scope 父链加入常驻挂载，冷读也可解析。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/preset/agent-presets/README.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-08-03-per-session-agent-presets.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-commands",
@@ -1454,7 +1926,16 @@
         "parseCommand/CommandId"
       ],
       "path": "packages/interaction/commands",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "插件拥有、供交互式 UI 适配器使用的用户斜杠命令注册表。命令在 UI 命令平面执行、结果绝不进入模型历史，让人类与模型交互分离，避免未知命令变成模型提示词；注册/移除通过 commands/change 通知运行中适配器刷新。",
+        "history": "位于 packages/interaction/commands，2026-08-10 首批发布，0.1.0-rc.6 转公开。随产品基础组合(dsh base)挂载，Web 客户端经其分派命令；无 UI 的 headless/ACP 不提供命令适配器。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/interaction/commands/README.zh.md",
+          "https://registry.npmjs.org/@deepseek-ai/dsh-commands"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-goal",
@@ -1471,7 +1952,16 @@
         "@Remote API"
       ],
       "path": "packages/goal/goal",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "解决 agent 长任务执行缺乏「持久目标状态」的问题：在既有会话内维护一个事件溯源的当前目标（含 phase/revision/续行权限），提供 create/edit/pause/resume/complete/block/clear 等动词。其核心价值是让长期目标在会话恢复/fork 后仍保真，同时把目标与继续执行权限分离、绝不持久化续行状态，为 goal-round-driver 等策略层提供可靠状态底座。",
+        "history": "来自 packages/goal/goal，伴随 goal 领域（2026-07-19 同会话目标领域 Agent Note）从简单状态演进为事件溯源+严格回放校验的服务，与 tool-goal、goal-round-driver 构成目标子系统三件套。",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/goal/goal/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-07-19-persisted-same-session-goal-domain.md"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-jobs-local",
@@ -1487,7 +1977,16 @@
         "TASK_WAIT_TIMEOUT"
       ],
       "path": "packages/jobs/jobs-local",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "解决 agent 后台任务（jobs）的进程内注册表实现：提供 LocalJobRegistry，按所属者(owner)管理并发上限（默认 10），任务归属 owner/后端而非执行光纤，使生产者与控制器重载后任务不中断，为模型提供 job_kill/等待/重试等容错语义。",
+        "history": "定位为 @deepseek-ai/dsh-jobs 注册契约的进程本地方案。已知局限：任务随进程死亡，跨重启的持久化需独立后端实现同一 seam。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/jobs/jobs-local/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-jobs-local"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-llm-retry",
@@ -1503,7 +2002,16 @@
         "llm-retry-invariant"
       ],
       "path": "packages/llm/llm-retry",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "按 provider 路由的 LLM 请求重试策略插件，为 LLM seam 注入容错。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-llm-retry",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/llm/llm-retry"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-message-feedback",
@@ -1517,7 +2025,16 @@
         "messageFeedback Typert Remote（list/put/delete）"
       ],
       "path": "packages/feedback/message-feedback",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "生命周期绑定的逐消息评分与备注旁路数据（feedback 能力族）。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-message-feedback",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/feedback/message-feedback"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-sandbox-policy",
@@ -1532,7 +2049,17 @@
         "ctx.systemPrompt context: sandbox:policy"
       ],
       "path": "packages/sandbox/sandbox-policy",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "沙箱策略解析的唯一所有者（ctx.sandboxPolicy）：统一为每次调用解析部署默认与每会话持久覆盖的 SandboxMode（read-only / workspace-write / danger-full-access）及不可变工作区根。若 FS 工具、单次 bash、终端会话各自解析 mode+workspaceRoot，会漂移成分裂的世界——此插件正是为防止策略分裂而生，默认 read-only 故障安全。",
+        "history": "2026-07-06 sandbox 决策划定能力边界（进程约束缝，bwrap/Landlock/Seatbelt 后端）；2026-07-14 cross-family fs sandbox 决策让文件系统/子进程共享同一策略；策略由单个事件写入、重放可恢复。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/sandbox/sandbox-policy",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-07-06-sandbox.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/subsystems/sandbox.md"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-session-projection-cache",
@@ -1545,7 +2072,15 @@
         "ctx.sessionProjectionCache（SessionProjectionCache 服务）"
       ],
       "path": "packages/session/session-projection-cache",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "投影缓存：持久化每个投影单元的检查点，日志领先缓存、写失败可自愈，让列表读取零 I/O、冷读免全量回放。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/session/session-projection-cache"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-session-reference",
@@ -1563,7 +2098,15 @@
         "untrusted 只读 'Referenced sessions' prompt 前缀"
       ],
       "path": "packages/context/session-reference",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "跨会话引用：把其他会话做成有界只读快照作为模型上下文，`@[label](dsh-session:...)` 提及语法，快照非权威、禁止跟随其中指令。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/context/session-reference"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-session-stats",
@@ -1576,7 +2119,15 @@
         "sessionStats 投影单元（key 'sessionStats'）"
       ],
       "path": "packages/session/session-stats",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "注册 sessionStats 投影单元，从日志折算 turn/step 数与各阶段耗时的会话统计。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/session/session-stats/README.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-session-title",
@@ -1593,7 +2144,16 @@
         "fallbackSessionTitle/foldSessionTitle"
       ],
       "path": "packages/session/session-title",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "基于会话日志的标题服务：确定性回退 + 可选异步 provider，每个接受的标题都是 session/title 日志事件。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/session/session-title/README.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-07-21-log-backed-session-titles.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-time-context",
@@ -1608,7 +2168,16 @@
         "source.kind='plugin' form='snapshot' 的会话事件写入"
       ],
       "path": "packages/context/time-context",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "可选的按步骤持久上下文，注入当前时间与经过时间，供模型感知时间。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-time-context",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/context/time-context"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-tmux-context",
@@ -1624,7 +2193,15 @@
         "source.kind='plugin' form='snapshot' 会话事件写入"
       ],
       "path": "packages/context/tmux-context",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "可选持久上下文：命名本进程所在 tmux session/window/pane 及布局，每轮变化时注入；用 tty 比对排除从祖先继承 $TMUX 的情况。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/context/tmux-context"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-token-meter",
@@ -1641,7 +2218,16 @@
         "TokenMeterConfig"
       ],
       "path": "packages/llm/token-meter",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "通过单例 ctx.tokenMeter 提供回放感知的 token 测量：从持久日志为每会话推进隔离 fold，压缩(compaction)等压力敏感插件共享计量，无需依赖 CompactionEngine。用固定启发式（4字符≈1token+结构开销）估算，保证测量与模型路由/压缩解耦。",
+        "history": "位于 packages/llm/token-meter，2026-08-10 首批发布，0.1.0-rc.6 转公开。dsh-compaction-basic 的默认计量依赖；提供 tokenUsage/contextPressure/contextBreakdown 三个会话投影单元。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/llm/token-meter/README.zh.md",
+          "https://registry.npmjs.org/@deepseek-ai/dsh-token-meter"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-user-approval",
@@ -1658,7 +2244,16 @@
         "setApprovalPolicy/effectiveApprovalPolicy/APPROVAL_POLICIES"
       ],
       "path": "packages/interaction/user-approval",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "Harness 的人机审批接缝 ctx.approval：一次性权限决策经 approval/request 瀑布分发给各 answerer，默认 fail-closed（无 answerer 即拒绝）。它为工具流水线的 ask 决策和沙箱 bash 提级重试提供安全阀，模型只看到被记录的最终工具结果，审计事件仅入日志。解决'Agent 工具执行前如何获得人的一次许可'的安全性问题。",
+        "history": "自 approval-seam 设计（2026-07-06 Agent Note）演进为渠道无关的一次性审批服务，同时用于 ACP 自动化桥的机器决策。策略仅 ask/never 两态，无 allow-always/撤销/持久授权，均列为 deferred。版本 0.1.0-rc.5。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/interaction/user-approval/README.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/interaction/user-approval/package.json"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-user-questions",
@@ -1674,7 +2269,15 @@
         "wire-safe 类型出口"
       ],
       "path": "packages/interaction/user-questions",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "用户交互 Service Definition，定义 ctx.userQuestions 供工具/权限插件暂停工作向人类提问并等待回答。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/interaction/user-questions/README.zh.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-web-search-deepseek",
@@ -1689,7 +2292,16 @@
         "Session 事件 web/deepseek-search-llm-request"
       ],
       "path": "packages/web/web-search-deepseek",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "DeepSeek 驱动的搜索提供方（经 Anthropic 兼容 API 的原生 web_search），web seam 的搜索实现。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-web-search-deepseek",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/web/web-search-deepseek"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-workspace",
@@ -1702,7 +2314,15 @@
         "ctx.workspaceRegistry（WorkspaceRegistry 服务）"
       ],
       "path": "packages/workspace/workspace",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "工作区实体注册表：持久化工作区记录、顺序与最新优先的候选会话索引。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/workspace/workspace/README.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-bash-sandbox",
@@ -1717,7 +2337,16 @@
         "result.sandbox 事实"
       ],
       "path": "packages/shell/bash-sandbox",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "消费 ctx.sandbox 的 bash 执行器实现：每条命令经沙箱约束 spawn，报告拒绝/执行事实，无沙箱则 fail-closed。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/shell/bash-sandbox/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-bash-sandbox"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-command-compact",
@@ -1730,7 +2359,16 @@
         "/compact 命令"
       ],
       "path": "packages/compaction/command-compact",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "面向用户的斜杠命令，显式触发会话压缩（compact）。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-command-compact",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/compaction/command-compact"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-command-feedback",
@@ -1745,7 +2383,15 @@
         "recordFeedback()"
       ],
       "path": "packages/feedback/command-feedback",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "会话反馈采集，导出 recordFeedback() 并以 /feedback 命令收集用户反馈，附会话共享策略披露。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/feedback/command-feedback/README.zh.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-command-goal",
@@ -1759,7 +2405,15 @@
         "GoalCommand 语法解析与渲染"
       ],
       "path": "packages/goal/command-goal",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "面向用户的 /goal 命令控制，基于 ctx.goals 持久 goal 栈：无需模型轮次即可展示/创建/编辑/暂停/恢复/清除目标，并将完成度、Round 计数与续行（autocontinue）状态暴露给 UI 与同会话驱动器，解决长任务『目标不可见、无续跑机制』的问题。",
+        "history": "通过 ctx.commands 注册全局命令，由 2026-07-19 的 human-goal-command Agent Note 决策演进而来；仅纯文本交互，适配器专用徽标等 UI 化能力列为暂缓。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/goal/command-goal/README.zh.md"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-compaction-tool-result-pruner",
@@ -1775,7 +2429,16 @@
         "surfaceOp replace 重写"
       ],
       "path": "packages/compaction/compaction-tool-result-pruner",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "回放安全、无模型的 head/middle/tail 修剪器，用于压缩工具结果表层节点。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-compaction-tool-result-pruner",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/compaction/compaction-tool-result-pruner"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-fs-sandbox",
@@ -1790,7 +2453,15 @@
         "fs-sandbox-invariant 伴生插件"
       ],
       "path": "packages/fs/fs-sandbox",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "带沙箱执行策略的文件系统后端：对 write/edit 按模式加 per-call 围栏。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/fs/fs-sandbox/README.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-goal-round-driver",
@@ -1805,7 +2476,16 @@
         "goal-round 消息源"
       ],
       "path": "packages/goal/goal-round-driver",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "ctx.goals 的同会话续行驱动器：把 active 且启用续行的目标转为连续 Goal Round，排队 <goal_round> 提示词并计轮数。",
+        "history": "",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/goal/goal-round-driver/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-07-19-same-session-goal-round-driver.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-permission-presets",
@@ -1822,7 +2502,15 @@
         "permission settings 命名空间"
       ],
       "path": "packages/interaction/permission-presets",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "面向用户的权限预设服务，把 sandbox/mode 与 approval/policy 打包成可一键切换的预设选择器。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/interaction/permission-presets/README.zh.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-pwsh-sandbox",
@@ -1837,7 +2525,15 @@
         "result.sandbox 事实"
       ],
       "path": "packages/shell/pwsh-sandbox",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "PowerShell 沙盒执行器：经 ctx.sandbox 隔离每条 pwsh 命令，受限模式 fail-closed 报告拒绝事实。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/shell/pwsh-sandbox/README.zh.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-session-title-all-prompts-llm",
@@ -1852,7 +2548,16 @@
         "LLM 生成标题（语言感知 system prompt + JSON 围栏）"
       ],
       "path": "packages/session/session-title-all-prompts-llm",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "会话标题的 LLM 提供方插件：用全部用户消息生成标题。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-session-title-all-prompts-llm",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/session/session-title-all-prompts-llm"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-session-title-first-prompt-llm",
@@ -1866,7 +2571,16 @@
         "Config schema(复用共享字段)"
       ],
       "path": "packages/session/session-title-first-prompt-llm",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "会话标题的 LLM 提供方插件：用首条消息生成标题。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-session-title-first-prompt-llm",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/session/session-title-first-prompt-llm"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-terminal-bash",
@@ -1879,7 +2593,15 @@
         "ctx.terminals 的 PTY backend type='shell'（config.ts:45 backendType 默认 'shell'）"
       ],
       "path": "packages/terminal/terminal-bash",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "ctx.terminals 的持久 shell 后端：基于 PTY 的交互式 bash 会话管理。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/terminal/terminal-bash/README.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-tools",
@@ -1900,7 +2622,17 @@
         "tools-invariant 伴随插件"
       ],
       "path": "packages/core/tools",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "作为『一切皆插件』架构的执行中枢，为所有工具插件提供统一的注册表与执行管线：工具插件在此注册 schema 与 executor，管线依次经过 pre-execute 策略门（allow/deny/ask）→ guard → execute 包装（超时/重试/指标）→ post-execute 改写 → 结果冻结，并支持并行/独占并发分类与协作式取消。解决 Agent 框架最核心问题——工具如何被定义、向模型呈现、被策略拦截、被安全执行。",
+        "history": "core 产品组『产品 API 脊梁』之一（stable API），与 session/system-prompt/agent 并列；随仓库 2026-06 起步、2026-08-13 公开。迭代出 Code Mode（run_code 传输）、canonical tool output 契约、render-intent 卡片体系等。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/core/tools",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/architecture.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/tool-execution-pipeline.md"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-web-search-exa",
@@ -1916,7 +2648,16 @@
         "Exa 搜索归一化映射（highlight→snippet, publishedDate→publishedAt）"
       ],
       "path": "packages/web/web-search-exa",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "Exa 支撑的 ctx.web 能力 seam 搜索 provider：调用 Exa /search 并把结果映射为标准化 WebSearchResult。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/web/web-search-exa/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-web-search-exa"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-web-search-perplexity",
@@ -1932,7 +2673,16 @@
         "Perplexity 搜索归一化（生成答案→content + 引文 sources）"
       ],
       "path": "packages/web/web-search-perplexity",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "Perplexity 驱动的搜索提供方，web capability seam 的替代实现。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-web-search-perplexity",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/web/web-search-perplexity"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-agent-instructions",
@@ -1948,7 +2698,16 @@
         "agent-instructions 源 user/message 注入"
       ],
       "path": "packages/context/agent-instructions",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "解决 AGENTS.md 式工作区指令注入问题：按会话加载用户全局与项目指令链（$DSH_HOME/AGENTS.md + 项目根到 cwd 的候选文件），折叠进首个请求；并在成功的文件系统工具调用后增量发现嵌套文件、报告改动/删除，避免指令与磁盘漂移，是产品级 agent 上下文治理的关键。",
+        "history": "定位为 per-session 工作区指令加载插件，使用持久化 user/message 事件（system-reminder 包裹），支持 SHA-1 摘要去重、tombstone 删除标记、compaction 重装载。README 详细描述生命周期与状态刷新机制。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/context/agent-instructions/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-agent-instructions"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-agent-loop",
@@ -1966,7 +2725,16 @@
         "agent-loop-invariant 伴随插件"
       ],
       "path": "packages/core/agent-loop",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "agent 的唯一具体实现与循环驱动器：作为 harness 中唯一包含具体循环逻辑的包，实现 Agent 接口并驱动会话、轮次与步骤生命周期，创建/恢复/取消/持久化恢复全部收拢到一个受回滚保护的事务边界，其余一切皆作为插件挂在事件分类体系上扩展。",
+        "history": "位于 core 目录的 AgentLoop 服务（ctx.agentLoop），核心定位是『循环内部只做调用模型/运行工具/重复』，钩子/压缩/沙箱/子代理等全部外置为事件监听插件，是 Everything is a Plugin 架构的循环中枢。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/core/agent-loop/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-agent-tool-presentation",
@@ -1981,7 +2749,16 @@
         "tool-presentation-invariant 伴随插件"
       ],
       "path": "packages/core/agent-tool-presentation",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "解决「工具注册表无法下沉进 preset」的矛盾：工具的消费者（agent-loop 调度器、apiproxy 的 presenter、各工具插件）全在宿主平面，preset 唯一能拥有的只是这份注册表的呈现方式。该插件作为 agent preset 中一行声明，指定模型看到的工具是 native（全 schema）、code（仅 run_code + 生成 TypeScript SDK）还是 both，使 Code Mode 会话可与 native 会话同进程并存。code 模式同时决定可调用面：注册表把模型直呼其他工具名解析为 UNKNOWN_TOOL，保证通告面与可调用面一致。",
+        "history": "位于 packages/core/agent-tool-presentation，agent 平面呈现选择器，0.1.0-rc.6（2026-08-13）由 @deepseek-ai 发布，2026-08-12 首版 0.0.1-rc.3。强调 mode 必填、每个 agent 只声明一次，第二次声明会被拒绝而非合并。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/core/agent-tool-presentation/README.zh.md",
+          "https://registry.npmjs.org/@deepseek-ai/dsh-agent-tool-presentation"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-compaction-basic",
@@ -1997,7 +2774,16 @@
         "compaction/start|summary|end 事件 + surfaceOp replace"
       ],
       "path": "packages/compaction/compaction-basic",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "token-meter 驱动的压缩策略 + LLM 摘要后端，compaction 能力族默认实现。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-compaction-basic",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/compaction/compaction-basic"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-cordis-host-runner",
@@ -2013,7 +2799,16 @@
         "dynamic 相关 Typert Remote"
       ],
       "path": "packages/extensions/cordis-host-runner",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "模型动态加载 Cordis 插件的 host 侧：define/run/stop 生命周期、node:vm 沙箱求值、浏览器半的 run 往返与 invoke 路由。",
+        "history": "",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/extensions/cordis-host-runner/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/extensions"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-hooks-codex",
@@ -2029,7 +2824,15 @@
         "inject ['shell']"
       ],
       "path": "packages/hooks/hooks-codex",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "Codex hook 桥：把用户既有 .codex/hooks.json 的 5 个钩子点映射到 harness 的规范拦截点，作为兼容路径而非原生能力。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/hooks/hooks-codex"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-plan-mode",
@@ -2047,7 +2850,15 @@
         "systemPrompt section plan:policy"
       ],
       "path": "packages/plan/plan-mode",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "per-agent 的日志化计划协作状态：/plan 命令、plan:policy 提示与 exit_plan_mode 退出。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/plan/plan-mode/README.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-repeat-tool-reminder",
@@ -2062,7 +2873,16 @@
         "配置 thresholds/include/exclude"
       ],
       "path": "packages/guard/repeat-tool-reminder",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "仅建议的循环中断器：监控相同规范化参数连续调用同一工具的次数，达阈值注入逐级提醒，绝不否决调用。",
+        "history": "",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/guard/repeat-tool-reminder/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/archived/feature/2026-07-08-repeat-tool-guard.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-schedule",
@@ -2076,7 +2896,16 @@
         "每 root agent 的 ScheduleRuntime 实例"
       ],
       "path": "packages/schedule/schedule",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "会话本地提醒：持久状态存于原会话日志，进程内计时器只在会话有活根 Agent 时等待，到期工作经普通后续队列进同一对话。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/schedule",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/subsystems/schedule.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-session-checkpoint-policy",
@@ -2091,7 +2920,15 @@
         "ctx.on('agent/pre-step') 每步 flush"
       ],
       "path": "packages/session/session-checkpoint-policy",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "语义持久化检查点策略：在模型请求前/工具副作用前/pre-step 边界强制刷新事件日志，失败即拒，防止崩溃丢事件。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/session/session-checkpoint-policy"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-shell-env",
@@ -2106,7 +2943,16 @@
         "session-persistence contributor(DSH_SESSION_JSONL)"
       ],
       "path": "packages/shell/shell-env",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "解决模型可见 shell 工具缺乏可信、受管环境的问题：拥有 ctx.shellEnv 注册表，为每次 shell 调用收集可信 DSH_* 变量（DSH_HOME/DSH_SHELL/DSH_SESSION_ID 等），内置键归自身、其他插件可注册贡献。其核心价值是让 bash/pwsh 工具拿到经过身份标注、防嵌套 harness 身份泄漏的一致环境快照，且永不修改 process.env，成为 shell 执行器的环境事实来源。",
+        "history": "位于 packages/shell/shell-env，作为工具无关的 shell 环境层与 dsh-tool-bash/pwsh 强耦合，属 shell 子系统基础件；随持久化 seam 演进新增 DSH_SESSION_JSONL 等动态键，保持注册表单点管理。",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/shell/shell-env/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-spill-policy",
@@ -2120,7 +2966,16 @@
         "tools/code-dispatch-log prepend 日志溢出转存"
       ],
       "path": "packages/spill/spill-policy",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "工具结果 spill 策略：tools/post-execute 转换器，超过 maxInlineBytes 的纯文本结果保存到 spillStore 并替换为有界首尾预览+取回指引。",
+        "history": "",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/spill/spill-policy/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-07-08-tool-output-spill-files.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-subagent",
@@ -2137,7 +2992,17 @@
         "SubagentRunId/descriptor 折叠/快照"
       ],
       "path": "packages/subagent/subagent",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "子 Agent 能力族的核心契约：定义 provider 注册、委派与续跑接口（ctx.subagents），让主 Agent 能把任务委派给子 Agent 并隔离上下文/token 成本。背后挂接多种 provider——进程内 spawn/fork、进程外 ACP、Claude Code/Codex、完整 DSH runtime，解决『一个接口背后变化极大的子 Agent 执行世界』问题。",
+        "history": "2026-06-21 子 Agent capability seam 决策确立契约；2026-07-21 引入 continuable background subagents（可续跑后台子代理）；2026-07-26 合并 subagent control service 简化控制面。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/subagent",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/subsystems/subagent.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-06-21-subagent-capability-seam.md"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-tool-ask-user",
@@ -2150,7 +3015,16 @@
         "tool: ask_user_question"
       ],
       "path": "packages/interaction/tool-ask-user",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "面向模型的 ask_user_question 工具，经 ctx.userQuestions seam 向人类提问。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-tool-ask-user",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/interaction/tool-ask-user"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-tool-bash-persistent",
@@ -2163,7 +3037,15 @@
         "tool: bash（owner 作用域持久 shell）"
       ],
       "path": "packages/shell/tool-bash-persistent",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "模型面向的 bash() 工具，复用 owner-scoped 持久 shell（cwd/环境跨调用保留）。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/shell/tool-bash-persistent/README.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-tool-call-timeout-policy",
@@ -2177,7 +3059,17 @@
         "常量 TOOL_TIMEOUT"
       ],
       "path": "packages/guard/timeout-policy",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "集中式工具调用超时策略插件：作为 tools/execute waterfall 包装器，读取各工具声明的 timeoutMs，派生 per-tool 截止信号赋给 exec.signal，超时返回 TOOL_TIMEOUT。核心理念：工具作者只需转发 exec.signal，预算由部署策略决定；超时声明放在工具定义上，避免拼错名称致策略失效；零配置，位于 packages/guard。",
+        "history": "由 2026-07-07 tool-call-timeout-policy Agent Note 定案（先提取共享 deadline/timeout 库，再插件化进 tools/execute 环绕分发扩展点）；2026-08-12 发布 0.0.1-rc.3。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-07-07-tool-call-timeout-policy.zh.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-tool-call-timeout-policy",
+          "https://github.com/deepseek-ai/deepseek-harness"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-tool-fs",
@@ -2193,7 +3085,16 @@
         "ctx.systemPrompt section: tool:read/write/edit"
       ],
       "path": "packages/fs/tool-fs",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "面向模型的文件系统工具（read/read_image/write/edit）及其执行器：ctx.fs seam 的 consumer 层，含读窗口化。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/fs/tool-fs/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-tool-fs"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-tool-fs-search",
@@ -2209,7 +3110,16 @@
         "SEARCH_* 错误词汇"
       ],
       "path": "packages/fs/tool-fs-search",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "面向模型的文件发现工具 glob/grep，由打包 ripgrep 二进制支持（经 ctx.subprocess），不依赖宿主 rg 安装。",
+        "history": "",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/fs/tool-fs-search/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/fs"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-tool-goal",
@@ -2224,7 +3134,16 @@
         "execution-time authority 校验"
       ],
       "path": "packages/goal/tool-goal",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "面向模型的同会话目标工具，带执行时权威检查（ctx.goals）。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-tool-goal",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/goal/tool-goal"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-tool-jobs",
@@ -2241,7 +3160,16 @@
         "tools/pre-execute 输出限制监听"
       ],
       "path": "packages/jobs/tool-jobs",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "给模型提供后台任务控制工具（job_output/job_list/job_kill），管理 ctx.jobs 注册表中的通用后台任务。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-tool-jobs",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/jobs/tool-jobs/README.zh.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-tool-lsp",
@@ -2256,7 +3184,16 @@
         "render.ts 渲染/归一化工具导出(parseLspArgs/presentLspCall)"
       ],
       "path": "packages/lsp/tool-lsp",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "给模型提供基于 ctx.lsp 能力 seam 的只读 lsp 工具，做精确代码导航：单工具四种操作（goToDefinition/findReferences/goToImplementation/hover），1 起始 UTF-16 光标坐标并自动转换 seam 的 0 起始位置。用于文本匹配歧义或改动前需要精确定义/实现/引用时，补充 search/read 的不足。不导入任何提供方，携带模型 schema、提示词指引（顺序 112）、结果限制（maxLocations=100/maxResultChars=16000）与 UI 呈现。",
+        "history": "位于 packages/lsp/tool-lsp，随 monorepo 2026-08-10 首版 0.0.1-rc.1，0.1.0-rc.6（2026-08-13）公开发布。设计依据 seam Agent Note（2026-07-15），明确不承诺跨语言/服务器的完整性。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/lsp/tool-lsp/README.zh.md",
+          "https://registry.npmjs.org/@deepseek-ai/dsh-tool-lsp"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-tool-session-query",
@@ -2272,7 +3209,15 @@
         "TEXT_OUTPUT 文本渲染（presentation.formatSessionSearch 等）"
       ],
       "path": "packages/session-query/tool-session-query",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "工作区授权的会话检索工具集：session_search/event_search/trace/read，默认不挂载。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/session-query/tool-session-query/README.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-tool-skill",
@@ -2287,7 +3232,16 @@
         "user 显式 /<skill> 调用注入"
       ],
       "path": "packages/skill/tool-skill",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "DeepSeek Harness 的模型侧技能加载工具，让模型按需加载 skill 能力（提供方注册表 + 本地提供方 + 目录/loader）。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-tool-skill",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/skill/tool-skill/README.zh.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-tool-str-replace-editor",
@@ -2301,7 +3255,16 @@
         "fs/observed 发射、fs/write-intent|fs/edit-intent 触发"
       ],
       "path": "packages/fs/tool-str-replace-editor",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "独立面向模型的 str_replace_editor 工具（view/create/str_replace/insert）over ctx.fs，可配任意 bash 面。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/fs/tool-str-replace-editor/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-tool-str-replace-editor"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-tool-terminal",
@@ -2315,7 +3278,16 @@
         "dsh-jobs JobKindMap 扩展 'pty-send'"
       ],
       "path": "packages/terminal/tool-terminal",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "基于 ctx.terminals 的 6 个终端工具（open/send/read/signal/close/list），要求同一 Agent 实例，支持后台 PTY 任务。",
+        "history": "",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/terminal/tool-terminal/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/terminal"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-tool-todo",
@@ -2330,7 +3302,16 @@
         "todos session projection"
       ],
       "path": "packages/todo/tool-todo",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "面向模型的 todo_write 工具，建立在事件源会话日志之上。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-tool-todo",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/todo/tool-todo"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-api-remotes",
@@ -2346,7 +3327,16 @@
         "createApiRemoteAgentResolver / hasApiRemoteSubagentOwner"
       ],
       "path": "packages/api/remotes",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "为 Web Host Remote 能力提供双侧 BFF：Host 侧负责 Agent/Session 身份查找策略（复用 live agent、恢复冷会话、并发去重、subagent ownership fence），Client 侧以运行时值挂载 /remote 产物。让客户端业务包依赖此外观，不依赖 Gateway 实现或单独 Remote 运行时入口，实现前后端远程能力解耦。",
+        "history": "位于 packages/api/remotes（npm 元数据最早标注 packages/api/api-remotes，后修正为 remotes），2026-08-10 发布，0.1.0-rc.6 转公开。仓库中唯一刻意拆分 Host/Client 双 TypeScript face 的包。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/api/remotes/README.zh.md",
+          "https://registry.npmjs.org/@deepseek-ai/dsh-api-remotes"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-client-modules",
@@ -2363,7 +3353,15 @@
         "dsh.client 声明解析（inject/immediately/platform）"
       ],
       "path": "packages/client/modules",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "客户端模块系统：node 半区组 __DSH_BOOT__ 入口图（dsh.client 扫描/打包路由），浏览器半区是 Cordis Loader 消费的懒加载 CJS 模块表。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/modules/package.json"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-hooks-claude-code",
@@ -2379,7 +3377,15 @@
         "inject ['shell']"
       ],
       "path": "packages/hooks/hooks-claude-code",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "Claude Code hook 桥：把用户既有 hooks.json（或 settings hooks 键）映射到 harness 拦截点，只实现 shell command 钩子子集。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/hooks/hooks-claude-code"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-sdk-jsonrpc-server",
@@ -2395,7 +3401,16 @@
         "shutdown 协议控制进程退出"
       ],
       "path": "packages/sdk/server",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "SDK 运行时服务端：以换行分隔 JSON-RPC over stdio 让进程外 SDK 客户端驱动 harness agents，stdout 严格只跑协议帧。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/sdk/server",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/sdk/protocol"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-subagent-acp",
@@ -2410,7 +3425,17 @@
         "PermissionPolicy 权限应答"
       ],
       "path": "packages/subagent/subagent-acp",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "子 Agent 的进程外 ACP 提供者：每个子 Agent 在新子进程中以 Agent Client Protocol 客户端驱动，子进程拥有自己的 runtime、session、模型配置与工具，不继承父会话上下文。是 spawn/fork 的进程外替代，让 DSH 能驱动任何 ACP 协议 Agent（不限于 DSH 自家 runtime），实现彻底的执行世界隔离与 token 隔离。",
+        "history": "2026-06-21 子 Agent capability seam 决策后出现的第一个进程外后端；postmortem 0001 记录默认导出丢失 inject 元数据的教训。每 run 全新进程，无进程池。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/subagent/subagent-acp",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-06-21-subagent-capability-seam.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/postmortem/0001-acp-default-export-drops-inject.md"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-subagent-claude-code",
@@ -2425,7 +3450,15 @@
         "disposeGraceMs 进程树终止控制"
       ],
       "path": "packages/subagent/subagent-claude-code",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "注册 claude-code 子代理 provider：在父会话工作区调用官方 Claude Agent SDK。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/subagent/subagent-claude-code/README.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-subagent-codex",
@@ -2440,7 +3473,16 @@
         "wire.ts: JsonRpcLineTransport 帧适配"
       ],
       "path": "packages/subagent/subagent-codex",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "ACP 子代理 provider（对应仓库目录 subagent-acp，Codex 场景）：每子代理独立子进程按 Agent Client Protocol 驱动，冷启动隔离环境。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/subagent/subagent-acp/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-subagent-codex"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-subagent-dsh-sdk",
@@ -2455,7 +3497,16 @@
         "子 runtime provider/model/maxTokens 配置"
       ],
       "path": "packages/subagent/subagent-dsh-sdk",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "进程外完整 DSH runtime 子 Agent：经 stdio JSON-RPC 驱动一个完整 peer harness（自有 cordis.yml 组合/持久化/模型路由），子进程能力完全自治。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/subagent/subagent-dsh-sdk",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-07-27-typescript-sdk-and-sdk-subagent-backend.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-subagent-fork-in-process",
@@ -2469,7 +3520,16 @@
         "继承父上下文能力声明"
       ],
       "path": "packages/subagent/subagent-fork-in-process",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "进程内 fork 子 Agent：以父会话已完成轮次为种子新建子 Agent，只继承历史不继承权限/工具限制，并保持 one-shot 以保护前缀缓存。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/subagent/subagent-fork-in-process",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-08-10-fork-children-stay-one-shot.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-subagent-spawn-in-process",
@@ -2483,7 +3543,16 @@
         "子代理能力声明: outputSchema/depthLimit/toolFilter/persona"
       ],
       "path": "packages/subagent/subagent-spawn-in-process",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "进程内 spawn 子 agent 后端：在 ctx.agents 上运行全新子 agent，是 subagent 提供方的一种进程内实现（spawn 模式传输层）。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-subagent-spawn-in-process",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/subagent/subagent-spawn-in-process/README.zh.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-tool-bash",
@@ -2498,7 +3567,16 @@
         "ctx.systemPrompt section: tool:bash"
       ],
       "path": "packages/shell/tool-bash",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "模型侧 bash 工具：注册在 ctx.shell 执行器 seam，前台/后台执行、DSH_* 环境注入、可选沙箱升权与审批流。",
+        "history": "",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/shell/tool-bash/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/shell"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-tool-cordis",
@@ -2515,7 +3593,15 @@
         "inject ['tools','systemPrompt','dynamicCordisRunner','cordisInspect']"
       ],
       "path": "packages/extensions/tool-cordis",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "自指式 Cordis 工具集：cordis_inspect/define/run/stop/undefine，操作进程内动态插件。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/extensions/tool-cordis/README.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-tool-pwsh",
@@ -2531,7 +3617,16 @@
         "ctx.systemPrompt section: tool:pwsh"
       ],
       "path": "packages/shell/tool-pwsh",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "面向模型的 pwsh 工具 over ctx.shell executor seam，专供 Windows 组合，行为逐调用镜像 dsh-tool-bash。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/shell/tool-pwsh/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-tool-pwsh"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-tool-subagent",
@@ -2546,7 +3641,16 @@
         "后台委派作业路由(dsh-jobs + continuable)"
       ],
       "path": "packages/subagent/tool-subagent",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "给模型提供基于 ctx.subagents seam 的委派工具，解耦传输与执行约定：更换提供方（spawn/fork/acp 等）只改传输不改变执行约定。支持前台等待与后台运行（one-shot 经通用 Task 接口收集、continuable 返回持久化 subagentId），并发安全（同级委派可并行重叠执行、结果按模型顺序提交），并支持 persona、toolFilter、maxDepth 等每子 agent 独立配置。子 agent 在各自会话中工作，一次运行绝不变更父会话。",
+        "history": "位于 packages/subagent/tool-subagent，随 DeepSeek Harness monorepo 于 2026-08-10 首版 0.0.1-rc.1，0.1.0-rc.6（2026-08-13）转 MIT 并公开发布。核心设计源自多个 Agent Note：后台子任务（2026-07-08）、可继续对话（2026-07-28）、后台优先委派（2026-08-11）。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/subagent/tool-subagent/README.zh.md",
+          "https://registry.npmjs.org/@deepseek-ai/dsh-tool-subagent"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-tool-subagent-control",
@@ -2560,7 +3664,16 @@
         "可独立加载的 list_agents"
       ],
       "path": "packages/subagent/tool-subagent-control",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "全局命名 send_message/interrupt_agent/list_agents 工具，经 ctx.subagents continuations 控制子 agent。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-tool-subagent-control",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/subagent/tool-subagent-control"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-tool-subagent-report",
@@ -2575,7 +3688,16 @@
         "父调度策略 reportDelivery: quiet|wakeup"
       ],
       "path": "packages/subagent/tool-subagent-report",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "面向子 agent 的 report 工具，基于 ctx.subagents 可继续会话提供子作用域报告通道，支撑后台可继续子 agent 的结算/汇报。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-tool-subagent-report",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/subagent/tool-subagent-report/README.zh.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-tool-web",
@@ -2590,7 +3712,16 @@
         "presentation meta: WebSearchMeta/WebFetchMeta"
       ],
       "path": "packages/web/tool-web",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "给模型提供 Web 工具（web_search/web_fetch），封装 ctx.web 能力 seam，用 turndown+GFM 插件把 HTML 转 Markdown 供模型读取。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-tool-web",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/web/tool-web/README.zh.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-web-app",
@@ -2608,7 +3739,15 @@
         "URL 就绪行"
       ],
       "path": "packages/bundle/web-app",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "dsh 浏览器表面 bundle：在 base 之上插入 Web host 行与浏览器插件册，提供 web-runtime。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/bundle/web-app/README.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-workflow-worker-thread",
@@ -2623,7 +3762,16 @@
         "WorkerRun/materializeFromRealm/validateMeta"
       ],
       "path": "packages/workflow/workflow-worker-thread",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "WorkflowEngine 实现：每次运行一个 Node worker thread 执行模型编写的工作流编排脚本，子 agent 留在 host，经类型化协议通过 ctx.subagents 桥接。核心目的：同步脚本循环不阻塞 host 事件循环，且忽略取消的脚本可随 worker.terminate() 真正终止；明确非安全沙箱，worker 只做事件循环隔离、空环境与结构化克隆边界。",
+        "history": "2026-08-12 以 0.0.1-rc.3 发布，晚于首批基础包 2 天；作为 workflow seam 的 worker-thread 引擎，供 dsh-tool-workflow 面向模型消费。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/workflow/workflow-worker-thread/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-workflow-worker-thread"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-agent-spine-demo",
@@ -2639,7 +3787,16 @@
         "agent-spine-demo-invariant 伴随插件"
       ],
       "path": "packages/examples/agent-spine-demo",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "默认无执行器/无 UI 的 agent spine 作为单一 bundle 插件：装载每个 harness agent 所需的固定服务集，应用只加点与可换后端。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/examples/agent-spine-demo/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-agent-spine-demo"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-hmr",
@@ -2652,7 +3809,15 @@
         "/plugins/events SSE 通道（graph/rebuilt 帧，PluginsEventFrame）"
       ],
       "path": "packages/client/hmr",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "仅开发环境的热重载驱动：SSE 重建帧 → 失效/预取 → 经 vendored Loader 入口做 fiber 切换，加速客户端插件开发。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/hmr/package.json"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-host-apiproxy",
@@ -2665,7 +3830,15 @@
         "ctx.apiProxy（ApiProxy 网关：sessions/subagents/workspace/host/goals/skills/agentPresets/settings/credentials/llm/events/downloads/respond）"
       ],
       "path": "packages/host/apiproxy",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "所有客户端共用的 API 网关：TS 契约 + fetch 载体 + 网关插件，承载 session/host/events RPC。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/host/apiproxy/README.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-sdk-jsonrpc-demo",
@@ -2680,7 +3853,16 @@
         "runner.ts 共享进程生命周期"
       ],
       "path": "packages/examples/jsonrpc-demo",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "示例 bin（dsh-jsonrpc-agent），引导外部 Cordis 配置启动 stdio JSON-RPC SDK 运行时，演示进程外 SDK 集成方式。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-sdk-jsonrpc-demo",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/examples/jsonrpc-demo/README.zh.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-tool-ralph",
@@ -2696,7 +3878,16 @@
         "子代理路由校验(fresh+outputSchema)"
       ],
       "path": "packages/workflow/tool-ralph",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "给模型提供 fresh-agent Ralph 循环工具，基于 workflow 与 subagent 双 seam 运行全新子 agent 做独立任务编排。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-tool-ralph",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/workflow/tool-ralph/README.zh.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-tool-workflow",
@@ -2711,7 +3902,16 @@
         "Session 事件 tool-workflow/run-start|agent-start|agent-end|run-end"
       ],
       "path": "packages/workflow/tool-workflow",
-      "source_layer": "L1"
+      "source_layer": "L1",
+      "why": {
+        "text": "面向模型的工作流工具：经 ctx.workflowEngine 运行 JS 编排脚本。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-tool-workflow",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/workflow/tool-workflow"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-acp-demo",
@@ -2726,7 +3926,15 @@
         "完整可读 Config schema(provider/model/toolOrder/workspaceContext/skills/goals 等)"
       ],
       "path": "packages/examples/acp-demo",
-      "source_layer": "L3"
+      "source_layer": "L3",
+      "why": {
+        "text": "ACP 自动化服务器 app 示例：JSON-RPC stdio 一键跑无 UI 的 agent 服务。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/examples/acp-demo/README.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-connection",
@@ -2743,7 +3951,16 @@
         "HostConnectionHandle"
       ],
       "path": "packages/client/connection",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "解决浏览器客户端与 Node host 之间的协议通道问题：作为协议消费层，挂载共享 API 客户端、双流 WebSocket 下行、loopback 状态与单消费方流循环启动器。其核心价值是统一浏览器/进程内两种载体的通信抽象，并在 /api 上实现基于回环+trustedHosts 的浏览器信任栅栏，防御 DNS rebinding，为远程 web 部署奠定安全边界。",
+        "history": "位于 packages/client/connection，是 web 客户端侧基础设施层；随 web 表面与远程访问需求演进，沉淀出 WebSocket 下行载体（2026-08-04）与 API 浏览器信任边界（2026-07-28）两项架构决策，是 host-client 双向通信的唯一入口。",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/connection/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-07-28-api-browser-trust-boundary.md"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-session-log-export",
@@ -2758,7 +3975,16 @@
         "conversation.session.header.utilities slot 条目"
       ],
       "path": "packages/session-query/session-log-export",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "Web 会话日志导出：/export 斜杠命令 + Header 按钮 + 共享下载对话框，经 host apiproxy 的 ZIP 端点下载。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/session-query/session-log-export/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-session-log-export"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-runtime",
@@ -2778,7 +4004,17 @@
         "createSnapshotStore/defineStore/shallowEqual"
       ],
       "path": "packages/client/runtime",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "Web 客户端（浏览器侧）的引导与运行核心。它把 Host 端广播的会话事件流扇出到 Session/Workspace 对象，维护 SlotRegistry（渲染数据源）与 SessionRuntime（会话列表/作用域状态/事件窗口/历史分页），使浏览器无需持有任何实体即可以投影方式渲染 Agent 会话。它是 dsh 前端所有 UI 包依赖的对象层地基，解决'浏览器如何复现并驱动远端 Agent 会话'的问题。",
+        "history": "dsh 插件化架构的客户端三大件之一（runtime/ui-settings/ui-conversation），api-contracts v3→v4 演进，SlotCore→SlotRegistry 封装，SessionRuntime 与 WorkspaceRuntime 逐步拆分为独立服务层。版本 0.1.0-rc.5，随仓库 2026-08 公开。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/runtime/README.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/architecture.md"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-client-ui-settings",
@@ -2792,7 +4028,16 @@
         "settings 规范 slot 契约 (settings.section / settings.plugins.tab / settings.onboarding / settings.general.item 等类型声明)"
       ],
       "path": "packages/client/ui-settings",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "设置域的基础层插件（无自绘 UI 的两角色包）：提供 ctx.settingsScope（每个偏好行绑定的 Host 传输通道/命名空间作用域）并声明 settings.trigger/header/close/action/section/plugins.tab/onboarding 等 slot 契约，让任意拥有偏好的功能包都能读写其命名空间设置。解决'浏览器偏好如何分域、并发安全地读写 Host 设置文档'的机制问题。",
+        "history": "设置域的 base 契约层，与 ui-settings-general（shell 外壳）刻意分离以避免 ui-sidebar→ui-layout→ui-theme 的引用图环。RPC 仅 loopback、单字段写入等限制明确记录为 deferred work。版本 0.1.0-rc.5。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-settings/README.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-settings/package.json"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-client-locale",
@@ -2809,7 +4054,16 @@
         "命名空间：common、settings.locale"
       ],
       "path": "packages/client/locale",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "解决浏览器 UI 多语言需求：提供 zh/en 偏好存储（settings.yaml 中 locale.preference），并在浏览器端提供 ns×locale 字典注册表，支持框架注入的 t() 翻译座位，使 UI 文案可本地化并实时切换，是 Web 客户端的国际化基础设施。",
+        "history": "定位为 client 侧的 locale 运行时服务。2026-08-06 的 Host-backed preferences 决策确定了持久化边界（浏览器偏好由 Host settings 管理而非仅浏览器本地），早期部分界面仍保留内联文案。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/locale/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-client-locale"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-client-ui-settings-models",
@@ -2825,7 +4079,15 @@
         "ModelsSettingsStore / WelcomeNoticeStore (connection.api 上)"
       ],
       "path": "packages/client/ui-settings-models",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "模型设置与共享产品引导对话框，叠在既有设置与凭据连接之上。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-settings-models/package.json"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-settings-plugin-inventory",
@@ -2839,7 +4101,15 @@
         "settings.pluginInventory 字典命名空间"
       ],
       "path": "packages/client/ui-settings-plugin-inventory",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "Web 插件设置里的只读 Cordis Loader 清单标签页，展示已装载插件库存。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-settings-plugin-inventory/package.json"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-input-trigger",
@@ -2855,7 +4125,16 @@
         "slash.menu 字典"
       ],
       "path": "packages/client/ui-input-trigger",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "输入触发流水线：光标处 / 与 @ 检测、分组候选菜单、路由到已注册 source（如命令、引用插入），纯内核+React 壳分离。",
+        "history": "",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-input-trigger/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-settings-plugins",
@@ -2870,7 +4149,15 @@
         "BashCard / AgentLoopCard / WebSearchCard 三卡片"
       ],
       "path": "packages/client/ui-settings-plugins",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "插件设置分区：功能所属标签页 + 可配置的宿主平面插件卡片。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-settings-plugins/package.json"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-theme",
@@ -2888,7 +4175,15 @@
         "--dsw-* token stylesheets"
       ],
       "path": "packages/client/ui-theme",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "主题插件：Host 引导预插件调色板、DOM-free ThemeRuntime（light/dark/system）、--dsw-* token 样式与 Appearance 设置行。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-theme/package.json"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-web-react",
@@ -2906,7 +4201,16 @@
         "observableHook/maybeObservableHook/projectionHook"
       ],
       "path": "packages/client/web-react",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "Web GUI 浏览器侧的 React 胶水库（createSlotRenderer/SessionProvider/bindSnapshotSelector/useInvoke），供宿主 UI 插件渲染工具卡与交互。",
+        "history": "",
+        "sources": [
+          "https://registry.npmjs.org/@deepseek-ai/dsh-client-web-react",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/web-react/README.zh.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-layout",
@@ -2922,7 +4226,15 @@
         "ThemePresenter（theme→document.body）"
       ],
       "path": "packages/client/ui-layout",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "壳插件：三栏 AppFrame 带拖拽手柄 + ctx.layout 视图状态服务（导航+面板）。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-layout/package.json"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-cordis-client-runner",
@@ -2937,7 +4249,15 @@
         "ClientCordisInspectRegistry"
       ],
       "path": "packages/extensions/cordis-client-runner",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "动态双半插件包的浏览器半：把定义加载为实时浏览器插件并回退清理。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/extensions/cordis-client-runner/README.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-conversation",
@@ -2956,7 +4276,16 @@
         "ChatNodeDataMap: tool-call/assistant-step/command/manual-compaction/compaction/model-retry/turn-error/turn-max-tokens/turn-tail/command-input"
       ],
       "path": "packages/client/ui-conversation",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "Web 对话域核心 UI：会话骨架（skeleton）、有序聊天流、Host 支持的 busy-Enter 偏好作曲家与详情宿主。它把 SessionEvent 日志投影为可交互的 Chat 节点（助手/工具/重试/压缩/队列/规划条），解决'用户如何在浏览器中阅读并驱动一次 Agent 会话'的展示层问题，并作为 conversation.chat.node / details.tool 等 slot 的宿主与分发者。",
+        "history": "dsh 客户端三大件之一，属于 conversation 域 base 层。经历了 thinking-tail 滚动、重试节点稳定状态行、用户气泡去分支操作、Host-backed 偏好持久化等多个迭代决策（2026-07~08 Agent Notes），slot 化渲染体系随 web bundle 一起成型。版本 0.1.0-rc.5。",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-conversation/README.md",
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-conversation/package.json"
+        ],
+        "tier": "deep"
+      }
     },
     {
       "id": "dsh-client-ui-sidebar",
@@ -2970,7 +4299,15 @@
         "SidebarRoot 外壳（含折叠 rail）"
       ],
       "path": "packages/client/ui-sidebar",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "侧边栏插件：会话多级树、搜索、分组、状态点，组织会话导航。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-sidebar/package.json"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-web",
@@ -2987,7 +4324,16 @@
         "PLATFORM_MODULES（平台字表）"
       ],
       "path": "packages/client/web",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "Web shell 内核 bootWebShell（模块持有+种子表+两阶段启动+AppRoot 门+app-shell 组装入口），由 apps/web vite 入口消费。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/web-react/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-client-web"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-agent-preset",
@@ -3003,7 +4349,15 @@
         "settings.section 'agent-presets' (AgentPresetSection 名录/编辑器)"
       ],
       "path": "packages/client/ui-agent-preset",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "Agent 预设 UI：新会话默认预设、当前会话席位与组合编辑器，管理每个会话的能力集。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-agent-preset/package.json"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-commands",
@@ -3020,7 +4374,16 @@
         "command 字典"
       ],
       "path": "packages/client/ui-commands",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "Web 端斜杠命令体系：会话级命令目录缓存、/ 命令 source、execute/popupSelect/leadingInput 三类派发，让业务包可注册自定义命令。",
+        "history": "",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-commands/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-deliverables",
@@ -3036,7 +4399,15 @@
         "ConversationTurnDataMap 'deliverables' 合并"
       ],
       "path": "packages/client/ui-deliverables",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "产物文件 turn tail 与可点击的最终回复文件引用，展示 Agent 生成的可交付文件。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-deliverables/package.json"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-goal",
@@ -3052,7 +4423,15 @@
         "ChatNodeDataMap 'command-input' 合并"
       ],
       "path": "packages/client/ui-goal",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "会话目标 UI：停靠在作曲家上方的 GoalBar，从 goal 会话投影读取，展示同一会话内目标进度。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-goal/package.json"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-jobs",
@@ -3065,7 +4444,15 @@
         "conversation.session.header.actions id=job-list(JobListAction)"
       ],
       "path": "packages/client/ui-jobs",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "会话头后台任务列表：从 session/jobs 帧镜像实时注册表状态，展示后台 job 进度。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-jobs/package.json"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-message-feedback",
@@ -3079,7 +4466,15 @@
         "MessageFeedbackController（每 Session 对象层，status cold/loading/ready/error）"
       ],
       "path": "packages/client/ui-message-feedback",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "逐条消息点赞/点踩反馈的浏览器插件，经 CAS 写 Host 侧对比版本。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-message-feedback/README.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-plan",
@@ -3093,7 +4488,16 @@
         "plan 字典"
       ],
       "path": "packages/client/ui-plan",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "Plan 模式状态芯片（纯浏览器表面插件）：占 conversation.input.plan seat，渲染 plan 投影并执行 /plan off。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-plan/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-client-ui-plan"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-settings-general",
@@ -3109,7 +4513,15 @@
         "ui-onboarding Host 设置命名空间 (welcomeNoticeVersion)"
       ],
       "path": "packages/client/ui-settings-general",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "设置所有者非复制/产品引导插件：General 分区、shell 触发器/头 chrome、设置字典与版本化欢迎页。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-settings-general/package.json"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-subagent",
@@ -3125,7 +4537,15 @@
         "subagent 字典"
       ],
       "path": "packages/client/ui-subagent",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "子 Agent 会话目录、续跑路由 UI 与 '@' 引用来源，管理多 Agent 会话的浏览与接线。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-subagent/package.json"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-tool",
@@ -3141,7 +4561,15 @@
         "7 个内置原子 toolview: read/search/web/todo/file-mutation/bash-sample/ask-question"
       ],
       "path": "packages/client/ui-tool",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "客户端工具调用展示：调度 tool-call 节点与原子 toolview 渲染（terminal/read/diff 等卡片）。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-tool/README.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-trajectory",
@@ -3157,7 +4585,15 @@
         "TrajectorySearchIndex/duration store（包内）"
       ],
       "path": "packages/client/ui-trajectory",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "轨迹事件账本 + 交互式时间轴概览：纯消费者插件，注册进 conversation ViewMap（无服务）。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-trajectory/package.json"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-user-questions",
@@ -3172,7 +4608,16 @@
         "PendingQuestion 域 face（answer/cancel）"
       ],
       "path": "packages/client/ui-user-questions",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "Web 提问功能：渲染 dsh-tool-ask-user 的问题为结构化表单（单选/多选/自定义），支持 plan-review 意图的审批卡片。",
+        "history": "",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-user-questions/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-workflow-run",
@@ -3187,7 +4632,15 @@
         "ChatNodeDataMap 'workflow-run' 合并"
       ],
       "path": "packages/client/ui-workflow-run",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "把持久化顶层 workflow run 重建为独立 Chat 节点的浏览器插件。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-workflow-run/README.md"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-workspace",
@@ -3202,7 +4655,16 @@
         "WorkspacePicker（hero 选择器）"
       ],
       "path": "packages/client/ui-workspace",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "Workspace 浏览器与选择器插件：填充 sidebar 与 hero 槽，管理 Workspace/Session 分组、排序、搜索与 Fork。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-workspace/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-client-ui-workspace"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-cordis",
@@ -3218,7 +4680,16 @@
         "slot 声明: tool.view.cordis(keyed)"
       ],
       "path": "packages/extensions/ui-cordis",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "Cordis 动态插件浏览器端：全局面板操作 host 持有的每个定义 + 只读 cordis_define 卡片记录会话定义。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/extensions/ui-cordis/README.md",
+          "https://www.npmjs.com/package/@deepseek-ai/dsh-client-ui-cordis"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-directory-picker-browse",
@@ -3232,7 +4703,16 @@
         "sidebar.workspaces.directoryFlow 条目(BrowseDirectoryFlow)"
       ],
       "path": "packages/client/ui-directory-picker-browse",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "应用内 Miller 分栏目录浏览对话框的浏览器半边，经 host.listDirectory/createDirectory 工作，无需本地 OS 对话框，服务远程浏览器。",
+        "history": "",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-directory-picker-browse/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/host/directory-picker-browse"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-directory-picker-native",
@@ -3246,7 +4726,16 @@
         "sidebar.workspaces.directoryFlow 条目(NativeDirectoryFlow, renderless)"
       ],
       "path": "packages/client/ui-directory-picker-native",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "原生系统目录选择对话框的浏览器半边，经 ui-workspace 的 directoryFlow 洞驱动 host.pickDirectory，回报选中路径/取消/失败。",
+        "history": "",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-directory-picker-native/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/host/directory-picker-native"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-model-selection",
@@ -3262,7 +4751,16 @@
         "model 字典"
       ],
       "path": "packages/client/ui-model-selection",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "浏览器侧模型选择：/model popup 与 composer 触发器共用一份会话级目录，经 session.models/selectModel 提交模型+推理强度。",
+        "history": "",
+        "sources": [
+          "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-model-selection/README.zh.md",
+          "https://github.com/deepseek-ai/deepseek-harness"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-permission-presets",
@@ -3277,7 +4775,15 @@
         "permission.access / settings.permission 字典"
       ],
       "path": "packages/client/ui-permission-presets",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "权限 UI：General 设置中的新会话默认权限 + 当前会话 /permission 弹窗（基于权限投影）。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-permission-presets/package.json"
+        ],
+        "tier": "short"
+      }
     },
     {
       "id": "dsh-client-ui-skill",
@@ -3292,7 +4798,15 @@
         "skill 字典 + 会话键控目录缓存"
       ],
       "path": "packages/client/ui-skill",
-      "source_layer": "L2"
+      "source_layer": "L2",
+      "why": {
+        "text": "Web 端 skill 引用与专用 skill 工具行，让用户查看/调用 Agent 技能。",
+        "history": "",
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-skill/package.json"
+        ],
+        "tier": "short"
+      }
     }
   ],
   "edges": [

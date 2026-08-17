@@ -6,6 +6,13 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/session/session-title`
 
+## 为什么需要它（设计初衷）
+基于会话日志的标题服务：确定性回退 + 可选异步 provider，每个接受的标题都是 session/title 日志事件。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/session/session-title/README.md
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-07-21-log-backed-session-titles.md
+
 ## 实现逻辑
 Log-backed 会话标题服务。SessionTitleService(ctx.sessionTitle，static inject=['sessions']) 以 session log 中 'session/title' 事件为唯一事实源。监听 'session/event'(user/message 触发自动调度)、'llm/stream'(主请求路由)、'session/disposed'(中止在途)；自动生成走 provider 注册 + 确定性 fallback 双轨；user rename() 钉住标题。注册 'title' 投影单元。
 

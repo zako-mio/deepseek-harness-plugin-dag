@@ -6,6 +6,12 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/shell/pwsh-sandbox`
 
+## 为什么需要它（设计初衷）
+PowerShell 沙盒执行器：经 ctx.sandbox 隔离每条 pwsh 命令，受限模式 fail-closed 报告拒绝事实。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/shell/pwsh-sandbox/README.zh.md
+
 ## 实现逻辑
 bash-sandbox 的 pwsh 对偶(SandboxPwshExecutor extends PwshLocalExecutor,注册 ctx.shell):confine(spec, policy) 用 ctx.sandbox.confine 包裹完整 pwsh argv(Windows 上 ACL 受限令牌 runner 链);resolve() 印入 per-call policy,runner 失败分类与 denial 签名匹配。
 

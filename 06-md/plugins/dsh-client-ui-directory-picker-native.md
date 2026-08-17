@@ -6,6 +6,13 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-directory-picker-native`
 
+## 为什么需要它（设计初衷）
+原生系统目录选择对话框的浏览器半边，经 ui-workspace 的 directoryFlow 洞驱动 host.pickDirectory，回报选中路径/取消/失败。
+
+来源：
+- https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-directory-picker-native/README.zh.md
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/host/directory-picker-native
+
 ## 实现逻辑
 目录选择 native 前端（renderless）。NativeDirectoryFlow 以嵌套 slots.inject 事务性注册进 conversation.hero.workspace.directoryFlow 与 sidebar.workspaces.directoryFlow 两个洞；无渲染，每次 open 驱动 host 的 workspaces.pickDirectory（OS 选择器）并把唯一结果（picked path/取消/失败）回报 owner conversation。
 

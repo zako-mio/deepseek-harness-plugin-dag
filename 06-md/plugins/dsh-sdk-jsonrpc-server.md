@@ -6,6 +6,13 @@
 - 来源层: L3 其余
 - 源码路径: `packages/sdk/server`
 
+## 为什么需要它（设计初衷）
+SDK 运行时服务端：以换行分隔 JSON-RPC over stdio 让进程外 SDK 客户端驱动 harness agents，stdout 严格只跑协议帧。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/sdk/server
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/sdk/protocol
+
 ## 实现逻辑
 SDK 面向的 stdio JSON-RPC 服务插件（由外部 cordis.yml 决定加载）：HarnessSdkJsonRpcServer 持 JsonRpcLineTransport 处理 initialize/agent 生命周期/turn/subagent 等请求，订阅 session/agent/subagent 生命周期事件并向客户端 notify；shutdown 应答后 dispose 整个 root runtime 并 exit 0。stdout 保留给协议帧，不得挂 stdout logger。inject=['agents']，LLM seam 经 ctx.get() 可选读取。
 

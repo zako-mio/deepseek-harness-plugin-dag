@@ -6,6 +6,12 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-skill`
 
+## 为什么需要它（设计初衷）
+Web 端 skill 引用与专用 skill 工具行，让用户查看/调用 Agent 技能。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-skill/package.json
+
 ## 实现逻辑
 技能引用源：注册 '/' source name=skill order=2（index.ts:133-178,185），候选来自 skill.list RPC 按会话缓存（session-keyed catalog fetch，单 flight，:70-115），pick 落字面 /name （plain-text-reference）。注册 tool.call.toolview keyed 'skill' 的 SkillRow（:65-68）。agent-preset/selected 失效单键、connection/reset 全清（:182-183）。
 

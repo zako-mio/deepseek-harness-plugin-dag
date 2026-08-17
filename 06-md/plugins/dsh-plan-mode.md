@@ -6,6 +6,12 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/plan/plan-mode`
 
+## 为什么需要它（设计初衷）
+per-agent 的日志化计划协作状态：/plan 命令、plan:policy 提示与 exit_plan_mode 退出。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/plan/plan-mode/README.md
+
 ## 实现逻辑
 定义 ctx.planMode PlanModeController。状态由 session 日志 'plan/mode' 折叠；agent/pre-step 接受后 onBoundary append 待定选择；systemPrompt.section('plan:policy') 渲染部署指导；/plan 命令与 exit_plan_mode 工具(经 userQuestions.ask 做 plan-review，approve 则 pendingIntents 置 false)；'plan' session projection 由 command/run+plan/mode 双事件折叠。
 

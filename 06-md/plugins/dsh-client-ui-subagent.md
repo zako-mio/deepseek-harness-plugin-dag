@@ -6,6 +6,12 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-subagent`
 
+## 为什么需要它（设计初衷）
+子 Agent 会话目录、续跑路由 UI 与 '@' 引用来源，管理多 Agent 会话的浏览与接线。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-subagent/package.json
+
 ## 实现逻辑
 子代理引用源：注册 '@' source name=subagent（index.ts:70-95,97），候选从 sessions.list 快照过滤 running 子会话（零 RPC，:61-69），pick 落字面 @label。另注册 conversation.session.header.actions 的 subagent-catalog 按钮（:110-119）与 conversation.composer 的 SubagentReadOnlyComposer（priority=-10，one-shot/parent-offline 接管，:120-128,44-53）。
 

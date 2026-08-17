@@ -6,6 +6,12 @@
 - 来源层: L3 其余
 - 源码路径: `packages/hooks/hooks-claude-code`
 
+## 为什么需要它（设计初衷）
+Claude Code hook 桥：把用户既有 hooks.json（或 settings hooks 键）映射到 harness 拦截点，只实现 shell command 钩子子集。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/hooks/hooks-claude-code
+
 ## 实现逻辑
 Bridge 插件：在 harness 拦截 seam 上运行未修改的 Claude Code hooks.json/settings hook 配置。name='hooks-claude-code', inject=['shell']（src/index.ts:39-42）。apply 时一次性读入并解析 hooks.json（readFileSync + parseClaudeCodeConfig，:101-116），注册 7 个扩展点：agent/session-start(SessionStart, detached, :206)、agent/pre-step(UserPromptSubmit→PreStepDecision, :219)、tools/pre-execute(PreToolUse→PreToolDecision, :238)、tools/post-execute(PostToolUse→PostToolDecision, :247)、agent/turn-stopping(Stop, deny 时 agent.steer 强制续跑, :270)、subagent/start(:281)、subagent/end(:291)。共享执行/解析在 dsh-hook-protocol（runHook/matchesMatcher/mergeHookOutputs/createDetachedRuns/appendHookInvoked/appendHookResult）。写 hook/invoked+hook/result session 事件对；支持 CLAUDE_PLUGIN_ROOT/CLAUDE_PROJECT_DIR 替换；updatedInput/systemMessage 仅告警不生效；hook 在 session workspace 内运行。
 

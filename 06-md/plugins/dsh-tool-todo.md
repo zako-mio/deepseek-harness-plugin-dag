@@ -6,6 +6,13 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/todo/tool-todo`
 
+## 为什么需要它（设计初衷）
+面向模型的 todo_write 工具，建立在事件源会话日志之上。
+
+来源：
+- https://registry.npmjs.org/@deepseek-ai/dsh-tool-todo
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/todo/tool-todo
+
 ## 实现逻辑
 apply() 注册 todo_write 工具：整表替换语义，execute 校验后 exec.agent.session.append('todo/write')，返回新表+counts；无 agent 则拒绝。ctx.inject(['sessionProjections']) 注册 'todos' 投影(last todo/write 快照，turn/start 清空)。
 

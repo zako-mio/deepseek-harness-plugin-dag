@@ -6,6 +6,13 @@
 - 来源层: L3 其余
 - 源码路径: `packages/subagent/subagent-dsh-sdk`
 
+## 为什么需要它（设计初衷）
+进程外完整 DSH runtime 子 Agent：经 stdio JSON-RPC 驱动一个完整 peer harness（自有 cordis.yml 组合/持久化/模型路由），子进程能力完全自治。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/subagent/subagent-dsh-sdk
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-07-27-typescript-sdk-and-sdk-subagent-backend.md
+
 ## 实现逻辑
 进程外 SDK 子代理后端：每个 child 是完整 DeepSeek Harness runtime（自有 cordis.yml 组合/session/model/tools），经 dsh-sdk-client 的 DeepSeekHarness 高层 API 通过 stdio JSON-RPC 驱动；不共享父 Cordis context、不声明父强制 start capabilities；唯一读取 request.parent 的是 session workspace cwd。inject=['subagents']，subprocess 仅经 scrubbedParentEnv 值导入使用。
 

@@ -6,6 +6,13 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/goal/tool-goal`
 
+## 为什么需要它（设计初衷）
+面向模型的同会话目标工具，带执行时权威检查（ctx.goals）。
+
+来源：
+- https://registry.npmjs.org/@deepseek-ai/dsh-tool-goal
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/goal/tool-goal
+
 ## 实现逻辑
 apply() 注册 get_goal/create_goal/update_goal 工具与 systemPrompt section 'tool:goal'。authority.ts 校验执行时 agent 为 live 且 open turn(GOAL_TOOL_DRIVER_REQUIRED)，create/edit/pause/resume 需 requireDirectHuman，complete/blocked 可由 direct-human 或精确 goal round 授权；autonomous 完成经 exec.deferContext 注入 wrapup 收尾上下文。
 

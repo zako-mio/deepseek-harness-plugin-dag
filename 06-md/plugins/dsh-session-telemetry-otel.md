@@ -6,6 +6,13 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/session/session-telemetry-otel`
 
+## 为什么需要它（设计初衷）
+telemetry seam 的 OpenTelemetry 后端，把捕获的会话记录交给 OTel JS SDK 日志管道。
+
+来源：
+- https://registry.npmjs.org/@deepseek-ai/dsh-session-telemetry-otel
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/session/session-telemetry-otel
+
 ## 实现逻辑
 以 OpenTelemetrySessionBackend 类(extends SessionTelemetryBackend)默认导出，static inject=['sessions']。FULL 模式构造 LoggerProvider+BatchLogRecordProcessor+OTLPLogExporter 并 new SessionTelemetryCoordinator(ctx, backend, 'live') 全量跟随；FEEDBACK_ONLY 模式 coordinator 走 'on-demand' 并注册 feedback/record 监听；DISABLED 不建 SDK。记录映射为 logger.emit()，shutdown 带超时竞速。
 

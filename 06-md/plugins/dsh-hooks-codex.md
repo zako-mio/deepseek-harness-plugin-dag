@@ -6,6 +6,12 @@
 - 来源层: L3 其余
 - 源码路径: `packages/hooks/hooks-codex`
 
+## 为什么需要它（设计初衷）
+Codex hook 桥：把用户既有 .codex/hooks.json 的 5 个钩子点映射到 harness 的规范拦截点，作为兼容路径而非原生能力。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/hooks/hooks-codex
+
 ## 实现逻辑
 Bridge 插件：在 harness 拦截 seam 上运行未修改的 Codex hooks.json。name='hooks-codex', inject=['shell']（src/index.ts:40-41）。apply 读入解析 Codex hooks.json（parseCodexConfig, :81-97），注册 5 个扩展点：agent/session-start(SessionStart, detached, :188)、agent/pre-step(UserPromptSubmit, 仅 reject 支持, :199)、tools/pre-execute(PreToolUse, 仅 deny, :225)、tools/post-execute(PostToolUse, :234)、agent/turn-stopping(Stop, :260)。Codex 方言：snake_case payload、每事件带 model、正则匹配器、无 hook 环境/命令替换、无 pre-tool approval/rewrite 路径，仅 honor 阻断决策；stop_hook_active 恒 false。共享执行/解析在 dsh-hook-protocol。
 

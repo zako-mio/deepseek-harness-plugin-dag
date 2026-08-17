@@ -6,6 +6,12 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-jobs`
 
+## 为什么需要它（设计初衷）
+会话头后台任务列表：从 session/jobs 帧镜像实时注册表状态，展示后台 job 进度。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-jobs/package.json
+
 ## 实现逻辑
 session-header 后台作业列表。JobListAction 注册进 conversation.session.header.actions（id=job-list, order=20 位于 subagent catalog 之后）；数据完全来自 sessions list 镜像的 jobsBySession（useSessions(state => state.jobsBySession[sessionId])），不发任何 RPC、不持自身状态（仅 popover 可见性）；按 live/settled 排序渲染状态点（running/stopping/completed/killed/failed）+ 时长。
 

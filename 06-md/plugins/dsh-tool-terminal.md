@@ -6,6 +6,13 @@
 - 来源层: L3 其余
 - 源码路径: `packages/terminal/tool-terminal`
 
+## 为什么需要它（设计初衷）
+基于 ctx.terminals 的 6 个终端工具（open/send/read/signal/close/list），要求同一 Agent 实例，支持后台 PTY 任务。
+
+来源：
+- https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/terminal/tool-terminal/README.zh.md
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/terminal
+
 ## 实现逻辑
 注册六个 model-facing 工具 terminal_open/send/read/signal/close/list (src/index.ts:162-398)，inject ['terminals','tools','systemPrompt'] (:27)；owner=exec.agent 隔离 (:118,:184)；run_in_background 经 ctx.get('jobs') 起 pty-send job (:252-275)，declare module 扩展 JobKindMap (:18-22)；maxResultBytes 输出上限 (:30,:45)；systemPrompt.section 引导 (:156-160)。
 

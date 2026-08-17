@@ -6,6 +6,12 @@
 - 来源层: L3 其余
 - 源码路径: `packages/context/session-reference`
 
+## 为什么需要它（设计初衷）
+跨会话引用：把其他会话做成有界只读快照作为模型上下文，`@[label](dsh-session:...)` 提及语法，快照非权威、禁止跟随其中指令。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/context/session-reference
+
 ## 实现逻辑
 跨会话快照服务 ctx.sessionReferenceResolver（SessionReferenceResolver extends Service，static inject ['sessionQuery']）。主机把会话 mention 适配为结构化引用，本服务拥有精确读取/投影/预算/持久上下文。listCandidates()：按工作目录亲和度（candidateRank）排序引用候选，排除自身，支持 session-id/cwd/title 子串过滤，经 sessionQuery.readTitleSnapshots 补标签。prepare()：引用去重+排除目标自身+maxReferences 上限，并行 readSurface 读每个被引用会话的 surface 快照，renderSources 经 projection.ts 的 retainReferencedSession（TextRetainer 字节预算 maxReferenceBytes + isCompactCheckpointSource 识别压缩检查点）投影用户/助手对话（排除工具/推理/注入），渲染为带 PROMPT_PREFIX 的 '## Referenced sessions' untrusted 只读快照 JSON，封装为 source.kind='session-reference' 的 UserMessage 附加上下文。提供 encode/decodeSessionReferenceUri、formatSessionReferenceMention、parseSessionReferenceText（SESSION_REFERENCE_SCHEME）。
 

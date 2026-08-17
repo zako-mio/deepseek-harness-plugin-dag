@@ -6,6 +6,13 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/subagent/tool-subagent-report`
 
+## 为什么需要它（设计初衷）
+面向子 agent 的 report 工具，基于 ctx.subagents 可继续会话提供子作用域报告通道，支撑后台可继续子 agent 的结算/汇报。
+
+来源：
+- https://registry.npmjs.org/@deepseek-ai/dsh-tool-subagent-report
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/subagent/tool-subagent-report/README.zh.md
+
 ## 实现逻辑
 子作用域 report 工具：apply 通过 ctx.subagents.registerContinuableSetup(childCtx => installReportTool(childCtx, ctx, reportDelivery)) 将 report 工具与 prompt 指引装入每个可续聊子代理的未发布 childCtx。installReportTool 注册 childCtx.tools 的 'report' 工具(调 ctx.subagents.reportFrom)，仅对 continuable in-process 子代理可见。
 

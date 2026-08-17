@@ -6,6 +6,15 @@
 - 来源层: L3 其余
 - 源码路径: `packages/preset/persona`
 
+## 为什么需要它（设计初衷）
+解决『一个 agent 一个身份』的可组合问题：system-prompt 注册表持有 deployment persona 且无条件注册，进程内唯一；此插件提供可在 agent preset 作用域内挂载的 persona 行，遮蔽部署级 persona 或（complete 模式下）独占整个系统提示词，使不同 agent 拥有独立身份。
+
+发展史：定位为『可组合的 persona 行』，只能挂载在 agent preset 作用域内（scope-only），避免与注册表自身 deployment:persona 冲突。支持 text 模板与 includeRuntimeContext 开关。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/preset/persona/README.md
+- https://www.npmjs.com/package/@deepseek-ai/dsh-persona
+
 ## 实现逻辑
 组合式部署人设行（scope-only）。name='persona', inject=['systemPrompt']（src/index.ts:28-31）。挂载在 agent preset 内为单个 agent 遮蔽部署人设：apply 时向 systemPrompt 注册 deployment:persona section（PERSONA_SECTION/PERSONA_ORDER 从 dsh-system-prompt 导入，:23,61-66），config.text 为模板（{{…}} 变量渲染），complete:true 时成为唯一 system prompt（:65），includeRuntimeContext:false 抑制运行时上下文快照（:67）。在 agent scope 之外挂载会与注册表自身的 deployment:persona 冲突并 fail loud。
 

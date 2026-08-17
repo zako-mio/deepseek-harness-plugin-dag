@@ -6,6 +6,12 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-sidebar`
 
+## 为什么需要它（设计初衷）
+侧边栏插件：会话多级树、搜索、分组、状态点，组织会话导航。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-sidebar/package.json
+
 ## 实现逻辑
 侧栏外壳。SidebarRoot 注册进 layout 声明的 'sidebar' slot，并声明三个 child：sidebar.workspaces（whole browsing region，ui-workspace 占据）、sidebar.settings（ui-settings 占据）、sidebar.footer.action（list，ui-cordis 等注册）；inject 提供 startSession（ctx.workspaces.startSession，当前 Workspace→最近回退）与 toggleSidebar（ctx.layout.toggleSidebar）。
 

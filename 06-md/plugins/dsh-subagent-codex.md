@@ -6,6 +6,13 @@
 - 来源层: L3 其余
 - 源码路径: `packages/subagent/subagent-codex`
 
+## 为什么需要它（设计初衷）
+ACP 子代理 provider（对应仓库目录 subagent-acp，Codex 场景）：每子代理独立子进程按 Agent Client Protocol 驱动，冷启动隔离环境。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/subagent/subagent-acp/README.md
+- https://www.npmjs.com/package/@deepseek-ai/dsh-subagent-codex
+
 ## 实现逻辑
 固定 Codex one-shot 子代理 provider：每次被接受的 run 在委派 Session 的 workspace 启动官方 codex app-server --stdio 子进程，仅在 ephemeral thread 存在后发布；declares NO_START_CAPABILITIES。wire.ts 复用 dsh-sdk-protocol 的 JsonRpcLineTransport 实现 app-server 帧协议，外部 @openai/codex(0.147.0) 提供 CLI 类型。
 

@@ -6,6 +6,13 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-user-questions`
 
+## 为什么需要它（设计初衷）
+Web 提问功能：渲染 dsh-tool-ask-user 的问题为结构化表单（单选/多选/自定义），支持 plan-review 意图的审批卡片。
+
+来源：
+- https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-user-questions/README.zh.md
+- https://github.com/deepseek-ai/deepseek-harness
+
 ## 实现逻辑
 用户提问 UI。QuestionComposer 以 selector selectQuestion（interactions 中 kind==='question' 的 PendingWait 载体）注册进 conversation.composer 链；一个条目两种形态：请求带 plan-review 呈现意图时渲染 PlanReviewPanel（approve/decline/discuss 决策卡），否则走通用提问流程（pager/选项/自定义/跳过）；PendingQuestion 域 face 封装 answer/cancel（wait.respond 编码 wire 应答）；零业务 face，数据/动词全部随 carrier。
 

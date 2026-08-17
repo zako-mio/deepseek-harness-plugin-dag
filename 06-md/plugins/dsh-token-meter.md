@@ -6,6 +6,15 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/llm/token-meter`
 
+## 为什么需要它（设计初衷）
+通过单例 ctx.tokenMeter 提供回放感知的 token 测量：从持久日志为每会话推进隔离 fold，压缩(compaction)等压力敏感插件共享计量，无需依赖 CompactionEngine。用固定启发式（4字符≈1token+结构开销）估算，保证测量与模型路由/压缩解耦。
+
+发展史：位于 packages/llm/token-meter，2026-08-10 首批发布，0.1.0-rc.6 转公开。dsh-compaction-basic 的默认计量依赖；提供 tokenUsage/contextPressure/contextBreakdown 三个会话投影单元。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/llm/token-meter/README.zh.md
+- https://registry.npmjs.org/@deepseek-ai/dsh-token-meter
+
 ## 实现逻辑
 Replay-aware token 计量服务(ctx.tokenMeter)。TokenMeter 服务按 session 维护 ReplayState，惰性折叠事件日志得出请求压力与 surface token 估算；measure() 输出基线+surface 增量；estimateMessage/estimateHeader 启发式计价；可选注入 sessionProjections 注册 usage/contextPressure/breakdown 三个投影定义。
 

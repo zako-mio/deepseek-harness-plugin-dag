@@ -6,6 +6,13 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/subagent/subagent-fork-in-process`
 
+## 为什么需要它（设计初衷）
+进程内 fork 子 Agent：以父会话已完成轮次为种子新建子 Agent，只继承历史不继承权限/工具限制，并保持 one-shot 以保护前缀缓存。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/subagent/subagent-fork-in-process
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-08-10-fork-children-stay-one-shot.md
+
 ## 实现逻辑
 ctx.subagents 的 fork provider 后端：apply 注册 ForkInProcessProvider。start() 通过 completedTurnPrefix(parent) 截取父会话截至最后 turn/end 的完整事件前缀作为种子，再调 startInProcessRun(request, {seed}) 创建继承父上下文的子代理；inheritsParentContext=true。
 

@@ -6,6 +6,12 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-theme`
 
+## 为什么需要它（设计初衷）
+主题插件：Host 引导预插件调色板、DOM-free ThemeRuntime（light/dark/system）、--dsw-* token 样式与 Appearance 设置行。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-theme/package.json
+
 ## 实现逻辑
 双面主题插件。node 半：ctx.inject(['settings']) 注册 THEME_SETTINGS_NAMESPACE 的 ThemeSettingsSchema；ctx.inject(['webServer']) 挂 tapIndex→injectBootTheme——在 body 后内联脚本按持久化偏好设置 colorScheme+data-ds-dark-theme（pre-plugin 预着色，system 在浏览器解析）。browser 半：ThemeRuntime——DOM-free（presenter 由 ui-layout 消费 snapshot），持有 prefers-color-scheme media query（system 偏好下 OS 切换触发 publish），register()/overrideTokens()（seq 序层折叠，later 层 per-token 胜出），setTheme 写 settingsScope；注册 'theme/change' 事件；把 AppearanceRow 注册进 settings.general.item slot（order 10）。styles/ 提供 --dsw-* token 与 base/design-platform/scrollbar/shiki CSS。
 

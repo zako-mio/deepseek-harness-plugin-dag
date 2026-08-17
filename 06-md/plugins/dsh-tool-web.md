@@ -6,6 +6,13 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/web/tool-web`
 
+## 为什么需要它（设计初衷）
+给模型提供 Web 工具（web_search/web_fetch），封装 ctx.web 能力 seam，用 turndown+GFM 插件把 HTML 转 Markdown 供模型读取。
+
+来源：
+- https://registry.npmjs.org/@deepseek-ai/dsh-tool-web
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/web/tool-web/README.zh.md
+
 ## 实现逻辑
 模型可见 web 工具套件：apply 按 config 决定注册 web_search(经 ctx.web.search 执行并投影 WebSearchResult)与 web_fetch(经 ctx.web.fetch 执行后由 turndown 把 HTML 转 markdown，带深度上限)。两工具把 config 的 timeoutMs 附到 ToolDefinition.timeoutMs 交 timeout-policy 强制。
 

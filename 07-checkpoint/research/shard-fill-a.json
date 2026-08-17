@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "task": "DeepSeek Harness 插件包设计初衷补充调研",
+    "date": "2026-08-17",
+    "method": "git clone monorepo + 逐包 README.zh.md 精读",
+    "repo": "github.com/deepseek-ai/deepseek-harness (master@47f9438, 2026-08-13 公开)",
+    "note": "全部 12 个插件均从本地 clone 源码 README.zh.md 核实，非推断"
+  },
+  "plugins": [
+    {
+      "id": "dsh-agent-loop",
+      "why": "agent 的唯一具体实现与循环驱动器：作为 harness 中唯一包含具体循环逻辑的包，实现 Agent 接口并驱动会话、轮次与步骤生命周期，创建/恢复/取消/持久化恢复全部收拢到一个受回滚保护的事务边界，其余一切皆作为插件挂在事件分类体系上扩展。",
+      "history": "位于 core 目录的 AgentLoop 服务（ctx.agentLoop），核心定位是『循环内部只做调用模型/运行工具/重复』，钩子/压缩/沙箱/子代理等全部外置为事件监听插件，是 Everything is a Plugin 架构的循环中枢。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/core/agent-loop/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness"
+      ]
+    },
+    {
+      "id": "dsh-command-goal",
+      "why": "面向用户的 /goal 命令控制，基于 ctx.goals 持久 goal 栈：无需模型轮次即可展示/创建/编辑/暂停/恢复/清除目标，并将完成度、Round 计数与续行（autocontinue）状态暴露给 UI 与同会话驱动器，解决长任务『目标不可见、无续跑机制』的问题。",
+      "history": "通过 ctx.commands 注册全局命令，由 2026-07-19 的 human-goal-command Agent Note 决策演进而来；仅纯文本交互，适配器专用徽标等 UI 化能力列为暂缓。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/goal/command-goal/README.zh.md"
+      ]
+    },
+    {
+      "id": "dsh-skill-filesystem",
+      "why": "ctx.skills 注册表的本地文件系统提供方：扫描项目/.dsh/用户级多个 skill 根目录，解析 SKILL.md 或平铺 Markdown 并注册，Chokidar 热监视目录变化实现动态发现，解决 skill 跨项目共享、编辑即生效、多根 rank 合并的问题。",
+      "history": "与 dsh-skill（注册表）、dsh-tool-skill（模型加载工具）分层：本包只做发现与解析；项目根以最近 .git 祖先界定，限定一层发现深度，monorepo 子项目选择暂缓。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/skill/skill-filesystem/README.zh.md"
+      ]
+    },
+    {
+      "id": "dsh-subprocess-e2b",
+      "why": "subprocess seam 的 E2B（远程云沙箱）实现：以 Linux 进程组 + base64 帧投影 stdio + PTY 终端会话，让 Bash/PTY/LSP 消费方无需改动即可在共享远程沙箱执行，解决本地执行的安全隔离与主机资源占用问题。",
+      "history": "先加载 dsh-e2b 再替换 dsh-subprocess-local 即完成沙箱切换，是 dsh-subprocess seam 的远程替代后端；当前为 POC 级，仍受 E2B 无信号事实、无 Windows 支持等限制约束。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/e2b/subprocess-e2b/README.zh.md"
+      ]
+    },
+    {
+      "id": "dsh-settings-file",
+      "why_short": "基于文件的设置提供方，YAML/JSON 承载全 namespace 分节，读-改-写原子写回并热发布外部编辑。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/settings/settings-file/README.zh.md"
+      ]
+    },
+    {
+      "id": "dsh-subprocess-local",
+      "why_short": "subprocess seam 的本地 Service Provider，spawn 进程树/PTY 终端、升级式终止、有界 spill 输出与凭据清除。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/subprocess/subprocess-local/README.zh.md"
+      ]
+    },
+    {
+      "id": "dsh-skill-badge",
+      "why_short": "可选内置 skill 提供方，贡献官方『powered by dsh』Markdown 片段与随包 PNG 徽标，默认禁用需显式启用。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/skill/skill-badge/README.zh.md"
+      ]
+    },
+    {
+      "id": "dsh-storage-sqlite",
+      "why_short": "存储中心的 SQLite 后端，node:sqlite 提供 kv facet，单文件或 :memory:，为高频变更领域提供行级原子写。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/storage/storage-sqlite/README.zh.md"
+      ]
+    },
+    {
+      "id": "dsh-user-questions",
+      "why_short": "用户交互 Service Definition，定义 ctx.userQuestions 供工具/权限插件暂停工作向人类提问并等待回答。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/interaction/user-questions/README.zh.md"
+      ]
+    },
+    {
+      "id": "dsh-command-feedback",
+      "why_short": "会话反馈采集，导出 recordFeedback() 并以 /feedback 命令收集用户反馈，附会话共享策略披露。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/feedback/command-feedback/README.zh.md"
+      ]
+    },
+    {
+      "id": "dsh-permission-presets",
+      "why_short": "面向用户的权限预设服务，把 sandbox/mode 与 approval/policy 打包成可一键切换的预设选择器。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/interaction/permission-presets/README.zh.md"
+      ]
+    },
+    {
+      "id": "dsh-pwsh-sandbox",
+      "why_short": "PowerShell 沙盒执行器：经 ctx.sandbox 隔离每条 pwsh 命令，受限模式 fail-closed 报告拒绝事实。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/shell/pwsh-sandbox/README.zh.md"
+      ]
+    }
+  ]
+}

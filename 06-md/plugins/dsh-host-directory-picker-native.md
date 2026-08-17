@@ -6,6 +6,12 @@
 - 来源层: L3 其余
 - 源码路径: `packages/host/directory-picker-native`
 
+## 为什么需要它（设计初衷）
+directory-picker seam 的原生 OS 选择器后端（macOS osascript / Linux Zenity / Windows IFileOpenDialog）。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/host/directory-picker-native/README.md
+
 ## 实现逻辑
 NativeDirectoryPicker extends DirectoryPicker (src/index.ts:20)，native capability pick→pickNativeDirectory (:21-25)；打开系统级目录选择器：macOS osascript、Linux Zenity+KDialog 回退、Windows 经 koffi 驱动 IFileOpenDialog 于 spawn 子进程 COM 对话（头注释 :1-10）；native-picker.ts + win32-dialog-* 多文件实现 worker 隔离。
 

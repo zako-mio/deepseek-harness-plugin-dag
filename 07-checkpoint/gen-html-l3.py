@@ -109,6 +109,13 @@ footer{margin-top:40px;padding:16px 24px;border-top:1px solid var(--border);colo
 table{border-collapse:collapse;width:100%;margin:10px 0;}
 th,td{border:1px solid var(--border);padding:6px 10px;font-size:13px;text-align:left;}
 th{background:var(--panel);color:#b8c2d4;}
+.whybox{background:#0d1a14;border:1px solid #2f5a4a;border-radius:8px;padding:14px 18px;margin:10px 0;}
+.whybox .tag{color:#5fc9a0;font-size:12px;font-weight:600;letter-spacing:1px;}
+.whybox p{font-size:14px;color:#cfe8dd;margin:6px 0;}
+.whybox .hist{font-size:13px;color:var(--dim);margin-top:8px;}
+.whybox .src{font-size:11px;color:var(--dim);margin-top:8px;}
+.whybox .src a{color:#7fb0ff;text-decoration:none;word-break:break-all;}
+.whybox .src a:hover{text-decoration:underline;}
 """
 
 def page_header(title, crumb, extra_badge=""):
@@ -237,6 +244,19 @@ for nid, n in nodes.items():
     if n.get("override_base"):
         extra_rows += f'<tr><th>覆盖 base 行</th><td>覆盖 <a href="dsh-api-gateway.html">dsh-api-gateway</a>（web patch 以 {esc(n["override_base"])} 取代）</td></tr>'
     out.append(f'<table><tr><th>包名</th><td>{esc(n["name"])}</td></tr><tr><th>分组</th><td>{esc(gid)} · {esc(gname)}</td></tr><tr><th>拓扑层</th><td>Layer {n["layer"]}（层次遍历：被依赖方先于依赖方）</td></tr><tr><th>源码路径</th><td><code>{esc(src_path)}</code></td></tr>{extra_rows}</table>')
+    # 为什么需要它（设计初衷）
+    why_data = n.get("why", {})
+    if why_data and why_data.get("text"):
+        why_parts = ['<div class="whybox"><span class="tag">为什么需要它 · 设计初衷</span>']
+        why_parts.append(f'<p>{esc(why_data["text"])}</p>')
+        if why_data.get("history"):
+            why_parts.append(f'<div class="hist">📜 {esc(why_data["history"])}</div>')
+        srcs = why_data.get("sources", [])
+        if srcs:
+            src_links = "".join(f'<a href="{esc(u)}" target="_blank">{esc(u)}</a><br>' for u in srcs)
+            why_parts.append(f'<div class="src">📚 来源：<br>{src_links}</div>')
+        why_parts.append('</div>')
+        out.append("".join(why_parts))
     # 实现逻辑
     out.append('<h2>① 实现逻辑</h2>')
     out.append(f'<p>{esc(n["implementation"])}</p>')

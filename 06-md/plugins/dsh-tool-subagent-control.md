@@ -6,6 +6,13 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/subagent/tool-subagent-control`
 
+## 为什么需要它（设计初衷）
+全局命名 send_message/interrupt_agent/list_agents 工具，经 ctx.subagents continuations 控制子 agent。
+
+来源：
+- https://registry.npmjs.org/@deepseek-ai/dsh-tool-subagent-control
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/subagent/tool-subagent-control
+
 ## 实现逻辑
 全局命名控制工具：apply 注册 send_message(ctx.subagents.followup 转发)与 interrupt_agent(ctx.subagents.interrupt 转发)；list-agents 子入口注册 list_agents(listChildren/listDescendants + agents 实时状态)。工具名全局唯一。
 

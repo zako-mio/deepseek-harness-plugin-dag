@@ -1,0 +1,257 @@
+{
+  "meta": {
+    "shard": "shard2",
+    "scope": "29 个 DeepSeek Harness 插件（8 CORE + 21 普通/轻量）",
+    "research_date": "2026-08-17",
+    "main_repo": "https://github.com/deepseek-ai/deepseek-harness",
+    "npm_scope": "@deepseek-ai/dsh-*",
+    "framework": "Cordis（一切皆插件，无特权核心，扩展=挂载插件，注册=随插件卸载回退的 effect）",
+    "core_design_doc": "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/docs/architecture.md"
+  },
+  "design_intent_summary": "DeepSeek Harness (dsh) 是 DeepSeek AI 开源的 agent harness，核心哲学『Everything is a Plugin』：产品每一部分（模型适配器、工具注册表、会话日志、agent 循环本身）都是可替换的插件，由 Cordis 插件系统驱动（Cordis 设计出自论文 A Programming Paradigm for Spatiotemporal Composability）。无特权核心可打补丁——扩展 dsh 就是在其他插件旁挂载一个插件，注册行为是可在插件卸载时回退（unwind）的 effect。当前处于 developer preview 阶段，快速迭代，会有破坏性变更。CORE 8 插件即该架构下最基础、被最多其他插件依赖、承担产品 API 脊柱的插件。",
+  "core_plugins": [
+    {
+      "id": "dsh-agent",
+      "why": "定义 Agent 接口、实时注册表、发起方(initiator)作用域与 agent/* 事件词汇，是产品 API 脊柱。所有插件（UI、钩子、编排器）面向此 Agent handle 编程而不依赖具体循环，因此循环(agent-loop)可整体替换，从根本上落实『一切皆插件』。",
+      "history": "位于 packages/core/agent，随 2026-08-10 首批 rc 发布（BSD-3-Clause），后转 MIT，0.1.0-rc.6 转公开。保持稳定 API，注册表可复用稳定路由载体，为 dsh-agent-loop 等循环实现提供替换缝隙。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/core/agent/README.zh.md",
+        "https://registry.npmjs.org/@deepseek-ai/dsh-agent",
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/architecture.md"
+      ]
+    },
+    {
+      "id": "dsh-api-remotes",
+      "why": "为 Web Host Remote 能力提供双侧 BFF：Host 侧负责 Agent/Session 身份查找策略（复用 live agent、恢复冷会话、并发去重、subagent ownership fence），Client 侧以运行时值挂载 /remote 产物。让客户端业务包依赖此外观，不依赖 Gateway 实现或单独 Remote 运行时入口，实现前后端远程能力解耦。",
+      "history": "位于 packages/api/remotes（npm 元数据最早标注 packages/api/api-remotes，后修正为 remotes），2026-08-10 发布，0.1.0-rc.6 转公开。仓库中唯一刻意拆分 Host/Client 双 TypeScript face 的包。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/api/remotes/README.zh.md",
+        "https://registry.npmjs.org/@deepseek-ai/dsh-api-remotes"
+      ]
+    },
+    {
+      "id": "dsh-commands",
+      "why": "插件拥有、供交互式 UI 适配器使用的用户斜杠命令注册表。命令在 UI 命令平面执行、结果绝不进入模型历史，让人类与模型交互分离，避免未知命令变成模型提示词；注册/移除通过 commands/change 通知运行中适配器刷新。",
+      "history": "位于 packages/interaction/commands，2026-08-10 首批发布，0.1.0-rc.6 转公开。随产品基础组合(dsh base)挂载，Web 客户端经其分派命令；无 UI 的 headless/ACP 不提供命令适配器。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/interaction/commands/README.zh.md",
+        "https://registry.npmjs.org/@deepseek-ai/dsh-commands"
+      ]
+    },
+    {
+      "id": "dsh-skill",
+      "why": "纯 agent skill 提供方注册表（ctx.skills）：宿主+按 scope 分层结构，不感知来源（本地/嵌入式/HTTP），提供方经 registerProvider 注册；按 modelInvocable/userInvocable 策略区分目录。为 harness 提供可插拔的技能发现/加载能力，是 skill 能力族的注册中心。",
+      "history": "位于 packages/skill/skill，2026-08-10 首批发布，0.1.0-rc.6 转公开。本地实现为 dsh-skill-filesystem；面向模型的 skill 工具由 dsh-tool-skill 消费，注册表本身不渲染模型指引。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/skill/skill/README.zh.md",
+        "https://registry.npmjs.org/@deepseek-ai/dsh-skill"
+      ]
+    },
+    {
+      "id": "dsh-token-meter",
+      "why": "通过单例 ctx.tokenMeter 提供回放感知的 token 测量：从持久日志为每会话推进隔离 fold，压缩(compaction)等压力敏感插件共享计量，无需依赖 CompactionEngine。用固定启发式（4字符≈1token+结构开销）估算，保证测量与模型路由/压缩解耦。",
+      "history": "位于 packages/llm/token-meter，2026-08-10 首批发布，0.1.0-rc.6 转公开。dsh-compaction-basic 的默认计量依赖；提供 tokenUsage/contextPressure/contextBreakdown 三个会话投影单元。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/llm/token-meter/README.zh.md",
+        "https://registry.npmjs.org/@deepseek-ai/dsh-token-meter"
+      ]
+    },
+    {
+      "id": "cordis-plugin-timer",
+      "why": "Cordis 的 disposal-aware 定时器服务（ctx.timeout/interval/throttle/debounce）。定时器 handle 注册在当前 fiber，插件被 dispose 时自动清除——保证『一切皆插件』架构下挂载/卸载不泄漏定时器，是 dsh 组合层的基础设施。",
+      "history": "npm 包名 @deepseek-ai/cordis-plugin-timer，源码在 vendor/timer（上游为 @cordisjs/plugin-timer，vendored 进 dsh 仓库），2026-08-10 随 Cordis 一起发布，MIT 许可。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/vendor/timer/README.md",
+        "https://registry.npmjs.org/@deepseek-ai/cordis-plugin-timer"
+      ]
+    },
+    {
+      "id": "dsh-attachment-local",
+      "why": "dsh-attachment 的私有本地实现：DSH_HOME 下基于内容寻址(sha256:)的对象存储，含崩溃安全(原子硬链接发布+目录同步)、图片解码准入校验、只允许所有者访问。会话日志只含引用与校验元数据、不含宿主路径，保证重启/fork 后历史图片可持久回放。",
+      "history": "位于 packages/attachment/attachment-local，2026-08-10 首批发布，0.1.0-rc.6 转公开。依赖 sharp 处理图片，dsh-attachment 定义身份/校验抽象，本包提供本地存储后端。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/attachment/attachment-local/README.zh.md",
+        "https://registry.npmjs.org/@deepseek-ai/dsh-attachment-local"
+      ]
+    },
+    {
+      "id": "dsh-web-fetch-http",
+      "why": "匿名公共 HTTP(S) WebFetchProvider，web 能力 seam(ctx.web) 的实现包。负责安全资源获取（URL 校验、重定向策略、超时、字节上限、charset 解码、二进制拒绝）；SSRF/私有网络防护明确列为暂缓事项，注明是 SSRF 原语，敏感内网部署禁止启用。",
+      "history": "位于 packages/web/web-fetch-http，2026-08-10 首批发布，0.1.0-rc.6 转公开。与 dsh-tool-web（呈现）职责分离；属于实现包，注册 ctx.web 提供方但不拥有该键、不注册模型工具。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/web/web-fetch-http/README.zh.md",
+        "https://registry.npmjs.org/@deepseek-ai/dsh-web-fetch-http"
+      ]
+    }
+  ],
+  "regular_plugins": [
+    {
+      "id": "dsh-native-command",
+      "why_short": "零依赖无 shell 的 execFile 运行器，支持 utf8 捕获、abort 传播与 Windows 隐藏窗口，用于宿主原生 OS 集成。",
+      "sources": [
+        "https://registry.npmjs.org/@deepseek-ai/dsh-native-command",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/util/native-command"
+      ]
+    },
+    {
+      "id": "dsh-api-gateway",
+      "why_short": "Typert Remote Host 分派器与客户端 API 端点，是 api 能力族的 RPC 网关（dsh-api-remotes 的底层实现）。",
+      "sources": [
+        "https://registry.npmjs.org/@deepseek-ai/dsh-api-gateway",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/api"
+      ]
+    },
+    {
+      "id": "dsh-llm-pi-ai",
+      "why_short": "pi-ai 支持的 DeepSeek 适配器，作为 dsh-llm-deepseek 的设计验证孪生实现，挂在 LLM seam 上。",
+      "sources": [
+        "https://registry.npmjs.org/@deepseek-ai/dsh-llm-pi-ai",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/llm/llm-pi-ai"
+      ]
+    },
+    {
+      "id": "dsh-session-telemetry-otel",
+      "why_short": "telemetry seam 的 OpenTelemetry 后端，把捕获的会话记录交给 OTel JS SDK 日志管道。",
+      "sources": [
+        "https://registry.npmjs.org/@deepseek-ai/dsh-session-telemetry-otel",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/session/session-telemetry-otel"
+      ]
+    },
+    {
+      "id": "dsh-llm-retry",
+      "why_short": "按 provider 路由的 LLM 请求重试策略插件，为 LLM seam 注入容错。",
+      "sources": [
+        "https://registry.npmjs.org/@deepseek-ai/dsh-llm-retry",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/llm/llm-retry"
+      ]
+    },
+    {
+      "id": "dsh-time-context",
+      "why_short": "可选的按步骤持久上下文，注入当前时间与经过时间，供模型感知时间。",
+      "sources": [
+        "https://registry.npmjs.org/@deepseek-ai/dsh-time-context",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/context/time-context"
+      ]
+    },
+    {
+      "id": "dsh-command-compact",
+      "why_short": "面向用户的斜杠命令，显式触发会话压缩（compact）。",
+      "sources": [
+        "https://registry.npmjs.org/@deepseek-ai/dsh-command-compact",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/compaction/command-compact"
+      ]
+    },
+    {
+      "id": "dsh-session-title-first-prompt-llm",
+      "why_short": "会话标题的 LLM 提供方插件：用首条消息生成标题。",
+      "sources": [
+        "https://registry.npmjs.org/@deepseek-ai/dsh-session-title-first-prompt-llm",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/session/session-title-first-prompt-llm"
+      ]
+    },
+    {
+      "id": "dsh-session-title-all-prompts-llm",
+      "why_short": "会话标题的 LLM 提供方插件：用全部用户消息生成标题。",
+      "sources": [
+        "https://registry.npmjs.org/@deepseek-ai/dsh-session-title-all-prompts-llm",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/session/session-title-all-prompts-llm"
+      ]
+    },
+    {
+      "id": "dsh-tool-todo",
+      "why_short": "面向模型的 todo_write 工具，建立在事件源会话日志之上。",
+      "sources": [
+        "https://registry.npmjs.org/@deepseek-ai/dsh-tool-todo",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/todo/tool-todo"
+      ]
+    },
+    {
+      "id": "dsh-tool-ask-user",
+      "why_short": "面向模型的 ask_user_question 工具，经 ctx.userQuestions seam 向人类提问。",
+      "sources": [
+        "https://registry.npmjs.org/@deepseek-ai/dsh-tool-ask-user",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/interaction/tool-ask-user"
+      ]
+    },
+    {
+      "id": "dsh-tool-subagent-control",
+      "why_short": "全局命名 send_message/interrupt_agent/list_agents 工具，经 ctx.subagents continuations 控制子 agent。",
+      "sources": [
+        "https://registry.npmjs.org/@deepseek-ai/dsh-tool-subagent-control",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/subagent/tool-subagent-control"
+      ]
+    },
+    {
+      "id": "dsh-tool-goal",
+      "why_short": "面向模型的同会话目标工具，带执行时权威检查（ctx.goals）。",
+      "sources": [
+        "https://registry.npmjs.org/@deepseek-ai/dsh-tool-goal",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/goal/tool-goal"
+      ]
+    },
+    {
+      "id": "dsh-tool-workflow",
+      "why_short": "面向模型的工作流工具：经 ctx.workflowEngine 运行 JS 编排脚本。",
+      "sources": [
+        "https://registry.npmjs.org/@deepseek-ai/dsh-tool-workflow",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/workflow/tool-workflow"
+      ]
+    },
+    {
+      "id": "dsh-tool-fs-search",
+      "why_short": "面向模型的文件系统发现工具（glob/grep），由打包的 @vscode/ripgrep 二进制驱动。",
+      "sources": [
+        "https://registry.npmjs.org/@deepseek-ai/dsh-tool-fs-search",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/fs/tool-fs-search"
+      ]
+    },
+    {
+      "id": "dsh-message-feedback",
+      "why_short": "生命周期绑定的逐消息评分与备注旁路数据（feedback 能力族）。",
+      "sources": [
+        "https://registry.npmjs.org/@deepseek-ai/dsh-message-feedback",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/feedback/message-feedback"
+      ]
+    },
+    {
+      "id": "dsh-compaction-basic",
+      "why_short": "token-meter 驱动的压缩策略 + LLM 摘要后端，compaction 能力族默认实现。",
+      "sources": [
+        "https://registry.npmjs.org/@deepseek-ai/dsh-compaction-basic",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/compaction/compaction-basic"
+      ]
+    },
+    {
+      "id": "dsh-compaction-tool-result-pruner",
+      "why_short": "回放安全、无模型的 head/middle/tail 修剪器，用于压缩工具结果表层节点。",
+      "sources": [
+        "https://registry.npmjs.org/@deepseek-ai/dsh-compaction-tool-result-pruner",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/compaction/compaction-tool-result-pruner"
+      ]
+    },
+    {
+      "id": "dsh-tool-terminal",
+      "why_short": "六个面向模型的持久 PTY 工具，带所有者隔离与通用后台任务集成。",
+      "sources": [
+        "https://registry.npmjs.org/@deepseek-ai/dsh-tool-terminal",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/terminal/tool-terminal"
+      ]
+    },
+    {
+      "id": "dsh-web-search-deepseek",
+      "why_short": "DeepSeek 驱动的搜索提供方（经 Anthropic 兼容 API 的原生 web_search），web seam 的搜索实现。",
+      "sources": [
+        "https://registry.npmjs.org/@deepseek-ai/dsh-web-search-deepseek",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/web/web-search-deepseek"
+      ]
+    },
+    {
+      "id": "dsh-web-search-perplexity",
+      "why_short": "Perplexity 驱动的搜索提供方，web capability seam 的替代实现。",
+      "sources": [
+        "https://registry.npmjs.org/@deepseek-ai/dsh-web-search-perplexity",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/web/web-search-perplexity"
+      ]
+    }
+  ]
+}

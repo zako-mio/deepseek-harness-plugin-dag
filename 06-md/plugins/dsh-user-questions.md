@@ -6,6 +6,12 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/interaction/user-questions`
 
+## 为什么需要它（设计初衷）
+用户交互 Service Definition，定义 ctx.userQuestions 供工具/权限插件暂停工作向人类提问并等待回答。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/interaction/user-questions/README.zh.md
+
 ## 实现逻辑
 用户提问能力接缝：UserQuestionService(ctx.userQuestions) 维护单一活动 UI provider 槽。ask(request) 是唯一出口：前置校验(signal 中止/空问题/agent 必须精确 live root/plan-review intent 标签合法)，然后委托 provider.ask。
 

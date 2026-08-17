@@ -6,6 +6,16 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/sandbox/sandbox-policy`
 
+## 为什么需要它（设计初衷）
+沙箱策略解析的唯一所有者（ctx.sandboxPolicy）：统一为每次调用解析部署默认与每会话持久覆盖的 SandboxMode（read-only / workspace-write / danger-full-access）及不可变工作区根。若 FS 工具、单次 bash、终端会话各自解析 mode+workspaceRoot，会漂移成分裂的世界——此插件正是为防止策略分裂而生，默认 read-only 故障安全。
+
+发展史：2026-07-06 sandbox 决策划定能力边界（进程约束缝，bwrap/Landlock/Seatbelt 后端）；2026-07-14 cross-family fs sandbox 决策让文件系统/子进程共享同一策略；策略由单个事件写入、重放可恢复。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/sandbox/sandbox-policy
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-07-06-sandbox.md
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/subsystems/sandbox.md
+
 ## 实现逻辑
 沙箱策略中枢(SandboxPolicyService extends Service,注册 ctx.sandboxPolicy):部署默认模式(read-only fail-safe)+ per-session 解析——resolve({session}) 合并 approved override > 会话 sandbox/mode 事件折叠 > 部署默认;会话级 mode 切换以 setSandboxMode 写 sandbox/mode 日志事件;另经 ctx.inject(['systemPrompt']) 提供 sandbox:policy 动态上下文段落。
 

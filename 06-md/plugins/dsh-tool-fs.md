@@ -6,6 +6,13 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/fs/tool-fs`
 
+## 为什么需要它（设计初衷）
+面向模型的文件系统工具（read/read_image/write/edit）及其执行器：ctx.fs seam 的 consumer 层，含读窗口化。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/fs/tool-fs/README.md
+- https://www.npmjs.com/package/@deepseek-ai/dsh-tool-fs
+
 ## 实现逻辑
 模型面向的文件系统工具套件:apply() 经 ctx.tools.register 注册 read/write/edit 工具(read 附带流式大文件/窗口渲染/观察事件,write/edit 通过 FsSandboxController 解析 per-call 沙箱策略、经 ctx.waterfall 取 fs/write-intent|fs/edit-intent 守卫并 emit fs/observed);read_image 仅在 ctx.inject(['attachments']) 挂载时注册;每工具同时注册 ctx.systemPrompt.section 引导文本。
 

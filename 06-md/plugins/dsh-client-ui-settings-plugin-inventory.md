@@ -6,6 +6,12 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-settings-plugin-inventory`
 
+## 为什么需要它（设计初衷）
+Web 插件设置里的只读 Cordis Loader 清单标签页，展示已装载插件库存。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-settings-plugin-inventory/package.json
+
 ## 实现逻辑
 只读插件清单 tab：注册 settings.plugins.tab id=all order=10（index.ts:39-46），list 闭包调 ctx.remote.pluginInventory.list() RPC 拉取当前 Loader 条目投影（:30-36），渲染 PluginInventorySettingsTab。inject 含 remote.pluginInventory 生成 Remote 面。
 

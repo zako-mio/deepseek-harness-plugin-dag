@@ -6,6 +6,12 @@
 - 来源层: L3 其余
 - 源码路径: `packages/extensions/tool-cordis`
 
+## 为什么需要它（设计初衷）
+自指式 Cordis 工具集：cordis_inspect/define/run/stop/undefine，操作进程内动态插件。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/extensions/tool-cordis/README.md
+
 ## 实现逻辑
 Model 面向的 Cordis 运行时/包管理工具集。name='tool-cordis', inject=['tools','systemPrompt','dynamicCordisRunner','cordisInspect']（src/index.ts:26-27）。注册 7 个工具：cordis_inspect_list/query/self、cordis_define、cordis_run、cordis_stop、cordis_undefine（:41-378）；注册 tool:cordis system prompt section（order 115, :36）；经 ctx.cordisInspect.register 注册 Host Inspect Provider（Service/Event/Builtin/Tool, providers.ts:26-64）；agent/pre-step 侦测用户 @pluginId（正则 @([a-z]{3,6}-\d+), :381-398,497-506）注入 DynamicCordisReference 上下文。所有运行时操作走 dsh-cordis-host-runner 的 dynamicCordisRunner（define/run/stop/undefine/reference/snapshot/inspectPlugin/inspectPackage）。presentCall 卡片经 dsh-tools GenericCallView。
 

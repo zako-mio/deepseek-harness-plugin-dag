@@ -6,6 +6,16 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/core/agent`
 
+## 为什么需要它（设计初衷）
+定义 Agent 接口、实时注册表、发起方(initiator)作用域与 agent/* 事件词汇，是产品 API 脊柱。所有插件（UI、钩子、编排器）面向此 Agent handle 编程而不依赖具体循环，因此循环(agent-loop)可整体替换，从根本上落实『一切皆插件』。
+
+发展史：位于 packages/core/agent，随 2026-08-10 首批 rc 发布（BSD-3-Clause），后转 MIT，0.1.0-rc.6 转公开。保持稳定 API，注册表可复用稳定路由载体，为 dsh-agent-loop 等循环实现提供替换缝隙。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/core/agent/README.zh.md
+- https://registry.npmjs.org/@deepseek-ai/dsh-agent
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/architecture.md
+
 ## 实现逻辑
 Agent 服务(ctx.agents)：live 注册表 + initiator scope(AsyncLocalStorage 因果归属) + 工厂委派。AgentRegistry 只跟踪/生命周期管理，具体 create/resume 由 dsh-agent-loop 实现 AgentFactory 通过 setFactory 注入。提供 agentEvents/emitAgentEvent 事件派发(agent/created、agent/disposed、agent/status、agent/request、agent/request-error 等主题事件词表)；model-selection.ts 将模型选择耦合到 system-prompt/assemble 与 agent/request 瀑布。
 

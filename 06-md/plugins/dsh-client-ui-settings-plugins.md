@@ -6,6 +6,12 @@
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-settings-plugins`
 
+## 为什么需要它（设计初衷）
+插件设置分区：功能所属标签页 + 可配置的宿主平面插件卡片。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-settings-plugins/package.json
+
 ## 实现逻辑
 插件配置 section：注册 settings.section id=plugins order=15（index.ts:111-119），其 configurable tab(order=0) 声明 settings.plugin.item 槽并渲染三张 host-plane 卡片 bash/agent-loop/web-search（:123-157）。每卡经 ctx.settingsScope.bind 绑定各自命名空间；订阅 credentials/updated 使 webSearch 刷新凭据（:70）。
 

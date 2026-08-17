@@ -6,6 +6,12 @@
 - 来源层: L3 其余
 - 源码路径: `packages/subagent/subagent-claude-code`
 
+## 为什么需要它（设计初衷）
+注册 claude-code 子代理 provider：在父会话工作区调用官方 Claude Agent SDK。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/subagent/subagent-claude-code/README.md
+
 ## 实现逻辑
 固定 Claude Code one-shot 子代理 provider：每次被接受的 run 经官方 Agent SDK 在委派 Session 的 workspace 启动真实 CLI 子进程，置于共享 subprocess owner 之下；declares NO_START_CAPABILITIES(inheritsParentContext=false)。经外部 @anthropic-ai/sdk(0.93.0)+@anthropic-ai/claude-agent-sdk(0.3.220) 通信，env 显式条目层叠在 subprocess seam 的 credential-scrubbed 父环境之上。
 

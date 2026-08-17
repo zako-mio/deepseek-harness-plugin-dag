@@ -6,6 +6,13 @@
 - 来源层: L1 核心集
 - 源码路径: `packages/typert/loader`
 
+## 为什么需要它（设计初衷）
+Typert Loader 集成：扫描 Loader 条目并注册生成的主机类型产物进运行时 registry，喂给 typert 类型图（ctx.typert）。
+
+来源：
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/typert/loader
+- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/typert
+
 ## 实现逻辑
 Typert 构建产物的自动注册集成。apply(ctx) 扫描 loader entries 与显式配置 packages，对每个 entry 解析其 package.json 的 './typert' export，动态 import 后经 validateTypertManifest 严格校验，通过 ctx.typert.register(manifest) 注册。监听 'internal/plugin' 事件把 fiber entry 标记 dirty，microtask 批量 flush 增量 reconcile；unmount 时撤下注册。
 
