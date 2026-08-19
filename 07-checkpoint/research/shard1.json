@@ -1,0 +1,260 @@
+{
+  "meta": {
+    "repo": "github.com/deepseek-ai/deepseek-harness",
+    "repo_created": "2026-08-13T11:56:32Z",
+    "repo_desc": "DeepSeek Harness: Everything is a Plugin.",
+    "repo_stars": 139849,
+    "npm_publish_window": "2026-08-10 ~ 2026-08-13（dsh 家族首批 0.0.1-rc 包，8-13 全量转公开）",
+    "architecture": "一切皆插件（Cordis 框架），无特权核心，221 个包构成可替换插件树",
+    "note": "包名与 monorepo 目录名不同（npm 名去 dsh- 前缀后对应 packages/<domain>/<dir>），README 实际存放于 GitHub monorepo 各包目录（npm 页 README 为空，全部指向仓库）"
+  },
+  "core": [
+    {
+      "id": "dsh-llm",
+      "why": "为 DeepSeek Harness 定义供应商中立的 LLM 词汇与抽象服务：消息/内容块/流式 chunk 协议 + LlmRuntime 适配器注册表与单一流式调用 API。agent loop、会话日志与所有插件都以它作为模型交互的规范语言；真实适配器（deepseek-official、pi-ai）实现同一 LlmAdapter 接口，llm/stream waterfall 事件供缓存/日志/路由拦截。",
+      "history": "dsh 家族首批基础包，2026-08-10 发布 0.0.1-rc.1；架构文档列为 core 包（ctx.llm），是模型适配器与一切上层能力（retry、工具、UI 流渲染）依赖的根 seam。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/llm/llm/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-llm",
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/architecture.md"
+      ]
+    },
+    {
+      "id": "dsh-client-ui-slots",
+      "why": "Web shell 插槽系统的纯核心：声明合并的 SlotMap、单次 register 组合 API、四共享 props 类型族与 store-seat 类型族。一次 register 调用即完成组件进槽、子槽声明（声明=渲染授权=运行时规格）、store 座位与业务面注册；React-free 且 cordis-free，register 时校验未声明槽/重复声明/跨作用域共享等错误。",
+      "history": "2026-08-10 以 0.0.1-rc.1 随 dsh 第一批客户端包发布；为浏览器 UI 插件体系提供类型安全插槽注册与 renderer 安装契约，实现在 web-react 与 shell boot。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-slots/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-client-ui-slots"
+      ]
+    },
+    {
+      "id": "dsh-session-projection",
+      "why": "会话投影 seam：拥有合并可扩展的投影类型表、provider 契约与 ctx.sessionProjections 注册表，将已提交的会话事件驱动到每个注册投影单元（init/apply/view 三个纯函数）并输出完整当前值，供 api-proxy 历史尾页与 session/projection push 帧消费。领域注册纯数学，框架负责驱动，事件日志为唯一真源，UI 读模型由此派生。",
+      "history": "由 2026-07-27 session-projection RFC 定案设计（框架驱动/领域计算、同引用即无工作、全量值规则）；2026-08-10 发布 0.0.1-rc.1。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/session/session-projection/README.md",
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/proposed/architecture/2026-07-27-session-projection-and-command-log.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-session-projection"
+      ]
+    },
+    {
+      "id": "dsh-typert-registry",
+      "why": "Typert 生成产物的运行时注册中心：贡献者携带一个包面的业务反射与可选实时 Zod schema，ctx.typert 原子注册并在 fiber 卸载时撤回。按 <包>#<面> 键控包反射、按 <包>#<名> 键控 schema，JSON Schema 在消费端按需计算，为 host/client 跨进程类型安全 Remote 通信提供运行时支撑。",
+      "history": "2026-08-10 发布 0.0.1-rc.1；与 typert 生成器/loader/协议组包，构成 harness 类型反射与 Remote 通信机制的可替换组件。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/typert/registry/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-typert-registry"
+      ]
+    },
+    {
+      "id": "dsh-storage-domain",
+      "why": "存储中心的领域数据形态：在配置的后端上提供 schema 校验、事件发射的 KV 领域（ctx.storageDomain / ctx.storage.domain 投影）。领域以 defineDomain + zod 记录 schema 声明，内存为权威、读同步、写按领域串行化，先落盘后更新内存并发射 domain/changed。用于存放非会话数据（workspace 记录、未来会话 sidecar）。",
+      "history": "由 2026-07-24 domain-kv-storage Agent Note 定案（storage/domain 分层）；2026-08-10 发布 0.0.1-rc.1，补足会话日志之外的结构化存储形态。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/storage/storage-domain/README.md",
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/proposed/architecture/2026-07-24-domain-kv-storage-and-workspace.zh.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-storage-domain"
+      ]
+    },
+    {
+      "id": "dsh-workflow-worker-thread",
+      "why": "WorkflowEngine 实现：每次运行一个 Node worker thread 执行模型编写的工作流编排脚本，子 agent 留在 host，经类型化协议通过 ctx.subagents 桥接。核心目的：同步脚本循环不阻塞 host 事件循环，且忽略取消的脚本可随 worker.terminate() 真正终止；明确非安全沙箱，worker 只做事件循环隔离、空环境与结构化克隆边界。",
+      "history": "2026-08-12 以 0.0.1-rc.3 发布，晚于首批基础包 2 天；作为 workflow seam 的 worker-thread 引擎，供 dsh-tool-workflow 面向模型消费。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/workflow/workflow-worker-thread/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-workflow-worker-thread"
+      ]
+    },
+    {
+      "id": "dsh-tool-call-timeout-policy",
+      "why": "集中式工具调用超时策略插件：作为 tools/execute waterfall 包装器，读取各工具声明的 timeoutMs，派生 per-tool 截止信号赋给 exec.signal，超时返回 TOOL_TIMEOUT。核心理念：工具作者只需转发 exec.signal，预算由部署策略决定；超时声明放在工具定义上，避免拼错名称致策略失效；零配置，位于 packages/guard。",
+      "history": "由 2026-07-07 tool-call-timeout-policy Agent Note 定案（先提取共享 deadline/timeout 库，再插件化进 tools/execute 环绕分发扩展点）；2026-08-12 发布 0.0.1-rc.3。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-07-07-tool-call-timeout-policy.zh.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-tool-call-timeout-policy",
+        "https://github.com/deepseek-ai/deepseek-harness"
+      ]
+    },
+    {
+      "id": "dsh-session-persistence-sqlite",
+      "why": "SQLite 持久会话后端：第二个 SessionPersistence provider，满足与 JSONL 相同的契约（append-only、连续 seq、lazy 物化、加载时关闭中断轮次），以 node:sqlite 行替代文件字节。事件 1:1 映射 events 表行（assistant/chunk 也不丢弃、seq 连续），append=事务，默认 WAL 日志，PRAGMA application_id 标识规范库。",
+      "history": "2026-08-10 发布 0.0.1-rc.1；与 JSONL 后端共同实现 2026-06-14 session-persistence 契约，为需跨进程共享单一数据库的部署提供另一后端。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/session/session-persistence-sqlite/README.md",
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-06-14-session-persistence.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-session-persistence-sqlite"
+      ]
+    }
+  ],
+  "light": [
+    {
+      "id": "dsh-host-plugin-inventory",
+      "why_short": "只读暴露当前 Cordis Loader 插件树的 host 端投影，供 UI 展示插件清单，无缓存/无变更/无 mutations。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/host/plugin-inventory/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-host-plugin-inventory"
+      ]
+    },
+    {
+      "id": "cordis-plugin-hmr",
+      "why_short": "Cordis 客户端插件热重载：浏览器经 SSE 按 rebuilt 帧重载单插件，node 端轮询统计重构建，无需整页刷新。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/hmr/README.md",
+        "https://www.npmjs.com/package/cordis-plugin-hmr"
+      ]
+    },
+    {
+      "id": "dsh-host-frontend-static",
+      "why_short": "Web shell 的 SPA dist 静态服务器：占用 webserver 单 fallback seat，带 index-tap 注入、越界 403、SPA 路由回退。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/host/frontend-static/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-host-frontend-static"
+      ]
+    },
+    {
+      "id": "dsh-session-persistence-jsonl",
+      "why_short": "JSONL 持久会话后端：每会话一个 append-only 逻辑日志，默认 zstd 压缩、chunk 打包行压缩、支持恢复。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/session/session-persistence-jsonl/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-session-persistence-jsonl"
+      ]
+    },
+    {
+      "id": "dsh-agent-presets",
+      "why_short": "按 preset 目录（agent.cordis.yml）做每会话 agent 组合，会话经 scope 父链加入常驻挂载，冷读也可解析。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/preset/agent-presets/README.md",
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-08-03-per-session-agent-presets.md"
+      ]
+    },
+    {
+      "id": "dsh-session-title",
+      "why_short": "基于会话日志的标题服务：确定性回退 + 可选异步 provider，每个接受的标题都是 session/title 日志事件。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/session/session-title/README.md",
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-07-21-log-backed-session-titles.md"
+      ]
+    },
+    {
+      "id": "dsh-bash-sandbox",
+      "why_short": "消费 ctx.sandbox 的 bash 执行器实现：每条命令经沙箱约束 spawn，报告拒绝/执行事实，无沙箱则 fail-closed。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/shell/bash-sandbox/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-bash-sandbox"
+      ]
+    },
+    {
+      "id": "dsh-goal-round-driver",
+      "why_short": "竞态防护的同会话 goal-round 驱动器：把 active+armed 目标桥接为顺序 goal rounds，不引入 agent-loop 分支。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/goal/goal-round-driver/README.md",
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-07-19-same-session-goal-round-driver.zh.md"
+      ]
+    },
+    {
+      "id": "dsh-web-search-exa",
+      "why_short": "Exa 支撑的 ctx.web 能力 seam 搜索 provider：调用 Exa /search 并把结果映射为标准化 WebSearchResult。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/web/web-search-exa/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-web-search-exa"
+      ]
+    },
+    {
+      "id": "dsh-client-ui-input-trigger",
+      "why_short": "输入触发器流水线：/ 与 @ 光标处检测、分组候选菜单、选择路由到注册源，纯浏览器侧 UI。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-input-trigger/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-client-ui-input-trigger"
+      ]
+    },
+    {
+      "id": "dsh-client-ui-workspace",
+      "why_short": "Workspace 浏览器与选择器插件：填充 sidebar 与 hero 槽，管理 Workspace/Session 分组、排序、搜索与 Fork。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-workspace/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-client-ui-workspace"
+      ]
+    },
+    {
+      "id": "dsh-repeat-tool-reminder",
+      "why_short": "建议性防循环守卫：相同工具+相同参数连续调用时注入升级提醒，不阻断、不重写、不登日志。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/guard/repeat-tool-reminder/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-repeat-tool-reminder"
+      ]
+    },
+    {
+      "id": "dsh-tool-fs",
+      "why_short": "面向模型的文件系统工具（read/read_image/write/edit）及其执行器：ctx.fs seam 的 consumer 层，含读窗口化。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/fs/tool-fs/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-tool-fs"
+      ]
+    },
+    {
+      "id": "dsh-tool-str-replace-editor",
+      "why_short": "独立面向模型的 str_replace_editor 工具（view/create/str_replace/insert）over ctx.fs，可配任意 bash 面。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/fs/tool-str-replace-editor/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-tool-str-replace-editor"
+      ]
+    },
+    {
+      "id": "dsh-subagent-codex",
+      "why_short": "ACP 子代理 provider（对应仓库目录 subagent-acp，Codex 场景）：每子代理独立子进程按 Agent Client Protocol 驱动，冷启动隔离环境。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/subagent/subagent-acp/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-subagent-codex"
+      ]
+    },
+    {
+      "id": "dsh-tool-pwsh",
+      "why_short": "面向模型的 pwsh 工具 over ctx.shell executor seam，专供 Windows 组合，行为逐调用镜像 dsh-tool-bash。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/shell/tool-pwsh/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-tool-pwsh"
+      ]
+    },
+    {
+      "id": "dsh-agent-spine-demo",
+      "why_short": "默认无执行器/无 UI 的 agent spine 作为单一 bundle 插件：装载每个 harness agent 所需的固定服务集，应用只加点与可换后端。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/examples/agent-spine-demo/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-agent-spine-demo"
+      ]
+    },
+    {
+      "id": "dsh-session-log-export",
+      "why_short": "Web 会话日志导出：/export 斜杠命令 + Header 按钮 + 共享下载对话框，经 host apiproxy 的 ZIP 端点下载。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/session-query/session-log-export/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-session-log-export"
+      ]
+    },
+    {
+      "id": "dsh-client-web",
+      "why_short": "Web shell 内核 bootWebShell（模块持有+种子表+两阶段启动+AppRoot 门+app-shell 组装入口），由 apps/web vite 入口消费。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/web-react/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-client-web"
+      ]
+    },
+    {
+      "id": "dsh-client-ui-plan",
+      "why_short": "Plan 模式状态芯片（纯浏览器表面插件）：占 conversation.input.plan seat，渲染 plan 投影并执行 /plan off。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-plan/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-client-ui-plan"
+      ]
+    },
+    {
+      "id": "dsh-client-ui-cordis",
+      "why_short": "Cordis 动态插件浏览器端：全局面板操作 host 持有的每个定义 + 只读 cordis_define 卡片记录会话定义。",
+      "sources": [
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/extensions/ui-cordis/README.md",
+        "https://www.npmjs.com/package/@deepseek-ai/dsh-client-ui-cordis"
+      ]
+    }
+  ]
+}

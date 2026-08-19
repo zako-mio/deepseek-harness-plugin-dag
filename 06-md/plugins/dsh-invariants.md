@@ -1,0 +1,74 @@
+# dsh-invariants (外部基座 seam)
+
+- 包名: `@deepseek-ai/dsh-invariants`
+- 源码路径: `packages/runtime-diagnostics/invariants`
+- 被插件引用: 63 次
+- 描述: Registry service for package-owned DeepSeek Harness runtime invariants
+
+## 被集依赖 (下游)
+- `dsh-acp-demo`
+- `dsh-agent`
+- `dsh-agent-default-model`
+- `dsh-agent-spine-demo`
+- `dsh-agent-tool-presentation`
+- `dsh-api-gateway`
+- `dsh-fs-e2b`
+- `dsh-fs-observation-policy`
+- `dsh-fs-sandbox`
+- `dsh-hooks-claude-code`
+- `dsh-hooks-codex`
+- `dsh-host-directory-picker`
+- `dsh-host-directory-picker-browse`
+- `dsh-host-directory-picker-native`
+- `dsh-host-frontend-static`
+- `dsh-llm`
+- `dsh-llm-pi-ai`
+- `dsh-llm-retry`
+- `dsh-lsp-stdio`
+- `dsh-native-command`
+- `dsh-persona`
+- `dsh-sandbox-policy`
+- `dsh-schedule`
+- `dsh-sdk-client`
+- `dsh-sdk-jsonrpc-demo`
+- `dsh-sdk-jsonrpc-server`
+- `dsh-session`
+- `dsh-session-persistence-jsonl`
+- `dsh-session-persistence-sqlite`
+- `dsh-session-projection`
+- `dsh-session-query-sqlite`
+- `dsh-session-reference`
+- `dsh-session-title`
+- `dsh-session-title-all-prompts-llm`
+- `dsh-session-title-first-prompt-llm`
+- `dsh-skill`
+- `dsh-spill-local`
+- `dsh-storage-sqlite`
+- `dsh-subagent-acp`
+- `dsh-subagent-claude-code`
+- `dsh-subagent-codex`
+- `dsh-subagent-dsh-sdk`
+- `dsh-subprocess-e2b`
+- `dsh-subprocess-local`
+- `dsh-system-prompt`
+- `dsh-terminal-bash`
+- `dsh-time-context`
+- `dsh-tmux-context`
+- `dsh-token-meter`
+- `dsh-tool-ask-user`
+- `dsh-tool-bash-persistent`
+- `dsh-tool-cordis`
+- `dsh-tool-lsp`
+- `dsh-tool-session-query`
+- `dsh-tool-terminal`
+- `dsh-tools`
+- `dsh-typert-generator`
+- `dsh-typert-loader`
+- `dsh-typert-registry`
+- `dsh-user-questions`
+- `dsh-web-fetch-http`
+- `dsh-web-search-exa`
+- `dsh-web-search-perplexity`
+
+## 依赖机制
+编译依赖、运行时依赖、组合依赖

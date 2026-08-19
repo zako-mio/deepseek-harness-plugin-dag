@@ -1,0 +1,1202 @@
+{
+  "route": "R3-interaction-ui",
+  "scope": "会话交互UI + UI底座 19 插件",
+  "plugins": [
+    {
+      "id": "dsh-client-ui-conversation",
+      "name": "@deepseek-ai/dsh-client-ui-conversation",
+      "implementation": "会话交互核心大包（70 ts）。apply() 先 registerConversationNodes+registerChatNodeRenderers，然后向 slots 注册：conversation（ConversationRoot，声明 session/header/composer/input.dock/hero 等 11 个 child slot）、conversation.session（ConversationSession，持 chatStore + views ring）、conversation.session.header、conversation.composer.bar（InputBar，注入 shell/inputTriggers/command/stop/submissionPolicy）、conversation.composer 的 ApprovalPanel（selector 路由）、conversation.view id=chat（ChatView + keyed conversation.chat.node 座位）、details（DetailsPanel）、settings.general.item 的 EnterBehaviorRow。以 ConversationController 提供 ctx.conversation（scope 寻址 send/cancel/updateQueue/loadOlder，input hub + composer blocks 注册表），并注册 11 个 Chat 业务 Definition（assistant/tool/command/compaction/retry/turn-error/turn-max-tokens/turn-tail/inbox/message）到 ConversationEventRegistry。composer 标准输入 kit（hooks:input + inputActions）经 sessions.provide 发布。依赖 host 的 slots/layout/sessions/workspaces/locale/connection/remote/settingsScope/conversationEvents/conversationViews。",
+      "provides": [
+        "ctx.conversation（ConversationController: send/cancel/updateQueue/loadOlder/input/blocks）",
+        "slot 声明: conversation, conversation.session, conversation.session.header, conversation.composer, conversation.composer.bar, conversation.view, conversation.details, conversation.chat.node(keyed), conversation.chat.turnTail(chain), conversation.chat.assistant-actions(list), conversation.input.dock, conversation.input.left/right/overlay, conversation.hero.workspace/hero.agentPreset, conversation.session.header.actions/utilities, conversation.input.plan/model",
+        "chatStore(per-session, persist 'dsh.conversation.chat')",
+        "composer 标准输入 provide 通道(input/inputActions)",
+        "CONVERSATION_SETTINGS_NAMESPACE settings 注册",
+        "locale 命名空间 'conversation'",
+        "ChatNodeDataMap: tool-call/assistant-step/command/manual-compaction/compaction/model-retry/turn-error/turn-max-tokens/turn-tail/command-input"
+      ],
+      "depends_on": [
+        {
+          "plugin_id": "dsh-client-runtime",
+          "mechanism": "E1",
+          "evidence": "package.json:34-41(dsh.client.inject runtime/api-remotes/connection) + apply.ts:5-6 resolveWorkspacePath,ISessions + apply.ts:52-53 inject sessions/workspaces/conversationEvents/conversationViews",
+          "purpose": "SessionRuntime 会话/工作区服务、EventDefinition+View 注册表、useProjection/defineStore 运行时"
+        },
+        {
+          "plugin_id": "dsh-client-ui-slots",
+          "mechanism": "E1",
+          "evidence": "apply.ts:3 resolveSlotLabel,BoundActions + contract/slots.ts:5-7",
+          "purpose": "SlotRegistry 注册/dispatch 与四份 props 类型底座"
+        },
+        {
+          "plugin_id": "dsh-client-ui-layout",
+          "mechanism": "E1",
+          "evidence": "apply.ts:10 type-only import + apply.ts:118 layout + apply.ts:392/452 layout.openDetails/closeDetails",
+          "purpose": "三栏框架提供 conversation/details 父 slot + ctx.layout 面板动作"
+        },
+        {
+          "plugin_id": "dsh-client-ui-settings",
+          "mechanism": "E2",
+          "evidence": "apply.ts:9 type-only + apply.ts:133-135 ctx.settingsScope.bind(ConversationSettings)",
+          "purpose": "settingsScope 服务承载 busy-Enter 设置绑定"
+        },
+        {
+          "plugin_id": "dsh-client-locale",
+          "mechanism": "E1",
+          "evidence": "apply.ts:12 type-only + apply.ts:124 ctx.locale.register(NS)",
+          "purpose": "命名空间字典注册与 t 座位"
+        },
+        {
+          "plugin_id": "dsh-client-connection",
+          "mechanism": "E2",
+          "evidence": "apply.ts:52 inject 'connection' + src/index.ts package.json dsh.client.inject:35",
+          "purpose": "wire 连接句柄/事件总线（connection/reset 等）"
+        },
+        {
+          "plugin_id": "dsh-api-remotes",
+          "mechanism": "E2",
+          "evidence": "apply.ts:52 inject 'remote'",
+          "purpose": "ctx.remote 远程调用底座（conversation 事件经 connection 传输）"
+        },
+        {
+          "plugin_id": "dsh-session-projection",
+          "mechanism": "E2",
+          "evidence": "InputBar.tsx:64/66/90/123 useProjection('plan'|'goal'|'imageLimits'|'permissions') + StatsLine.tsx:165-170 useProjection('tokenUsage'|'sessionStats') + ContextMeter.tsx:41-42",
+          "purpose": "会话投影数据源：plan/goal/permissions/tokenUsage/sessionStats 渲染输入"
+        },
+        {
+          "plugin_id": "dsh-agent",
+          "mechanism": "E1",
+          "evidence": "conversation-nodes/inbox.ts:5 InboxTarget + package.json peerDependencies:57",
+          "purpose": "inbox/agent 事件类型契约（agent/inbox/spliced）"
+        },
+        {
+          "plugin_id": "dsh-tools",
+          "mechanism": "E1",
+          "evidence": "conversation-nodes/tool.ts:7 dsh-tools/types + package.json:75",
+          "purpose": "Tool 调用 wire 类型契约（tool/call、tool/result）"
+        },
+        {
+          "plugin_id": "dsh-commands",
+          "mechanism": "E1",
+          "evidence": "conversation-nodes/command.ts:9 dsh-commands/types",
+          "purpose": "command/run 事件与命令 surface 契约"
+        },
+        {
+          "plugin_id": "dsh-compaction",
+          "mechanism": "E1",
+          "evidence": "conversation-nodes/command.ts:7-8 dsh-compaction/checkpoint + compaction.ts:5 dsh-compaction/types",
+          "purpose": "compaction 节点类型/检查点事件契约"
+        },
+        {
+          "plugin_id": "dsh-session-stats",
+          "mechanism": "E1",
+          "evidence": "StatsLine.tsx:10 dsh-session-stats/client（sessionStats projection key 合并）+ package.json:73",
+          "purpose": "sessionStats 投影 key 类型合并"
+        },
+        {
+          "plugin_id": "dsh-token-meter",
+          "mechanism": "E1",
+          "evidence": "StatsLine.tsx:11 + ContextMeter.tsx:10 dsh-token-meter/client + package.json:74",
+          "purpose": "tokenUsage/contextPressure/contextBreakdown 投影类型"
+        },
+        {
+          "plugin_id": "dsh-goal",
+          "mechanism": "E1",
+          "evidence": "InputBar.tsx:21 dsh-goal/client（goal projection key 合并）",
+          "purpose": "goal 投影 key 类型合并（hasGoal 开关）"
+        },
+        {
+          "plugin_id": "dsh-permission-presets",
+          "mechanism": "E1",
+          "evidence": "skeleton/PermissionSelect.tsx:4 dsh-permission-presets/client",
+          "purpose": "permissions 投影与 PermissionSelect 值类型"
+        },
+        {
+          "plugin_id": "dsh-tool-todo",
+          "mechanism": "E1",
+          "evidence": "skeleton/TodoPanel.tsx:15 dsh-tool-todo/client",
+          "purpose": "todos 投影类型（todo dock 数据）"
+        },
+        {
+          "plugin_id": "dsh-llm-retry",
+          "mechanism": "E1",
+          "evidence": "conversation-nodes/assistant.ts:9 dsh-llm-retry/types + package.json:72",
+          "purpose": "model-retry 节点事件类型"
+        },
+        {
+          "plugin_id": "dsh-client-ui-input-trigger",
+          "mechanism": "E1",
+          "evidence": "input/hub.ts:12 InputTriggerController + input/machine.ts:16 + input/contract.ts:13 + input/facade.ts:14",
+          "purpose": "'/'|'@' 输入触发控制器与 slash 事件契约（bail 监听）"
+        },
+        {
+          "plugin_id": "dsh-client-ui-attachment",
+          "mechanism": "E1",
+          "evidence": "InputBar.tsx:15-16 AttachmentRail,DropOverlay,ImageLightbox + AssistantMarkdown.tsx:17 ImageGallery",
+          "purpose": "图片 draft rail/lightbox/overlay 渲染 atoms"
+        },
+        {
+          "plugin_id": "dsh-client-ui-primitives",
+          "mechanism": "E1",
+          "evidence": "多文件 import（InputBar.tsx:12-14, MessageItem.tsx:11, ChatView.tsx:17 等）",
+          "purpose": "通用 UI atoms/图标/Markdown 渲染底座"
+        },
+        {
+          "plugin_id": "dsh-attachment",
+          "mechanism": "E1",
+          "evidence": "service.ts:16 ImageAttachmentRef + contract/slots.ts:3 + package.json:59",
+          "purpose": "附件 wire 类型（image media type）"
+        },
+        {
+          "plugin_id": "dsh-invariants",
+          "mechanism": "E1",
+          "evidence": "package.json:71 peerDependencies",
+          "purpose": "不变量工具库"
+        }
+      ],
+      "dependents": [
+        {
+          "plugin_id": "dsh-client-ui-tool",
+          "evidence": "ui-tool/src/client/apply.ts:3 type-only + apply.ts:23-30 注册 conversation.chat.node keyed 'tool-call'",
+          "purpose": "消费 conversation.chat.node 座位声明 Chat 节点渲染"
+        },
+        {
+          "plugin_id": "dsh-client-ui-workflow-run",
+          "evidence": "ui-workflow-run/src/client/index.ts:24-31 注册 conversation.chat.node keyed 'workflow-run'",
+          "purpose": "消费 keyed Chat 节点座位"
+        },
+        {
+          "plugin_id": "dsh-client-ui-deliverables",
+          "evidence": "ui-deliverables/src/client/index.ts:41-52 注册 conversation.chat.turnTail 链 + :12 ChatFileMentions 类型",
+          "purpose": "消费 turnTail 链声明 + ChatFileMentions 服务类型"
+        },
+        {
+          "plugin_id": "dsh-client-ui-goal",
+          "evidence": "ui-goal/src/client/index.ts:72-99 注册 conversation.input.dock id=goal + :51-55 conversation.chat.node keyed 'command-input'",
+          "purpose": "消费 input.dock 与 chat.node 座位"
+        },
+        {
+          "plugin_id": "dsh-client-ui-user-questions",
+          "evidence": "ui-user-questions/src/client/index.ts:56-59 注册 conversation.composer selector 链",
+          "purpose": "消费 composer 链座位（question 接管）"
+        },
+        {
+          "plugin_id": "dsh-client-ui-trajectory",
+          "evidence": "ui-trajectory/src/client/index.ts:43-64 注册 conversation.view id=trajectory",
+          "purpose": "消费 conversation.view 视图环"
+        },
+        {
+          "plugin_id": "dsh-client-ui-message-feedback",
+          "evidence": "ui-message-feedback/src/client/index.ts:60-77 注册 conversation.chat.assistant-actions",
+          "purpose": "消费 assistant-actions 动作条座位"
+        },
+        {
+          "plugin_id": "dsh-client-ui-jobs",
+          "evidence": "ui-jobs/src/client/index.ts:30-39 注册 conversation.session.header.actions id=job-list",
+          "purpose": "消费 header actions 座位"
+        },
+        {
+          "plugin_id": "dsh-client-ui-workspace",
+          "evidence": "ui-workspace/src/client/index.ts:120-128 注册 conversation.hero.workspace",
+          "purpose": "消费 hero workspace 座位"
+        },
+        {
+          "plugin_id": "dsh-client-ui-cordis",
+          "evidence": "ui-cordis/src/client/index.ts:4 type-only ui-tool/client（cordis 走 ui-tool 座位）",
+          "purpose": "间接经 ui-tool 消费 Chat 节点"
+        }
+      ]
+    },
+    {
+      "id": "dsh-client-ui-tool",
+      "name": "@deepseek-ai/dsh-client-ui-tool",
+      "implementation": "工具调用树 + 业务 Tool 视图。apply() 注册：conversation.chat.node keyed 'tool-call'（ToolCallTree，含 child slot tool.call.toolview keyed dispatch）、conversation.details.tool（ToolDetails 渲染选中调用输出）；再以 7 个独立 registrant plugin（bash/read/file-mutation/search/web/todo/ask-question toolviews）注册 keyed 'tool.call.toolview' 原子视图，未覆盖的 toolName 由 GenericToolCard fallback。declares slot 'tool.call.toolview'（keyed，open key 域，toolName 即 key）。",
+      "provides": [
+        "slot 声明: tool.call.toolview(keyed)",
+        "conversation.chat.node keyed 'tool-call' 渲染器(ToolCallTree)",
+        "conversation.details.tool 渲染器(ToolDetails)",
+        "7 个内置原子 toolview: read/search/web/todo/file-mutation/bash-sample/ask-question"
+      ],
+      "depends_on": [
+        {
+          "plugin_id": "dsh-client-ui-conversation",
+          "mechanism": "E1",
+          "evidence": "apply.ts:3 type-only import + package.json:55 peerDependencies + package.json:37 dsh.client.inject",
+          "purpose": "消费 conversation.chat.node/details.tool 座位声明与 ChatNodeDataMap 'tool-call' 数据契约"
+        },
+        {
+          "plugin_id": "dsh-client-runtime",
+          "mechanism": "E1",
+          "evidence": "apply.ts:2 ClientContext + ToolCallTree.tsx:3 ToolCallBlock",
+          "purpose": "会话快照/ToolCallBlock 类型与运行时"
+        },
+        {
+          "plugin_id": "dsh-client-ui-slots",
+          "mechanism": "E1",
+          "evidence": "contract/slots.ts:2 PropsLocale/PropsRenderSlots/PropsRuntime + 各 toolview 注册用 ctx.slots.inject",
+          "purpose": "slot 注册 API 与四份 props 类型"
+        },
+        {
+          "plugin_id": "dsh-client-ui-primitives",
+          "mechanism": "E1",
+          "evidence": "toolviews/read-row.tsx:11 IconBrowseOutline16 等",
+          "purpose": "图标/组件 atoms"
+        },
+        {
+          "plugin_id": "dsh-client-locale",
+          "mechanism": "E1",
+          "evidence": "package.json:53 peerDependencies + locale.ts",
+          "purpose": "locale 命名空间（复用 conversation 命名空间文案）"
+        },
+        {
+          "plugin_id": "dsh-api-remotes",
+          "mechanism": "E1",
+          "evidence": "package.json:52 peerDependencies",
+          "purpose": "remote 类型底座"
+        }
+      ],
+      "dependents": [
+        {
+          "plugin_id": "dsh-client-ui-cordis",
+          "evidence": "ui-cordis/src/client/index.ts:115-143 注册 tool.call.toolview keyed cordis_define/cordis_run/cordis_stop/cordis_undefine",
+          "purpose": "消费 tool.call.toolview 座位注册 cordis 业务 Tool 卡片"
+        },
+        {
+          "plugin_id": "dsh-client-ui-conversation",
+          "evidence": "ui-conversation/src/client/apply.ts:444-454 details 注册 conversation.details.tool child",
+          "purpose": "details 面板消费 ToolDetails 座位"
+        }
+      ]
+    },
+    {
+      "id": "dsh-client-ui-cordis",
+      "name": "@deepseek-ai/dsh-client-ui-cordis",
+      "implementation": "cordis 动态插件管理 UI。建立 CordisDynamicPort 经 ctx.remote.dynamicCordisRunner Remote 调 stopFromPanel/undefineFromPanel/inventory；createCordisInventory 订阅 remote.$on('cordis/dynamic-package'|'dynamic-retract'|'request-run'|'request-run-resolved') 与 connection/reset 刷新；注册 sidebar.footer.action id=cordis-panel（CordisPanel：inventory/activeRuns/approve/decline/startUserRun）；注册 tool.call.toolview keyed cordis_define/cordis_run（含 tool.view.cordis keyed child）/cordis_stop/cordis_undefine；以 InputTriggerSource 注册 '@' cordis 源（@pluginId 引用）。",
+      "provides": [
+        "sidebar.footer.action id=cordis-panel(CordisPanel)",
+        "tool.call.toolview keyed cordis_define/cordis_run/cordis_stop/cordis_undefine",
+        "InputTriggerSource '@' cordis（@pluginId 候选/lexicon）",
+        "slot 声明: tool.view.cordis(keyed)"
+      ],
+      "depends_on": [
+        {
+          "plugin_id": "dsh-cordis-client-runner",
+          "mechanism": "E2",
+          "evidence": "index.ts:36 inject 'remote.dynamicCordisRunner','dynamicCordisRunner' + index.ts:64-71 ctx.dynamicCordisRunner 快照/approve/reconcileApprovals",
+          "purpose": "浏览器侧 cordis runner 服务：运行状态快照与 approval 对账"
+        },
+        {
+          "plugin_id": "dsh-api-remotes",
+          "mechanism": "E2",
+          "evidence": "index.ts:45-59 ctx.remote.dynamicCordisRunner.stopFromPanel/undefineFromPanel/inventory + index.ts:73-78 remote.$on",
+          "purpose": "host 端动态插件生命周期 Remote 调用与事件推送"
+        },
+        {
+          "plugin_id": "dsh-client-ui-tool",
+          "mechanism": "E1",
+          "evidence": "index.ts:4 type-only ui-tool/client + package.json:62 peerDependencies",
+          "purpose": "消费 tool.call.toolview 座位注册业务 Tool 卡片"
+        },
+        {
+          "plugin_id": "dsh-client-ui-sidebar",
+          "mechanism": "E1",
+          "evidence": "index.ts:6 type-only ui-sidebar/client + package.json:59",
+          "purpose": "消费 sidebar.footer.action 座位声明"
+        },
+        {
+          "plugin_id": "dsh-client-ui-input-trigger",
+          "mechanism": "E2",
+          "evidence": "index.ts:8 InputTriggerService + index.ts:167-168 slash.registerSource(source)",
+          "purpose": "注册 '@' cordis 引用源（@pluginId）"
+        },
+        {
+          "plugin_id": "dsh-client-runtime",
+          "mechanism": "E1",
+          "evidence": "index.ts:3 ClientContext,SessionId + package.json:57",
+          "purpose": "客户端运行时与会话上下文"
+        },
+        {
+          "plugin_id": "dsh-client-locale",
+          "mechanism": "E1",
+          "evidence": "index.ts:5 type-only + index.ts:41 locale.register",
+          "purpose": "命名空间字典"
+        },
+        {
+          "plugin_id": "dsh-client-connection",
+          "mechanism": "E2",
+          "evidence": "index.ts:79-82 ctx.on('connection/reset')",
+          "purpose": "连接重置时刷新 inventory"
+        }
+      ],
+      "dependents": [
+        {
+          "plugin_id": "dsh-session-telemetry",
+          "evidence": "cordis.patch.yml:205-206 ui-cordis 行（装配位置）",
+          "purpose": "同 web-app bundle 装配，受 host plugin-inventory 约束"
+        }
+      ]
+    },
+    {
+      "id": "dsh-client-ui-workflow-run",
+      "name": "@deepseek-ai/dsh-client-ui-workflow-run",
+      "implementation": "持久化工作流生命周期的独立 Chat 节点。workflowRunDefinition（target 'chat'，match tool-workflow/run-start|agent-start|agent-end|run-end）注册进 ConversationEventRegistry；WorkflowRunPanel 以 keyed 'workflow-run' 注册进 conversation.chat.node，渲染 phase/member 状态（running/completed/failed/cancelled/interrupted），inject 注入 openSession 跳转子会话；将 WorkflowRunChatData 合入 ui-conversation 的 ChatNodeDataMap。",
+      "provides": [
+        "conversation.chat.node keyed 'workflow-run' 渲染器(WorkflowRunPanel)",
+        "ConversationNodeDefinition 'workflow-run'（tool-workflow/* 事件状态机）",
+        "ChatNodeDataMap 'workflow-run' 合并"
+      ],
+      "depends_on": [
+        {
+          "plugin_id": "dsh-client-ui-conversation",
+          "mechanism": "E1",
+          "evidence": "index.ts:5 type-only + workflow-definition.ts:37-42 declare ChatNodeDataMap merge + package.json:59 peerDependencies",
+          "purpose": "消费 conversation.chat.node 座位与 ChatNodeDataMap 合并面"
+        },
+        {
+          "plugin_id": "dsh-client-runtime",
+          "mechanism": "E1",
+          "evidence": "index.ts:3 ClientContext + workflow-definition.ts:1-4 ConversationNodeDefinition + WorkflowRunPanel.tsx:7 SessionId",
+          "purpose": "EventDefinition/View 注册表与会话快照类型"
+        },
+        {
+          "plugin_id": "dsh-client-ui-primitives",
+          "mechanism": "E1",
+          "evidence": "WorkflowRunPanel.tsx:2-5 DisclosureRow,StateDot 等",
+          "purpose": "UI atoms"
+        },
+        {
+          "plugin_id": "dsh-client-ui-slots",
+          "mechanism": "E1",
+          "evidence": "WorkflowRunPanel.tsx:6 PropsLocale/PropsRuntime",
+          "purpose": "props 类型与 slot 注册 API"
+        },
+        {
+          "plugin_id": "dsh-workflow",
+          "mechanism": "E1",
+          "evidence": "workflow-definition.ts:9 WorkflowAgentOutcome/WorkflowStopReason + package.json:65",
+          "purpose": "工作流领域 wire 类型"
+        },
+        {
+          "plugin_id": "dsh-tool-workflow",
+          "mechanism": "E1",
+          "evidence": "workflow-definition.ts:6-8 ToolWorkflowAgentStartData/AgentEndData + package.json:64",
+          "purpose": "tool-workflow 事件负载类型"
+        },
+        {
+          "plugin_id": "dsh-session",
+          "mechanism": "E1",
+          "evidence": "workflow-definition.ts:5 SessionId from dsh-session/types + package.json:63",
+          "purpose": "会话 id 类型契约"
+        },
+        {
+          "plugin_id": "dsh-client-locale",
+          "mechanism": "E1",
+          "evidence": "index.ts:4 type-only + index.ts:23 locale.register",
+          "purpose": "workflowRun 命名空间字典"
+        },
+        {
+          "plugin_id": "dsh-session-projection",
+          "mechanism": "E2",
+          "evidence": "WorkflowRunPanel.tsx 经 PropsRuntime 读会话快照（workflow-run 数据在 conversation snapshot）",
+          "purpose": "会话数据源"
+        }
+      ],
+      "dependents": [
+        {
+          "plugin_id": "dsh-client-ui-conversation",
+          "evidence": "ui-conversation/src/client/chat/register-node-renderers.ts:40-50 keyed 座位分发",
+          "purpose": "keyed 节点分发到本渲染器"
+        }
+      ]
+    },
+    {
+      "id": "dsh-client-ui-deliverables",
+      "name": "@deepseek-ai/dsh-client-ui-deliverables",
+      "implementation": "turn tail 产物行。deliverablesDefinition（kind 'deliverables'，match tool/result 且 callView 为 diff/edit 的 mutation locations，累积 Turn 内 produced 路径）注册进 ConversationEventRegistry；ProducedFiles 以 selector selectProducedFiles（关闭 turn 有产物才认领）注册进 conversation.chat.turnTail 链，inject 经 connection 提供 isLoopback/hostDescription；另 provide('chatFileMentions') 服务，让 ChatView 的闭合散文渲染 produced 文件内联提及（MarkdownFileMentions）。",
+      "provides": [
+        "conversation.chat.turnTail 链条目(ProducedFiles)",
+        "ConversationNodeDefinition 'deliverables'（Turn 内产物累积，无 view node）",
+        "ctx 服务 chatFileMentions（forClosing）",
+        "ConversationTurnDataMap 'deliverables' 合并"
+      ],
+      "depends_on": [
+        {
+          "plugin_id": "dsh-client-ui-conversation",
+          "mechanism": "E1",
+          "evidence": "index.ts:12 ChatFileMentions 类型 + turn-deliverables.ts:11 TurnTailOwnerProps + package.json:12 dsh.client.inject",
+          "purpose": "消费 turnTail 链座位与 TurnTailOwnerProps 载体（turn.data 读 deliverables）"
+        },
+        {
+          "plugin_id": "dsh-client-runtime",
+          "mechanism": "E1",
+          "evidence": "turn-deliverables.ts:6-9 ConversationNodeDefinition,isAppendSurfaceEvent",
+          "purpose": "EventDefinition 注册表与事件匹配"
+        },
+        {
+          "plugin_id": "dsh-client-connection",
+          "mechanism": "E2",
+          "evidence": "index.ts:10 ConnectionHandle + index.ts:38 ctx.get('connection') + index.ts:48-49 isLoopback/hostDescription",
+          "purpose": "连接回环/主机描述（产物链接是本地路径则 open）"
+        },
+        {
+          "plugin_id": "dsh-client-locale",
+          "mechanism": "E1",
+          "evidence": "index.ts:13 type-only + index.ts:40 locale.register",
+          "purpose": "deliverables 命名空间字典"
+        },
+        {
+          "plugin_id": "dsh-client-ui-primitives",
+          "mechanism": "E1",
+          "evidence": "turn-deliverables.ts:10 MarkdownFileMentions 类型",
+          "purpose": "产物内联提及类型"
+        },
+        {
+          "plugin_id": "dsh-client-ui-slots",
+          "mechanism": "E1",
+          "evidence": "ProducedFiles.tsx:9 InjectFace/PropsLocale + index.ts:20-25 LocaleNamespaceMap merge",
+          "purpose": "slot 注册与 props 类型"
+        },
+        {
+          "plugin_id": "dsh-tools",
+          "mechanism": "E1",
+          "evidence": "cordis.patch.yml:213-216 ui-deliverables 行（装配）",
+          "purpose": "产物来源为 mutation tools 的 callView.locations（运行时契约）"
+        }
+      ],
+      "dependents": [
+        {
+          "plugin_id": "dsh-client-ui-conversation",
+          "evidence": "ui-conversation/src/client/apply.ts:394 ctx.get('chatFileMentions')?.forClosing(owner)",
+          "purpose": "ChatView 读 chatFileMentions 服务渲染内联产物提及"
+        }
+      ]
+    },
+    {
+      "id": "dsh-client-ui-workspace",
+      "name": "@deepseek-ai/dsh-client-ui-workspace",
+      "implementation": "工作区选择/切换。注册两处：sidebar.workspaces（WorkspaceBrowser，含 sidebar.workspaces.directoryFlow single child + workspace 视图 store）与 conversation.hero.workspace（WorkspacePicker，含 conversation.hero.workspace.directoryFlow child）。二者都通过框架 useWorkspaces hook 读 host Workspaces；inject face 封装 ctx.sessions.search/open/fork/rename/binding 与 ctx.workspaces.startSession/rename/delete/insertBefore/archiveSession/insertSessionBefore/create；flowSource 用 slots.entries/subscribe 观察 directoryFlow 洞是否被填（决定是否渲染目录流）。",
+      "provides": [
+        "slot 声明: sidebar.workspaces, sidebar.workspaces.directoryFlow, conversation.hero.workspace, conversation.hero.workspace.directoryFlow",
+        "WorkspaceBrowser（sidebar 整个浏览区）",
+        "WorkspacePicker（hero 选择器）"
+      ],
+      "depends_on": [
+        {
+          "plugin_id": "dsh-client-runtime",
+          "mechanism": "E2",
+          "evidence": "index.ts:12 ClientContext + index.ts:45 inject sessions/workspaces + index.ts:56-107 sessions.search/fork/open/binding, workspaces.startSession/rename/delete/insertBefore/archiveSession",
+          "purpose": "会话列表/搜索/分叉与工作区 CRUD 服务"
+        },
+        {
+          "plugin_id": "dsh-client-ui-sidebar",
+          "mechanism": "E1",
+          "evidence": "index.ts:110-119 注册 sidebar.workspaces（ui-sidebar 声明的 child）+ package.json:38 dsh.client.inject",
+          "purpose": "消费 sidebar.workspaces 座位（SidebarRoot 声明的洞）"
+        },
+        {
+          "plugin_id": "dsh-client-ui-conversation",
+          "mechanism": "E1",
+          "evidence": "index.ts:120-128 注册 conversation.hero.workspace（ui-conversation 声明的 hero child）+ package.json:37",
+          "purpose": "消费 conversation.hero.workspace 座位"
+        },
+        {
+          "plugin_id": "dsh-client-locale",
+          "mechanism": "E1",
+          "evidence": "index.ts:14 type-only + index.ts:54 locale.register",
+          "purpose": "workspace 命名空间字典"
+        },
+        {
+          "plugin_id": "dsh-client-ui-slots",
+          "mechanism": "E1",
+          "evidence": "index.ts:11 HostObservable + index.ts:64-69 slots.entries/subscribe 观察 directoryFlow",
+          "purpose": "slot 注册与洞占用观察"
+        }
+      ],
+      "dependents": [
+        {
+          "plugin_id": "dsh-client-ui-directory-picker-browse",
+          "evidence": "ui-directory-picker-browse/src/client/index.ts:83-91 注册两处 directoryFlow 洞",
+          "purpose": "填充浏览式目录选择流"
+        },
+        {
+          "plugin_id": "dsh-client-ui-directory-picker-native",
+          "evidence": "ui-directory-picker-native/src/client/index.ts:31-39 注册两处 directoryFlow 洞",
+          "purpose": "填充 native 目录选择流"
+        }
+      ]
+    },
+    {
+      "id": "dsh-client-ui-jobs",
+      "name": "@deepseek-ai/dsh-client-ui-jobs",
+      "implementation": "session-header 后台作业列表。JobListAction 注册进 conversation.session.header.actions（id=job-list, order=20 位于 subagent catalog 之后）；数据完全来自 sessions list 镜像的 jobsBySession（useSessions(state => state.jobsBySession[sessionId])），不发任何 RPC、不持自身状态（仅 popover 可见性）；按 live/settled 排序渲染状态点（running/stopping/completed/killed/failed）+ 时长。",
+      "provides": [
+        "conversation.session.header.actions id=job-list(JobListAction)"
+      ],
+      "depends_on": [
+        {
+          "plugin_id": "dsh-client-runtime",
+          "mechanism": "E2",
+          "evidence": "index.ts:7 ClientContext + JobListAction.tsx:95 useSessions(state => state.jobsBySession[sessionId]) + JobListAction.tsx:2 JobView",
+          "purpose": "jobsBySession 列表镜像（dsh-jobs 注册的会话数据）"
+        },
+        {
+          "plugin_id": "dsh-client-ui-conversation",
+          "mechanism": "E1",
+          "evidence": "index.ts:30-39 注册 conversation.session.header.actions + JobListAction.tsx:6 type-only + package.json:54 peerDependencies",
+          "purpose": "消费 header actions 座位声明"
+        },
+        {
+          "plugin_id": "dsh-client-ui-primitives",
+          "mechanism": "E1",
+          "evidence": "JobListAction.tsx:3 StateDot,IconChevronDownOutline14",
+          "purpose": "状态点/图标 atoms"
+        },
+        {
+          "plugin_id": "dsh-client-locale",
+          "mechanism": "E1",
+          "evidence": "index.ts:9 type-only + index.ts:29 locale.register",
+          "purpose": "job 命名空间字典"
+        },
+        {
+          "plugin_id": "dsh-client-ui-slots",
+          "mechanism": "E1",
+          "evidence": "JobListAction.tsx:4 PropsLocale/PropsRuntime/TranslateNS",
+          "purpose": "props 类型与 slot 注册"
+        }
+      ],
+      "dependents": [
+        {
+          "plugin_id": "dsh-client-ui-conversation",
+          "evidence": "ui-conversation/src/client/apply.ts:257-269 header 声明 header.actions list",
+          "purpose": "header 动作条渲染本条目"
+        }
+      ]
+    },
+    {
+      "id": "dsh-client-ui-goal",
+      "name": "@deepseek-ai/dsh-client-ui-goal",
+      "implementation": "GoalBar 输入坞。投影模式 surface：goal 实时值经 session.projections.faceOf('goal') 读取（不持 store/事件监听）；goalCommandInputDefinition（match command/run name=goal）注册进 conversationEvents，以 keyed 'command-input' 渲染 /goal 命令行输入；GoalDock 注册进 conversation.input.dock（id=goal, order=10），inject 封装四个 mutation verb——onEdit/onPause/onResume/onClear 经 ctx.remote.goals.edit/pause/resume/clear（携带 CAS ref：goal.id+revision，由 host 对账）。",
+      "provides": [
+        "conversation.input.dock id=goal(GoalDock/GoalBar)",
+        "conversation.chat.node keyed 'command-input'(GoalCommandInputView)",
+        "ConversationNodeDefinition 'goal-command-input'",
+        "ChatNodeDataMap 'command-input' 合并"
+      ],
+      "depends_on": [
+        {
+          "plugin_id": "dsh-session-projection",
+          "mechanism": "E2",
+          "evidence": "index.ts:19 GoalProjection/GoalRef 类型 + index.ts:61-65 sessions.binding(sessionId).session.projections.faceOf('goal')",
+          "purpose": "goal 会话投影读取（CAS ref 来源）"
+        },
+        {
+          "plugin_id": "dsh-goal",
+          "mechanism": "E1",
+          "evidence": "index.ts:19 dsh-goal/client + package.json:56 peerDependencies",
+          "purpose": "goal 投影 key 类型与 GoalRef 契约"
+        },
+        {
+          "plugin_id": "dsh-api-remotes",
+          "mechanism": "E2",
+          "evidence": "index.ts:13 type-only + index.ts:41 inject remote.goals + index.ts:81/86/91/96 ctx.remote.goals.edit/pause/resume/clear",
+          "purpose": "goal 域 Remote 端点（host goals 服务）"
+        },
+        {
+          "plugin_id": "dsh-client-ui-conversation",
+          "mechanism": "E1",
+          "evidence": "index.ts:15 type-only + index.ts:51-55/72-99 注册 input.dock 与 chat.node + package.json:52",
+          "purpose": "消费 input.dock 座位与 conversationEvents 注册表"
+        },
+        {
+          "plugin_id": "dsh-client-runtime",
+          "mechanism": "E1",
+          "evidence": "index.ts:11 ClientContext,SessionId",
+          "purpose": "会话绑定与投影 face"
+        },
+        {
+          "plugin_id": "dsh-commands",
+          "mechanism": "E1",
+          "evidence": "goal-command-input.ts:2-3 dsh-commands/brand,types + package.json:55",
+          "purpose": "command/run 事件与 CommandId 契约"
+        },
+        {
+          "plugin_id": "dsh-session",
+          "mechanism": "E1",
+          "evidence": "goal-command-input.ts:1 dsh-session/types",
+          "purpose": "SessionEvent<'command/run'> 类型"
+        },
+        {
+          "plugin_id": "dsh-client-locale",
+          "mechanism": "E1",
+          "evidence": "index.ts:17 type-only + index.ts:49 locale.register",
+          "purpose": "goal 命名空间字典"
+        },
+        {
+          "plugin_id": "dsh-client-ui-primitives",
+          "mechanism": "E1",
+          "evidence": "GoalBar.tsx:13-16 图标 + Tooltip",
+          "purpose": "UI atoms"
+        }
+      ],
+      "dependents": [
+        {
+          "plugin_id": "dsh-client-ui-conversation",
+          "evidence": "ui-conversation/src/client/apply.ts:205 input.dock 声明",
+          "purpose": "input dock 渲染 GoalBar"
+        }
+      ]
+    },
+    {
+      "id": "dsh-client-ui-trajectory",
+      "name": "@deepseek-ai/dsh-client-ui-trajectory",
+      "implementation": "轨迹展示（纯消费者，无服务）。注册 conversation.view id=trajectory（order=10, label thunk）的 TrajectoryView（Table+Timeline+Toolbar，含 @tanstack/react-virtual 虚拟行、search index、duration store）；6 个轨迹 Definition（trajectory-inbox-next-step/message/assistant/tool/compaction/request-header）注册进 conversationEvents（target 'trajectory'），trajectory 专用 ConversationViewBuilder 注册进 conversationViews 组装 TrajectorySnapshot；loadOlder 走 session.loadOlder 分页。",
+      "provides": [
+        "conversation.view id=trajectory(TrajectoryView)",
+        "6 个 ConversationNodeDefinition（trajectory-*，target 'trajectory'）",
+        "trajectory 目标 ConversationViewBuilder",
+        "TrajectorySearchIndex/duration store（包内）"
+      ],
+      "depends_on": [
+        {
+          "plugin_id": "dsh-client-ui-conversation",
+          "mechanism": "E1",
+          "evidence": "index.ts:11 type-only + index.ts:43-64 注册 conversation.view + TrajectoryView.tsx:4 ConvViewProps + package.json:37 dsh.client.inject",
+          "purpose": "消费 conversation.view 视图环座位与 ConvViewProps"
+        },
+        {
+          "plugin_id": "dsh-client-runtime",
+          "mechanism": "E1",
+          "evidence": "index.ts:6 SessionId + trajectory-request-header-definition.ts:2-5 ConversationNodeDefinition + index.ts:56-60 session.loadOlder",
+          "purpose": "EventDefinition/View 注册表与会话分页"
+        },
+        {
+          "plugin_id": "dsh-agent",
+          "mechanism": "E1",
+          "evidence": "trajectory-message-definitions.ts:9 dsh-agent/types + package.json:52 peerDependencies",
+          "purpose": "agent/inbox/spliced 等事件类型"
+        },
+        {
+          "plugin_id": "dsh-tools",
+          "mechanism": "E1",
+          "evidence": "trajectory-tool-definition.ts:6 dsh-tools/types + package.json:59",
+          "purpose": "tool 调用轨迹事件类型"
+        },
+        {
+          "plugin_id": "dsh-compaction",
+          "mechanism": "E1",
+          "evidence": "trajectory-compaction-definition.ts:5 dsh-compaction/types + package.json:58",
+          "purpose": "compaction 轨迹事件类型"
+        },
+        {
+          "plugin_id": "dsh-client-ui-primitives",
+          "mechanism": "E1",
+          "evidence": "TrajectoryTable.tsx:14, TrajectoryTimeline.tsx:7, TrajectoryToolbar.tsx:4, trajectory-preview.ts:3",
+          "purpose": "UI atoms + markdown 纯文本提取"
+        },
+        {
+          "plugin_id": "dsh-client-ui-slots",
+          "mechanism": "E1",
+          "evidence": "TrajectoryView.tsx:5 InjectFace/PropsLocale + TrajectoryToolbar.tsx:3 TranslateNS",
+          "purpose": "props 类型与 slot 注册"
+        },
+        {
+          "plugin_id": "dsh-client-locale",
+          "mechanism": "E1",
+          "evidence": "index.ts:8 type-only + index.ts:31 locale.register",
+          "purpose": "轨迹命名空间字典"
+        }
+      ],
+      "dependents": [
+        {
+          "plugin_id": "dsh-client-ui-conversation",
+          "evidence": "ui-conversation/src/client/apply.ts:406-409 inspectCall 切到 'trajectory' 视图",
+          "purpose": "tool 调用 inspect 跳转到轨迹视图"
+        }
+      ]
+    },
+    {
+      "id": "dsh-client-ui-user-questions",
+      "name": "@deepseek-ai/dsh-client-ui-user-questions",
+      "implementation": "用户提问 UI。QuestionComposer 以 selector selectQuestion（interactions 中 kind==='question' 的 PendingWait 载体）注册进 conversation.composer 链；一个条目两种形态：请求带 plan-review 呈现意图时渲染 PlanReviewPanel（approve/decline/discuss 决策卡），否则走通用提问流程（pager/选项/自定义/跳过）；PendingQuestion 域 face 封装 answer/cancel（wait.respond 编码 wire 应答）；零业务 face，数据/动词全部随 carrier。",
+      "provides": [
+        "conversation.composer 链条目(QuestionComposer)",
+        "PlanReviewPanel（plan-review 意图接管）",
+        "PendingQuestion 域 face（answer/cancel）"
+      ],
+      "depends_on": [
+        {
+          "plugin_id": "dsh-client-ui-conversation",
+          "mechanism": "E1",
+          "evidence": "index.ts:16 ComposerChainProps + contract/slots.ts:12 type-only + index.ts:56-59 注册 conversation.composer + package.json:36 dsh.client.inject",
+          "purpose": "消费 composer 链座位与 ComposerChainProps（interactions 载体）"
+        },
+        {
+          "plugin_id": "dsh-client-runtime",
+          "mechanism": "E1",
+          "evidence": "contract/slots.ts:13 PendingWait 类型",
+          "purpose": "PendingWait 载体（question 等待帧）"
+        },
+        {
+          "plugin_id": "dsh-api-remotes",
+          "mechanism": "E1",
+          "evidence": "contract/slots.ts:14 QuestionResponsePayload + package.json:57 peerDependencies",
+          "purpose": "提问应答负载类型"
+        },
+        {
+          "plugin_id": "dsh-client-locale",
+          "mechanism": "E1",
+          "evidence": "index.ts:18 type-only + index.ts:54 locale.register",
+          "purpose": "question 命名空间字典"
+        },
+        {
+          "plugin_id": "dsh-client-ui-primitives",
+          "mechanism": "E1",
+          "evidence": "QuestionComposer.tsx:3-6 Button/MarkdownText/图标 + PlanReviewPanel.tsx:17",
+          "purpose": "UI atoms"
+        },
+        {
+          "plugin_id": "dsh-client-ui-slots",
+          "mechanism": "E1",
+          "evidence": "contract/slots.ts:9 PropsLocale/PropsRuntime",
+          "purpose": "props 类型与 slot 注册"
+        }
+      ],
+      "dependents": [
+        {
+          "plugin_id": "dsh-client-ui-conversation",
+          "evidence": "ui-conversation/src/client/apply.ts:371 conversation.composer chain 注册 ApprovalPanel（同链并置）",
+          "purpose": "composer 链按 selector 优先级路由"
+        }
+      ]
+    },
+    {
+      "id": "dsh-client-ui-message-feedback",
+      "name": "@deepseek-ai/dsh-client-ui-message-feedback",
+      "implementation": "Like/Dislike + 备注。每 Session 一个 MessageFeedbackController 作对象层（list 一次读取 seed 整份 transcript；mutation 经 messageFeedback Remote list/put/delete，host 持有 per-item CAS，version-conflict 由应答对账）；MessageFeedbackActions 注册进 conversation.chat.assistant-actions（id=feedback, order=10），inject 暴露 ensure/rate/toggle/clearNote/clear；connection/reset 时对非 cold 控制器 resync。",
+      "provides": [
+        "conversation.chat.assistant-actions id=feedback(MessageFeedbackActions)",
+        "MessageFeedbackController（每 Session 对象层，status cold/loading/ready/error）"
+      ],
+      "depends_on": [
+        {
+          "plugin_id": "dsh-api-remotes",
+          "mechanism": "E2",
+          "evidence": "index.ts:12 type-only + index.ts:32 inject remote.messageFeedback + controller.ts:27-41 MessageFeedbackRemote(list/put/delete)",
+          "purpose": "host messageFeedback Remote（dsh-message-feedback 域的生成端点）"
+        },
+        {
+          "plugin_id": "dsh-message-feedback",
+          "mechanism": "E1",
+          "evidence": "controller.ts:13-19 dsh-message-feedback/types + package.json:57 peerDependencies",
+          "purpose": "feedback 域 wire 类型（item/rating/结果）"
+        },
+        {
+          "plugin_id": "dsh-client-ui-conversation",
+          "mechanism": "E1",
+          "evidence": "index.ts:14 type-only + index.ts:60-77 注册 assistant-actions + package.json:38 dsh.client.inject",
+          "purpose": "消费 assistant-actions 座位声明"
+        },
+        {
+          "plugin_id": "dsh-client-runtime",
+          "mechanism": "E1",
+          "evidence": "index.ts:10 ClientContext,SessionId",
+          "purpose": "会话上下文与对象层挂载"
+        },
+        {
+          "plugin_id": "dsh-client-connection",
+          "mechanism": "E2",
+          "evidence": "controller.ts:12 MessageId,SessionId + index.ts:54-58 ctx.on('connection/reset') resync",
+          "purpose": "消息 id 类型与连接重置重同步"
+        },
+        {
+          "plugin_id": "dsh-typert-protocol",
+          "mechanism": "E1",
+          "evidence": "controller.ts:10 RemoteResult 类型 + package.json:58",
+          "purpose": "Remote 结果信封类型"
+        },
+        {
+          "plugin_id": "dsh-client-locale",
+          "mechanism": "E1",
+          "evidence": "index.ts:16 type-only + index.ts:40 locale.register",
+          "purpose": "feedback 命名空间字典"
+        },
+        {
+          "plugin_id": "dsh-client-ui-primitives",
+          "mechanism": "E1",
+          "evidence": "package.json:54 peerDependencies（按钮/图标 atoms）",
+          "purpose": "UI atoms"
+        },
+        {
+          "plugin_id": "dsh-client-ui-slots",
+          "mechanism": "E1",
+          "evidence": "slots.ts: MessageFeedbackInjected + controller.ts:11 HostObservable",
+          "purpose": "props 类型与 slot 注册"
+        }
+      ],
+      "dependents": [
+        {
+          "plugin_id": "dsh-client-ui-conversation",
+          "evidence": "ui-conversation/src/client/chat/register-node-renderers.ts:46 assistant-actions 座位声明",
+          "purpose": "TurnTailNodeView 内动作条渲染反馈控件"
+        }
+      ]
+    },
+    {
+      "id": "dsh-client-ui-layout",
+      "name": "@deepseek-ai/dsh-client-ui-layout",
+      "implementation": "三栏 AppFrame UI 底座。apply() 内一次 register('root') 贡献 AppFrame 并声明四个 child slot（sidebar/conversation/details/shell.overlay），seat 布局 store（面板几何），inject hook 将 bound actions attach 给 LayoutController 后 ctx.reflect.provide('layout')；第二个 effect 起 ThemePresenter 把 ctx.theme 快照投影到 document.body（theme/change 事件驱动，纯 DOM 写）。",
+      "provides": [
+        "ctx.layout（ILayout: toggleSidebar/openDetails/closeDetails）",
+        "slot 声明: root 的 4 个 child — sidebar(single/root), conversation(single/session-maybe), details(single/session), shell.overlay(list/root)",
+        "AppFrame 三栏组件 + 布局 store（面板几何）",
+        "ThemePresenter（theme→document.body）"
+      ],
+      "depends_on": [
+        {
+          "plugin_id": "dsh-client-runtime",
+          "mechanism": "E2",
+          "evidence": "index.ts:116-137 ctx.reflect.provide('layout') + slots.register({name:'root'...}) + package.json:47 peerDependencies",
+          "purpose": "runtime 内建 'root' slot 与 reflect.provide 服务发布面"
+        },
+        {
+          "plugin_id": "dsh-client-ui-slots",
+          "mechanism": "E1",
+          "evidence": "index.ts:33-85 declare SlotMap merge + store: createLayoutStore",
+          "purpose": "slot 注册 API 与 SlotMap 合并面"
+        },
+        {
+          "plugin_id": "dsh-client-ui-theme",
+          "mechanism": "E2",
+          "evidence": "index.ts:11 type-only + index.ts:108 inject 'theme' + index.ts:149/150 ctx.theme.getTheme()/on('theme/change')",
+          "purpose": "ctx.theme 服务与主题事件流"
+        }
+      ],
+      "dependents": [
+        {
+          "plugin_id": "dsh-client-ui-sidebar",
+          "evidence": "ui-sidebar/src/client/index.ts:41-53 注册 'sidebar' slot + :38 ctx.layout.toggleSidebar()",
+          "purpose": "占据 sidebar 列并消费 ctx.layout"
+        },
+        {
+          "plugin_id": "dsh-client-ui-conversation",
+          "evidence": "ui-conversation/src/client/apply.ts:118 layout + :392/:452 openDetails/closeDetails",
+          "purpose": "占据 conversation/details 列并触发面板动作"
+        },
+        {
+          "plugin_id": "dsh-client-ui-workspace",
+          "evidence": "ui-workspace/src/client/index.ts:110-128 注册 sidebar.workspaces 与 hero",
+          "purpose": "在 frame 列内注册浏览区"
+        }
+      ]
+    },
+    {
+      "id": "dsh-client-ui-sidebar",
+      "name": "@deepseek-ai/dsh-client-ui-sidebar",
+      "implementation": "侧栏外壳。SidebarRoot 注册进 layout 声明的 'sidebar' slot，并声明三个 child：sidebar.workspaces（whole browsing region，ui-workspace 占据）、sidebar.settings（ui-settings 占据）、sidebar.footer.action（list，ui-cordis 等注册）；inject 提供 startSession（ctx.workspaces.startSession，当前 Workspace→最近回退）与 toggleSidebar（ctx.layout.toggleSidebar）。",
+      "provides": [
+        "slot 声明: sidebar.workspaces(single/root), sidebar.settings(single/root), sidebar.footer.action(list/root)",
+        "SidebarRoot 外壳（含折叠 rail）"
+      ],
+      "depends_on": [
+        {
+          "plugin_id": "dsh-client-ui-layout",
+          "mechanism": "E1",
+          "evidence": "index.ts:41-53 注册 'sidebar'（layout 声明的 child）+ package.json:36 dsh.client.inject + index.ts:38 ctx.layout.toggleSidebar()",
+          "purpose": "消费 sidebar 列座位与 ctx.layout 面板动作"
+        },
+        {
+          "plugin_id": "dsh-client-runtime",
+          "mechanism": "E2",
+          "evidence": "index.ts:26 inject sessions/workspaces + index.ts:37 ctx.workspaces.startSession",
+          "purpose": "新会话创建与工作区服务"
+        },
+        {
+          "plugin_id": "dsh-client-locale",
+          "mechanism": "E1",
+          "evidence": "index.ts:4 type-only + index.ts:32 locale.register",
+          "purpose": "sidebar 命名空间字典"
+        },
+        {
+          "plugin_id": "dsh-client-ui-slots",
+          "mechanism": "E1",
+          "evidence": "contract/slots.ts 类型 + slots.register API",
+          "purpose": "slot 注册与 child 声明"
+        },
+        {
+          "plugin_id": "dsh-client-ui-primitives",
+          "mechanism": "E1",
+          "evidence": "package.json:53 peerDependencies",
+          "purpose": "UI atoms"
+        }
+      ],
+      "dependents": [
+        {
+          "plugin_id": "dsh-client-ui-workspace",
+          "evidence": "ui-workspace/src/client/index.ts:110-119 注册 sidebar.workspaces",
+          "purpose": "占据浏览区洞"
+        },
+        {
+          "plugin_id": "dsh-client-ui-cordis",
+          "evidence": "ui-cordis/src/client/index.ts:84-112 注册 sidebar.footer.action id=cordis-panel",
+          "purpose": "占据 footer 动作条"
+        }
+      ]
+    },
+    {
+      "id": "dsh-client-ui-primitives",
+      "name": "@deepseek-ai/dsh-client-ui-primitives",
+      "implementation": "通用 UI atoms 底座（零 cordis 运行时依赖）。纯 React 组件库：Button/Input/Menu/Modal/Tooltip/HoverCard/Pill/Toast/StateDot/DisclosureRow/JsonTree/DiffBlock/ReadBlock/SearchBlock/TerminalBlock/WebBlock/RiskConfirmation/OnboardingSurface/ConnectionBanner/Button 等控件、icons 图标集、markdown 管线（parse/render/CodeBlock/JsonBlock/MessageText/MarkdownText/katex/shiki 高亮/ansi）与 MarkdownFileMentions 类型。不注册任何 slot/service，作为 import 底座被全部 UI 插件消费。",
+      "provides": [
+        "React atoms（Button/Input/Menu/Modal/Tooltip/StateDot/DisclosureRow/ReadBlock/SearchBlock/TerminalBlock/WebBlock/DiffBlock/JsonTree 等）",
+        "图标集 icons",
+        "Markdown 渲染管线（MarkdownText/MessageText/CodeBlock/JsonBlock/katex/shiki/ansi）",
+        "类型 MarkdownFileMentions/extractMarkdownPlainText"
+      ],
+      "depends_on": [
+        {
+          "plugin_id": "dsh-invariants",
+          "mechanism": "E1",
+          "evidence": "package.json:62-64 peerDependencies",
+          "purpose": "不变量工具（仅类型/工具层依赖）"
+        }
+      ],
+      "dependents": [
+        {
+          "plugin_id": "dsh-client-ui-conversation",
+          "evidence": "ui-conversation/src/client/skeleton/InputBar.tsx:12-14 等 20+ 处 import",
+          "purpose": "对话 UI 全部组件消费 atoms/markdown/图标"
+        },
+        {
+          "plugin_id": "dsh-client-ui-tool",
+          "evidence": "ui-tool/src/client/tool/toolviews/read-row.tsx:11 IconBrowseOutline16",
+          "purpose": "工具行渲染消费图标"
+        },
+        {
+          "plugin_id": "dsh-client-ui-goal",
+          "evidence": "ui-goal/src/client/GoalBar.tsx:13-16",
+          "purpose": "GoalBar 图标"
+        },
+        {
+          "plugin_id": "dsh-client-ui-trajectory",
+          "evidence": "ui-trajectory/src/client/TrajectoryTable.tsx:14",
+          "purpose": "轨迹表格渲染"
+        },
+        {
+          "plugin_id": "dsh-client-ui-deliverables",
+          "evidence": "ui-deliverables/src/client/turn-deliverables.ts:10 MarkdownFileMentions",
+          "purpose": "产物内联提及类型"
+        }
+      ]
+    },
+    {
+      "id": "dsh-client-ui-slots",
+      "name": "@deepseek-ai/dsh-client-ui-slots",
+      "implementation": "slot 渲染桥梁/注册表纯核心（零运行时依赖，仅 React 类型）。定义 SlotMap（owners 经 declare module 合并）、LocaleNamespaceMap、SlotKind(single/list/keyed/chain)、SlotScope(root/session-maybe/session)、SlotEntryDef、ChildrenDecl、四份 props share 类型（PropsRuntime/PropsLocale/PropsRenderSlots/PropsStore）与 store 座位（defineStore/BoundActions/HostObservable）。不注册任何 slot/service，是所有 UI 插件 slot 注册的类型与 API 底座。",
+      "provides": [
+        "SlotMap/LocaleNamespaceMap 声明合并面",
+        "SlotRegistry 注册 API（slots.inject/register/subscribe/entries）",
+        "四份 props share 类型系统 + store 座位类型（defineStore 声明）",
+        "resolveSlotLabel/InjectFace/PropsLocale 等工具类型"
+      ],
+      "depends_on": [
+        {
+          "plugin_id": "dsh-invariants",
+          "mechanism": "E1",
+          "evidence": "package.json:39-42 peerDependencies",
+          "purpose": "不变量工具"
+        },
+        {
+          "plugin_id": "dsh-client-runtime",
+          "mechanism": "E1",
+          "evidence": "runtime/src/client/index.ts:170 slots: SlotRegistry（运行时实现本包 API）",
+          "purpose": "运行时 slot 注册表实现（本包为纯类型核心）"
+        }
+      ],
+      "dependents": [
+        {
+          "plugin_id": "dsh-client-ui-conversation",
+          "evidence": "ui-conversation/src/client/apply.ts:3 resolveSlotLabel/BoundActions",
+          "purpose": "消费 slot 注册 API 与类型"
+        },
+        {
+          "plugin_id": "dsh-client-ui-layout",
+          "evidence": "ui-layout/src/client/index.ts:33-85 SlotMap merge",
+          "purpose": "声明 root 子 slot 契约"
+        },
+        {
+          "plugin_id": "dsh-client-ui-tool",
+          "evidence": "ui-tool/src/client/contract/slots.ts:2 PropsLocale/PropsRenderSlots",
+          "purpose": "声明 tool.call.toolview 契约"
+        },
+        {
+          "plugin_id": "dsh-client-ui-goal",
+          "evidence": "ui-goal/src/client/index.ts:30-35 LocaleNamespaceMap merge",
+          "purpose": "声明 goal 命名空间"
+        },
+        {
+          "plugin_id": "dsh-client-ui-jobs",
+          "evidence": "ui-jobs/src/client/index.ts:12-17 LocaleNamespaceMap merge",
+          "purpose": "声明 job 命名空间"
+        },
+        {
+          "plugin_id": "dsh-client-ui-trajectory",
+          "evidence": "ui-trajectory/src/client/TrajectoryView.tsx:5 InjectFace/PropsLocale",
+          "purpose": "消费 props 类型"
+        },
+        {
+          "plugin_id": "dsh-client-ui-message-feedback",
+          "evidence": "ui-message-feedback/src/client/controller.ts:11 HostObservable",
+          "purpose": "对象层可观察类型"
+        }
+      ]
+    },
+    {
+      "id": "dsh-client-schema-form",
+      "name": "@deepseek-ai/dsh-client-schema-form",
+      "implementation": "schema/draft 模型层（零 cordis 运行时）。rehydrateSchema 从 wire 的反序列化 schemastery 信封重建 schema，nodeAtPath/getPath/setPath/deletePath 按 settings 路径不可变编辑 draft，validateDraft 校验 draft。被 settings 编辑器（ui-settings-* 各页）作为纯工具 import，不注册任何 slot/service。",
+      "provides": [
+        "rehydrateSchema/nodeAtPath/getPath/setPath/deletePath/hasPath/validateDraft",
+        "SchemaNode 类型"
+      ],
+      "depends_on": [
+        {
+          "plugin_id": "dsh-invariants",
+          "mechanism": "E1",
+          "evidence": "package.json:32-35 peerDependencies",
+          "purpose": "不变量工具"
+        },
+        {
+          "plugin_id": "schemastery",
+          "mechanism": "E1",
+          "evidence": "package.json:29-31 dependencies @deepseek-ai/schemastery",
+          "purpose": "schema 反序列化与校验引擎"
+        }
+      ],
+      "dependents": [
+        {
+          "plugin_id": "dsh-client-ui-settings",
+          "evidence": "ui-conversation/src/client/apply.ts:133-135 settingsScope 绑定（settings 编辑依赖 schema-form 模型层）",
+          "purpose": "settings 编辑器消费 schema/draft 模型"
+        }
+      ]
+    },
+    {
+      "id": "dsh-client-ui-attachment",
+      "name": "@deepseek-ai/dsh-client-ui-attachment",
+      "implementation": "附件渲染 atoms（零 cordis）。AttachmentRail（composer 草稿图片轨）、MessageImage/ImageGallery（聊天历史图片画廊）、ImageLightbox（原图灯箱）、DropOverlay（全页拖放遮罩）；owners 经自己 locale 命名空间解析文案传入（无应用状态读取）。作为纯 React 底座被 ui-conversation 消费。",
+      "provides": [
+        "AttachmentRail",
+        "ImageGallery/MessageImage",
+        "ImageLightbox",
+        "DropOverlay",
+        "ImageLoader/MessageImageLabels 等类型"
+      ],
+      "depends_on": [
+        {
+          "plugin_id": "dsh-attachment",
+          "mechanism": "E1",
+          "evidence": "package.json:30 dependencies @deepseek-ai/dsh-attachment",
+          "purpose": "附件 wire 类型（ImageAttachmentRef/ImageMediaType）"
+        },
+        {
+          "plugin_id": "dsh-client-ui-primitives",
+          "mechanism": "E1",
+          "evidence": "package.json:31 dependencies",
+          "purpose": "基础 atoms"
+        }
+      ],
+      "dependents": [
+        {
+          "plugin_id": "dsh-client-ui-conversation",
+          "evidence": "ui-conversation/src/client/skeleton/InputBar.tsx:15-16 AttachmentRail/DropOverlay/ImageLightbox + AssistantMarkdown.tsx:17 ImageGallery + MessageItem.tsx:13",
+          "purpose": "对话草稿/消息图片渲染"
+        }
+      ]
+    },
+    {
+      "id": "dsh-client-ui-directory-picker-browse",
+      "name": "@deepseek-ai/dsh-client-ui-directory-picker-browse",
+      "implementation": "目录选择 browse 前端（in-app 对话框）。BrowseDirectoryFlow 以嵌套 slots.inject 事务性注册进 conversation.hero.workspace.directoryFlow 与 sidebar.workspaces.directoryFlow 两个洞；对话框（Select Workspace Directory figma 家族）驱动 host 的 workspaces.listDirectory/createDirectory 原语；locale 字典（zh/en）在包内注册（LOCALE_NS 'directory-browser'）。",
+      "provides": [
+        "conversation.hero.workspace.directoryFlow 条目(BrowseDirectoryFlow)",
+        "sidebar.workspaces.directoryFlow 条目(BrowseDirectoryFlow)"
+      ],
+      "depends_on": [
+        {
+          "plugin_id": "dsh-client-ui-workspace",
+          "mechanism": "E1",
+          "evidence": "index.ts:12 type-only ui-workspace/client + index.ts:83-91 注册两处 directoryFlow 洞 + package.json:36 dsh.client.inject",
+          "purpose": "消费 directoryFlow 洞声明（ui-workspace 声明）"
+        },
+        {
+          "plugin_id": "dsh-client-runtime",
+          "mechanism": "E2",
+          "evidence": "index.ts:20 inject 'workspaces' + index.ts:76-77 ctx.workspaces.listDirectory/createDirectory + contract/workspaces.ts:48/55",
+          "purpose": "host 目录列示/创建原语（dsh-host-directory-picker-browse node 半）"
+        },
+        {
+          "plugin_id": "dsh-client-locale",
+          "mechanism": "E2",
+          "evidence": "index.ts:20 inject 'locale' + index.ts:67/78 ctx.locale.register/bind(LOCALE_NS)",
+          "purpose": "对话框字典（zh/en）"
+        },
+        {
+          "plugin_id": "dsh-client-ui-slots",
+          "mechanism": "E1",
+          "evidence": "index.ts:83-91 ctx.slots.inject/register 嵌套事务",
+          "purpose": "slot 注册 API"
+        },
+        {
+          "plugin_id": "dsh-client-ui-primitives",
+          "mechanism": "E1",
+          "evidence": "package.json:53 peerDependencies",
+          "purpose": "UI atoms"
+        }
+      ],
+      "dependents": [
+        {
+          "plugin_id": "dsh-client-ui-workspace",
+          "evidence": "ui-workspace/src/client/index.ts:64-69 flowSource 观察洞占用",
+          "purpose": "workspace 表面检测 browse 流是否在"
+        }
+      ]
+    },
+    {
+      "id": "dsh-client-ui-directory-picker-native",
+      "name": "@deepseek-ai/dsh-client-ui-directory-picker-native",
+      "implementation": "目录选择 native 前端（renderless）。NativeDirectoryFlow 以嵌套 slots.inject 事务性注册进 conversation.hero.workspace.directoryFlow 与 sidebar.workspaces.directoryFlow 两个洞；无渲染，每次 open 驱动 host 的 workspaces.pickDirectory（OS 选择器）并把唯一结果（picked path/取消/失败）回报 owner conversation。",
+      "provides": [
+        "conversation.hero.workspace.directoryFlow 条目(NativeDirectoryFlow, renderless)",
+        "sidebar.workspaces.directoryFlow 条目(NativeDirectoryFlow, renderless)"
+      ],
+      "depends_on": [
+        {
+          "plugin_id": "dsh-client-ui-workspace",
+          "mechanism": "E1",
+          "evidence": "index.ts:12 type-only ui-workspace/client + index.ts:31-39 注册两处洞 + package.json:35 dsh.client.inject",
+          "purpose": "消费 directoryFlow 洞声明"
+        },
+        {
+          "plugin_id": "dsh-client-runtime",
+          "mechanism": "E2",
+          "evidence": "index.ts:18 inject 'workspaces' + index.ts:27 ctx.workspaces.pickDirectory() + contract/workspaces.ts:41",
+          "purpose": "host 原生目录选择原语（dsh-host-directory-picker-native node 半）"
+        },
+        {
+          "plugin_id": "dsh-client-ui-slots",
+          "mechanism": "E1",
+          "evidence": "index.ts:31-39 ctx.slots.inject/register",
+          "purpose": "slot 注册 API"
+        }
+      ],
+      "dependents": [
+        {
+          "plugin_id": "dsh-client-ui-workspace",
+          "evidence": "ui-workspace/src/client/index.ts:64-69 flowSource 观察洞占用",
+          "purpose": "workspace 表面检测 native 流是否在"
+        }
+      ]
+    }
+  ]
+}

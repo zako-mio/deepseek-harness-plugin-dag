@@ -1,0 +1,157 @@
+{
+  "route": "R6-framework",
+  "scope": "框架与杂项域 9 插件",
+  "plugins": [
+    {
+      "id": "cordis-plugin-timer",
+      "name": "@deepseek-ai/cordis-plugin-timer",
+      "implementation": "Vendored 的 cordis 官方定时器服务插件(框架层基础能力)。定义 TimerService 类(extends Service，注册名 'timer')，通过 ctx.mixin 把 timeout/interval/throttle/debounce/setTimeout/setInterval 六个方法混入 Context，全部基于 ctx.effect 建立 fiber 生命周期绑定(context 销毁自动清理)。",
+      "provides": ["ctx.timer (TimerService)", "ctx.timeout()/interval()/throttle()/debounce()/setTimeout()/setInterval() 六个 mixin", "Context 类型声明扩展"],
+      "depends_on": [
+        {"plugin_id": "@deepseek-ai/cordis", "mechanism": "E2", "evidence": "vendor/timer/src/index.ts:1", "purpose": "import Context/Service 基类"}
+      ],
+      "dependents": [
+        {"plugin_id": "@deepseek-ai/cordis-plugin-hmr", "evidence": "vendor/hmr/src/index.ts:87", "purpose": "static inject timer; ctx.debounce 防抖"},
+        {"plugin_id": "@deepseek-ai/dsh-app-boot", "evidence": "packages/boot/app-boot/package.json:58", "purpose": "boot 测试与 fail-loud 流程"},
+        {"plugin_id": "@deepseek-ai/dsh-base", "evidence": "packages/bundle/base/cordis.patch.yml:16-17", "purpose": "E3 装配第一个补丁行"}
+      ]
+    },
+    {
+      "id": "cordis-plugin-hmr",
+      "name": "@deepseek-ai/cordis-plugin-hmr",
+      "implementation": "Vendored 的 cordis 官方热更新插件(框架层)。Hmr 类(Service 'hmr')static inject=['loader','timer']。(1) registerConfig 对配置树外精确路径起 chokidar watcher；(2) [Service.init] 对 root/ignored 建全局 watcher，external 文件触发 loader.exit() 全量重载；(3) partialReload 通过 loadCache 依赖图分析把变更分类 accepted/declined，重 import 插件入口，失败 rollback。",
+      "provides": ["ctx.hmr (Hmr 服务)", "ctx.hmr.registerConfig()", "事件 hmr/change|hmr/reload|hmr/config-update-failed"],
+      "depends_on": [
+        {"plugin_id": "@deepseek-ai/cordis-plugin-loader", "mechanism": "E1", "evidence": "vendor/hmr/src/index.ts:3", "purpose": "读取 loader.internal loadCache"},
+        {"plugin_id": "@deepseek-ai/cordis-plugin-timer", "mechanism": "E2", "evidence": "vendor/hmr/src/index.ts:87,242", "purpose": "static inject timer; ctx.debounce"},
+        {"plugin_id": "@deepseek-ai/cordis-plugin-include", "mechanism": "E1", "evidence": "vendor/hmr/src/index.ts:4,249-253", "purpose": "Include 行识别与 refresh"},
+        {"plugin_id": "@deepseek-ai/cordis-plugin-timer", "mechanism": "E3", "evidence": "vendor/hmr/package.json:43-46", "purpose": "peer 声明先装 timer"}
+      ],
+      "dependents": [
+        {"plugin_id": "@deepseek-ai/dsh-app-boot", "evidence": "packages/boot/app-boot/src/index.ts:237-241", "purpose": "watchUserPatches 经 hmr.registerConfig"},
+        {"plugin_id": "@deepseek-ai/dsh-base", "evidence": "packages/bundle/base/cordis.patch.yml:19-22", "purpose": "E3 装配默认开启 HMR"},
+        {"plugin_id": "apps/cli", "evidence": "apps/cli/package.json:23", "purpose": "CLI 应用声明依赖"}
+      ]
+    },
+    {
+      "id": "dsh-typert-loader",
+      "name": "@deepseek-ai/dsh-typert-loader",
+      "implementation": "Typert 构建产物的自动注册集成。apply(ctx) 扫描 loader entries 与显式配置 packages，对每个 entry 解析其 package.json 的 './typert' export，动态 import 后经 validateTypertManifest 严格校验，通过 ctx.typert.register(manifest) 注册。监听 'internal/plugin' 事件把 fiber entry 标记 dirty，microtask 批量 flush 增量 reconcile；unmount 时撤下注册。",
+      "provides": ["typert manifest 自动注册/撤销能力", "inject=['typert','loader'] 插件入口", "validateTypertManifest/TYPERT_HOST_EXPORT"],
+      "depends_on": [
+        {"plugin_id": "@deepseek-ai/cordis-plugin-loader", "mechanism": "E2", "evidence": "packages/typert/loader/src/index.ts:44,361-362", "purpose": "遍历 loader entries"},
+        {"plugin_id": "dsh-typert-registry", "mechanism": "E2", "evidence": "packages/typert/loader/src/index.ts:35,383", "purpose": "ctx.typert.register"},
+        {"plugin_id": "@deepseek-ai/cordis", "mechanism": "E2", "evidence": "packages/typert/loader/src/index.ts:32,411", "purpose": "internal/plugin 事件驱动扫描"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/typert/loader/src/invariant.ts:15", "purpose": "companion"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/cordis.patch.yml:33-34", "purpose": "E3 装配 typert-loader"},
+        {"plugin_id": "dsh-session-title-first-prompt-llm", "evidence": "packages/session/session-title-first-prompt-llm/tests/loader-composition.spec.ts", "purpose": "loader 组合测试"}
+      ]
+    },
+    {
+      "id": "dsh-api-gateway",
+      "name": "@deepseek-ai/dsh-api-gateway",
+      "implementation": "Typert Remote 双向网关：Host 端 TypertGatewayService(ctx.typertGateway，static inject=['typert']) 把 '/api/<namespace>/<method>' RPC 派发到 live cordis Service——先 ctx.typert.local 严格 descriptor，缺省时经 collectSrcClaims 反射构建 SRC descriptor；Client 端 ClientRemoteService(ctx.remote，inject=['typert','connection']) 安装 direct/scoped 方法到 RemoteNamespaceService，经 connection.rpc.call('/api',...) 转发，支持 $on/$dispatch 远程事件订阅。",
+      "provides": ["ctx.typertGateway(Host 派发器)", "ctx.remote(Client Remote 命名空间)", "connection.rpc.intercept('/api')", "Client 远程事件 $on/$dispatch"],
+      "depends_on": [
+        {"plugin_id": "dsh-typert-registry", "mechanism": "E2", "evidence": "packages/api/gateway/src/index.ts:91,117-135", "purpose": "descriptor 权威来源"},
+        {"plugin_id": "dsh-client-connection", "mechanism": "E2", "evidence": "packages/api/gateway/src/index.ts:104-111", "purpose": "rpc.intercept + rpc.call"},
+        {"plugin_id": "dsh-typert-protocol", "mechanism": "E1", "evidence": "packages/api/gateway/src/index.ts:9-16", "purpose": "协议层类型"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/api/gateway/src/invariant.ts:15,29", "purpose": "companion"},
+        {"plugin_id": "@deepseek-ai/cordis", "mechanism": "E2", "evidence": "packages/api/gateway/src/index.ts:101-103", "purpose": "internal/service 事件"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/cordis.patch.yml:36-37", "purpose": "E3 装配 Host 网关"},
+        {"plugin_id": "dsh-api-remotes", "evidence": "packages/api/remotes/package.json:39,63,80", "purpose": "Client 组装消费 ctx.remote"}
+      ]
+    },
+    {
+      "id": "dsh-session-title",
+      "name": "@deepseek-ai/dsh-session-title",
+      "implementation": "Log-backed 会话标题服务。SessionTitleService(ctx.sessionTitle，static inject=['sessions']) 以 session log 中 'session/title' 事件为唯一事实源。监听 'session/event'(user/message 触发自动调度)、'llm/stream'(主请求路由)、'session/disposed'(中止在途)；自动生成走 provider 注册 + 确定性 fallback 双轨；user rename() 钉住标题。注册 'title' 投影单元。",
+      "provides": ["ctx.sessionTitle(get/rename/refresh/register)", "session/title 会话事件", "title projection key", "SessionTitleProvider 契约", "fallbackSessionTitle/foldSessionTitle"],
+      "depends_on": [
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/session/session-title/src/index.ts:262,319,374", "purpose": "事件源读取/追加"},
+        {"plugin_id": "dsh-session-projection", "mechanism": "E2", "evidence": "packages/session/session-title/src/index.ts:308-317", "purpose": "注册 title 纯折单元"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/session/session-title/src/index.ts:10-11,331-334", "purpose": "isAgentLoopRequest"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/session/session-title/src/invariant.ts:16", "purpose": "companion"},
+        {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "packages/session/session-title/src/index.ts:9", "purpose": "SessionTitleProviderId"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-session-title-llm", "evidence": "packages/session/session-title-llm/src/index.ts:162", "purpose": "注册模型 provider"},
+        {"plugin_id": "dsh-session-title-first-prompt-llm", "evidence": "packages/session/session-title-first-prompt-llm/src/index.ts:12", "purpose": "first-prompt provider"},
+        {"plugin_id": "dsh-session-query", "evidence": "packages/session-query/session-query/src/index.ts:9-10", "purpose": "读取标题快照"},
+        {"plugin_id": "dsh-host-apiproxy", "evidence": "packages/host/apiproxy/src/api-proxy.ts:84", "purpose": "rename 端点消费"}
+      ]
+    },
+    {
+      "id": "dsh-session-title-first-prompt-llm",
+      "name": "@deepseek-ai/dsh-session-title-first-prompt-llm",
+      "implementation": "首条人类消息的 LLM 标题 provider 薄插件。apply(ctx, config) 直接调用 @deepseek-ai/dsh-session-title-llm 的 registerSessionTitleLlmProvider，以 'first-prompt' 自动模式注册 provider，消息选择器取 messages[0]。",
+      "provides": ["向 ctx.sessionTitle 注册 first-prompt LLM provider", "Config schema(复用共享字段)"],
+      "depends_on": [
+        {"plugin_id": "dsh-session-title", "mechanism": "E2", "evidence": "packages/session/session-title-first-prompt-llm/src/index.ts:12,35", "purpose": "注册进标题服务"},
+        {"plugin_id": "dsh-session-title-llm", "mechanism": "E1", "evidence": "packages/session/session-title-first-prompt-llm/src/index.ts:5-9", "purpose": "复用共享 LLM 生成策略"},
+        {"plugin_id": "dsh-llm", "mechanism": "E2", "evidence": "packages/session/session-title-first-prompt-llm/src/index.ts:12", "purpose": "LLM 服务调用"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/session/session-title-first-prompt-llm/src/index.ts:12", "purpose": "会话服务访问"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/session/session-title-first-prompt-llm/src/invariant.ts:15", "purpose": "companion"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/cordis.patch.yml:46-53", "purpose": "默认启用首条消息 LLM 标题"}
+      ]
+    },
+    {
+      "id": "dsh-session-projection",
+      "name": "@deepseek-ai/dsh-session-projection",
+      "implementation": "会话投影能力接缝：SessionProjectionRegistry(ctx.sessionProjections) 管理 merge 可扩展的 SessionProjectionMap 类型表与投影单元注册。服务构造时订阅 'session/event' 一次驱动所有注册单元，仅当 apply 返回新引用才触发 onChanged。注册是 effect，同 key 多注册者共享单元并 refs 计数。读取面：snapshot()/checkpoint()/restoreFloor()/viewCheckpoint()/restore()。",
+      "provides": ["ctx.sessionProjections", "SessionProjectionMap 类型表", "ProjectionDefinition 纯同步单元契约", "ProjectionChangeListener"],
+      "depends_on": [
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/session/session-projection/src/index.ts:22,181", "purpose": "订阅 session/event 驱动投影"},
+        {"plugin_id": "@deepseek-ai/cordis", "mechanism": "E2", "evidence": "packages/session/session-projection/src/index.ts:20,180", "purpose": "Service 注册与 effect"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/session/session-projection/src/invariant.ts:15", "purpose": "companion"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-session-title", "evidence": "packages/session/session-title/src/index.ts:308-317", "purpose": "title 投影单元"},
+        {"plugin_id": "dsh-token-meter", "evidence": "packages/llm/token-meter/src/index.ts:87-90", "purpose": "token 计量投影"},
+        {"plugin_id": "dsh-goal/dsh-plan-mode/dsh-permission-presets/dsh-tool-todo", "evidence": "packages/goal/goal/src/index.ts:17", "purpose": "各域插件注册投影单元"}
+      ]
+    },
+    {
+      "id": "dsh-user-questions",
+      "name": "@deepseek-ai/dsh-user-questions",
+      "implementation": "用户提问能力接缝：UserQuestionService(ctx.userQuestions) 维护单一活动 UI provider 槽。ask(request) 是唯一出口：前置校验(signal 中止/空问题/agent 必须精确 live root/plan-review intent 标签合法)，然后委托 provider.ask。",
+      "provides": ["ctx.userQuestions(ask/registerProvider)", "UserQuestionProvider 单槽契约", "UserQuestionError 错误面", "wire-safe 类型出口"],
+      "depends_on": [
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/interaction/user-questions/src/index.ts:11,101-112", "purpose": "调用者身份边界"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/interaction/user-questions/src/index.ts:12", "purpose": "HarnessError 基类"},
+        {"plugin_id": "@deepseek-ai/cordis", "mechanism": "E2", "evidence": "packages/interaction/user-questions/src/index.ts:10,55", "purpose": "Service 注册与 effect"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/interaction/user-questions/src/invariant.ts:15", "purpose": "companion"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-tool-ask-user", "evidence": "packages/interaction/tool-ask-user/src/index.ts:14,81", "purpose": "ask_user_question 工具"},
+        {"plugin_id": "dsh-host-apiproxy", "evidence": "packages/host/apiproxy/src/api-proxy.ts:1369-1397", "purpose": "Web 载体注册唯一 UI provider"},
+        {"plugin_id": "dsh-ui-user-questions", "evidence": "packages/client/ui-user-questions/package.json:69", "purpose": "客户端 UI 组件"},
+        {"plugin_id": "dsh-plan-mode / dsh-tool-todo", "evidence": "packages/plan/plan-mode/package.json:52", "purpose": "plan 审批与 todo 决策流"}
+      ]
+    },
+    {
+      "id": "dsh-skill",
+      "name": "@deepseek-ai/dsh-skill",
+      "implementation": "Agent skill provider 注册表(能力接缝的 Service Definition 角色)。SkillRegistry(ctx.skills) 用 ScopedLayers 维护 global + per-scope 分层：registerProvider 分层注册，register 接收运行时 skill。读取面 list()/snapshot()/get()：collect 以 (cwd, scopeChain, revision) 为缓存键合并各层，就近层同名胜出；变更经 'skills/change' 事件通知。renderSkillContent 渲染成统一 <skill_content> 模型块。",
+      "provides": ["ctx.skills(registerProvider/register/list/snapshot/get)", "skills/change 事件", "SkillProvider 契约", "renderSkillContent/escapeText + skill-invocation MessageSourceMap"],
+      "depends_on": [
+        {"plugin_id": "dsh-scope", "mechanism": "E1", "evidence": "packages/skill/skill/src/index.ts:15-16,363-366", "purpose": "分层注册与 scope 链"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/skill/skill/src/index.ts:14,155-160", "purpose": "assertNever + MessageSourceMap 注入"},
+        {"plugin_id": "@deepseek-ai/cordis", "mechanism": "E2", "evidence": "packages/skill/skill/src/index.ts:13,375", "purpose": "Service 注册与事件 dispatch"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/skill/skill/src/invariant.ts:15", "purpose": "companion"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-skill-filesystem", "evidence": "packages/skill/skill-filesystem/package.json:38,50", "purpose": "本地目录 provider"},
+        {"plugin_id": "dsh-tool-skill", "evidence": "packages/skill/tool-skill/src/index.ts:25,134-141,222", "purpose": "skill 工具加载"},
+        {"plugin_id": "dsh-skill-badge", "evidence": "packages/skill/skill-badge/package.json:36,41", "purpose": "badge provider"},
+        {"plugin_id": "dsh-host-apiproxy", "evidence": "packages/host/apiproxy/src/api-proxy.ts:3247", "purpose": "Web API 消费目录"}
+      ]
+    }
+  ]
+}

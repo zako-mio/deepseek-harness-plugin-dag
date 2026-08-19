@@ -1,0 +1,243 @@
+{
+  "shard": 5,
+  "plugins_total": 28,
+  "core_done": 7,
+  "research_date": "2026-08-17",
+  "project": "DeepSeek Harness 插件 DAG 依赖链分析 —— 设计初衷区块",
+  "repo": "https://github.com/deepseek-ai/deepseek-harness",
+  "core": [
+    {
+      "id": "dsh-system-prompt",
+      "why": "解决「系统提示词由谁来拼、按什么顺序拼」的横切问题：提供有序系统提示词组装注册表，插件可贡献段/工具schema/具名变量，每次循环统一组装渲染。其核心价值是把提示词拼装从 agent 循环内部抽离为可组合、可遮蔽、KV缓存稳定的公共服务，保证 harness 身份、persona、工具引导等多方贡献的确定性编排。",
+      "history": "自仓库早期即为 core 层核心插件（packages/core/system-prompt），随 harness 从集成式架构转向「一切皆插件」持续演进，衍生出 prompt variables（2026-07-05）、显式工具顺序（2026-07-06）、系统提示词源路径（2026-07-21）等多项 Agent Note 记录的设计决策。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/core/system-prompt/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-07-05-prompt-variables-and-tool-guidance-ownership.md"
+      ]
+    },
+    {
+      "id": "dsh-client-connection",
+      "why": "解决浏览器客户端与 Node host 之间的协议通道问题：作为协议消费层，挂载共享 API 客户端、双流 WebSocket 下行、loopback 状态与单消费方流循环启动器。其核心价值是统一浏览器/进程内两种载体的通信抽象，并在 /api 上实现基于回环+trustedHosts 的浏览器信任栅栏，防御 DNS rebinding，为远程 web 部署奠定安全边界。",
+      "history": "位于 packages/client/connection，是 web 客户端侧基础设施层；随 web 表面与远程访问需求演进，沉淀出 WebSocket 下行载体（2026-08-04）与 API 浏览器信任边界（2026-07-28）两项架构决策，是 host-client 双向通信的唯一入口。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/connection/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-07-28-api-browser-trust-boundary.md"
+      ]
+    },
+    {
+      "id": "dsh-goal",
+      "why": "解决 agent 长任务执行缺乏「持久目标状态」的问题：在既有会话内维护一个事件溯源的当前目标（含 phase/revision/续行权限），提供 create/edit/pause/resume/complete/block/clear 等动词。其核心价值是让长期目标在会话恢复/fork 后仍保真，同时把目标与继续执行权限分离、绝不持久化续行状态，为 goal-round-driver 等策略层提供可靠状态底座。",
+      "history": "来自 packages/goal/goal，伴随 goal 领域（2026-07-19 同会话目标领域 Agent Note）从简单状态演进为事件溯源+严格回放校验的服务，与 tool-goal、goal-round-driver 构成目标子系统三件套。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/goal/goal/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-07-19-persisted-same-session-goal-domain.md"
+      ]
+    },
+    {
+      "id": "dsh-shell-env",
+      "why": "解决模型可见 shell 工具缺乏可信、受管环境的问题：拥有 ctx.shellEnv 注册表，为每次 shell 调用收集可信 DSH_* 变量（DSH_HOME/DSH_SHELL/DSH_SESSION_ID 等），内置键归自身、其他插件可注册贡献。其核心价值是让 bash/pwsh 工具拿到经过身份标注、防嵌套 harness 身份泄漏的一致环境快照，且永不修改 process.env，成为 shell 执行器的环境事实来源。",
+      "history": "位于 packages/shell/shell-env，作为工具无关的 shell 环境层与 dsh-tool-bash/pwsh 强耦合，属 shell 子系统基础件；随持久化 seam 演进新增 DSH_SESSION_JSONL 等动态键，保持注册表单点管理。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/shell/shell-env/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness"
+      ]
+    },
+    {
+      "id": "dsh-session-query-sqlite",
+      "why": "解决会话历史检索缺少高性能全文搜索的问题：作为 ctx.sessionQuery 的 SQLite 具体提供方，用 FTS5(unicode61) 实现 searchSessions/searchEvents 两个全文方法，支持跨会话/会话内分页、元数据过滤与实时+持久化双层语料库对账。其核心价值是为插件与工具提供不加载完整日志的可检索会话历史，并严格规避注入（FTS5 语法当数据、参数化谓词、谓词预算）。",
+      "history": "承接 2026-07-10 session-query-service 与 2026-07-23 unified-session-query-service 两次架构统一后，成为首个/默认的具体后端（packages/session-query/session-query-sqlite），与抽象服务 session-query 分离，采用「继承精确读取+自有全文实现」的分层结构。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/session-query/session-query-sqlite/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-07-10-sqlite-session-query-provider.md"
+      ]
+    },
+    {
+      "id": "dsh-sdk-client",
+      "why": "解决外部程序如何驱动 harness 的问题：提供以子进程方式经 stdio JSON-RPC 驱动 harness 运行时的 TypeScript 客户端 SDK，分 DeepSeekHarness（高层运行 API）与 HarnessClient（低层协议客户端）两层。其核心价值是让自动化、subagent 后端等非浏览器消费方无需 HTTP/浏览器层即可启动完整 harness 会话并收集结果，与 Python SDK 构成设计孪生。",
+      "history": "位于 packages/sdk/client，与 protocol/server 同属 SDK 三件套；起步即定位为 Python SDK 的 TS 设计孪生，共享同一运行时对端与协议分层，启动规格显式化（command/args），为 headless 与 CI 自动化铺路。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/sdk/client/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/python"
+      ]
+    },
+    {
+      "id": "dsh-lsp-stdio",
+      "why": "解决 agent 需要语言服务器能力却无法直接驱动 LSP 的问题：提供 ctx.lsp 的通用 stdio 语言服务器后端，按命名服务器表惰性 single-flight 启动独立服务器进程，以兼容性优先的「临时打开」序列（didOpen→操作→didClose）经 ctx.fs 读取源文件执行导航/hover 查询。其核心价值是把 LSP 变成通过 ctx.subprocess/ctx.fs 执行世界一致挂载的可组合服务，而不污染提示词或工具 schema。",
+      "history": "位于 packages/lsp/lsp-stdio，与 lsp 抽象、tool-lsp 构成 LSP 子系统；定位为「通用宿主而非目录/安装器」，强调部署显式配置服务器映射，是 agent 获取类型感知能力的安全封装层。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/lsp/lsp-stdio/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/lsp"
+      ]
+    }
+  ],
+  "light": [
+    {
+      "id": "dsh-client-ui-commands",
+      "why_short": "Web 端斜杠命令体系：会话级命令目录缓存、/ 命令 source、execute/popupSelect/leadingInput 三类派发，让业务包可注册自定义命令。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-commands/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness"
+      ]
+    },
+    {
+      "id": "dsh-client-ui-model-selection",
+      "why_short": "浏览器侧模型选择：/model popup 与 composer 触发器共用一份会话级目录，经 session.models/selectModel 提交模型+推理强度。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-model-selection/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness"
+      ]
+    },
+    {
+      "id": "dsh-client-ui-directory-picker-native",
+      "why_short": "原生系统目录选择对话框的浏览器半边，经 ui-workspace 的 directoryFlow 洞驱动 host.pickDirectory，回报选中路径/取消/失败。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-directory-picker-native/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/host/directory-picker-native"
+      ]
+    },
+    {
+      "id": "dsh-client-ui-directory-picker-browse",
+      "why_short": "应用内 Miller 分栏目录浏览对话框的浏览器半边，经 host.listDirectory/createDirectory 工作，无需本地 OS 对话框，服务远程浏览器。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-directory-picker-browse/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/host/directory-picker-browse"
+      ]
+    },
+    {
+      "id": "dsh-client-ui-user-questions",
+      "why_short": "Web 提问功能：渲染 dsh-tool-ask-user 的问题为结构化表单（单选/多选/自定义），支持 plan-review 意图的审批卡片。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-user-questions/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness"
+      ]
+    },
+    {
+      "id": "dsh-client-ui-input-trigger",
+      "why_short": "输入触发流水线：光标处 / 与 @ 检测、分组候选菜单、路由到已注册 source（如命令、引用插入），纯内核+React 壳分离。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-input-trigger/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness"
+      ]
+    },
+    {
+      "id": "dsh-cordis-host-runner",
+      "why_short": "模型动态加载 Cordis 插件的 host 侧：define/run/stop 生命周期、node:vm 沙箱求值、浏览器半的 run 往返与 invoke 路由。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/extensions/cordis-host-runner/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/extensions"
+      ]
+    },
+    {
+      "id": "dsh-host-directory-picker-auto",
+      "why_short": "目录选择 seam 的自适应选择器：启动时一次采样判定 native/browse 后端并动态挂载，保证交互一致性。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/host/directory-picker-auto/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-07-28-directory-picker-capability-seam.md"
+      ]
+    },
+    {
+      "id": "dsh-host-directory-picker-browse",
+      "why_short": "目录选择 seam 的应用内浏览后端：Node 标准库单层列举+子目录创建，无本地对话框，可服务远程客户端。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/host/directory-picker-browse/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/host/directory-picker"
+      ]
+    },
+    {
+      "id": "dsh-goal-round-driver",
+      "why_short": "ctx.goals 的同会话续行驱动器：把 active 且启用续行的目标转为连续 Goal Round，排队 <goal_round> 提示词并计轮数。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/goal/goal-round-driver/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-07-19-same-session-goal-round-driver.md"
+      ]
+    },
+    {
+      "id": "dsh-spill-policy",
+      "why_short": "工具结果 spill 策略：tools/post-execute 转换器，超过 maxInlineBytes 的纯文本结果保存到 spillStore 并替换为有界首尾预览+取回指引。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/spill/spill-policy/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-07-08-tool-output-spill-files.md"
+      ]
+    },
+    {
+      "id": "dsh-tool-fs-search",
+      "why_short": "面向模型的文件发现工具 glob/grep，由打包 ripgrep 二进制支持（经 ctx.subprocess），不依赖宿主 rg 安装。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/fs/tool-fs-search/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/fs"
+      ]
+    },
+    {
+      "id": "dsh-session-query",
+      "why_short": "SessionQueryEngine 组合式抽象：对实时 sessions + 可选 sessionPersistence 提供精确历史取回、血缘跟踪与提供方无关过滤，定义两个全文方法由后端实现。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/session-query/session-query/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-07-13-session-query-tracing.md"
+      ]
+    },
+    {
+      "id": "dsh-session-telemetry",
+      "why_short": "遥测 Service Definition：SessionTelemetrySink 后端约定，把会话记录经脱敏 waterfall 交接给任意上报 SDK，含 sharing 披露词汇。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/session/session-telemetry/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-07-23-session-telemetry-otel-revival.md"
+      ]
+    },
+    {
+      "id": "dsh-repeat-tool-reminder",
+      "why_short": "仅建议的循环中断器：监控相同规范化参数连续调用同一工具的次数，达阈值注入逐级提醒，绝不否决调用。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/guard/repeat-tool-reminder/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/archived/feature/2026-07-08-repeat-tool-guard.md"
+      ]
+    },
+    {
+      "id": "dsh-tool-bash",
+      "why_short": "模型侧 bash 工具：注册在 ctx.shell 执行器 seam，前台/后台执行、DSH_* 环境注入、可选沙箱升权与审批流。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/shell/tool-bash/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/shell"
+      ]
+    },
+    {
+      "id": "dsh-tool-terminal",
+      "why_short": "基于 ctx.terminals 的 6 个终端工具（open/send/read/signal/close/list），要求同一 Agent 实例，支持后台 PTY 任务。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/terminal/tool-terminal/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/terminal"
+      ]
+    },
+    {
+      "id": "dsh-hooks-sonnet",
+      "why_short": "在 GitHub 官方仓库 deepseek-harness 与 npm @deepseek-ai scope 均检索不到该包（404/零结果）；hooks 生态现存的为 dsh-hooks-claude-code（CC 方言桥接）。推断为社区/规划中未发布的 hooks 方言插件，功能上应是在 harness 拦截点运行 Sonnet（Claude）式 hook 配置。",
+      "sources": [
+        "https://registry.npmjs.org/@deepseek-ai%2Fdsh-hooks-sonnet",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/hooks"
+      ]
+    },
+    {
+      "id": "dsh-code-runtime-worker-thread",
+      "why_short": "code-runtime seam 的 worker 线程实现：每次运行全新 Worker，隔离非安全边界，含 computeMs/maxWallMs 双预算与 JSON 边界验证。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/code-runtime/code-runtime-worker-thread/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/code-runtime"
+      ]
+    },
+    {
+      "id": "dsh-session-persistence-jsonl",
+      "why_short": "JSONL 持久会话后端：每会话仅追加逻辑日志（默认 .jsonl.zstd），延迟实体化、崩溃恢复、项目/会话目录布局。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/session/session-persistence-jsonl/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-06-14-session-persistence.md"
+      ]
+    },
+    {
+      "id": "dsh-session-persistence-sqlite",
+      "why_short": "SQLite 持久会话后端：SessionEvent 1:1 映射 events 行，事务化 append、延迟实体化、pristine schema 门控、WAL 模式。",
+      "sources": [
+        "https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/session/session-persistence-sqlite/README.zh.md",
+        "https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/session"
+      ]
+    }
+  ]
+}

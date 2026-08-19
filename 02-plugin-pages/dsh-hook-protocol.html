@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dsh-hook-protocol · @deepseek-ai/dsh-hook-protocol · DeepSeek Harness 插件 DAG</title>
+<style>
+:root{--bg:#0f1117;--panel:#161a22;--border:#2a2f3a;--text:#e6e8ee;--dim:#9aa3b2;--accent:#4f8cff;--ext:#b48a3c;--ok:#2fb98a;--dis:#c0504d;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+header{background:var(--panel);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+header h1{font-size:17px;font-weight:600;}
+header .crumb{color:var(--dim);font-size:13px;}
+header .crumb a{color:var(--accent);text-decoration:none;}
+.badge{background:#20324f;color:#7fb0ff;padding:2px 10px;border-radius:20px;font-size:12px;}
+.badge.ext{background:#3a2f1a;color:#e0b25e;}
+.badge.layer{background:#1d2a24;color:#5fc9a0;}
+.badge.l2{background:#2f2440;color:#b48ae0;}
+.badge.l3{background:#1d3a30;color:#5fd0a8;}
+.badge.dis{background:#3a1d1d;color:#e08584;}
+main{padding:24px;max-width:1200px;margin:0 auto;}
+h2{font-size:18px;margin:26px 0 12px;color:#cfd6e4;border-bottom:1px solid var(--border);padding-bottom:8px;}
+h3{font-size:15px;margin:18px 0 8px;color:#b8c2d4;}
+p,li{font-size:14px;}
+ul{padding-left:22px;}
+.dep-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;margin:10px 0;}
+.dep-item{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 12px;}
+.dep-item .name{font-weight:600;color:var(--accent);}
+.dep-item .mech{display:inline-block;font-size:11px;background:#1d2a3f;color:#7fb0ff;border-radius:4px;padding:1px 6px;margin-left:6px;}
+.dep-item .evi{font-size:12px;color:var(--dim);margin-top:4px;font-family:Consolas,monospace;word-break:break-all;}
+.dep-item .purpose{font-size:13px;margin-top:4px;}
+.ext .name{color:var(--ext);}
+.dis .name{color:var(--dis);}
+.provides li{font-size:13px;margin:3px 0;}
+.evidence{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-family:Consolas,monospace;font-size:12px;color:#9fb0c3;margin:6px 0;word-break:break-all;}
+.dagnav{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:14px 0;}
+.dagnav .label{font-size:12px;color:var(--dim);margin-bottom:6px;}
+.dagnav .chips{display:flex;flex-wrap:wrap;gap:6px;}
+.chip{font-size:12px;background:#1d2a3f;border:1px solid #2b3d5f;border-radius:6px;padding:2px 8px;color:#7fb0ff;text-decoration:none;}
+.chip:hover{background:#2b3d5f;}
+.chip.ext{background:#3a2f1a;border-color:#5a4422;color:#e0b25e;}
+.chip.dis{background:#3a1d1d;border-color:#6a3231;color:#e08584;}
+.chip.l2{background:#2f2440;border-color:#4a3560;color:#b48ae0;}
+.chip.l3{background:#1d3a30;border-color:#2f5a4a;color:#5fd0a8;}
+.chip.self{background:#20324f;border-color:#4f8cff;color:#fff;cursor:default;}
+.treenav{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:14px 0;display:flex;flex-wrap:wrap;gap:4px 14px;}
+.treenav a{color:var(--dim);font-size:13px;text-decoration:none;}
+.treenav a:hover{color:var(--accent);}
+.treenav .sep{color:#3a3f4a;}
+.layernav{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}
+.layernav a{font-size:12px;background:#161d2c;border:1px solid var(--border);border-radius:6px;padding:2px 8px;color:var(--dim);text-decoration:none;}
+.layernav a.cur{background:#20324f;color:#7fb0ff;border-color:#4f8cff;}
+footer{margin-top:40px;padding:16px 24px;border-top:1px solid var(--border);color:var(--dim);font-size:12px;text-align:center;}
+table{border-collapse:collapse;width:100%;margin:10px 0;}
+th,td{border:1px solid var(--border);padding:6px 10px;font-size:13px;text-align:left;}
+th{background:var(--panel);color:#b8c2d4;}
+.whybox{background:#0d1a14;border:1px solid #2f5a4a;border-radius:8px;padding:14px 18px;margin:10px 0;}
+.whybox .tag{color:#5fc9a0;font-size:12px;font-weight:600;letter-spacing:1px;}
+.whybox p{font-size:14px;color:#cfe8dd;margin:6px 0;}
+.whybox .hist{font-size:13px;color:var(--dim);margin-top:8px;}
+.whybox .src{font-size:11px;color:var(--dim);margin-top:8px;}
+.whybox .src a{color:#7fb0ff;text-decoration:none;word-break:break-all;}
+.whybox .src a:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+<header>
+  <span class="crumb"><a href="../index.html">DAG总览</a> / <a href="../03-groups/index.html">组目录</a> / 外部基座 seam</span>
+  <h1>dsh-hook-protocol · @deepseek-ai/dsh-hook-protocol</h1>
+  <span class="badge ext">外部 seam</span>
+</header>
+<main>
+<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">运行时框架</a><a href="../03-groups/G02.html">类型契约</a><a href="../03-groups/G03.html">核心服务</a><a href="../03-groups/G04.html">LLM核心</a><a href="../03-groups/G05.html">LLM适配</a><a href="../03-groups/G06.html">LLM治理</a><a href="../03-groups/G07.html">会话持久化</a><a href="../03-groups/G08.html">会话展示</a><a href="../03-groups/G09.html">审批权限</a><a href="../03-groups/G10.html">命令交互</a><a href="../03-groups/G11.html">凭据设置</a><a href="../03-groups/G12.html">附件</a><a href="../03-groups/G13.html">文件系统</a><a href="../03-groups/G14.html">Shell工具</a><a href="../03-groups/G15.html">沙箱执行</a><a href="../03-groups/G16.html">作业</a><a href="../03-groups/G17.html">目标计划</a><a href="../03-groups/G18.html">技能</a><a href="../03-groups/G19.html">子代理</a><a href="../03-groups/G20.html">工作流</a><a href="../03-groups/G21.html">上下文治理</a><a href="../03-groups/G22.html">上下文注入</a><a href="../03-groups/G23.html">工具守卫</a><a href="../03-groups/G24.html">Web搜索</a><a href="../03-groups/G25.html">宿主服务</a><a href="../03-groups/G26.html">客户端runtime</a><a href="../03-groups/G27.html">会话交互UI</a><a href="../03-groups/G28.html">设置输入UI</a><a href="../03-groups/G29.html">UI底座</a><a href="../03-groups/G30.html">外部执行后端</a><a href="../03-groups/G31.html">协议与SDK</a><a href="../03-groups/G32.html">LSP集成</a><a href="../03-groups/G33.html">子代理外部后端</a><a href="../03-groups/G34.html">Web上下文扩展</a><a href="../03-groups/G35.html">会话存储变体</a><a href="../03-groups/G36.html">Hooks工具扩展</a><a href="../03-groups/G37.html">示例与框架</a><a href="../03-groups/G38.html">多智能体协作</a><a href="../03-groups/G39.html">代码执行运行时</a></div><div class="dagnav"><div class="label">被核心/Web/L3 集插件依赖（下游消费者）：</div><div class="chips"><a class="chip" href="dsh-hooks-claude-code.html">dsh-hooks-claude-code</a><a class="chip" href="dsh-hooks-codex.html">dsh-hooks-codex</a></div></div><h2>基座 seam 说明</h2><p>Shared Claude Code / Codex hook wire protocol: matcher engine, stdin/exit-code/stdout codec, multi-hook merge, and hook/* session events</p><table><tr><th>包名</th><td>@deepseek-ai/dsh-hook-protocol</td></tr><tr><th>源码路径</th><td><code>packages/hooks/hook-protocol</code></td></tr><tr><th>被插件引用</th><td>2 次</td></tr></table><h2>被依赖（下游）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-hooks-claude-code.html">dsh-hooks-claude-code</a></span></div><div class="dep-item"><span class="name"><a href="dsh-hooks-codex.html">dsh-hooks-codex</a></span></div></div><h2>依赖机制分布</h2><p>E1</p>
+</main>
+<footer>DeepSeek Harness 插件级 DAG 依赖链分析 · L1 核心集 + L2 web-app + L3 其余插件 · 源码三依据(E1编译/E2运行时/E3组合)逐条溯源</footer>
+</body>
+</html>

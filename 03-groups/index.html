@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>插件分组目录 · DeepSeek Harness 插件 DAG</title>
+<style>
+:root{--bg:#0f1117;--panel:#161a22;--border:#2a2f3a;--text:#e6e8ee;--dim:#9aa3b2;--accent:#4f8cff;--ext:#b48a3c;--ok:#2fb98a;--dis:#c0504d;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+header{background:var(--panel);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+header h1{font-size:17px;font-weight:600;}
+header .crumb{color:var(--dim);font-size:13px;}
+header .crumb a{color:var(--accent);text-decoration:none;}
+.badge{background:#20324f;color:#7fb0ff;padding:2px 10px;border-radius:20px;font-size:12px;}
+.badge.ext{background:#3a2f1a;color:#e0b25e;}
+.badge.layer{background:#1d2a24;color:#5fc9a0;}
+.badge.l2{background:#2f2440;color:#b48ae0;}
+.badge.l3{background:#1d3a30;color:#5fd0a8;}
+.badge.dis{background:#3a1d1d;color:#e08584;}
+main{padding:24px;max-width:1200px;margin:0 auto;}
+h2{font-size:18px;margin:26px 0 12px;color:#cfd6e4;border-bottom:1px solid var(--border);padding-bottom:8px;}
+h3{font-size:15px;margin:18px 0 8px;color:#b8c2d4;}
+p,li{font-size:14px;}
+ul{padding-left:22px;}
+.dep-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;margin:10px 0;}
+.dep-item{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 12px;}
+.dep-item .name{font-weight:600;color:var(--accent);}
+.dep-item .mech{display:inline-block;font-size:11px;background:#1d2a3f;color:#7fb0ff;border-radius:4px;padding:1px 6px;margin-left:6px;}
+.dep-item .evi{font-size:12px;color:var(--dim);margin-top:4px;font-family:Consolas,monospace;word-break:break-all;}
+.dep-item .purpose{font-size:13px;margin-top:4px;}
+.ext .name{color:var(--ext);}
+.dis .name{color:var(--dis);}
+.provides li{font-size:13px;margin:3px 0;}
+.evidence{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-family:Consolas,monospace;font-size:12px;color:#9fb0c3;margin:6px 0;word-break:break-all;}
+.dagnav{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:14px 0;}
+.dagnav .label{font-size:12px;color:var(--dim);margin-bottom:6px;}
+.dagnav .chips{display:flex;flex-wrap:wrap;gap:6px;}
+.chip{font-size:12px;background:#1d2a3f;border:1px solid #2b3d5f;border-radius:6px;padding:2px 8px;color:#7fb0ff;text-decoration:none;}
+.chip:hover{background:#2b3d5f;}
+.chip.ext{background:#3a2f1a;border-color:#5a4422;color:#e0b25e;}
+.chip.dis{background:#3a1d1d;border-color:#6a3231;color:#e08584;}
+.chip.l2{background:#2f2440;border-color:#4a3560;color:#b48ae0;}
+.chip.l3{background:#1d3a30;border-color:#2f5a4a;color:#5fd0a8;}
+.chip.self{background:#20324f;border-color:#4f8cff;color:#fff;cursor:default;}
+.treenav{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:14px 0;display:flex;flex-wrap:wrap;gap:4px 14px;}
+.treenav a{color:var(--dim);font-size:13px;text-decoration:none;}
+.treenav a:hover{color:var(--accent);}
+.treenav .sep{color:#3a3f4a;}
+.layernav{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}
+.layernav a{font-size:12px;background:#161d2c;border:1px solid var(--border);border-radius:6px;padding:2px 8px;color:var(--dim);text-decoration:none;}
+.layernav a.cur{background:#20324f;color:#7fb0ff;border-color:#4f8cff;}
+footer{margin-top:40px;padding:16px 24px;border-top:1px solid var(--border);color:var(--dim);font-size:12px;text-align:center;}
+table{border-collapse:collapse;width:100%;margin:10px 0;}
+th,td{border:1px solid var(--border);padding:6px 10px;font-size:13px;text-align:left;}
+th{background:var(--panel);color:#b8c2d4;}
+.whybox{background:#0d1a14;border:1px solid #2f5a4a;border-radius:8px;padding:14px 18px;margin:10px 0;}
+.whybox .tag{color:#5fc9a0;font-size:12px;font-weight:600;letter-spacing:1px;}
+.whybox p{font-size:14px;color:#cfe8dd;margin:6px 0;}
+.whybox .hist{font-size:13px;color:var(--dim);margin-top:8px;}
+.whybox .src{font-size:11px;color:var(--dim);margin-top:8px;}
+.whybox .src a{color:#7fb0ff;text-decoration:none;word-break:break-all;}
+.whybox .src a:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+<header>
+  <span class="crumb"><a href="../index.html">DAG总览</a> / <a href="../03-groups/index.html">组目录</a> / 目录</span>
+  <h1>插件分组目录</h1>
+  
+</header>
+<main>
+<div class="treenav"><a href="G01.html">G01 运行时框架（2）</a><a href="G02.html">G02 类型契约（3）</a><a href="G03.html">G03 核心服务（6）</a><a href="G04.html">G04 LLM核心（1）</a><a href="G05.html">G05 LLM适配（2）</a><a href="G06.html">G06 LLM治理（2）</a><a href="G07.html">G07 会话持久化（4）</a><a href="G08.html">G08 会话展示（4）</a><a href="G09.html">G09 审批权限（2）</a><a href="G10.html">G10 命令交互（4）</a><a href="G11.html">G11 凭据设置（2）</a><a href="G12.html">G12 附件（1）</a><a href="G13.html">G13 文件系统（5）</a><a href="G14.html">G14 Shell工具（4）</a><a href="G15.html">G15 沙箱执行（5）</a><a href="G16.html">G16 作业（2）</a><a href="G17.html">G17 目标计划（4）</a><a href="G18.html">G18 技能（4）</a><a href="G19.html">G19 子代理（6）</a><a href="G20.html">G20 工作流（3）</a><a href="G21.html">G21 上下文治理（6）</a><a href="G22.html">G22 上下文注入（1）</a><a href="G23.html">G23 工具守卫（3）</a><a href="G24.html">G24 Web搜索（3）</a><a href="G25.html">G25 宿主服务（16）</a><a href="G26.html">G26 客户端runtime（9）</a><a href="G27.html">G27 会话交互UI（12）</a><a href="G28.html">G28 设置输入UI（13）</a><a href="G29.html">G29 UI底座（9）</a><a href="G30.html">G30 外部执行后端（6）</a><a href="G31.html">G31 协议与SDK（2）</a><a href="G32.html">G32 LSP集成（2）</a><a href="G33.html">G33 子代理外部后端（4）</a><a href="G34.html">G34 Web上下文扩展（6）</a><a href="G35.html">G35 会话存储变体（4）</a><a href="G36.html">G36 Hooks工具扩展（6）</a><a href="G37.html">G37 示例与框架（9）</a><a href="G38.html">G38 多智能体协作（2）</a><a href="G39.html">G39 代码执行运行时（1）</a></div><h2>外部 seam 基座</h2><ul><li><a href="../02-plugin-pages/dsh-invariants.html">dsh-invariants</a> · Registry service for package-owned DeepSeek Harness runtime </li><li><a href="../02-plugin-pages/dsh-scope.html">dsh-scope</a> · Scoped-context registration primitive (scope tags, scope-fil</li><li><a href="../02-plugin-pages/dsh-timeout.html">dsh-timeout</a> · Zero-dependency timeout/deadline primitive: clampTimeout, de</li><li><a href="../02-plugin-pages/dsh-settings.html">dsh-settings</a> · Abstract user-settings seam (ctx.settings) for the DeepSeek </li><li><a href="../02-plugin-pages/dsh-fs.html">dsh-fs</a> · Abstract filesystem capability seam (ctx.fs) for the DeepSee</li><li><a href="../02-plugin-pages/dsh-session-persistence.html">dsh-session-persistence</a> · Abstract durable session persistence seam (ctx.sessionPersis</li><li><a href="../02-plugin-pages/dsh-typert-protocol.html">dsh-typert-protocol</a> · Compiler-independent Remote metadata and Typert provider pro</li><li><a href="../02-plugin-pages/dsh-brand.html">dsh-brand</a> · Type-only Branded&lt;B&gt; nominal-typing primitive for the DeepSe</li><li><a href="../02-plugin-pages/dsh-home-paths.html">dsh-home-paths</a> · Shared filesystem path helpers for the DeepSeek Harness</li><li><a href="../02-plugin-pages/dsh-jobs.html">dsh-jobs</a> · Background job registry (ctx.jobs) for the DeepSeek Harness </li><li><a href="../02-plugin-pages/dsh-shell.html">dsh-shell</a> · Abstract bash executor seam (ctx.shell) for the DeepSeek Har</li><li><a href="../02-plugin-pages/dsh-attachment.html">dsh-attachment</a> · Durable immutable attachment storage seam for the DeepSeek H</li><li><a href="../02-plugin-pages/dsh-credentials.html">dsh-credentials</a> · Abstract credential seam (ctx.credentials): settings carry r</li><li><a href="../02-plugin-pages/dsh-launch-environment.html">dsh-launch-environment</a> · Immutable DeepSeek Harness launch environment that records w</li><li><a href="../02-plugin-pages/dsh-sandbox.html">dsh-sandbox</a> · Abstract process-sandbox seam (ctx.sandbox) for the DeepSeek</li><li><a href="../02-plugin-pages/dsh-subprocess.html">dsh-subprocess</a> · Subprocess seam (ctx.subprocess) for the DeepSeek Harness — </li><li><a href="../02-plugin-pages/dsh-anonymous-user-id.html">dsh-anonymous-user-id</a> · Shared anonymous user identity for DeepSeek Harness telemetr</li><li><a href="../02-plugin-pages/dsh-compaction.html">dsh-compaction</a> · Abstract compaction service seam (ctx.compaction) for the De</li><li><a href="../02-plugin-pages/dsh-session-telemetry.html">dsh-session-telemetry</a> · SessionTelemetryBackend seam for the DeepSeek Harness: sessi</li><li><a href="../02-plugin-pages/dsh-spill.html">dsh-spill</a> · Abstract spill storage seam (ctx.spillStore) for the DeepSee</li><li><a href="../02-plugin-pages/dsh-workflow.html">dsh-workflow</a> · Workflow capability seam: ctx.workflowEngine service, run vo</li><li><a href="../02-plugin-pages/cordis-plugin-loader.html">cordis-plugin-loader</a> · </li><li><a href="../02-plugin-pages/dsh-atomic-write.html">dsh-atomic-write</a> · Zero-dependency atomic file replacement: exclusive-create ra</li><li><a href="../02-plugin-pages/dsh-output-retention.html">dsh-output-retention</a> · Zero-dependency bounded-retention primitive: ItemRetainer/Te</li><li><a href="../02-plugin-pages/dsh-session-title-llm.html">dsh-session-title-llm</a> · Shared LLM generation policy for DeepSeek Harness session-ti</li><li><a href="../02-plugin-pages/dsh-subagent-in-process-driver.html">dsh-subagent-in-process-driver</a> · Shared in-process subagent run driver: drives a child agent </li><li><a href="../02-plugin-pages/cordis-plugin-include.html">cordis-plugin-include</a> · </li><li><a href="../02-plugin-pages/dsh-bash-local.html">dsh-bash-local</a> · Local-subprocess implementation of the DeepSeek Harness bash</li><li><a href="../02-plugin-pages/dsh-bundle-base.html">dsh-bundle-base</a> · </li><li><a href="../02-plugin-pages/dsh-client-connection.html">dsh-client-connection</a> · Wire consumer layer: HTTP-up/WebSocket-down client, Connecti</li><li><a href="../02-plugin-pages/dsh-code-runtime.html">dsh-code-runtime</a> · Abstract code-execution seam (ctx.codeRuntime) for the DeepS</li><li><a href="../02-plugin-pages/dsh-fs-local.html">dsh-fs-local</a> · Local-filesystem implementation of the DeepSeek Harness file</li><li><a href="../02-plugin-pages/dsh-node-addon-landlock-run.html">dsh-node-addon-landlock-run</a> · </li><li><a href="../02-plugin-pages/dsh-pwsh-local.html">dsh-pwsh-local</a> · Local PowerShell implementation of the DeepSeek Harness bash</li><li><a href="../02-plugin-pages/dsh-sandbox-windows-acl.html">dsh-sandbox-windows-acl</a> · Windows ACL write-restriction sandbox backend (restricted-to</li><li><a href="../02-plugin-pages/dsh-session-query.html">dsh-session-query</a> · Combined session query service contract with concrete reads,</li><li><a href="../02-plugin-pages/dsh-acp.html">dsh-acp</a> · Automation-only Agent Client Protocol server for driving Dee</li><li><a href="../02-plugin-pages/dsh-e2b.html">dsh-e2b</a> · Shared E2B sandbox lifecycle for DeepSeek Harness provider a</li><li><a href="../02-plugin-pages/dsh-hook-protocol.html">dsh-hook-protocol</a> · Shared Claude Code / Codex hook wire protocol: matcher engin</li><li><a href="../02-plugin-pages/dsh-lsp.html">dsh-lsp</a> · Abstract LSP capability seam (ctx.lsp) for the DeepSeek Harn</li><li><a href="../02-plugin-pages/dsh-mcp-client.html">dsh-mcp-client</a> · MCP client bridge: connects to MCP servers and registers the</li><li><a href="../02-plugin-pages/dsh-sdk-protocol.html">dsh-sdk-protocol</a> · Shared wire protocol for the DeepSeek Harness SDK runtime: t</li><li><a href="../02-plugin-pages/dsh-terminal.html">dsh-terminal</a> · Persistent PTY session seam for the DeepSeek Harness — owner</li><li><a href="../02-plugin-pages/dsh-acp-snapshot.html">dsh-acp-snapshot</a> · ACP test kit: shared subprocess launcher, snapshot scenario </li><li><a href="../02-plugin-pages/dsh-agent-loop-testkit.html">dsh-agent-loop-testkit</a> · Shared prerequisite mounting for tests that exercise the con</li><li><a href="../02-plugin-pages/dsh-client-test-runtime.html">dsh-client-test-runtime</a> · jsdom slot test runtime: real Cordis Context + SlotRegistry </li><li><a href="../02-plugin-pages/dsh-llm-mock-server.html">dsh-llm-mock-server</a> · Scriptable OpenAI-compatible HTTP/SSE fault server for LLM r</li><li><a href="../02-plugin-pages/dsh-llm-replay.html">dsh-llm-replay</a> · Replay LLM plugin: short-circuits llm/stream with model chun</li><li><a href="../02-plugin-pages/dsh-loader-smoke.html">dsh-loader-smoke</a> · Shared subprocess and direct-agent harness for keyless real-</li></ul><h2>特殊模块（独立分析，非 DAG 节点）</h2><ul><li><a href="../08-special-modules/dsh-base.html">dsh-base</a> · 所有 profile 的第一 patch 层（package.json dsh.bundle.patch=cordis.patch.yml），对空 profil</li><li><a href="../08-special-modules/dsh-headless.html">dsh-headless</a> · 一次性任务模式 bundle，直接叠在 dsh-base 之上（PROFILE_TEMPLATES headless=[base,headless], prof</li><li><a href="../08-special-modules/dsh-app-boot.html">dsh-app-boot</a> · app bins (dsh/dsh-acp-demo) 的共享启动胶水，非插件（无 name/inject/apply）。boot() 序列（index.ts:</li><li><a href="../08-special-modules/dsh-cmdline.html">dsh-cmdline</a> · launcher → app 的不可变命令行交接，非插件（无 name/inject/apply）。provideCmdline(ctx, host) 在树挂载</li></ul>
+</main>
+<footer>DeepSeek Harness 插件级 DAG 依赖链分析 · L1 核心集 + L2 web-app + L3 其余插件 · 源码三依据(E1编译/E2运行时/E3组合)逐条溯源</footer>
+</body>
+</html>

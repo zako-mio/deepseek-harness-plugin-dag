@@ -1,0 +1,19 @@
+# 临时/缓存
+*.log
+.DS_Store
+Thumbs.db
+
+# 截图（门控验证产物，不入库）
+07-checkpoint/screenshots/
+07-checkpoint/shots-why/
+07-checkpoint/shots/
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 测试产物（不入库）
+04-interactive/_test_0817/
+
+# 临时脚本
+D:\Temp\opencode\

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeepSeek Harness 插件级 DAG 依赖链分析</title>
+<style>
+  :root { --bg:#0f1117; --panel:#161a22; --border:#2a2f3a; --text:#e6e8ee; --dim:#9aa3b2; --accent:#4f8cff; --ext:#b48a3c; --ok:#2fb98a; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; line-height:1.7; }
+  header { background:var(--panel); border-bottom:1px solid var(--border); padding:28px 32px; }
+  header h1 { font-size:24px; margin-bottom:6px; }
+  header p { color:var(--dim); font-size:14px; max-width:900px; }
+  main { padding:28px 32px; max-width:1100px; margin:0 auto; }
+  h2 { font-size:18px; margin:28px 0 14px; color:#cfd6e4; border-bottom:1px solid var(--border); padding-bottom:8px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; margin:12px 0; }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px 18px; }
+  .card h3 { font-size:15px; color:var(--accent); margin-bottom:6px; }
+  .card a { color:var(--accent); text-decoration:none; }
+  .card a:hover { text-decoration:underline; }
+  .card p { font-size:13px; color:var(--dim); }
+  .stat { display:inline-block; background:#1d2a3f; border:1px solid #2b3d5f; border-radius:8px; padding:10px 16px; margin:4px; text-align:center; }
+  .stat b { display:block; font-size:22px; color:#fff; }
+  .stat span { font-size:12px; color:var(--dim); }
+  .links a { display:inline-block; margin:4px 8px 4px 0; padding:6px 14px; background:var(--panel); border:1px solid var(--border); border-radius:8px; color:var(--accent); text-decoration:none; font-size:13px; }
+  .links a:hover { border-color:var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <h1>DeepSeek Harness 插件级 DAG 依赖链分析</h1>
+  <p>以 cordis 插件为最小分析单元，三硬依据（E1 编译 / E2 运行时 / E3 组合）+ 源码行引用逐条溯源，回答每个插件「实现了什么」「依赖谁」「被谁依赖」。L1 核心集（base bundle）+ L2 web-app bundle（宿主层/前端 runtime/ui-*）+ L3 其余（examples/hooks/web 变体/e2b/lsp/sdk/子代理外部后端）已全部完成。</p>
+</header>
+<main>
+  <h2>核心统计</h2>
+  <div>
+    <div class="stat"><b>180</b><span>插件节点（76 L1 + 58 L2 + 46 L3）</span></div>
+    <div class="stat"><b>49</b><span>外部 seam 基座</span></div>
+    <div class="stat"><b>578</b><span>依赖边（含 22 个 web 变体 disabled 标注）</span></div>
+    <div class="stat"><b>17</b><span>拓扑层</span></div>
+    <div class="stat"><b>39</b><span>分组</span></div>
+    <div class="stat"><b>229</b><span>HTML 插件页（180 DAG 节点 + 49 seam，1 个双身份共享页）</span></div>
+  </div>
+
+  <h2>入口导航</h2>
+  <div class="links">
+    <a href="04-interactive/index.html">交互 DAG 总览（组级视图+点击下钻）</a>
+    <a href="03-groups/index.html">分组目录</a>
+  </div>
+
+  <h2>查看方式</h2>
+  <div class="cards">
+    <div class="card"><h3>交互图</h3><p>cytoscape 本地渲染，组级视图 40 节点（39 组 + EXT）彩色，点击组节点下钻组内插件 DAG；disabled 插件灰显红边。<a href="04-interactive/index.html">打开 →</a></p></div>
+    <div class="card"><h3>插件页</h3><p>每插件一页：设计初衷 + 实现逻辑 + provides + 上游/下游 DAG 链式导航 + 源码引用。<a href="02-plugin-pages/dsh-session.html">示例 dsh-session →</a></p></div>
+    <div class="card"><h3>分组索引</h3><p>39 组索引（L1 24 组 + L2 5 组 + L3 8 组 + 新增 G38/G39），每组列出组内插件与拓扑层。<a href="03-groups/index.html">打开 →</a></p></div>
+    <div class="card"><h3>MD 镜像</h3><p>AI 友好 Markdown 简表，供检索与二次加工（非人类浏览入口，见 README）。</p></div>
+  </div>
+
+  <h2>方法说明</h2>
+  <p>依赖判定三硬依据：<b>E1 编译依赖</b>（package.json peerDependencies / import）、<b>E2 运行时依赖</b>（ctx 服务注入 / ctx.get / 事件订阅）、<b>E3 组合依赖</b>（cordis.patch.yml 装配）。拓扑分层采用层次遍历：被依赖方先于依赖方（Layer 0 为基础能力，Layer 16 为最外层 UI 插件）。L2 另标注 22 个 web 变体 disabled 插件（模型侧工具移到 agent presets）。L3 追加 8 组（外部执行后端/协议与SDK/LSP集成/子代理外部后端/Web上下文扩展/会话存储变体/Hooks工具扩展/示例与框架）+ 4 特殊模块页（base/headless/app-boot/cmdline）。</p>
+</main>
+</body>
+</html>

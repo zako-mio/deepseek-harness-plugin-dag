@@ -1,0 +1,204 @@
+{
+  "route": "R4-session",
+  "scope": "会话治理域(持久化/查询/展示/遥测/压缩/溢出) 12 插件",
+  "plugins": [
+    {
+      "id": "dsh-session-persistence-jsonl",
+      "name": "@deepseek-ai/dsh-session-persistence-jsonl",
+      "implementation": "以 JsonlSessionPersistence 类(extends SessionPersistence implements PersistenceBackend)作为默认导出插件，static inject=['sessions']。构造时实例化 PersistenceCoordinator，由协调器安装写路径监听(session/created 捕获 header、session/event 入缓冲、session/flush drain、session/disposed retire)；后端实现 JSONL 追加式日志存储 + zstd 帧压缩 + 崩溃修复(link/unlink 原子发布)。",
+      "provides": ["ctx.sessionPersistence 服务", "PersistenceCoordinator 写路径监听", "JSONL 追加式日志 + zstd + 崩溃修复", "locate/readRaw/listSnapshots"],
+      "depends_on": [
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/session/session-persistence/src/coordinator.ts:1118-1132", "purpose": "订阅 session/created|event|flush|disposed 事件源"},
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/session/session-persistence-jsonl/src/index.ts:124", "purpose": "static inject sessions"},
+        {"plugin_id": "dsh-session", "mechanism": "E3", "evidence": "packages/session/session-persistence-jsonl/src/format.ts:12", "purpose": "packChunkRuns/decodeStorageRecord"},
+        {"plugin_id": "dsh-session-persistence", "mechanism": "E3", "evidence": "packages/session/session-persistence-jsonl/src/index.ts:19-23", "purpose": "继承 SessionPersistence 基类"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E3", "evidence": "packages/session/session-persistence-jsonl/package.json:35", "purpose": "格式/不变量校验"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-session-query-sqlite", "evidence": "packages/session-query/session-query-sqlite/src/index.ts:497-511", "purpose": "后端实现之一，被观察索引"},
+        {"plugin_id": "dsh-session-checkpoint-policy", "evidence": "packages/session/session-checkpoint-policy/package.json:52", "purpose": "flush 语义测试后端"},
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/package.json:75", "purpose": "默认基座装配"}
+      ]
+    },
+    {
+      "id": "dsh-session-query-sqlite",
+      "name": "@deepseek-ai/dsh-session-query-sqlite",
+      "implementation": "以 SqliteSessionQueryEngine 类(extends SessionQueryEngine)实现 ctx.sessionQuery 的 SQLite FTS5 后端，static inject=['sessions']。搜索前 _reconcile 做双源观察：live 源折叠 ctx.sessions.list()，持久化源通过可选 ctx.inject(['sessionPersistence']) 的 listSnapshots 对比 revision、inspect 装载变更日志；searchSessions/searchEvents 返回带实例指纹的游标分页。",
+      "provides": ["ctx.sessionQuery 服务", "SQLite FTS5 全文检索索引", "launcherSessionQueryPath 可选槽位"],
+      "depends_on": [
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/session-query/session-query-sqlite/src/index.ts:197", "purpose": "static inject sessions; observeLive"},
+        {"plugin_id": "dsh-session-persistence", "mechanism": "E1", "evidence": "packages/session-query/session-query-sqlite/src/index.ts:235-244,497,508", "purpose": "可选 inject sessionPersistence 观察持久化日志源"},
+        {"plugin_id": "dsh-session-query", "mechanism": "E3", "evidence": "packages/session-query/session-query-sqlite/src/index.ts:17-24", "purpose": "继承 SessionQueryEngine"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E3", "evidence": "packages/session-query/session-query-sqlite/package.json:35", "purpose": "查询不变量"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-tool-session-query", "evidence": "packages/session-query/tool-session-query/package.json:55", "purpose": "工具装配做 sqlite 测试"},
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/package.json:77", "purpose": "默认基座装配"}
+      ]
+    },
+    {
+      "id": "dsh-session-checkpoint-policy",
+      "name": "@deepseek-ai/dsh-session-checkpoint-policy",
+      "implementation": "纯 apply(ctx) 函数插件，inject=['llm','sessionPersistence','sessions','tools']。在三处语义边界前强制 ctx.sessions.flush：llm/stream 包装器在延迟构造模型流之前 flush(失败即阻止 adapter dispatch)；tools/execute 在顶层工具分发前 flush；agent/pre-step 在每步请求前 flush。",
+      "provides": ["ctx.on('llm/stream') 前置 flush 包装", "ctx.on('tools/execute') 顶层工具 flush 屏障", "ctx.on('agent/pre-step') 每步 flush"],
+      "depends_on": [
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/session/session-checkpoint-policy/src/index.ts:18,35,72,80", "purpose": "ctx.sessions.flush 强制持久化屏障"},
+        {"plugin_id": "dsh-session-persistence", "mechanism": "E3", "evidence": "packages/session/session-checkpoint-policy/src/index.ts:12", "purpose": "flush 耐久性语义"},
+        {"plugin_id": "dsh-llm", "mechanism": "E3", "evidence": "packages/session/session-checkpoint-policy/src/index.ts:9", "purpose": "StreamChunk 类型"},
+        {"plugin_id": "dsh-tools", "mechanism": "E3", "evidence": "packages/session/session-checkpoint-policy/src/index.ts:10", "purpose": "ToolExecutionResult 类型"},
+        {"plugin_id": "dsh-agent", "mechanism": "E3", "evidence": "packages/session/session-checkpoint-policy/src/index.ts:11", "purpose": "PreStepDecision 类型"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/package.json:74", "purpose": "默认基座装配"}
+      ]
+    },
+    {
+      "id": "dsh-session-telemetry-otel",
+      "name": "@deepseek-ai/dsh-session-telemetry-otel",
+      "implementation": "以 OpenTelemetrySessionBackend 类(extends SessionTelemetryBackend)默认导出，static inject=['sessions']。FULL 模式构造 LoggerProvider+BatchLogRecordProcessor+OTLPLogExporter 并 new SessionTelemetryCoordinator(ctx, backend, 'live') 全量跟随；FEEDBACK_ONLY 模式 coordinator 走 'on-demand' 并注册 feedback/record 监听；DISABLED 不建 SDK。记录映射为 logger.emit()，shutdown 带超时竞速。",
+      "provides": ["ctx.sessionTelemetry 服务", "SessionTelemetryCoordinator 组合", "OTel 日志管道", "feedback/record 捕获监听"],
+      "depends_on": [
+        {"plugin_id": "dsh-session-telemetry", "mechanism": "E3", "evidence": "packages/session/session-telemetry-otel/src/index.ts:19-26", "purpose": "继承 SessionTelemetryBackend + 组合 Coordinator"},
+        {"plugin_id": "dsh-session-telemetry", "mechanism": "E2", "evidence": "packages/session/session-telemetry/src/coordinator.ts:80-107", "purpose": "coordinator 订阅事件源"},
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/session/session-telemetry-otel/src/index.ts:148,247", "purpose": "static inject sessions; feedback 校验"},
+        {"plugin_id": "dsh-llm", "mechanism": "E3", "evidence": "packages/session/session-telemetry-otel/src/index.ts:27", "purpose": "APP_IDENTITY"},
+        {"plugin_id": "dsh-anonymous-user-id", "mechanism": "E1", "evidence": "packages/session/session-telemetry-otel/src/index.ts:28,204", "purpose": "getOrCreateAnonymousUserId"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/package.json:78", "purpose": "默认基座装配"}
+      ]
+    },
+    {
+      "id": "dsh-session-title",
+      "name": "@deepseek-ai/dsh-session-title",
+      "implementation": "Log-backed 会话标题服务。SessionTitleService(ctx.sessionTitle，static inject=['sessions']) 以 session log 中 'session/title' 事件为唯一事实源。监听 'session/event'(user/message 触发自动调度)、'llm/stream'(主请求路由)、'session/disposed'(中止在途)；自动生成走 provider 注册 + 确定性 fallback 双轨；user rename() 钉住标题。注册 'title' 投影单元。",
+      "provides": ["ctx.sessionTitle(get/rename/refresh/register)", "session/title 会话事件", "title projection key", "SessionTitleProvider 契约", "fallbackSessionTitle/normalizeSessionTitle/foldSessionTitle"],
+      "depends_on": [
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/session/session-title/src/index.ts:262,319,374", "purpose": "事件源读取/追加"},
+        {"plugin_id": "dsh-session-projection", "mechanism": "E2", "evidence": "packages/session/session-title/src/index.ts:308-317", "purpose": "注册 title 纯折单元"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/session/session-title/src/index.ts:10-11,331-334", "purpose": "isAgentLoopRequest 识别主请求"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/session/session-title/src/invariant.ts:16", "purpose": "companion"},
+        {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "packages/session/session-title/src/index.ts:9", "purpose": "SessionTitleProviderId"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-session-title-llm", "evidence": "packages/session/session-title-llm/src/index.ts:162", "purpose": "注册模型 provider"},
+        {"plugin_id": "dsh-session-title-first-prompt-llm", "evidence": "packages/session/session-title-first-prompt-llm/src/index.ts:12", "purpose": "first-prompt provider"},
+        {"plugin_id": "dsh-session-query", "evidence": "packages/session-query/session-query/src/index.ts:9-10", "purpose": "读取标题快照"},
+        {"plugin_id": "dsh-host-apiproxy", "evidence": "packages/host/apiproxy/src/api-proxy.ts:84", "purpose": "rename 端点消费"}
+      ]
+    },
+    {
+      "id": "dsh-session-title-first-prompt-llm",
+      "name": "@deepseek-ai/dsh-session-title-first-prompt-llm",
+      "implementation": "首条人类消息的 LLM 标题 provider 薄插件。apply(ctx, config) 直接调用 @deepseek-ai/dsh-session-title-llm 的 registerSessionTitleLlmProvider，以 'first-prompt' 自动模式注册 provider，消息选择器取 messages[0]。Config 是 SessionTitleLlmConfig 全量字段。",
+      "provides": ["向 ctx.sessionTitle 注册 first-prompt LLM provider", "Config schema(复用共享字段)"],
+      "depends_on": [
+        {"plugin_id": "dsh-session-title", "mechanism": "E2", "evidence": "packages/session/session-title-first-prompt-llm/src/index.ts:12,35", "purpose": "注册进标题服务"},
+        {"plugin_id": "dsh-session-title-llm", "mechanism": "E1", "evidence": "packages/session/session-title-first-prompt-llm/src/index.ts:5-9", "purpose": "复用共享 LLM 生成策略"},
+        {"plugin_id": "dsh-llm", "mechanism": "E2", "evidence": "packages/session/session-title-first-prompt-llm/src/index.ts:12", "purpose": "LLM 服务调用"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/session/session-title-first-prompt-llm/src/index.ts:12", "purpose": "会话服务访问"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/session/session-title-first-prompt-llm/src/invariant.ts:15", "purpose": "companion"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/cordis.patch.yml:46-53", "purpose": "默认启用首条消息 LLM 标题"}
+      ]
+    },
+    {
+      "id": "dsh-session-projection",
+      "name": "@deepseek-ai/dsh-session-projection",
+      "implementation": "会话投影能力接缝：SessionProjectionRegistry(ctx.sessionProjections) 管理 merge 可扩展的 SessionProjectionMap 类型表与投影单元注册。服务构造时订阅 'session/event' 一次驱动所有注册单元，仅当 apply 返回新引用才触发 onChanged。注册是 effect(随 fiber 卸载移除 key)，同 key 多注册者共享单元并 refs 计数。读取面：snapshot()/checkpoint()/restoreFloor()/viewCheckpoint()/restore()。",
+      "provides": ["ctx.sessionProjections", "SessionProjectionMap 类型表", "ProjectionDefinition 纯同步单元契约", "ProjectionChangeListener"],
+      "depends_on": [
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/session/session-projection/src/index.ts:22,181", "purpose": "订阅 session/event 驱动投影 fold"},
+        {"plugin_id": "cordis", "mechanism": "E2", "evidence": "packages/session/session-projection/src/index.ts:20,180", "purpose": "Service 注册与 effect"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/session/session-projection/src/invariant.ts:15", "purpose": "companion"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-session-title", "evidence": "packages/session/session-title/src/index.ts:308-317", "purpose": "title 投影单元"},
+        {"plugin_id": "dsh-token-meter", "evidence": "packages/llm/token-meter/src/index.ts:87-90", "purpose": "token 计量投影"},
+        {"plugin_id": "dsh-goal/dsh-plan-mode/dsh-permission-presets/dsh-tool-todo", "evidence": "packages/goal/goal/src/index.ts:17", "purpose": "各域插件注册投影单元"}
+      ]
+    },
+    {
+      "id": "dsh-compaction-basic",
+      "name": "@deepseek-ai/dsh-compaction-basic",
+      "implementation": "以 BasicCompactionEngine 类(extends CompactionEngine)默认导出，static inject=['llm','tokenMeter','sessions']。auto 时注册 agent/pre-step 压力压缩、agent/request-error 溢出恢复(CONTEXT_WINDOW_EXCEEDED)、agent/status idle 重置。compactIfNeeded 用 ctx.tokenMeter.measure 定价，可选 ctx.get('toolResultPruner') 先裁剪，再 compactSurfaceRegion(append compaction/start|summary|end + user/message surfaceOp replace)；summarize 经 ctx.llm.stream() 复用 KV 前缀缓存。",
+      "provides": ["ctx.compaction 服务", "agent/pre-step 自动压力压缩", "agent/request-error context-overflow 恢复", "compaction/start|summary|end 事件 + surfaceOp replace"],
+      "depends_on": [
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/compaction/compaction-basic/src/index.ts:173; region.ts:189-215,462-463", "purpose": "订阅 session/event + append compaction 事件"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/compaction/compaction-basic/src/summarizer.ts:121-164", "purpose": "summarizeWithLlm 经 ctx.llm.stream()"},
+        {"plugin_id": "dsh-token-meter", "mechanism": "E1", "evidence": "packages/compaction/compaction-basic/src/index.ts:104,267", "purpose": "measure 定价压力/收敛"},
+        {"plugin_id": "dsh-compaction-tool-result-pruner", "mechanism": "E1", "evidence": "packages/compaction/compaction-basic/src/index.ts:281,309", "purpose": "可选 pruneSession(压缩前先裁剪)"},
+        {"plugin_id": "dsh-agent", "mechanism": "E2", "evidence": "packages/compaction/compaction-basic/src/index.ts:147,179", "purpose": "订阅 agent/pre-step|request-error|status"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/package.json:54", "purpose": "默认基座装配"}
+      ]
+    },
+    {
+      "id": "dsh-compaction-tool-result-pruner",
+      "name": "@deepseek-ai/dsh-compaction-tool-result-pruner",
+      "implementation": "以 ToolResultPruner 类(extends Service，super(ctx,'toolResultPruner'))默认导出，static inject=['tokenMeter']。pruneSession 遍历 session.surface.nodes 中 tool/result 事件，pruneContent 按 Unicode 码点做 head/middle/tail 截断；超预算的替换先 append 'compaction/prune' 影子定价事件，再 append 同内容裁剪版 'tool/result' 事件并带 surfaceOp:{op:'replace'} 落盘。",
+      "provides": ["ctx.toolResultPruner 服务", "pruneSession 模型无关裁剪", "compaction/prune 影子定价协议", "surfaceOp replace 重写"],
+      "depends_on": [
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/compaction/compaction-tool-result-pruner/src/index.ts:138-171", "purpose": "读 surface.nodes + append 替换"},
+        {"plugin_id": "dsh-token-meter", "mechanism": "E1", "evidence": "packages/compaction/compaction-tool-result-pruner/src/index.ts:47,165", "purpose": "estimateMessage 计算 shadowedTokenCount"},
+        {"plugin_id": "dsh-compaction", "mechanism": "E3", "evidence": "packages/compaction/compaction-tool-result-pruner/src/index.ts:13", "purpose": "compaction/prune 事件类型"},
+        {"plugin_id": "dsh-llm", "mechanism": "E3", "evidence": "packages/compaction/compaction-tool-result-pruner/src/index.ts:9", "purpose": "freezeMessage"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-compaction-basic", "evidence": "packages/compaction/compaction-basic/src/index.ts:281,309", "purpose": "压缩前先调 pruneSession 降 token"},
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/package.json:55", "purpose": "默认基座装配"}
+      ]
+    },
+    {
+      "id": "dsh-spill-local",
+      "name": "@deepseek-ai/dsh-spill-local",
+      "implementation": "以 LocalSpillStore 类(extends SpillStore)默认导出，static Config 仅 root(缺省 OS temp 下 mkdtemp 私有 0700)。saveText 将完整文本写入 <root>/session-<sha256前12>/<随机hex>-<sanitizedName>，open('wx',0600) 独占写入防符号链接投毒，返回 SpillLocator。",
+      "provides": ["ctx.spillStore 服务", "session-scoped 私有文件存储", "traversal-safe 命名"],
+      "depends_on": [
+        {"plugin_id": "dsh-spill", "mechanism": "E3", "evidence": "packages/spill/spill-local/src/index.ts:14-15", "purpose": "继承 SpillStore 基类"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E3", "evidence": "packages/spill/spill-local/package.json:35", "purpose": "存储不变量"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-spill-policy", "evidence": "packages/spill/spill-policy/src/index.ts:142-155", "purpose": "saveText 存溢出工具结果"},
+        {"plugin_id": "dsh-tool-web", "evidence": "packages/web/tool-web/package.json:53", "purpose": "web 工具装配"},
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/package.json:85", "purpose": "默认基座装配"}
+      ]
+    },
+    {
+      "id": "dsh-spill-policy",
+      "name": "@deepseek-ai/dsh-spill-policy",
+      "implementation": "纯 apply(ctx, config) 函数插件，inject=['tools']，Config 仅 maxInlineBytes(省略则 no-op)。注册 tools/post-execute prepend 监听：对 accept 且纯文本且超限的顶层结果，spillReplacement 经 ctx.get('spillStore').saveText 存全量文本，用 TextRetainer 做 head/tail 预算内预览 + spillNotice 定位行；第二臂 tools/code-dispatch-log prepend 对 tool/code-dispatch 子调用做相同 cap。",
+      "provides": ["tools/post-execute prepend 结果溢出转存", "tools/code-dispatch-log prepend 日志溢出转存"],
+      "depends_on": [
+        {"plugin_id": "dsh-tools", "mechanism": "E2", "evidence": "packages/spill/spill-policy/src/index.ts:190,217", "purpose": "订阅 tools/post-execute waterfall"},
+        {"plugin_id": "dsh-spill-local", "mechanism": "E1", "evidence": "packages/spill/spill-policy/src/index.ts:142-155", "purpose": "ctx.get('spillStore') 存溢出"},
+        {"plugin_id": "dsh-spill", "mechanism": "E3", "evidence": "packages/spill/spill-policy/src/index.ts:51", "purpose": "SaveTextSpill/SpillRef 类型"},
+        {"plugin_id": "dsh-output-retention", "mechanism": "E3", "evidence": "packages/spill/spill-policy/src/index.ts:49", "purpose": "TextRetainer 预算裁剪"},
+        {"plugin_id": "dsh-session", "mechanism": "E3", "evidence": "packages/spill/spill-policy/src/index.ts:52", "purpose": "SessionId 类型"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-tool-web", "evidence": "packages/web/tool-web/package.json:54", "purpose": "web 工具装配"},
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/package.json:86", "purpose": "默认基座装配"}
+      ]
+    },
+    {
+      "id": "dsh-agent-instructions",
+      "name": "@deepseek-ai/dsh-agent-instructions",
+      "implementation": "纯 apply(ctx, config) 函数插件。agent/pre-step 里先 next() 委托，等投影队列排空后 compose 基线+作用域指令并 syncInbox(inbox.prepend/replace/remove)；session/event 跟踪 step/turn 判定 openStep；tools/result 收集 read/write/edit 触碰路径，step 关闭后 queueProjection 串行重算指令版本并注入 inbox。ctx.get('fs') 可选。",
+      "provides": ["agent/pre-step 指令上下文 compose/inbox 同步", "session/event step/turn 跟踪", "tools/result 文件触碰投影触发", "agent-instructions 源 user/message 注入"],
+      "depends_on": [
+        {"plugin_id": "dsh-agent", "mechanism": "E2", "evidence": "packages/context/agent-instructions/src/index.ts:322", "purpose": "订阅 agent/pre-step waterfall"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/context/agent-instructions/src/index.ts:305-314", "purpose": "订阅 session/event step 判定"},
+        {"plugin_id": "dsh-llm", "mechanism": "E3", "evidence": "packages/context/agent-instructions/src/index.ts:15", "purpose": "createUserMessage"},
+        {"plugin_id": "dsh-tools", "mechanism": "E2", "evidence": "packages/context/agent-instructions/src/index.ts:350", "purpose": "订阅 tools/result 捕获触碰"},
+        {"plugin_id": "dsh-fs", "mechanism": "E1", "evidence": "packages/context/agent-instructions/src/index.ts:116", "purpose": "ctx.get('fs') 可选读文件系统"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-agent-spine-demo", "evidence": "packages/examples/agent-spine-demo/src/index.ts:33", "purpose": "示例装配"},
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/package.json:118", "purpose": "默认基座装配"}
+      ]
+    }
+  ]
+}

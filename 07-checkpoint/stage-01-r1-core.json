@@ -1,0 +1,237 @@
+{
+  "route": "R1-core",
+  "scope": "核心服务域 12 插件",
+  "plugins": [
+    {
+      "id": "dsh-session",
+      "name": "@deepseek-ai/dsh-session",
+      "implementation": "事件溯源(Event-sourced)会话存储。SessionStore(ctx.sessions) 维护内存 Map 存 Session，append-only 事件日志由 Session 类持有；append() 同步通知，通过 session/created / session/event / session/flush / session/disposed 事件向外广播，持久化由外部插件订阅事件自行落盘。Session 提供 deriveMessages()(折叠 surface 派生 LLM 消息历史)、requestHeader()(折叠 request/header 事件)、prepare/enter/announce 三段式发布边界(配合 agent-loop 的复合 effect 保证拆解顺序)。",
+      "provides": ["ctx.sessions(SessionStore)", "session/created 事件", "session/event 事件", "session/flush 事件", "session/disposed 事件", "Session 类(append/events/deriveMessages/requestHeader/surface)", "SessionPreparation", "SessionForkError", "packChunkRuns/decodeStorageRecord(存储格式)", "deepFreeze 冻结的不可变事件契约"],
+      "depends_on": [
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/core/session/package.json:46, packages/core/session/src/index.ts:11-14", "purpose": "import deepFreeze 冻结事件/头, Message/UserMessage 类型定义事件载荷"},
+        {"plugin_id": "dsh-scope", "mechanism": "E1", "evidence": "packages/core/session/package.json:47, packages/core/session/src/index.ts:12-13", "purpose": "scopeOf/scopeTarget 用于 session/* 事件的 scope 过滤派发"},
+        {"plugin_id": "dsh-typert-registry", "mechanism": "E2", "evidence": "packages/core/session/src/index.ts:798-805", "purpose": "ctx.inject(['typert']) 注册 session 查找器(typert.lookups.register)"},
+        {"plugin_id": "dsh-typert-protocol", "mechanism": "E1", "evidence": "packages/core/session/package.json:48, packages/core/session/src/index.ts:89-93", "purpose": "declare module 扩展 TypertLookupMap.session"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/core/session/src/invariant.ts:20-22, 242, 249-250", "purpose": "注册 session-invariant 伴随插件校验事件序列"},
+        {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "packages/core/session/package.json:44", "purpose": "SessionId 等 branded 类型基础"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-agent", "evidence": "packages/core/agent/src/index.ts:14, packages/core/agent/package.json:43", "purpose": "import SessionEvent/SessionId 类型"},
+        {"plugin_id": "dsh-agent-loop", "evidence": "packages/core/agent-loop/src/index.ts:24-25, 558-560", "purpose": "ctx.sessions.prepare/enter/announce 创建会话"},
+        {"plugin_id": "dsh-tools", "evidence": "packages/core/tools/src/index.ts:14-15, packages/core/tools/package.json:49", "purpose": "snapshotJsonValue 快照工具参数"},
+        {"plugin_id": "dsh-llm-retry", "evidence": "packages/llm/llm-retry/src/index.ts:150, 182", "purpose": "agent.session.append('llm/retry')"},
+        {"plugin_id": "dsh-token-meter", "evidence": "packages/llm/token-meter/src/index.ts:11-12, 95", "purpose": "订阅 session/event 同步重放"},
+        {"plugin_id": "dsh-session-persistence-jsonl", "evidence": "packages/session/session-persistence-jsonl/src/format.ts:12-13", "purpose": "packChunkRuns/decodeStorageRecord 实现 JSONL 落盘"}
+      ]
+    },
+    {
+      "id": "dsh-agent",
+      "name": "@deepseek-ai/dsh-agent",
+      "implementation": "Agent 服务(ctx.agents)：live 注册表 + initiator scope(AsyncLocalStorage 因果归属) + 工厂委派。AgentRegistry 只跟踪/生命周期管理，具体 create/resume 由 dsh-agent-loop 实现 AgentFactory 通过 setFactory 注入。提供 agentEvents/emitAgentEvent 事件派发(agent/created、agent/disposed、agent/status、agent/request、agent/request-error 等主题事件词表)；model-selection.ts 将模型选择耦合到 system-prompt/assemble 与 agent/request 瀑布。",
+      "provides": ["ctx.agents(AgentRegistry)", "ctx.agent(DX accessor)", "agent/created|disposed|status 事件", "agent/inbox/* 事件", "agent/session-start|pre-step|request|request-error|turn-stopping|error 事件词表", "AgentFactory 接口(由 agent-loop 实现)", "Inbox 类", "typert lookups: agent", "ModelSelection/installModelSelection"],
+      "depends_on": [
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/core/agent/src/index.ts:14, 268-280", "purpose": "Agent 以 SessionId 为 id"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/core/agent/package.json:41, packages/core/agent/src/model-selection.ts:7", "purpose": "LlmCallConfig/ReasoningEffortId 类型"},
+        {"plugin_id": "dsh-system-prompt", "mechanism": "E2", "evidence": "packages/core/agent/src/model-selection.ts:40-53", "purpose": "监听 system-prompt/assemble 注入模型变量"},
+        {"plugin_id": "dsh-typert-registry", "mechanism": "E2", "evidence": "packages/core/agent/src/index.ts:268-281", "purpose": "ctx.inject(['typert']) 注册 agent 查找器"},
+        {"plugin_id": "dsh-typert-protocol", "mechanism": "E1", "evidence": "packages/core/agent/package.json:45, packages/core/agent/src/index.ts:26-34", "purpose": "declare module 扩展 TypertLookupMap.agent"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/core/agent/src/invariant.ts:12, 31-32", "purpose": "agent-invariant 伴随插件"},
+        {"plugin_id": "dsh-scope", "mechanism": "E1", "evidence": "packages/core/agent/src/index.ts:12-13, packages/core/agent/package.json:42", "purpose": "scopeTarget 构建 Scoped<Agent> carrier"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-agent-loop", "evidence": "packages/core/agent-loop/src/index.ts:11-21, 350", "purpose": "实现 AgentFactory.setFactory"},
+        {"plugin_id": "dsh-tools", "evidence": "packages/core/tools/src/index.ts:13, 1707", "purpose": "ToolExecution.agent 由 Agent 提供"},
+        {"plugin_id": "dsh-llm-retry", "evidence": "packages/llm/llm-retry/src/index.ts:11, 210", "purpose": "订阅 agent/request-error 事件"},
+        {"plugin_id": "dsh-agent-default-model", "evidence": "packages/core/agent-default-model/src/index.ts:9", "purpose": "ModelSelection 类型"},
+        {"plugin_id": "dsh-api-gateway", "evidence": "packages/host/apiproxy/src/index.ts:71, 99-100", "purpose": "gateway 消费 ctx.agents"}
+      ]
+    },
+    {
+      "id": "dsh-agent-loop",
+      "name": "@deepseek-ai/dsh-agent-loop",
+      "implementation": "具体 agent 循环插件。AgentLoop 服务(static inject: agents/sessions/llm/tools/systemPrompt) 实现 dsh-agent 的 AgentFactory(createAgent/resume)，创建 ReactLoopAgent；config.agents 声明式启动。ReactLoopAgent 驱动 turn/step 边界：systemPrompt.assemble 装配提示词→runtimeContext 投影动态上下文→llm.prepareCall/stream 发起模型流→executeToolCalls 用 tools 注册表调度工具→错误经 agent/request-error 瀑布恢复。",
+      "provides": ["ctx.agentLoop(AgentLoop)", "AgentFactory 实现(setFactory)", "ReactLoopAgent(Agent 驱动实现)", "agent-loop/config-start-failed 事件", "AGENT_LOOP_SETTINGS_NAMESPACE", "agent-loop-invariant 伴随插件"],
+      "depends_on": [
+        {"plugin_id": "dsh-agent", "mechanism": "E2", "evidence": "packages/core/agent-loop/src/index.ts:297, 350, 559-562", "purpose": "static inject agents + setFactory"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/core/agent-loop/src/index.ts:24-25, 558-560, 590", "purpose": "ctx.sessions.prepare/enter/announce 创建会话"},
+        {"plugin_id": "dsh-llm", "mechanism": "E2", "evidence": "packages/core/agent-loop/src/agent.ts:345, 449", "purpose": "llm.prepareCall/stream 发起模型调用"},
+        {"plugin_id": "dsh-tools", "mechanism": "E2", "evidence": "packages/core/agent-loop/src/tool-calls.ts:17, 88, 204", "purpose": "ctx.tools.executionMode 调度工具"},
+        {"plugin_id": "dsh-system-prompt", "mechanism": "E2", "evidence": "packages/core/agent-loop/src/agent.ts:230, 337", "purpose": "ctx.systemPrompt.assemble 装配提示词"},
+        {"plugin_id": "dsh-session-persistence", "mechanism": "E2", "evidence": "packages/core/agent-loop/src/index.ts:28, 359, 371, 654", "purpose": "resume 路径 ctx.get('sessionPersistence')"},
+        {"plugin_id": "dsh-settings", "mechanism": "E2", "evidence": "packages/core/agent-loop/src/index.ts:23, 335", "purpose": "installSettingsSection 暴露 maxParallelToolCalls"},
+        {"plugin_id": "dsh-scope", "mechanism": "E1", "evidence": "packages/core/agent-loop/src/agent.ts:28-29", "purpose": "createScope 构造 agent 作用域 ctx"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/cordis.patch.yml:436-439", "purpose": "base bundle 挂载 agent-loop 行"},
+        {"plugin_id": "dsh-api-gateway", "evidence": "packages/host/apiproxy/src/index.ts:71", "purpose": "ACP/API 桥通过 ctx.agents"},
+        {"plugin_id": "dsh-headless-runner", "evidence": "packages/bundle/headless/src/index.ts:28", "purpose": "headless 经 AgentFactory.createAgent"}
+      ]
+    },
+    {
+      "id": "dsh-agent-default-model",
+      "name": "@deepseek-ai/dsh-agent-default-model",
+      "implementation": "默认模型选择服务(ctx.agentDefaultModel)。持有 provider/model/reasoningEffort 组成入口，通过 dsh-settings 的 installSettingsSection 绑定用户层可热更新默认选择；currentSelection() 投影为 dsh-agent 的 ModelSelection，saveSelection() 写回设置文档。",
+      "provides": ["ctx.agentDefaultModel(AgentDefaultModelConfig)", "currentSelection(): ModelSelection", "saveSelection()", "AGENT_DEFAULT_MODEL_SETTINGS_NAMESPACE"],
+      "depends_on": [
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/core/agent-default-model/src/index.ts:9", "purpose": "ModelSelection 类型"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/core/agent-default-model/src/index.ts:10", "purpose": "ReasoningEffortId branded 类型"},
+        {"plugin_id": "dsh-settings", "mechanism": "E2", "evidence": "packages/core/agent-default-model/src/index.ts:76, 99", "purpose": "installSettingsSection + saveSelection 写 settings.replace"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/core/agent-default-model/src/invariant.ts", "purpose": "invariant 伴随插件"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-api-gateway", "evidence": "packages/host/apiproxy/src/index.ts:71, 99-100", "purpose": "gateway 读取默认模型"},
+        {"plugin_id": "dsh-headless-runner", "evidence": "packages/bundle/headless/src/index.ts:28, 101", "purpose": "headless 解析任务模型"},
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/cordis.patch.yml:63-67", "purpose": "base 挂载默认 deepseek-official/deepseek-v4-flash"}
+      ]
+    },
+    {
+      "id": "dsh-system-prompt",
+      "name": "@deepseek-ai/dsh-system-prompt",
+      "implementation": "系统提示词装配注册表(ctx.systemPrompt)。SystemPrompt 服务管理分层的 sections/contexts/tools/variables 注册(PromptLayer + ScopedLayers 支持 agent 作用域遮蔽)，assemble() 收集全局+作用域层、按 order 排序、toolOrder 规范工具顺序、插值 {{variable}}，再跑 system-prompt/assemble 瀑布允许插件改写；renderPrompt/renderContextSections 产出最终模型输入。",
+      "provides": ["ctx.systemPrompt(SystemPrompt)", "system-prompt/assemble 瀑布事件", "system-prompt/change 事件", "section()/context()/tools()/variable()/suppressRuntimeContext()/assemble()", "renderPrompt/renderContextSections", "PERSONA_SECTION/PERSONA_ORDER/TOOL_ORDER_REST", "system-prompt-invariant 伴随插件"],
+      "depends_on": [
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/core/system-prompt/src/index.ts:11", "purpose": "ToolSchema/ContextSnapshotSection 类型"},
+        {"plugin_id": "dsh-scope", "mechanism": "E1", "evidence": "packages/core/system-prompt/src/index.ts:9-10, 347-350", "purpose": "ScopedLayers/scopeTarget 作用域遮蔽"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/core/system-prompt/src/invariant.ts:13", "purpose": "system-prompt-invariant"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-agent-loop", "evidence": "packages/core/agent-loop/src/index.ts:26, 351-353", "purpose": "static inject systemPrompt；assemble 每步"},
+        {"plugin_id": "dsh-tools", "evidence": "packages/core/tools/src/index.ts:16, 788, 832-835", "purpose": "static inject systemPrompt；tools() 注入工具 schema"},
+        {"plugin_id": "dsh-agent", "evidence": "packages/core/agent/src/model-selection.ts:40", "purpose": "installModelSelection 监听 assemble"}
+      ]
+    },
+    {
+      "id": "dsh-tools",
+      "name": "@deepseek-ai/dsh-tools",
+      "implementation": "工具注册表与执行管线(ctx.tools)。ToolRuntime 服务(static inject ['systemPrompt']) 管理分层工具注册(ScopedLayers)与可见性解析器(view)，按 mode(native/code/both) 决定模型可见工具集；execute() 走 pre-execute → execute → post-execute 三个瀑布(pre 允许/拒绝/询问、execute 包装超时/重试、post 接受/替换/阻断)，最后发 tools/result 观察事件；approval 请求经 ctx.get('approval') 可选 seam 路由，codeRuntime 经 ctx.get('codeRuntime') 可选。",
+      "provides": ["ctx.tools(ToolRuntime)", "tools/pre-execute|tools/execute|tools/post-execute|tools/code-dispatch-log 瀑布事件", "tools/result 观察事件", "tools/change 通知事件", "defineTool/schema.ts 工具定义 API", "ToolExecutionInput/ToolRunContext", "TOOL_RUNTIME_SCHEDULER", "run_code 保留工具(code mode)", "tools-invariant 伴随插件"],
+      "depends_on": [
+        {"plugin_id": "dsh-system-prompt", "mechanism": "E2", "evidence": "packages/core/tools/src/index.ts:788, 832-835", "purpose": "static inject systemPrompt"},
+        {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "packages/core/tools/src/index.ts:14-15, 102", "purpose": "snapshotJsonValue 快照工具参数"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/core/tools/src/index.ts:11-12", "purpose": "ToolSchema/ContentBlock/HarnessError 类型"},
+        {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "packages/core/tools/src/index.ts:13", "purpose": "ToolExecutionInput.agent 关联调用归属"},
+        {"plugin_id": "dsh-user-approval", "mechanism": "E2", "evidence": "packages/core/tools/src/index.ts:18-20, 1693, 1706", "purpose": "ctx.get('approval') 可选 seam：ask 决策转 approval.request"},
+        {"plugin_id": "dsh-code-runtime", "mechanism": "E2", "evidence": "packages/core/tools/src/index.ts:928, 1020", "purpose": "ctx.get('codeRuntime') 可选：code mode"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/core/tools/src/invariant.ts:13, 76-110", "purpose": "tools-invariant"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-agent-loop", "evidence": "packages/core/agent-loop/src/index.ts:27, packages/core/agent-loop/src/tool-calls.ts:17, 88", "purpose": "executeToolCalls 调度"},
+        {"plugin_id": "dsh-llm-retry", "evidence": "packages/llm/llm-retry/package.json:66", "purpose": "重试 e2e 测试装配"},
+        {"plugin_id": "tool-* 家族", "evidence": "packages/core/tools/src/index.ts(defineTool 导出)", "purpose": "所有工具插件注册进 ctx.tools"}
+      ]
+    },
+    {
+      "id": "dsh-llm",
+      "name": "@deepseek-ai/dsh-llm",
+      "implementation": "Provider 无关的 LLM 服务接口(ctx.llm)。LlmRuntime 服务维护 provider→LlmAdapter 注册表(registerAdapter)、可配置 provider 目录(registerConfigurableProviders)与模型发现(registerModelDiscovery)；stream() 走 llm/stream 瀑布拦截；prepareCall() 在注册时快照能力解析绑定一次派发；resolveCallConfig/resolveModelInfo 校验模型能力。附错误分类(LlmError/HarnessError)、BlockAssembler 流组装。",
+      "provides": ["ctx.llm(LlmRuntime)", "llm/stream 瀑布事件", "llm/adapters-updated 通知事件", "registerAdapter/registerConfigurableProviders/registerModelDiscovery", "LlmAdapter 抽象基类", "LlmError/HarnessError", "BlockAssembler", "createUserMessage/createAssistantMessage/createToolResultMessage", "llm-invariant 伴随插件"],
+      "depends_on": [
+        {"plugin_id": "dsh-attachment", "mechanism": "E1", "evidence": "packages/llm/llm/package.json:48", "purpose": "attachment 类型参与消息内容块契约"},
+        {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "packages/llm/llm/package.json:49", "purpose": "ProviderRequestId 等 branded 类型"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/llm/llm/src/invariant.ts:12, 88-103", "purpose": "llm-invariant 包裹 llm/stream"},
+        {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "packages/llm/llm/package.json:51", "purpose": "超时机制供 adapter 流 idle watchdog"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-llm-deepseek", "evidence": "packages/llm/llm-deepseek/src/index.ts:16-17, 42, 256", "purpose": "registerAdapter 注册 deepseek-official"},
+        {"plugin_id": "dsh-llm-pi-ai", "evidence": "packages/llm/llm-pi-ai/src/index.ts:60-61, 85, 220, 270", "purpose": "注册 pi-ai 多 provider 路由"},
+        {"plugin_id": "dsh-agent-loop", "evidence": "packages/core/agent-loop/src/agent.ts:345, 449", "purpose": "llm.prepareCall/stream"},
+        {"plugin_id": "dsh-agent", "evidence": "packages/core/agent/package.json:41", "purpose": "agent/request 瀑布"},
+        {"plugin_id": "dsh-session", "evidence": "packages/core/session/package.json:46", "purpose": "dsh-session 依赖 deepFreeze"},
+        {"plugin_id": "dsh-token-meter", "evidence": "packages/llm/token-meter/src/index.ts:9-10", "purpose": "BlockAssembler 驱动 token 计量"},
+        {"plugin_id": "dsh-llm-retry", "evidence": "packages/llm/llm-retry/src/index.ts:12", "purpose": "LlmFailure 类型"}
+      ]
+    },
+    {
+      "id": "dsh-llm-deepseek",
+      "name": "@deepseek-ai/dsh-llm-deepseek",
+      "implementation": "DeepSeek chat-completions 适配器插件(inject ['llm'])。apply() 创建 DeepSeekAdapter(fetch+SSE，eventsource-parser 解析)，向 ctx.llm.registerAdapter(['deepseek-official'], adapter) 与 registerConfigurableProviders 注册路由；连接事实(apiKeyEnv/baseURL/models/retryPolicy)每次请求经 options() thunk 重新解析，API key 经 ctx.get('credentials') 或 launchEnvironment 按请求解析；错误码归一化(AUTH/RATE_LIMIT/QUOTA/CONTEXT_WINDOW_EXCEEDED)。",
+      "provides": ["llm 适配器: provider 路由 'deepseek-official'", "可配置 provider 目录(llm-deepseek 设置段)", "模型目录 deepseek-v4-flash/deepseek-v4-pro", "llm-deepseek 设置段 schema", "DeepSeekAdapter 类导出"],
+      "depends_on": [
+        {"plugin_id": "dsh-llm", "mechanism": "E2", "evidence": "packages/llm/llm-deepseek/src/index.ts:42, 251-256", "purpose": "inject ['llm']：registerAdapter"},
+        {"plugin_id": "dsh-credentials", "mechanism": "E2", "evidence": "packages/llm/llm-deepseek/src/index.ts:18, 229-231", "purpose": "ctx.get('credentials').resolve(ref) 解析 API key"},
+        {"plugin_id": "dsh-settings", "mechanism": "E2", "evidence": "packages/llm/llm-deepseek/src/index.ts:20, 270-275", "purpose": "installSettingsSection 热更新"},
+        {"plugin_id": "dsh-launch-environment", "mechanism": "E1", "evidence": "packages/llm/llm-deepseek/src/index.ts:19, 208, 236", "purpose": "launchEnvironmentOf 解析 DEEPSEEK_BASE_URL"},
+        {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "packages/llm/llm-deepseek/src/index.ts:21, 99", "purpose": "MAX_TIMER_DELAY_MS / idleWatchdog"},
+        {"plugin_id": "dsh-anonymous-user-id", "mechanism": "E1", "evidence": "packages/llm/llm-deepseek/src/index.ts:22, 249", "purpose": "匿名用户 id 遥测归属"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/cordis.patch.yml:450-451", "purpose": "base 挂载 llm-deepseek"},
+        {"plugin_id": "dsh-headless-agent", "evidence": "examples/headless-agent/cordis.yml:24", "purpose": "headless 选用 deepseek 适配器"},
+        {"plugin_id": "dsh-llm-pi-ai(dev)", "evidence": "packages/llm/llm-pi-ai/package.json:54", "purpose": "pi-ai 设计验证孪生"}
+      ]
+    },
+    {
+      "id": "dsh-llm-pi-ai",
+      "name": "@deepseek-ai/dsh-llm-pi-ai",
+      "implementation": "pi-ai 库驱动的通用 LLM 适配器插件(inject ['llm'])。apply() 按 provider 配置 dict 生成 PiAiAdapter(继承 LlmAdapter)，routes 来自 pi-ai catalog 或手声明；每次请求解析 profile，key 经 credentials/launchEnvironment 解析；ctx.llm.registerConfigurableProviders 维护目录、registerModelDiscovery 提供端点问询、registerAdapter 注册路由；含模型回放与图片附件解析(resolveAttachments→ctx.get('attachments'))。",
+      "provides": ["llm 适配器: 多 provider 路由(openai/anthropic/自定义)", "可配置 provider 目录(llm-pi-ai 设置段)", "模型发现(registerModelDiscovery)", "llm-pi-ai 设置段 schema", "PiAiAdapter 类导出"],
+      "depends_on": [
+        {"plugin_id": "dsh-llm", "mechanism": "E2", "evidence": "packages/llm/llm-pi-ai/src/index.ts:85, 220, 246, 270", "purpose": "inject ['llm']：registerAdapter 等"},
+        {"plugin_id": "dsh-credentials", "mechanism": "E2", "evidence": "packages/llm/llm-pi-ai/src/index.ts:19, 186-188", "purpose": "credentials.resolve 解析每路由 apiKeyEnv"},
+        {"plugin_id": "dsh-settings", "mechanism": "E2", "evidence": "packages/llm/llm-pi-ai/src/index.ts:62, 278", "purpose": "installSettingsSection 热更新 profiles"},
+        {"plugin_id": "dsh-attachment", "mechanism": "E2", "evidence": "packages/llm/llm-pi-ai/src/index.ts:203", "purpose": "resolveAttachments 解析图片附件"},
+        {"plugin_id": "dsh-launch-environment", "mechanism": "E1", "evidence": "packages/llm/llm-pi-ai/src/index.ts:59, 190", "purpose": "launchEnvironmentOf 解析环境 key"},
+        {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "packages/llm/llm-pi-ai/src/config.ts:21", "purpose": "MAX_TIMER_DELAY_MS / idleWatchdog"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/llm/llm-pi-ai/src/invariant.ts", "purpose": "pi-ai invariant 伴随插件"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/cordis.patch.yml:95-96", "purpose": "base 挂载 llm-pi-ai(dormant)"},
+        {"plugin_id": "dsh-app-boot", "evidence": "packages/boot/app-boot/tests/user-patches.spec.ts:56", "purpose": "用户 patch 可替换为 pi-ai"}
+      ]
+    },
+    {
+      "id": "dsh-llm-retry",
+      "name": "@deepseek-ai/dsh-llm-retry",
+      "implementation": "Provider 路由的 LLM 请求重试策略插件(inject ['agents'])。apply() 订阅 agent/request-error 瀑布事件，按 ResolvedRetryPolicy 判定重试：retryableCodes 匹配、maxRetries 上限(经 session 事件日志查历史重试次数)、指数退避+抖动、providerRetryAfterMs 优先；每次重试先 agent.session.append('llm/retry') 持久化再等待。",
+      "provides": ["agent/request-error 瀑布的 retry 恢复策略", "llm/retry、llm/retry-started 会话事件类型", "LlmRetryEventData 类型导出", "llm-retry-invariant"],
+      "depends_on": [
+        {"plugin_id": "dsh-agent", "mechanism": "E2", "evidence": "packages/llm/llm-retry/src/index.ts:21, 210-219", "purpose": "inject ['agents']；订阅 agent/request-error"},
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/llm/llm-retry/src/index.ts:13, 150, 182", "purpose": "agent.session.append('llm/retry')"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/llm/llm-retry/src/index.ts:12", "purpose": "LlmFailure/ResolvedRetryPolicy 类型"},
+        {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "packages/llm/llm-retry/src/brand.ts:1", "purpose": "RetryId branded 类型"},
+        {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "packages/llm/llm-retry/src/invariant.ts:6", "purpose": "MAX_TIMER_DELAY_MS"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/llm/llm-retry/src/invariant.ts:159-160", "purpose": "invariant"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/cordis.patch.yml:72-73", "purpose": "base 挂载 llm-retry"},
+        {"plugin_id": "dsh-compaction-basic", "evidence": "packages/compaction/compaction-basic/tests/compaction-loop-repro.spec.ts:17", "purpose": "compaction 重放测试"},
+        {"plugin_id": "dsh-client-runtime", "evidence": "packages/client/runtime/src/client/sessions/conversation.ts:12", "purpose": "前端会话模型消费重试状态"}
+      ]
+    },
+    {
+      "id": "dsh-token-meter",
+      "name": "@deepseek-ai/dsh-token-meter",
+      "implementation": "Replay-aware token 计量服务(ctx.tokenMeter)。TokenMeter 服务按 session 维护 ReplayState，惰性折叠事件日志得出请求压力与 surface token 估算；measure() 输出基线+surface 增量；estimateMessage/estimateHeader 启发式计价；可选注入 sessionProjections 注册 usage/contextPressure/breakdown 三个投影定义。",
+      "provides": ["ctx.tokenMeter(TokenMeter)", "measure(): TokenMeasurement", "estimateMessage()", "tokenUsage/contextPressure/contextBreakdown 投影定义", "TokenMeterConfig"],
+      "depends_on": [
+        {"plugin_id": "dsh-session", "mechanism": "E2", "evidence": "packages/llm/token-meter/src/index.ts:11-12, 95-97", "purpose": "订阅 session/event；折叠 header/surface"},
+        {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "packages/llm/token-meter/src/index.ts:9-10", "purpose": "BlockAssembler/deepFreeze；TokenUsage 类型"},
+        {"plugin_id": "dsh-session-projection", "mechanism": "E2", "evidence": "packages/llm/token-meter/src/index.ts:14, 87-91", "purpose": "ctx.inject(['sessionProjections']) 注册投影"},
+        {"plugin_id": "dsh-compaction", "mechanism": "E1", "evidence": "packages/llm/token-meter/src/surface-projection.ts:23", "purpose": "compaction 类型级"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/llm/token-meter/src/invariant.ts", "purpose": "token-meter invariant"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-compaction-basic", "evidence": "packages/compaction/compaction-basic/src/region.ts:21", "purpose": "tokenMeter.measure 提供压力数据"},
+        {"plugin_id": "dsh-compaction-tool-result-pruner", "evidence": "packages/compaction/compaction-tool-result-pruner/src/index.ts:15", "purpose": "工具结果裁剪依赖 TokenMeter"},
+        {"plugin_id": "dsh-bundle-base", "evidence": "packages/bundle/base/cordis.patch.yml:281-282", "purpose": "base 挂载 token-meter"},
+        {"plugin_id": "dsh-ui-subagent", "evidence": "packages/client/ui-subagent/package.json:61", "purpose": "UI 展示 token 消耗"}
+      ]
+    },
+    {
+      "id": "dsh-typert-registry",
+      "name": "@deepseek-ai/dsh-typert-registry",
+      "implementation": "Typert 运行时注册表(ctx.typert)。TypertRegistry 服务注册生成的包反射/Zod schema(register 原子提交)、local/remote Invocation 描述符、host 对象查找器与 host Context 提供者；typertKey/typertEndpoint 构成全局键；lookups/contexts/remotes/local 各视图暴露给依赖方；纯运行时反射仓库。",
+      "provides": ["ctx.typert(TypertRegistry)", "register()/get()/resolve()/list()/toJSONSchema()", "typert.lookups/contexts/remotes/local 视图", "typertKey/typertEndpoint", "变更订阅(ChangeSource)"],
+      "depends_on": [
+        {"plugin_id": "dsh-typert-protocol", "mechanism": "E1", "evidence": "packages/typert/registry/package.json:56", "purpose": "Typert 接口类型来自 protocol 包"},
+        {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "packages/typert/registry/package.json:60", "purpose": "registry invariant 伴随插件"}
+      ],
+      "dependents": [
+        {"plugin_id": "dsh-session", "evidence": "packages/core/session/src/index.ts:798-805", "purpose": "注册 session 查找器"},
+        {"plugin_id": "dsh-agent", "evidence": "packages/core/agent/src/index.ts:268-281", "purpose": "注册 agent 查找器"},
+        {"plugin_id": "dsh-typert-loader", "evidence": "packages/bundle/base/cordis.patch.yml:30-34", "purpose": "typert-loader 注入贡献"},
+        {"plugin_id": "dsh-api-gateway", "evidence": "packages/bundle/base/cordis.patch.yml:36-37", "purpose": "api-gateway 消费 typert 契约"}
+      ]
+    }
+  ]
+}
