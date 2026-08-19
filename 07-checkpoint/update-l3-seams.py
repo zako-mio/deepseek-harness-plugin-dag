@@ -8,7 +8,7 @@ S2 补充: 从 L3 全部采集产物自动回填 external-seams.json 的 referre
 import json, os, sys
 sys.stdout.reconfigure(encoding='utf-8')
 
-BASE = r"D:\Opencode_Download\Mission-file\2026-08\0816-plugin-dag"
+BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0819-plugin-dag-rc7"
 CHK = os.path.join(BASE, "07-checkpoint")
 SEAMS = os.path.join(BASE, "01-dag-data", "external-seams.json")
 

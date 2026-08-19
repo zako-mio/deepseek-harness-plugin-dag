@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>任务完成报告 · dsh DAG 知识库 RC5 → RC7 级联升级</title>
+<style>
+  :root { --bg:#0f1115; --panel:#1a1d24; --text:#e6e6e6; --dim:#9aa0aa; --accent:#7fb0ff; --border:#2a2e38; --good:#3fbf7f; --warn:#e0b25e; --bad:#e05f5f; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:'Segoe UI','Microsoft YaHei',system-ui,sans-serif; line-height:1.7; padding:0 0 80px; }
+  header { background:var(--panel); border-bottom:1px solid var(--border); padding:28px 40px; }
+  header h1 { font-size:22px; font-weight:700; color:#fff; }
+  header p { color:var(--dim); font-size:14px; margin-top:6px; }
+  main { max-width:1000px; margin:0 auto; padding:32px 24px; }
+  h2 { font-size:19px; color:var(--accent); margin:36px 0 14px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+  h3 { font-size:15px; color:#fff; margin:20px 0 10px; }
+  p, li { font-size:14px; color:var(--text); }
+  ul, ol { padding-left:24px; margin:10px 0; }
+  li { margin:5px 0; }
+  table { width:100%; border-collapse:collapse; margin:14px 0; font-size:13px; }
+  th, td { border:1px solid var(--border); padding:8px 12px; text-align:left; vertical-align:top; }
+  th { background:var(--panel); color:var(--accent); font-weight:600; }
+  tr:nth-child(even) td { background:rgba(255,255,255,0.02); }
+  code { background:var(--panel); color:var(--accent); padding:1px 6px; border-radius:4px; font-size:13px; font-family:Consolas,monospace; }
+  .badge { display:inline-block; padding:2px 10px; border-radius:20px; font-size:12px; margin-left:8px; }
+  .badge.ok { background:#1e3a2a; color:var(--good); }
+  .badge.del { background:#3a1e1e; color:var(--bad); }
+  .note { background:var(--panel); border-left:4px solid var(--accent); padding:12px 16px; border-radius:0 6px 6px 0; margin:14px 0; font-size:13px; }
+  .reflection { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:18px 20px; margin:12px 0; }
+  .reflection h3 { margin-top:0; color:var(--warn); }
+</style>
+</head>
+<body>
+<header>
+  <h1>任务完成报告 · dsh DAG 知识库 RC5 → RC7 级联升级</h1>
+  <p>任务日期：2026-08-19 ｜ 任务目录：<code>/home/zako-mio/opencode/archive/Mission-file/2026-08/0819-plugin-dag-rc7/</code></p>
+</header>
+<main>
+
+  <h2>一、当时情况</h2>
+  <p>用户提出 DeepSeek Harness（dsh）已从 RC5 更新到 RC7，要求将插件级 DAG 知识库（<code>0816-plugin-dag</code>，基于 RC5）级联升级到 RC7：查阅官方更新文档、分析差异点、级联更新 DAG 图集合与被修改的对应插件页面和内容，并对比最新版源码验证确实正确（必须用纯官方版源码，不用魔改版）。</p>
+  <p>环境：WSL2 / Ubuntu，工作目录 <code>/home/zako-mio/opencode/</code>。本地 <code>dsh/</code> 为 RC5 快照（无 git），官方仓库 <code>deepseek-ai/deepseek-harness</code>。</p>
+
+  <h2>二、制定计划</h2>
+  <p>经 Grill-Me 收敛，确认以下方案：</p>
+  <ul>
+    <li><b>RC7 源码</b>：下载官方 tarball（<code>dsh-v0.1.0-rc.7.tar.gz</code>），存留档目录 <code>05-source/dsh-rc7/</code></li>
+    <li><b>更新深度</b>：增量更新受影响插件 + 全量质量门控（非全量重建）</li>
+    <li><b>目录策略</b>：新建 <code>0819-plugin-dag-rc7</code>，保留 <code>0816-plugin-dag</code>（RC5）原版</li>
+    <li><b>差异分析</b>：完整 diff（111 commits）+ release notes + packages 目录对比三路交叉验证，生成独立差异报告</li>
+    <li><b>drawio</b>：仅受影响插件图（后改为<b>完全移除</b>，见执行情况）</li>
+    <li><b>验证</b>：RC7 源码三依据重验 + headless/VLM</li>
+    <li><b>上传</b>：整个目录 push 到 <code>zako-mio/deepseek-harness-plugin-dag</code> master</li>
+  </ul>
+
+  <h2>三、执行情况</h2>
+  <h3>阶段0 前置准备</h3>
+  <p>复制 <code>0816-plugin-dag</code> → <code>0819-plugin-dag-rc7</code>（保留 RC5 原版）。</p>
+
+  <h3>阶段1 差异分析（委派 explore）</h3>
+  <ul>
+    <li>官方 diff：RC5→RC7 共 <b>111 commits</b></li>
+    <li>packages 结构：219=219，<b>无新增/删除包</b></li>
+    <li><b>26 个源码实质变化包</b> + 5 个仅 tests 变化包 + ~188 个仅版本号变化包</li>
+    <li><b>2 处依赖变化</b>：acp（+attachment+llm）、mcp-client（+attachment）</li>
+    <li>cordis.patch.yml 三文件字节级一致，<b>装配位置零变化</b></li>
+  </ul>
+
+  <h3>阶段2 RC7 源码</h3>
+  <p>wget/curl 下载官方 tarball（13.8MB，经 codeload 直连），解压验证 <code>0.1.0-rc.7</code>，复制到 <code>05-source/dsh-rc7/</code>（5319 文件）。</p>
+
+  <h3>阶段3 数据更新（委派 general）</h3>
+  <ul>
+    <li>external-seams.json：attachment referred_by 4→6（+acp、+mcp-client）</li>
+    <li>webapp-dag.json：20 个节点内容按 RC7 更新 + 7 处版本标注 rc.5→rc.7</li>
+    <li>14 个 HTML/MD 文件版本标注 rc.5→rc.7</li>
+  </ul>
+
+  <h3>阶段4 页面重生成（委派 general）</h3>
+  <p>路径适配：46 个 07-checkpoint 脚本 Windows 路径 → Linux 路径。重跑 gen-html-l3 / gen-md-l3 / gen-plugin-dyn / gen-overview / inject-data-l3，221 插件页 + 38 组页 + 交互图 + 221 MD + 4 特殊模块全部生成。</p>
+
+  <h3>阶段4d Chrome 代理</h3>
+  <p>drawio-worker 需 Chrome 导出 PNG，WSL2 缺 Chrome。注入 Linux Chrome 路径（<code>/home/zako-mio/.agent-browser/browsers/chrome-152.0.7977.42/chrome</code>）到 drawio-mcp export.js，实测导出成功。<code>app.diagrams.net</code> 直连可达，无需额外代理。</p>
+
+  <h3>阶段4e drawio 完全移除（用户中途决策）<span class="badge del">已移除</span></h3>
+  <ul>
+    <li>用户明确"完全移除该项目的 drawio 绘制的图片本身，只需要 HTML 的动态图"</li>
+    <li>删除 <code>05-drawio/</code>（348 文件：174 drawio + 174 png）</li>
+    <li>同步更新 README.md、index.html、REPORT.md、L3-EXEC-REPORT.md 的 drawio 引用</li>
+    <li>同步移除 quality-gate-l3/l2/gate.py 的 drawio 校验步骤</li>
+    <li><b>修复交互图 2 个 bug</b>：
+      <ol>
+        <li>gen-overview.py 模板漏引 cytoscape-dagre.min.js → 交互图无法渲染（"No such layout 'dagre'"）→ 已补</li>
+        <li>样式选择器 <code>node.plugin</code>（class）与实际 data.kind 不匹配 → 改为 <code>node[kind="plugin"]</code>（属性选择器），disabled 插入标记同步修正</li>
+      </ol>
+    </li>
+  </ul>
+
+  <h3>阶段5 质量门控</h3>
+  <p><code>quality-gate-l3.py</code> <b>ALL PASS</b>（JSON/DAG无环173/HTML断链0/vendor/插件页覆盖/DATA校验/MD覆盖，0 错误 0 警告）。</p>
+
+  <h3>阶段6 验证（headless + VLM）</h3>
+  <ul>
+    <li>交互图组级 38 节点渲染正常，右侧统计（173/49/37）完整，中文完整无截断</li>
+    <li>插件页 dsh-llm 内嵌动态 DAG 正常，RC7 内容（ReplayEnvelope、max-tokens）正确呈现</li>
+    <li>修复交互图选择器 bug 后重验：无 pageerror，canvas 1440x844，组级 38 节点</li>
+  </ul>
+
+  <h3>阶段7f 交互图重构（用户反馈卡顿）</h3>
+  <ul>
+    <li>用户指出：主 DAG 应<b>始终是组级视图</b>，点进去是<b>单独的组内视图</b>；原实现缩放切换导致卡顿</li>
+    <li>原缺陷：<code>modeFromZoom(k)</code> 靠滚轮缩放 k≥0.9 切到插件级（173 节点全渲染）+ <code>cy.on('zoom')</code> 每次缩放触发重建 → 卡顿</li>
+    <li>重构：<b>始终组级视图</b>（38 组），点击组节点进入<b>独立组内视图</b>（该组插件 + 上下游 stub 灰显），提供"← 返回组级视图"按钮；移除 zoom 事件触发的视图切换；暴露 <code>window.__cy</code> 便于调试</li>
+    <li>headless 验证：组级 38 节点 → 点击 G01 → 组内视图 4 节点 + 依赖边 → 返回组级正常，无 pageerror 无卡顿</li>
+  </ul>
+
+  <h3>阶段7g 删除过时遗留计划文档（用户要求）</h3>
+  <ul>
+    <li>删除 9 个过时遗留文档：PLAN-layer2-prompt.md、PLAN-layer2-webapp.md、PLAN-layer3.md、PLAN-layer4.md、L3-DYN-DAG-REPORT.md、L3-EXEC-REPORT.md、L3-MD-COMPLETION-REPORT.md、REPORT.md、执行报告-0817经验迁移优化.md</li>
+    <li>保留当前有效文档：README.md、index.html、RC5-RC7-DIFF-REPORT.md、report.md、report.html</li>
+  </ul>
+
+  <h3>子Agent 委派</h3>
+  <p>explore（差异分析）×1 + general（数据更新）×1 + general（页面重生成）×1 + drawio-worker（drawio，后取消）+ 多轮验证脚本。</p>
+
+  <h2>四、完成情况</h2>
+  <h3>交付物清单</h3>
+  <table>
+    <tr><th>交付物</th><th>数量</th><th>说明</th></tr>
+    <tr><td>02-plugin-pages/</td><td>221 页</td><td>173 插件 + 49 seam - 1 双身份，含内嵌动态 DAG</td></tr>
+    <tr><td>03-groups/</td><td>38 页</td><td>37 组 + 目录</td></tr>
+    <tr><td>04-interactive/index.html</td><td>1</td><td>cytoscape 交互图（组级+下钻+disabled 标注）</td></tr>
+    <tr><td>06-md/</td><td>221 MD</td><td>AI 友好镜像</td></tr>
+    <tr><td>08-special-modules/</td><td>4 页</td><td>base/headless/app-boot/cmdline</td></tr>
+    <tr><td>01-dag-data/</td><td>3 JSON</td><td>webapp-dag + external-seams + core-dag</td></tr>
+    <tr><td>05-source/dsh-rc7/</td><td>5319 文件</td><td>纯官方 RC7 源码</td></tr>
+    <tr><td>RC5-RC7-DIFF-REPORT.md</td><td>1</td><td>差异分析报告（本任务新增）</td></tr>
+    <tr><td>07-checkpoint/</td><td>—</td><td>生成脚本（路径已适配 Linux）</td></tr>
+    <tr><td><s>05-drawio/</s></td><td><s>348</s></td><td><b>已完全移除</b>（用户决策）</td></tr>
+  </table>
+
+  <h3>验证结果</h3>
+  <ul>
+    <li>质量门控 ALL PASS</li>
+    <li>headless + VLM：交互图 + 插件页动态 DAG 渲染正常</li>
+    <li>RC7 源码三依据重验通过（26 包逐条核对官方源码）</li>
+  </ul>
+
+  <h3>改动明细</h3>
+  <ul>
+    <li>数据：external-seams.json、webapp-dag.json</li>
+    <li>页面：02-plugin-pages/、03-groups/、04-interactive/、06-md/、08-special-modules/ 全量重生成</li>
+    <li>脚本：46 个 07-checkpoint 脚本路径适配；gen-overview.py + inject-data-l3.py 修复选择器 bug；quality-gate*.py 移除 drawio 校验</li>
+    <li>文档：README.md、index.html、REPORT.md、L3-EXEC-REPORT.md 更新 drawio 移除；新增 RC5-RC7-DIFF-REPORT.md</li>
+  </ul>
+
+  <h2>五、反思/分析/建议</h2>
+  <div class="reflection">
+    <h3>1. 版本升级方法论</h3>
+    <p>RC5→RC7 虽 111 commits，但真正的源码变化集中在 26 包（12%），其余为批量版本号升级。先做 packages 目录结构 diff（快速排除 188 包）+ 源码文件 diff（定位 26 包），再深入分析，避免全量重建的无效消耗。此方法可复用于后续 RC8+ 升级。</p>
+  </div>
+  <div class="reflection">
+    <h3>2. 版本标注 vs 历史记录</h3>
+    <p>知识库中 <code>0.1.0-rc.5</code> 是"当前版本"标注（需更新为 rc.7），而 <code>0.0.1-rc.1/rc.3/rc.6</code> 是各包历史演进记录（保留）。更新时需区分"当前版本"与"历史版本"，不能一刀切全局替换。</p>
+  </div>
+  <div class="reflection">
+    <h3>3. drawio 完全移除</h3>
+    <p>用户最终决策只需 HTML 动态图。交互图（cytoscape）+ 插件页内嵌动态 DAG 已完全自包含（数据内嵌 DATA），不依赖外部图片文件。移除 drawio 后需同步更新 README/index/门控/报告，避免残留引用。</p>
+  </div>
+  <div class="reflection">
+    <h3>4. 选择器 bug 教训</h3>
+    <p>交互图 gen-overview.py 用 <code>node.plugin</code>（class 选择器）但节点 data 是 <code>kind:'plugin'</code>，二者不匹配导致样式不生效且门控"样式选择器缺失"。headless 验证是唯一能发现此渲染 bug 的手段（静态检查看不出来）。验证交互图必须 headless 渲染 + DOM 检查 + VLM 三重确认。</p>
+  </div>
+  <div class="reflection">
+    <h3>5. WSL2 Chrome 导出</h3>
+    <p>drawio-mcp 的 findSystemBrowser 只查 Windows 路径，WSL2 下找不到 Chrome。注入 Linux Chrome for Testing 路径即可复用既有导出链路，<code>app.diagrams.net</code> 直连可达无需代理。</p>
+  </div>
+  <div class="reflection">
+    <h3>6. 残留清理</h3>
+    <p>任务完成需清理 /tmp 及临时目录残留（MEMORY 原则）。</p>
+  </div>
+
+</main>
+</body>
+</html>

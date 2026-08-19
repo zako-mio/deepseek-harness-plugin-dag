@@ -3,7 +3,7 @@
 """重新注入 DATA JSON 到 index.html (替换 __DATA__ 占位符)"""
 import json, os
 
-BASE = r"D:\Opencode_Download\Mission-file\2026-08\0816-plugin-dag"
+BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0819-plugin-dag-rc7"
 DAG = os.path.join(BASE, "01-dag-data", "core-dag.json")
 EXT = os.path.join(BASE, "01-dag-data", "external-seams.json")
 HTML = os.path.join(BASE, "04-interactive", "index.html")

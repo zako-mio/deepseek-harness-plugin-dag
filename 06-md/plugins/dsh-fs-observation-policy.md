@@ -9,7 +9,7 @@
 ## 为什么需要它（设计初衷）
 文件系统策略层第三块：在 ctx.fs provider 契约之上通过 fs/* 事件门（而非方法服务）增加'observed-state（先观察）→ read-before-edit（先读后改）→ version-guarded（版本守卫的写/改）'策略。它让模型必须先读文件才能改，杜绝盲写导致的版本丢失，是'以 fs/* 事件门替代强制方法服务'设计的示范实现。
 
-发展史：源自 2026-06-26 fsspec-style fs-seam 简化决策，把策略从 FileSystem provider 基类拆出，形成 tool-fs/fs-observation-policy/fs/fs-local 四层栈。无服务 API，仅注册三个 fs/* 监听器，可优雅地加减装。观察状态不跨会话持久化为已知限制。版本 0.1.0-rc.5。
+发展史：源自 2026-06-26 fsspec-style fs-seam 简化决策，把策略从 FileSystem provider 基类拆出，形成 tool-fs/fs-observation-policy/fs/fs-local 四层栈。无服务 API，仅注册三个 fs/* 监听器，可优雅地加减装。观察状态不跨会话持久化为已知限制。版本 0.1.0-rc.7。
 
 来源：
 - https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/fs/fs-observation-policy/README.md

@@ -3,7 +3,7 @@
 """分析 stage-01 数据中 appears in depends_on 但不在 76 集合内的外部 seam 包"""
 import json, os, glob, collections
 
-BASE = r"D:\Opencode_Download\Mission-file\2026-08\0816-plugin-dag"
+BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0819-plugin-dag-rc7"
 CHK = os.path.join(BASE, "07-checkpoint")
 
 # 收集所有 depends_on 引用

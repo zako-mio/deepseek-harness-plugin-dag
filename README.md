@@ -29,7 +29,6 @@
 | 每插件一页（含**模块内部结构动态 DAG**） | `02-plugin-pages/`（221 页：173 插件 + 49 seam - 1 双身份） |
 | 特殊模块结构（base/headless/boot） | `08-special-modules/` |
 | AI 检索 MD 镜像 | `06-md/00-index.md`（173 插件 + 49 seam 全量） |
-| 插件内部结构图（静态 drawio） | `05-drawio/`（174 张 drawio+png） |
 | DAG 数据（JSON） | `01-dag-data/webapp-dag.json`（L1+L2+L3 合并） |
 | 模块级 import 数据 | `07-checkpoint/plugin-internal-all.json`（215 插件 1130 模块） |
 
@@ -41,7 +40,6 @@
 ├── 02-plugin-pages/      # 每插件一页 HTML（173 核心/Web/L3 + 49 外部 seam = 221 页，1 双身份共享）
 ├── 03-groups/            # 37 组索引页 + 组目录
 ├── 04-interactive/       # cytoscape 交互总览 (index.html, 组级+下钻) + vendor/(cytoscape+dagre)
-├── 05-drawio/            # 每插件内部结构图 (host/runtime/ui-* + L1 6 域 + L3 8 域)
 ├── 06-md/                # AI 友好 MD 镜像
 ├── 07-checkpoint/        # 中间产物: stage-00/01 采集 / build-dag-l3.py / gen-html-l3.py / inject-data-l3.py / quality-gate-l3.py
 ├── 08-special-modules/   # 特殊模块 4 页 (dsh-base/headless/app-boot/cmdline)
@@ -100,7 +98,7 @@
 
 ## 质量门控
 
-`07-checkpoint/quality-gate-l3.py` 全部通过：JSON 合法 / DAG 无环（173/173）/ HTML 265 页断链 0 / drawio 174 张 png 配套 / vendor 完整 / 插件页覆盖 173+49+4 特殊模块 / 交互图 DATA 校验（173 插件 + 49 seam + 37 组）/**MD 镜像覆盖 173+49**。
+`07-checkpoint/quality-gate-l3.py` 全部通过：JSON 合法 / DAG 无环（173/173）/ HTML 265 页断链 0 / vendor 完整 / 插件页覆盖 173+49+4 特殊模块 / 交互图 DATA 校验（173 插件 + 49 seam + 37 组）/**MD 镜像覆盖 173+49**。
 headless + VLM 验证：组级视图 38 节点、L3 组下钻正常（G30 下钻 23 节点 / G37 下钻 36 节点）、中文渲染完整、模块 DAG 染色/排版正确。
 
 > ℹ️ **关于"红框"插件**：交互图中灰色红边的节点（22 个，如 dsh-skill-filesystem / dsh-tool-skill）是 **web 变体禁用 base 插件**的刻意标注（`node[kind="disabled"]` 样式），并非缺页面——它们的 HTML 页面与 MD 镜像均存在，点击可正常跳转。

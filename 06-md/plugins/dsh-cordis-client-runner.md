@@ -7,18 +7,19 @@
 - 源码路径: `packages/extensions/cordis-client-runner`
 
 ## 为什么需要它（设计初衷）
-动态双半插件包的浏览器半：把定义加载为实时浏览器插件并回退清理。
+动态双半插件包的浏览器半：把定义加载为实时浏览器插件并回退清理。RC7 slot-catalog 全面 keyed 化支撑命令/工具动态座位的精确分发。
 
 来源：
 - https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/extensions/cordis-client-runner/README.md
 
 ## 实现逻辑
-动态双半插件包的浏览器半运行引擎（node 半 apply 空，仅让行出现在 Loader）。DynamicCordisPackageRunner：把浏览器半源码 evaluateClientHalf（闭包求值）→ guard facade 包装 → 模块表注册 factory（moduleIdOf: 'dyn/<id>'）→ 创建 loader entry，复用静态插件的 inject 等待/fiber-effect 清理/status 投影；unload=loader entry 移除+factory 失效+样式移除。CordisRunOrchestrator：订阅 remote.dynamicCordisRunner 命名空间与 5 个 forwarded 事件（cordis/request-run 等），驱动 run/approve/decline/startUserRun。ClientCordisInspectRegistry：inspect manifest 同步/query 解析。provideClientTimer 提供 ClientTimerService。
+动态双半插件包的浏览器半运行引擎（node 半 apply 空，仅让行出现在 Loader）。DynamicCordisPackageRunner：把浏览器半源码 evaluateClientHalf（闭包求值）→ guard facade 包装 → 模块表注册 factory（moduleIdOf: 'dyn/<id>'）→ 创建 loader entry，复用静态插件的 inject 等待/fiber-effect 清理/status 投影；unload=loader entry 移除+factory 失效+样式移除。CordisRunOrchestrator：订阅 remote.dynamicCordisRunner 命名空间与 5 个 forwarded 事件（cordis/request-run 等），驱动 run/approve/decline/startUserRun。ClientCordisInspectRegistry：inspect manifest 同步/query 解析。provideClientTimer 提供 ClientTimerService。RC7：slot-catalog 全面 keyed 化（chat 视图按 command/run.name 键控分发、tool.call.toolview 等 keyed 座位、per-command 行洞带 fallback，浏览器半 facade 自动分配 priority）。
 
 ## Provides
 - ctx.dynamicCordisRunner（CordisRunnerFace: activeRuns/lastRunError/renderFailures/approve/decline/startUserRun/subscribe/getSnapshot/isLoaded）
 - ctx.clientTimer（ClientTimerService）
 - ClientCordisInspectRegistry
+- slot-catalog keyed 座位描述(单/列表/keyed/链四类)
 
 ## Depends On (上游依赖)
 - `dsh-api-remotes` [编译依赖] - dynamicCordisRunner Remote 命名空间——声明的注入让页面在 host 半不可达时不加载浏览器半

@@ -70,7 +70,95 @@ th{background:var(--panel);color:#b8c2d4;}
   <span class="badge">Layer 2</span><span class="badge">G35</span><span class="badge l3">L3 其余</span>
 </header>
 <main>
-<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">运行时框架</a><a href="../03-groups/G02.html">类型契约</a><a href="../03-groups/G03.html">核心服务</a><a href="../03-groups/G04.html">LLM核心</a><a href="../03-groups/G05.html">LLM适配</a><a href="../03-groups/G06.html">LLM治理</a><a href="../03-groups/G07.html">会话持久化</a><a href="../03-groups/G08.html">会话展示</a><a href="../03-groups/G09.html">审批权限</a><a href="../03-groups/G10.html">命令交互</a><a href="../03-groups/G11.html">凭据设置</a><a href="../03-groups/G12.html">附件</a><a href="../03-groups/G13.html">文件系统</a><a href="../03-groups/G14.html">Shell工具</a><a href="../03-groups/G15.html">沙箱执行</a><a href="../03-groups/G16.html">作业</a><a href="../03-groups/G17.html">目标计划</a><a href="../03-groups/G18.html">技能</a><a href="../03-groups/G19.html">子代理</a><a href="../03-groups/G20.html">工作流</a><a href="../03-groups/G21.html">上下文治理</a><a href="../03-groups/G22.html">上下文注入</a><a href="../03-groups/G23.html">工具守卫</a><a href="../03-groups/G24.html">Web搜索</a><a href="../03-groups/G25.html">宿主服务</a><a href="../03-groups/G26.html">客户端runtime</a><a href="../03-groups/G27.html">会话交互UI</a><a href="../03-groups/G28.html">设置输入UI</a><a href="../03-groups/G29.html">UI底座</a><a href="../03-groups/G30.html">外部执行后端</a><a href="../03-groups/G31.html">协议与SDK</a><a href="../03-groups/G32.html">LSP集成</a><a href="../03-groups/G33.html">子代理外部后端</a><a href="../03-groups/G34.html">Web上下文扩展</a><a href="../03-groups/G35.html">会话存储变体</a><a href="../03-groups/G36.html">Hooks工具扩展</a><a href="../03-groups/G37.html">示例与框架</a></div><div class="dagnav"><div class="label">依赖链 · 上游（该插件依赖的前驱）：</div><div class="chips"><a class="chip" href="dsh-storage.html">dsh-storage</a><a class="chip" href="dsh-storage-json.html">dsh-storage-json</a></div><div class="label" style="margin-top:8px;">依赖链 · 下游（依赖该插件的节点）：</div><div class="chips"><span style="color:var(--dim);font-size:12px;">无下游（叶子/被消费端）</span></div><div class="label" style="margin-top:8px;">同一拓扑层（Layer 2，层次遍历层序）：</div><div class="chips"><a class="chip" href="dsh-agent.html">dsh-agent</a><a class="chip" href="dsh-code-runtime-worker-thread.html">dsh-code-runtime-worker-thread</a><a class="chip" href="dsh-fs-observation-policy.html">dsh-fs-observation-policy</a><a class="chip" href="dsh-persona.html">dsh-persona</a><a class="chip" href="dsh-sandbox-local.html">dsh-sandbox-local</a><a class="chip" href="dsh-sdk-client.html">dsh-sdk-client</a><a class="chip" href="dsh-session-persistence-jsonl.html">dsh-session-persistence-jsonl</a><a class="chip" href="dsh-session-persistence-sqlite.html">dsh-session-persistence-sqlite</a><a class="chip" href="dsh-session-projection.html">dsh-session-projection</a><a class="chip" href="dsh-session-query-sqlite.html">dsh-session-query-sqlite</a><a class="chip" href="dsh-session-telemetry-otel.html">dsh-session-telemetry-otel</a><a class="chip" href="dsh-skill-badge.html">dsh-skill-badge</a><a class="chip" href="dsh-skill-filesystem.html">dsh-skill-filesystem</a><a class="chip" href="dsh-storage-domain.html">dsh-storage-domain</a><a class="chip self" href="dsh-storage-sqlite.html">dsh-storage-sqlite</a><a class="chip" href="dsh-web-fetch-http.html">dsh-web-fetch-http</a></div></div><div class="layernav"><a href="cordis-plugin-hmr.html">↑ Layer 1（16 插件）</a><span class="chip self">Layer 2</span><a href="dsh-agent-default-model.html">↓ Layer 3（19 插件）</a></div><h2>插件信息</h2><table><tr><th>包名</th><td>@deepseek-ai/dsh-storage-sqlite</td></tr><tr><th>分组</th><td>G35 · 会话存储变体</td></tr><tr><th>拓扑层</th><td>Layer 2（层次遍历：被依赖方先于依赖方）</td></tr><tr><th>源码路径</th><td><code>packages/storage/storage-sqlite</code></td></tr><tr><th>来源层</th><td>L3 其余插件（独立于 bundle 装配的扩展/变体/示例）</td></tr></table><div class="whybox"><span class="tag">为什么需要它 · 设计初衷</span><p>存储中心的 SQLite 后端，node:sqlite 提供 kv facet，单文件或 :memory:，为高频变更领域提供行级原子写。</p><div class="src">📚 来源：<br><a href="https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/storage/storage-sqlite/README.zh.md" target="_blank">https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/storage/storage-sqlite/README.zh.md</a><br></div></div><h2>① 实现逻辑</h2><p>SQLite 存储后端：SqliteStorageBackend implements StorageBackend，只提供 kv facet（document-per-row: key TEXT PRIMARY KEY / value TEXT NOT NULL, STRICT 表）。apply() 在 storage 中枢 ctx.storage.backend.register(&#x27;sqlite&#x27;, backend) 注册 + ctx.provide(storageBackendServiceKey(&#x27;sqlite&#x27;)) 暴露后端生命周期服务键，disposer 先 unregister 再 close（inject [&#x27;storage&#x27;]）。openUnit() 校验 UNIT_NAME_RE（unit/table 名）+ 防 double-open（units Map 同步占位）+ units 表 per-unit version 印章校验（不匹配即 StorageError version-mismatch）+ CREATE TABLE IF NOT EXISTS 建记录表。schema.ts 与 session-persistence-sqlite/session-query-sqlite 同构 open 序列（owner-only 建库、PRAGMA foreign_keys/journal_mode=wal、user_version=1 版本印章、零迁移拒绝非当前版本）。close() 幂等关闭所有 unit 并释放连接。config 仅 path（:memory: 支持）+ journalMode。</p><h2>② 注册/提供（provides）</h2><ul class="provides"><li>storage.backend &#x27;sqlite&#x27; 后端（kv facet: KvUnit open）</li><li>storageBackendServiceKey(&#x27;sqlite&#x27;) 后端生命周期服务键</li><li>per-unit version 印章 + UNIT_NAME_RE 校验 + double-open 防护</li><li>SqliteKvUnit（key/value STRICT 表）</li></ul><h2>③ 依赖（depends_on · 上游前驱）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-storage.html">dsh-storage</a></span><span class="mech">E2</span><div class="purpose">存储中枢：后端注册表 + 服务键提供</div><div class="evi">packages/storage/storage-sqlite/src/index.ts:11-12 StorageError/UNIT_NAME_RE/storageBackendServiceKey + StorageBackend/KvFacet；21 inject [&#x27;storage&#x27;]；161 ctx.storage.backend.register(&#x27;sqlite&#x27;, backend)；167 ctx.provide(storageBackendServiceKey)</div></div><div class="dep-item"><span class="name"><a href="dsh-storage-json.html">dsh-storage-json</a></span><span class="mech">E3</span><div class="purpose">后端注册模式参照：与 json 后端并列的 kv facet 后端实现</div><div class="evi">storage-sqlite 为 storage-json 同插槽的 SQLite 变体（storage-json/src/index.ts:107 同样 register(&#x27;json&#x27;) 模式）</div></div></div><h2>④ 被依赖（dependents · 下游消费者）</h2><p style="color:var(--dim);">无下游（叶子/被消费端）</p>
+<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">运行时框架</a><a href="../03-groups/G02.html">类型契约</a><a href="../03-groups/G03.html">核心服务</a><a href="../03-groups/G04.html">LLM核心</a><a href="../03-groups/G05.html">LLM适配</a><a href="../03-groups/G06.html">LLM治理</a><a href="../03-groups/G07.html">会话持久化</a><a href="../03-groups/G08.html">会话展示</a><a href="../03-groups/G09.html">审批权限</a><a href="../03-groups/G10.html">命令交互</a><a href="../03-groups/G11.html">凭据设置</a><a href="../03-groups/G12.html">附件</a><a href="../03-groups/G13.html">文件系统</a><a href="../03-groups/G14.html">Shell工具</a><a href="../03-groups/G15.html">沙箱执行</a><a href="../03-groups/G16.html">作业</a><a href="../03-groups/G17.html">目标计划</a><a href="../03-groups/G18.html">技能</a><a href="../03-groups/G19.html">子代理</a><a href="../03-groups/G20.html">工作流</a><a href="../03-groups/G21.html">上下文治理</a><a href="../03-groups/G22.html">上下文注入</a><a href="../03-groups/G23.html">工具守卫</a><a href="../03-groups/G24.html">Web搜索</a><a href="../03-groups/G25.html">宿主服务</a><a href="../03-groups/G26.html">客户端runtime</a><a href="../03-groups/G27.html">会话交互UI</a><a href="../03-groups/G28.html">设置输入UI</a><a href="../03-groups/G29.html">UI底座</a><a href="../03-groups/G30.html">外部执行后端</a><a href="../03-groups/G31.html">协议与SDK</a><a href="../03-groups/G32.html">LSP集成</a><a href="../03-groups/G33.html">子代理外部后端</a><a href="../03-groups/G34.html">Web上下文扩展</a><a href="../03-groups/G35.html">会话存储变体</a><a href="../03-groups/G36.html">Hooks工具扩展</a><a href="../03-groups/G37.html">示例与框架</a></div><div class="dagnav"><div class="label">依赖链 · 上游（该插件依赖的前驱）：</div><div class="chips"><a class="chip" href="dsh-storage.html">dsh-storage</a><a class="chip" href="dsh-storage-json.html">dsh-storage-json</a></div><div class="label" style="margin-top:8px;">依赖链 · 下游（依赖该插件的节点）：</div><div class="chips"><span style="color:var(--dim);font-size:12px;">无下游（叶子/被消费端）</span></div><div class="label" style="margin-top:8px;">同一拓扑层（Layer 2，层次遍历层序）：</div><div class="chips"><a class="chip" href="dsh-agent.html">dsh-agent</a><a class="chip" href="dsh-code-runtime-worker-thread.html">dsh-code-runtime-worker-thread</a><a class="chip" href="dsh-fs-observation-policy.html">dsh-fs-observation-policy</a><a class="chip" href="dsh-persona.html">dsh-persona</a><a class="chip" href="dsh-sandbox-local.html">dsh-sandbox-local</a><a class="chip" href="dsh-sdk-client.html">dsh-sdk-client</a><a class="chip" href="dsh-session-persistence-jsonl.html">dsh-session-persistence-jsonl</a><a class="chip" href="dsh-session-persistence-sqlite.html">dsh-session-persistence-sqlite</a><a class="chip" href="dsh-session-projection.html">dsh-session-projection</a><a class="chip" href="dsh-session-query-sqlite.html">dsh-session-query-sqlite</a><a class="chip" href="dsh-session-telemetry-otel.html">dsh-session-telemetry-otel</a><a class="chip" href="dsh-skill-badge.html">dsh-skill-badge</a><a class="chip" href="dsh-skill-filesystem.html">dsh-skill-filesystem</a><a class="chip" href="dsh-storage-domain.html">dsh-storage-domain</a><a class="chip self" href="dsh-storage-sqlite.html">dsh-storage-sqlite</a><a class="chip" href="dsh-web-fetch-http.html">dsh-web-fetch-http</a></div></div><div class="layernav"><a href="cordis-plugin-hmr.html">↑ Layer 1（16 插件）</a><span class="chip self">Layer 2</span><a href="dsh-agent-default-model.html">↓ Layer 3（19 插件）</a></div><h2>插件信息</h2><table><tr><th>包名</th><td>@deepseek-ai/dsh-storage-sqlite</td></tr><tr><th>分组</th><td>G35 · 会话存储变体</td></tr><tr><th>拓扑层</th><td>Layer 2（层次遍历：被依赖方先于依赖方）</td></tr><tr><th>源码路径</th><td><code>packages/storage/storage-sqlite</code></td></tr><tr><th>来源层</th><td>L3 其余插件（独立于 bundle 装配的扩展/变体/示例）</td></tr></table><div class="whybox"><span class="tag">为什么需要它 · 设计初衷</span><p>存储中心的 SQLite 后端，node:sqlite 提供 kv facet，单文件或 :memory:，为高频变更领域提供行级原子写。</p><div class="src">📚 来源：<br><a href="https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/storage/storage-sqlite/README.zh.md" target="_blank">https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/storage/storage-sqlite/README.zh.md</a><br></div></div><h2>① 实现逻辑</h2><p>SQLite 存储后端：SqliteStorageBackend implements StorageBackend，只提供 kv facet（document-per-row: key TEXT PRIMARY KEY / value TEXT NOT NULL, STRICT 表）。apply() 在 storage 中枢 ctx.storage.backend.register(&#x27;sqlite&#x27;, backend) 注册 + ctx.provide(storageBackendServiceKey(&#x27;sqlite&#x27;)) 暴露后端生命周期服务键，disposer 先 unregister 再 close（inject [&#x27;storage&#x27;]）。openUnit() 校验 UNIT_NAME_RE（unit/table 名）+ 防 double-open（units Map 同步占位）+ units 表 per-unit version 印章校验（不匹配即 StorageError version-mismatch）+ CREATE TABLE IF NOT EXISTS 建记录表。schema.ts 与 session-persistence-sqlite/session-query-sqlite 同构 open 序列（owner-only 建库、PRAGMA foreign_keys/journal_mode=wal、user_version=1 版本印章、零迁移拒绝非当前版本）。close() 幂等关闭所有 unit 并释放连接。config 仅 path（:memory: 支持）+ journalMode。</p>
+<style>
+#dyn-dag{width:100%;height:480px;background:var(--panel);border:1px solid var(--border);border-radius:8px;margin:12px 0;}
+#dyn-dag-label{font-size:12px;color:var(--dim);margin:10px 0 4px;}
+#dyn-dag-legend{display:flex;gap:16px;font-size:12px;color:var(--dim);margin:6px 0 2px;flex-wrap:wrap;}
+#dyn-dag-legend .item{display:flex;align-items:center;gap:5px;}
+#dyn-dag-legend .dot{width:10px;height:10px;border-radius:3px;display:inline-block;}
+.dyn-self{background:var(--accent);}
+.dyn-up{background:#e8933b;}
+.dyn-down{background:#2fb98a;}
+.dyn-seam{background:var(--ext);}
+</style>
+
+<div id="dyn-dag-label">内部结构动态 DAG（深色主题：橙色=上游依赖 · 绿色=下游依赖 · 棕色=外部seam · 蓝=本插件）</div>
+<div id="dyn-dag-legend">
+  <span class="item"><span class="dot dyn-self"></span>本插件</span>
+  <span class="item"><span class="dot dyn-up"></span>上游依赖</span>
+  <span class="item"><span class="dot dyn-down"></span>下游依赖</span>
+  <span class="item"><span class="dot dyn-seam"></span>外部 seam</span>
+</div>
+<div id="dyn-dag"></div>
+
+<script src="../04-interactive/vendor/cytoscape.min.js"></script>
+<script src="../04-interactive/vendor/cytoscape-dagre.min.js"></script>
+<script>
+(function(){
+  const raw = {"elements": [{"data": {"id": "dsh-storage-sqlite", "label": "dsh-storage-sqlite", "kind": "self", "cls": "#4f8cff", "url": "dsh-storage-sqlite.html"}}, {"data": {"id": "dsh-storage", "label": "dsh-storage", "kind": "up", "cls": "#e8933b", "url": "dsh-storage.html"}}, {"data": {"id": "dsh-storage-json", "label": "dsh-storage-json", "kind": "up", "cls": "#e8933b", "url": "dsh-storage-json.html"}}, {"data": {"id": "dsh-storage->dsh-storage-sqlite", "source": "dsh-storage", "target": "dsh-storage-sqlite"}}, {"data": {"id": "dsh-storage-json->dsh-storage-sqlite", "source": "dsh-storage-json", "target": "dsh-storage-sqlite"}}]};
+  const cy = cytoscape({
+    container: document.getElementById('dyn-dag'),
+    elements: raw.elements,
+    style: [
+      {
+        selector: 'node',
+        style: {
+          'label': 'data(label)',
+          'background-color': 'data(cls)',
+          'color': '#e6e8ee',
+          'font-size': 11,
+          'text-valign': 'bottom',
+          'text-margin-y': 4,
+          'width': 46,
+          'height': 46,
+          'shape': 'round-rectangle',
+          'border-width': 2,
+          'border-color': '#2a2f3a'
+        }
+      },
+      {
+        selector: 'node[kind="self"]',
+        style: {
+          'border-width': 3,
+          'border-color': '#4f8cff',
+          'width': 60,
+          'height': 60,
+          'font-size': 12,
+          'font-weight': 700
+        }
+      },
+      {
+        selector: 'edge',
+        style: {
+          'width': 1.5,
+          'line-color': '#4a5263',
+          'target-arrow-color': '#4a5263',
+          'target-arrow-shape': 'triangle',
+          'curve-style': 'bezier'
+        }
+      }
+    ],
+    layout: {
+      name: 'dagre',
+      rankDir: 'LR',
+      nodeSep: 30,
+      rankSep: 60,
+      padding: 20
+    },
+    wheelSensitivity: 0.2,
+    minZoom: 0.2,
+    maxZoom: 2.5
+  });
+  cy.on('tap', 'node', (evt) => {
+    const url = evt.target.data('url');
+    if (url) window.location.href = url;
+  });
+  // 等渲染完自适应容器尺寸
+  setTimeout(() => cy.resize(), 100);
+})();
+</script>
+<h2>② 注册/提供（provides）</h2><ul class="provides"><li>storage.backend &#x27;sqlite&#x27; 后端（kv facet: KvUnit open）</li><li>storageBackendServiceKey(&#x27;sqlite&#x27;) 后端生命周期服务键</li><li>per-unit version 印章 + UNIT_NAME_RE 校验 + double-open 防护</li><li>SqliteKvUnit（key/value STRICT 表）</li></ul><h2>③ 依赖（depends_on · 上游前驱）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-storage.html">dsh-storage</a></span><span class="mech">E2</span><div class="purpose">存储中枢：后端注册表 + 服务键提供</div><div class="evi">packages/storage/storage-sqlite/src/index.ts:11-12 StorageError/UNIT_NAME_RE/storageBackendServiceKey + StorageBackend/KvFacet；21 inject [&#x27;storage&#x27;]；161 ctx.storage.backend.register(&#x27;sqlite&#x27;, backend)；167 ctx.provide(storageBackendServiceKey)</div></div><div class="dep-item"><span class="name"><a href="dsh-storage-json.html">dsh-storage-json</a></span><span class="mech">E3</span><div class="purpose">后端注册模式参照：与 json 后端并列的 kv facet 后端实现</div><div class="evi">storage-sqlite 为 storage-json 同插槽的 SQLite 变体（storage-json/src/index.ts:107 同样 register(&#x27;json&#x27;) 模式）</div></div></div><h2>④ 被依赖（dependents · 下游消费者）</h2><p style="color:var(--dim);">无下游（叶子/被消费端）</p>
 </main>
 <footer>DeepSeek Harness 插件级 DAG 依赖链分析 · L1 核心集 + L2 web-app + L3 其余插件 · 源码三依据(E1编译/E2运行时/E3组合)逐条溯源</footer>
 </body>

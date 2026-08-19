@@ -5,7 +5,7 @@ import json, os, re, sys
 sys.stdout.reconfigure(encoding='utf-8')
 
 SRC = r"C:\Users\15057\.local\share\opencode\tool-output\tool_00baa1011001Q4I4HIbEOtjPZy"
-OUT = r"D:\Opencode_Download\Mission-file\2026-08\0816-plugin-dag\07-checkpoint\stage-01-l2-r3.json"
+OUT = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0819-plugin-dag-rc7\07-checkpoint\stage-01-l2-r3.json"
 
 with open(SRC, "r", encoding="utf-8") as f:
     content = f.read()

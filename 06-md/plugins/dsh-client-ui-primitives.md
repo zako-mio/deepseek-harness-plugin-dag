@@ -16,12 +16,13 @@
 - https://www.npmjs.com/package/@deepseek-ai/dsh-client-ui-primitives
 
 ## 实现逻辑
-通用 UI atoms 底座（零 cordis 运行时依赖）。纯 React 组件库：Button/Input/Menu/Modal/Tooltip/HoverCard/Pill/Toast/StateDot/DisclosureRow/JsonTree/DiffBlock/ReadBlock/SearchBlock/TerminalBlock/WebBlock/RiskConfirmation/OnboardingSurface/ConnectionBanner/Button 等控件、icons 图标集、markdown 管线（parse/render/CodeBlock/JsonBlock/MessageText/MarkdownText/katex/shiki 高亮/ansi）与 MarkdownFileMentions 类型。不注册任何 slot/service，作为 import 底座被全部 UI 插件消费。
+通用 UI atoms 底座（零 cordis 运行时依赖）。纯 React 组件库：Button/Input/Menu/Modal/Tooltip/HoverCard/Pill/Toast/StateDot/DisclosureRow/JsonTree/DiffBlock/ReadBlock/SearchBlock/TerminalBlock/WebBlock/RiskConfirmation/OnboardingSurface/ConnectionBanner/Button 等控件、icons 图标集、markdown 管线（parse/render/CodeBlock/JsonBlock/MessageText/MarkdownText/katex/shiki 高亮/ansi）与 MarkdownFileMentions 类型。RC7 新增 useDismissOnOutsidePointer hook(外部点击关闭，ui-jobs/ui-cordis 等 popover 复用)。不注册任何 slot/service，作为 import 底座被全部 UI 插件消费。
 
 ## Provides
 - React atoms（Button/Input/Menu/Modal/Tooltip/StateDot/DisclosureRow/ReadBlock/SearchBlock/TerminalBlock/WebBlock/DiffBlock/JsonTree 等）
 - 图标集 icons
 - Markdown 渲染管线（MarkdownText/MessageText/CodeBlock/JsonBlock/katex/shiki/ansi）
+- useDismissOnOutsidePointer(外部点击关闭 hook，RC7 新增)
 - 类型 MarkdownFileMentions/extractMarkdownPlainText
 
 ## Depends On (上游依赖)

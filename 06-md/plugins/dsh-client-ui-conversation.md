@@ -7,16 +7,16 @@
 - 源码路径: `packages/client/ui-conversation`
 
 ## 为什么需要它（设计初衷）
-Web 对话域核心 UI：会话骨架（skeleton）、有序聊天流、Host 支持的 busy-Enter 偏好作曲家与详情宿主。它把 SessionEvent 日志投影为可交互的 Chat 节点（助手/工具/重试/压缩/队列/规划条），解决'用户如何在浏览器中阅读并驱动一次 Agent 会话'的展示层问题，并作为 conversation.chat.node / details.tool 等 slot 的宿主与分发者。
+Web 对话域核心 UI：会话骨架（skeleton）、有序聊天流、Host 支持的 busy-Enter 偏好作曲家与详情宿主。它把 SessionEvent 日志投影为可交互的 Chat 节点（助手/工具/重试/压缩/队列/规划条），解决'用户如何在浏览器中阅读并驱动一次 Agent 会话'的展示层问题，并作为 conversation.chat.node / details.tool 等 slot 的宿主与分发者。RC7 新增 Safari 输入框布局修复。
 
-发展史：dsh 客户端三大件之一，属于 conversation 域 base 层。经历了 thinking-tail 滚动、重试节点稳定状态行、用户气泡去分支操作、Host-backed 偏好持久化等多个迭代决策（2026-07~08 Agent Notes），slot 化渲染体系随 web bundle 一起成型。版本 0.1.0-rc.5。
+发展史：dsh 客户端三大件之一，属于 conversation 域 base 层。经历了 thinking-tail 滚动、重试节点稳定状态行、用户气泡去分支操作、Host-backed 偏好持久化等多个迭代决策（2026-07~08 Agent Notes），slot 化渲染体系随 web bundle 一起成型。版本 0.1.0-rc.7。
 
 来源：
 - https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-conversation/README.md
 - https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-conversation/package.json
 
 ## 实现逻辑
-会话交互核心大包（70 ts）。apply() 先 registerConversationNodes+registerChatNodeRenderers，然后向 slots 注册：conversation（ConversationRoot，声明 session/header/composer/input.dock/hero 等 11 个 child slot）、conversation.session（ConversationSession，持 chatStore + views ring）、conversation.session.header、conversation.composer.bar（InputBar，注入 shell/inputTriggers/command/stop/submissionPolicy）、conversation.composer 的 ApprovalPanel（selector 路由）、conversation.view id=chat（ChatView + keyed conversation.chat.node 座位）、details（DetailsPanel）、settings.general.item 的 EnterBehaviorRow。以 ConversationController 提供 ctx.conversation（scope 寻址 send/cancel/updateQueue/loadOlder，input hub + composer blocks 注册表），并注册 11 个 Chat 业务 Definition（assistant/tool/command/compaction/retry/turn-error/turn-max-tokens/turn-tail/inbox/message）到 ConversationEventRegistry。composer 标准输入 kit（hooks:input + inputActions）经 sessions.provide 发布。依赖 host 的 slots/layout/sessions/workspaces/locale/connection/remote/settingsScope/conversationEvents/conversationViews。
+会话交互核心大包（70 ts）。apply() 先 registerConversationNodes+registerChatNodeRenderers，然后向 slots 注册：conversation（ConversationRoot，声明 session/header/composer/input.dock/hero 等 11 个 child slot）、conversation.session（ConversationSession，持 chatStore + views ring）、conversation.session.header、conversation.composer.bar（InputBar，注入 shell/inputTriggers/command/stop/submissionPolicy）、conversation.composer 的 ApprovalPanel（selector 路由）、conversation.view id=chat（ChatView + keyed conversation.chat.node 座位）、details（DetailsPanel）、settings.general.item 的 EnterBehaviorRow。以 ConversationController 提供 ctx.conversation（scope 寻址 send/cancel/updateQueue/loadOlder，input hub + composer blocks 注册表），并注册 11 个 Chat 业务 Definition（assistant/tool/command/compaction/retry/turn-error/turn-max-tokens/turn-tail/inbox/message）到 ConversationEventRegistry。composer 标准输入 kit（hooks:input + inputActions）经 sessions.provide 发布。依赖 host 的 slots/layout/sessions/workspaces/locale/connection/remote/settingsScope/conversationEvents/conversationViews。RC7：新增 src/client/skeleton/safari.ts——isSafariBrowser 检测 + repairSafariTextareaLayout 修复 Safari 原生编辑缩短草稿时的 textarea soft-wrap 回流光标问题(2026-08-13 bug-fix note)。
 
 ## Provides
 - ctx.conversation（ConversationController: send/cancel/updateQueue/loadOlder/input/blocks）

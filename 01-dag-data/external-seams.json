@@ -310,11 +310,13 @@
       "path": "packages/attachment/attachment",
       "ts_count": 5,
       "description": "Durable immutable attachment storage seam for the DeepSeek Harness",
-      "ref_count": 4,
+      "ref_count": 6,
       "referred_by": [
+        "dsh-acp",
         "dsh-attachment-local",
         "dsh-llm",
         "dsh-llm-pi-ai",
+        "dsh-mcp-client",
         "dsh-tool-fs"
       ],
       "mechanisms": [

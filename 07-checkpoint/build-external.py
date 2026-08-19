@@ -3,7 +3,7 @@
 """查询 39 个外部 seam 包在 PACKAGE-MAP.json 中的路径/描述, 输出外部包元数据清单"""
 import json, os, glob, collections
 
-BASE = r"D:\Opencode_Download\Mission-file\2026-08\0816-plugin-dag"
+BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0819-plugin-dag-rc7"
 CHK = os.path.join(BASE, "07-checkpoint")
 MAP = r"D:\Opencode_Download\Mission-file\2026-08\0814-deepseek-harness源码解析\07-checkpoint\PACKAGE-MAP.json"
 

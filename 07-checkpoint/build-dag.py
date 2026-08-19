@@ -6,7 +6,7 @@ S2 DAG 建模脚本: 从 stage-01-r*.json 提取插件节点与依赖边,
 """
 import json, sys, os
 
-BASE = r"D:\Opencode_Download\Mission-file\2026-08\0816-plugin-dag"
+BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0819-plugin-dag-rc7"
 CHK = os.path.join(BASE, "07-checkpoint")
 OUT = os.path.join(BASE, "01-dag-data")
 

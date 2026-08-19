@@ -2,7 +2,7 @@
 """S2a: 聚合 6 路调研结果，验证覆盖度与完整性"""
 import json, os, sys, glob
 
-BASE = r"D:\Opencode_Download\Mission-file\2026-08\0816-plugin-dag"
+BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0819-plugin-dag-rc7"
 RES = os.path.join(BASE, "07-checkpoint", "research")
 sys.stdout.reconfigure(encoding="utf-8")
 

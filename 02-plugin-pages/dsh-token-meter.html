@@ -70,7 +70,95 @@ th{background:var(--panel);color:#b8c2d4;}
   <span class="badge">Layer 3</span><span class="badge">G06</span>
 </header>
 <main>
-<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">运行时框架</a><a href="../03-groups/G02.html">类型契约</a><a href="../03-groups/G03.html">核心服务</a><a href="../03-groups/G04.html">LLM核心</a><a href="../03-groups/G05.html">LLM适配</a><a href="../03-groups/G06.html">LLM治理</a><a href="../03-groups/G07.html">会话持久化</a><a href="../03-groups/G08.html">会话展示</a><a href="../03-groups/G09.html">审批权限</a><a href="../03-groups/G10.html">命令交互</a><a href="../03-groups/G11.html">凭据设置</a><a href="../03-groups/G12.html">附件</a><a href="../03-groups/G13.html">文件系统</a><a href="../03-groups/G14.html">Shell工具</a><a href="../03-groups/G15.html">沙箱执行</a><a href="../03-groups/G16.html">作业</a><a href="../03-groups/G17.html">目标计划</a><a href="../03-groups/G18.html">技能</a><a href="../03-groups/G19.html">子代理</a><a href="../03-groups/G20.html">工作流</a><a href="../03-groups/G21.html">上下文治理</a><a href="../03-groups/G22.html">上下文注入</a><a href="../03-groups/G23.html">工具守卫</a><a href="../03-groups/G24.html">Web搜索</a><a href="../03-groups/G25.html">宿主服务</a><a href="../03-groups/G26.html">客户端runtime</a><a href="../03-groups/G27.html">会话交互UI</a><a href="../03-groups/G28.html">设置输入UI</a><a href="../03-groups/G29.html">UI底座</a><a href="../03-groups/G30.html">外部执行后端</a><a href="../03-groups/G31.html">协议与SDK</a><a href="../03-groups/G32.html">LSP集成</a><a href="../03-groups/G33.html">子代理外部后端</a><a href="../03-groups/G34.html">Web上下文扩展</a><a href="../03-groups/G35.html">会话存储变体</a><a href="../03-groups/G36.html">Hooks工具扩展</a><a href="../03-groups/G37.html">示例与框架</a></div><div class="dagnav"><div class="label">依赖链 · 上游（该插件依赖的前驱）：</div><div class="chips"><a class="chip" href="dsh-llm.html">dsh-llm</a><a class="chip" href="dsh-session.html">dsh-session</a><a class="chip" href="dsh-session-projection.html">dsh-session-projection</a></div><div class="label" style="margin-top:8px;">依赖链 · 下游（依赖该插件的节点）：</div><div class="chips"><a class="chip l2" href="dsh-client-ui-conversation.html">dsh-client-ui-conversation</a><a class="chip" href="dsh-compaction-basic.html">dsh-compaction-basic</a><a class="chip" href="dsh-compaction-tool-result-pruner.html">dsh-compaction-tool-result-pruner</a></div><div class="label" style="margin-top:8px;">同一拓扑层（Layer 3，层次遍历层序）：</div><div class="chips"><a class="chip" href="dsh-agent-default-model.html">dsh-agent-default-model</a><a class="chip" href="dsh-agent-presets.html">dsh-agent-presets</a><a class="chip" href="dsh-commands.html">dsh-commands</a><a class="chip" href="dsh-goal.html">dsh-goal</a><a class="chip" href="dsh-jobs-local.html">dsh-jobs-local</a><a class="chip" href="dsh-llm-retry.html">dsh-llm-retry</a><a class="chip" href="dsh-message-feedback.html">dsh-message-feedback</a><a class="chip" href="dsh-sandbox-policy.html">dsh-sandbox-policy</a><a class="chip" href="dsh-session-projection-cache.html">dsh-session-projection-cache</a><a class="chip" href="dsh-session-reference.html">dsh-session-reference</a><a class="chip" href="dsh-session-stats.html">dsh-session-stats</a><a class="chip" href="dsh-session-title.html">dsh-session-title</a><a class="chip" href="dsh-time-context.html">dsh-time-context</a><a class="chip" href="dsh-tmux-context.html">dsh-tmux-context</a><a class="chip self" href="dsh-token-meter.html">dsh-token-meter</a><a class="chip" href="dsh-user-approval.html">dsh-user-approval</a><a class="chip" href="dsh-user-questions.html">dsh-user-questions</a><a class="chip" href="dsh-web-search-deepseek.html">dsh-web-search-deepseek</a><a class="chip" href="dsh-workspace.html">dsh-workspace</a></div></div><div class="layernav"><a href="dsh-agent.html">↑ Layer 2（16 插件）</a><span class="chip self">Layer 3</span><a href="dsh-bash-sandbox.html">↓ Layer 4（15 插件）</a></div><h2>插件信息</h2><table><tr><th>包名</th><td>@deepseek-ai/dsh-token-meter</td></tr><tr><th>分组</th><td>G06 · LLM治理</td></tr><tr><th>拓扑层</th><td>Layer 3（层次遍历：被依赖方先于依赖方）</td></tr><tr><th>源码路径</th><td><code>packages/llm/token-meter</code></td></tr></table><div class="whybox"><span class="tag">为什么需要它 · 设计初衷</span><p>通过单例 ctx.tokenMeter 提供回放感知的 token 测量：从持久日志为每会话推进隔离 fold，压缩(compaction)等压力敏感插件共享计量，无需依赖 CompactionEngine。用固定启发式（4字符≈1token+结构开销）估算，保证测量与模型路由/压缩解耦。</p><div class="hist">📜 位于 packages/llm/token-meter，2026-08-10 首批发布，0.1.0-rc.6 转公开。dsh-compaction-basic 的默认计量依赖；提供 tokenUsage/contextPressure/contextBreakdown 三个会话投影单元。</div><div class="src">📚 来源：<br><a href="https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/llm/token-meter/README.zh.md" target="_blank">https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/llm/token-meter/README.zh.md</a><br><a href="https://registry.npmjs.org/@deepseek-ai/dsh-token-meter" target="_blank">https://registry.npmjs.org/@deepseek-ai/dsh-token-meter</a><br></div></div><h2>① 实现逻辑</h2><p>Replay-aware token 计量服务(ctx.tokenMeter)。TokenMeter 服务按 session 维护 ReplayState，惰性折叠事件日志得出请求压力与 surface token 估算；measure() 输出基线+surface 增量；estimateMessage/estimateHeader 启发式计价；可选注入 sessionProjections 注册 usage/contextPressure/breakdown 三个投影定义。</p><h2>② 注册/提供（provides）</h2><ul class="provides"><li>ctx.tokenMeter(TokenMeter)</li><li>measure(): TokenMeasurement</li><li>estimateMessage()</li><li>tokenUsage/contextPressure/contextBreakdown 投影定义</li><li>TokenMeterConfig</li></ul><h2>③ 依赖（depends_on · 上游前驱）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-llm.html">dsh-llm</a></span><span class="mech">E1</span><div class="purpose">BlockAssembler/deepFreeze；TokenUsage 类型</div><div class="evi">packages/llm/token-meter/src/index.ts:9-10</div></div><div class="dep-item"><span class="name"><a href="dsh-session.html">dsh-session</a></span><span class="mech">E2</span><div class="purpose">订阅 session/event；折叠 header/surface</div><div class="evi">packages/llm/token-meter/src/index.ts:11-12, 95-97</div></div><div class="dep-item"><span class="name"><a href="dsh-session-projection.html">dsh-session-projection</a></span><span class="mech">E2</span><div class="purpose">ctx.inject([&#x27;sessionProjections&#x27;]) 注册投影</div><div class="evi">packages/llm/token-meter/src/index.ts:14, 87-91</div></div></div><h2>④ 被依赖（dependents · 下游消费者）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-client-ui-conversation.html">dsh-client-ui-conversation</a></span><div class="purpose">tokenUsage/contextPressure/contextBreakdown 投影类型</div><div class="evi">StatsLine.tsx:11 + ContextMeter.tsx:10 dsh-token-meter/client + package.json:74</div></div><div class="dep-item"><span class="name"><a href="dsh-compaction-basic.html">dsh-compaction-basic</a></span><div class="purpose">measure 定价压力/收敛</div><div class="evi">packages/compaction/compaction-basic/src/index.ts:104,267</div></div><div class="dep-item"><span class="name"><a href="dsh-compaction-tool-result-pruner.html">dsh-compaction-tool-result-pruner</a></span><div class="purpose">estimateMessage 计算 shadowedTokenCount</div><div class="evi">packages/compaction/compaction-tool-result-pruner/src/index.ts:47,165</div></div></div>
+<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">运行时框架</a><a href="../03-groups/G02.html">类型契约</a><a href="../03-groups/G03.html">核心服务</a><a href="../03-groups/G04.html">LLM核心</a><a href="../03-groups/G05.html">LLM适配</a><a href="../03-groups/G06.html">LLM治理</a><a href="../03-groups/G07.html">会话持久化</a><a href="../03-groups/G08.html">会话展示</a><a href="../03-groups/G09.html">审批权限</a><a href="../03-groups/G10.html">命令交互</a><a href="../03-groups/G11.html">凭据设置</a><a href="../03-groups/G12.html">附件</a><a href="../03-groups/G13.html">文件系统</a><a href="../03-groups/G14.html">Shell工具</a><a href="../03-groups/G15.html">沙箱执行</a><a href="../03-groups/G16.html">作业</a><a href="../03-groups/G17.html">目标计划</a><a href="../03-groups/G18.html">技能</a><a href="../03-groups/G19.html">子代理</a><a href="../03-groups/G20.html">工作流</a><a href="../03-groups/G21.html">上下文治理</a><a href="../03-groups/G22.html">上下文注入</a><a href="../03-groups/G23.html">工具守卫</a><a href="../03-groups/G24.html">Web搜索</a><a href="../03-groups/G25.html">宿主服务</a><a href="../03-groups/G26.html">客户端runtime</a><a href="../03-groups/G27.html">会话交互UI</a><a href="../03-groups/G28.html">设置输入UI</a><a href="../03-groups/G29.html">UI底座</a><a href="../03-groups/G30.html">外部执行后端</a><a href="../03-groups/G31.html">协议与SDK</a><a href="../03-groups/G32.html">LSP集成</a><a href="../03-groups/G33.html">子代理外部后端</a><a href="../03-groups/G34.html">Web上下文扩展</a><a href="../03-groups/G35.html">会话存储变体</a><a href="../03-groups/G36.html">Hooks工具扩展</a><a href="../03-groups/G37.html">示例与框架</a></div><div class="dagnav"><div class="label">依赖链 · 上游（该插件依赖的前驱）：</div><div class="chips"><a class="chip" href="dsh-llm.html">dsh-llm</a><a class="chip" href="dsh-session.html">dsh-session</a><a class="chip" href="dsh-session-projection.html">dsh-session-projection</a></div><div class="label" style="margin-top:8px;">依赖链 · 下游（依赖该插件的节点）：</div><div class="chips"><a class="chip l2" href="dsh-client-ui-conversation.html">dsh-client-ui-conversation</a><a class="chip" href="dsh-compaction-basic.html">dsh-compaction-basic</a><a class="chip" href="dsh-compaction-tool-result-pruner.html">dsh-compaction-tool-result-pruner</a></div><div class="label" style="margin-top:8px;">同一拓扑层（Layer 3，层次遍历层序）：</div><div class="chips"><a class="chip" href="dsh-agent-default-model.html">dsh-agent-default-model</a><a class="chip" href="dsh-agent-presets.html">dsh-agent-presets</a><a class="chip" href="dsh-commands.html">dsh-commands</a><a class="chip" href="dsh-goal.html">dsh-goal</a><a class="chip" href="dsh-jobs-local.html">dsh-jobs-local</a><a class="chip" href="dsh-llm-retry.html">dsh-llm-retry</a><a class="chip" href="dsh-message-feedback.html">dsh-message-feedback</a><a class="chip" href="dsh-sandbox-policy.html">dsh-sandbox-policy</a><a class="chip" href="dsh-session-projection-cache.html">dsh-session-projection-cache</a><a class="chip" href="dsh-session-reference.html">dsh-session-reference</a><a class="chip" href="dsh-session-stats.html">dsh-session-stats</a><a class="chip" href="dsh-session-title.html">dsh-session-title</a><a class="chip" href="dsh-time-context.html">dsh-time-context</a><a class="chip" href="dsh-tmux-context.html">dsh-tmux-context</a><a class="chip self" href="dsh-token-meter.html">dsh-token-meter</a><a class="chip" href="dsh-user-approval.html">dsh-user-approval</a><a class="chip" href="dsh-user-questions.html">dsh-user-questions</a><a class="chip" href="dsh-web-search-deepseek.html">dsh-web-search-deepseek</a><a class="chip" href="dsh-workspace.html">dsh-workspace</a></div></div><div class="layernav"><a href="dsh-agent.html">↑ Layer 2（16 插件）</a><span class="chip self">Layer 3</span><a href="dsh-bash-sandbox.html">↓ Layer 4（15 插件）</a></div><h2>插件信息</h2><table><tr><th>包名</th><td>@deepseek-ai/dsh-token-meter</td></tr><tr><th>分组</th><td>G06 · LLM治理</td></tr><tr><th>拓扑层</th><td>Layer 3（层次遍历：被依赖方先于依赖方）</td></tr><tr><th>源码路径</th><td><code>packages/llm/token-meter</code></td></tr></table><div class="whybox"><span class="tag">为什么需要它 · 设计初衷</span><p>通过单例 ctx.tokenMeter 提供回放感知的 token 测量：从持久日志为每会话推进隔离 fold，压缩(compaction)等压力敏感插件共享计量，无需依赖 CompactionEngine。用固定启发式（4字符≈1token+结构开销）估算，保证测量与模型路由/压缩解耦。</p><div class="hist">📜 位于 packages/llm/token-meter，2026-08-10 首批发布，0.1.0-rc.6 转公开。dsh-compaction-basic 的默认计量依赖；提供 tokenUsage/contextPressure/contextBreakdown 三个会话投影单元。</div><div class="src">📚 来源：<br><a href="https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/llm/token-meter/README.zh.md" target="_blank">https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/llm/token-meter/README.zh.md</a><br><a href="https://registry.npmjs.org/@deepseek-ai/dsh-token-meter" target="_blank">https://registry.npmjs.org/@deepseek-ai/dsh-token-meter</a><br></div></div><h2>① 实现逻辑</h2><p>Replay-aware token 计量服务(ctx.tokenMeter)。TokenMeter 服务按 session 维护 ReplayState，惰性折叠事件日志得出请求压力与 surface token 估算；measure() 输出基线+surface 增量；estimateMessage/estimateHeader 启发式计价；可选注入 sessionProjections 注册 usage/contextPressure/breakdown 三个投影定义。</p>
+<style>
+#dyn-dag{width:100%;height:480px;background:var(--panel);border:1px solid var(--border);border-radius:8px;margin:12px 0;}
+#dyn-dag-label{font-size:12px;color:var(--dim);margin:10px 0 4px;}
+#dyn-dag-legend{display:flex;gap:16px;font-size:12px;color:var(--dim);margin:6px 0 2px;flex-wrap:wrap;}
+#dyn-dag-legend .item{display:flex;align-items:center;gap:5px;}
+#dyn-dag-legend .dot{width:10px;height:10px;border-radius:3px;display:inline-block;}
+.dyn-self{background:var(--accent);}
+.dyn-up{background:#e8933b;}
+.dyn-down{background:#2fb98a;}
+.dyn-seam{background:var(--ext);}
+</style>
+
+<div id="dyn-dag-label">内部结构动态 DAG（深色主题：橙色=上游依赖 · 绿色=下游依赖 · 棕色=外部seam · 蓝=本插件）</div>
+<div id="dyn-dag-legend">
+  <span class="item"><span class="dot dyn-self"></span>本插件</span>
+  <span class="item"><span class="dot dyn-up"></span>上游依赖</span>
+  <span class="item"><span class="dot dyn-down"></span>下游依赖</span>
+  <span class="item"><span class="dot dyn-seam"></span>外部 seam</span>
+</div>
+<div id="dyn-dag"></div>
+
+<script src="../04-interactive/vendor/cytoscape.min.js"></script>
+<script src="../04-interactive/vendor/cytoscape-dagre.min.js"></script>
+<script>
+(function(){
+  const raw = {"elements": [{"data": {"id": "dsh-token-meter", "label": "dsh-token-meter", "kind": "self", "cls": "#4f8cff", "url": "dsh-token-meter.html"}}, {"data": {"id": "dsh-llm", "label": "dsh-llm", "kind": "up", "cls": "#e8933b", "url": "dsh-llm.html"}}, {"data": {"id": "dsh-session", "label": "dsh-session", "kind": "up", "cls": "#e8933b", "url": "dsh-session.html"}}, {"data": {"id": "dsh-session-projection", "label": "dsh-session-projection", "kind": "up", "cls": "#e8933b", "url": "dsh-session-projection.html"}}, {"data": {"id": "dsh-client-ui-conversation", "label": "dsh-client-ui-conversation", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-conversation.html"}}, {"data": {"id": "dsh-compaction-basic", "label": "dsh-compaction-basic", "kind": "down", "cls": "#2fb98a", "url": "dsh-compaction-basic.html"}}, {"data": {"id": "dsh-compaction-tool-result-pruner", "label": "dsh-compaction-tool-result-pruner", "kind": "down", "cls": "#2fb98a", "url": "dsh-compaction-tool-result-pruner.html"}}, {"data": {"id": "dsh-llm->dsh-token-meter", "source": "dsh-llm", "target": "dsh-token-meter"}}, {"data": {"id": "dsh-session->dsh-token-meter", "source": "dsh-session", "target": "dsh-token-meter"}}, {"data": {"id": "dsh-session-projection->dsh-token-meter", "source": "dsh-session-projection", "target": "dsh-token-meter"}}, {"data": {"id": "dsh-token-meter->dsh-client-ui-conversation", "source": "dsh-token-meter", "target": "dsh-client-ui-conversation"}}, {"data": {"id": "dsh-token-meter->dsh-compaction-basic", "source": "dsh-token-meter", "target": "dsh-compaction-basic"}}, {"data": {"id": "dsh-token-meter->dsh-compaction-tool-result-pruner", "source": "dsh-token-meter", "target": "dsh-compaction-tool-result-pruner"}}]};
+  const cy = cytoscape({
+    container: document.getElementById('dyn-dag'),
+    elements: raw.elements,
+    style: [
+      {
+        selector: 'node',
+        style: {
+          'label': 'data(label)',
+          'background-color': 'data(cls)',
+          'color': '#e6e8ee',
+          'font-size': 11,
+          'text-valign': 'bottom',
+          'text-margin-y': 4,
+          'width': 46,
+          'height': 46,
+          'shape': 'round-rectangle',
+          'border-width': 2,
+          'border-color': '#2a2f3a'
+        }
+      },
+      {
+        selector: 'node[kind="self"]',
+        style: {
+          'border-width': 3,
+          'border-color': '#4f8cff',
+          'width': 60,
+          'height': 60,
+          'font-size': 12,
+          'font-weight': 700
+        }
+      },
+      {
+        selector: 'edge',
+        style: {
+          'width': 1.5,
+          'line-color': '#4a5263',
+          'target-arrow-color': '#4a5263',
+          'target-arrow-shape': 'triangle',
+          'curve-style': 'bezier'
+        }
+      }
+    ],
+    layout: {
+      name: 'dagre',
+      rankDir: 'LR',
+      nodeSep: 30,
+      rankSep: 60,
+      padding: 20
+    },
+    wheelSensitivity: 0.2,
+    minZoom: 0.2,
+    maxZoom: 2.5
+  });
+  cy.on('tap', 'node', (evt) => {
+    const url = evt.target.data('url');
+    if (url) window.location.href = url;
+  });
+  // 等渲染完自适应容器尺寸
+  setTimeout(() => cy.resize(), 100);
+})();
+</script>
+<h2>② 注册/提供（provides）</h2><ul class="provides"><li>ctx.tokenMeter(TokenMeter)</li><li>measure(): TokenMeasurement</li><li>estimateMessage()</li><li>tokenUsage/contextPressure/contextBreakdown 投影定义</li><li>TokenMeterConfig</li></ul><h2>③ 依赖（depends_on · 上游前驱）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-llm.html">dsh-llm</a></span><span class="mech">E1</span><div class="purpose">BlockAssembler/deepFreeze；TokenUsage 类型</div><div class="evi">packages/llm/token-meter/src/index.ts:9-10</div></div><div class="dep-item"><span class="name"><a href="dsh-session.html">dsh-session</a></span><span class="mech">E2</span><div class="purpose">订阅 session/event；折叠 header/surface</div><div class="evi">packages/llm/token-meter/src/index.ts:11-12, 95-97</div></div><div class="dep-item"><span class="name"><a href="dsh-session-projection.html">dsh-session-projection</a></span><span class="mech">E2</span><div class="purpose">ctx.inject([&#x27;sessionProjections&#x27;]) 注册投影</div><div class="evi">packages/llm/token-meter/src/index.ts:14, 87-91</div></div></div><h2>④ 被依赖（dependents · 下游消费者）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-client-ui-conversation.html">dsh-client-ui-conversation</a></span><div class="purpose">tokenUsage/contextPressure/contextBreakdown 投影类型</div><div class="evi">StatsLine.tsx:11 + ContextMeter.tsx:10 dsh-token-meter/client + package.json:74</div></div><div class="dep-item"><span class="name"><a href="dsh-compaction-basic.html">dsh-compaction-basic</a></span><div class="purpose">measure 定价压力/收敛</div><div class="evi">packages/compaction/compaction-basic/src/index.ts:104,267</div></div><div class="dep-item"><span class="name"><a href="dsh-compaction-tool-result-pruner.html">dsh-compaction-tool-result-pruner</a></span><div class="purpose">estimateMessage 计算 shadowedTokenCount</div><div class="evi">packages/compaction/compaction-tool-result-pruner/src/index.ts:47,165</div></div></div>
 </main>
 <footer>DeepSeek Harness 插件级 DAG 依赖链分析 · L1 核心集 + L2 web-app + L3 其余插件 · 源码三依据(E1编译/E2运行时/E3组合)逐条溯源</footer>
 </body>

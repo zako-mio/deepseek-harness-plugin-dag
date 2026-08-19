@@ -11,7 +11,7 @@ S2 L2 DAG 建模脚本:
 import json, os, sys
 sys.stdout.reconfigure(encoding='utf-8')
 
-BASE = r"D:\Opencode_Download\Mission-file\2026-08\0816-plugin-dag"
+BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0819-plugin-dag-rc7"
 CHK = os.path.join(BASE, "07-checkpoint")
 DAG1 = os.path.join(BASE, "01-dag-data", "core-dag.json")
 OUT = os.path.join(BASE, "01-dag-data", "webapp-dag.json")

@@ -9,7 +9,7 @@
 ## 为什么需要它（设计初衷）
 设置域的基础层插件（无自绘 UI 的两角色包）：提供 ctx.settingsScope（每个偏好行绑定的 Host 传输通道/命名空间作用域）并声明 settings.trigger/header/close/action/section/plugins.tab/onboarding 等 slot 契约，让任意拥有偏好的功能包都能读写其命名空间设置。解决'浏览器偏好如何分域、并发安全地读写 Host 设置文档'的机制问题。
 
-发展史：设置域的 base 契约层，与 ui-settings-general（shell 外壳）刻意分离以避免 ui-sidebar→ui-layout→ui-theme 的引用图环。RPC 仅 loopback、单字段写入等限制明确记录为 deferred work。版本 0.1.0-rc.5。
+发展史：设置域的 base 契约层，与 ui-settings-general（shell 外壳）刻意分离以避免 ui-sidebar→ui-layout→ui-theme 的引用图环。RPC 仅 loopback、单字段写入等限制明确记录为 deferred work。版本 0.1.0-rc.7。
 
 来源：
 - https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-settings/README.md

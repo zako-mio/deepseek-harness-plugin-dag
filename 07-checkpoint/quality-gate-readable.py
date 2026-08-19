@@ -7,7 +7,7 @@ C. index 统计一致性：index.html 统计数字与 webapp-dag.json 实测一�
 """
 import json, os, sys, re, glob
 
-BASE = r"D:\Opencode_Download\Mission-file\2026-08\0816-plugin-dag"
+BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0819-plugin-dag-rc7"
 DAG = os.path.join(BASE, "01-dag-data", "webapp-dag.json")
 EXT = os.path.join(BASE, "01-dag-data", "external-seams.json")
 INDEX = os.path.join(BASE, "index.html")

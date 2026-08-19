@@ -7,17 +7,18 @@
 - 源码路径: `packages/client/ui-settings-plugins`
 
 ## 为什么需要它（设计初衷）
-插件设置分区：功能所属标签页 + 可配置的宿主平面插件卡片。
+插件设置分区：功能所属标签页 + 可配置的宿主平面插件卡片。RC7 槽 keyed 化并引入 tab-store 支撑按命名空间动态编卡。
 
 来源：
 - https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-settings-plugins/package.json
 
 ## 实现逻辑
-插件配置 section：注册 settings.section id=plugins order=15（index.ts:111-119），其 configurable tab(order=0) 声明 settings.plugin.item 槽并渲染三张 host-plane 卡片 bash/agent-loop/web-search（:123-157）。每卡经 ctx.settingsScope.bind 绑定各自命名空间；订阅 credentials/updated 使 webSearch 刷新凭据（:70）。
+插件配置 section：注册 settings.section id=plugins order=15（index.ts:111-119），其 configurable tab(order=0) 声明 settings.plugin.item 槽并渲染三张 host-plane 卡片 bash/agent-loop/web-search（:123-157）。RC7：settings.plugin.item 槽由 list 改为 keyed(按所编辑的 settings namespace 编键，插件页按 namespace 渲染其卡片)；新增 tab-store(ConfigurablePluginsTabController) 订阅 slots.entries('settings.plugin.item') 维护可配置插件 tab 状态。每卡经 ctx.settingsScope.bind 绑定各自命名空间；订阅 credentials/updated 使 webSearch 刷新凭据（:70）。
 
 ## Provides
 - settings.section 'plugins' 注册 (PluginsSettingsSection)
-- settings.plugins.tab 'configurable' + settings.plugin.item 槽
+- settings.plugins.tab 'configurable' + settings.plugin.item 槽(keyed by namespace)
+- tab-store(ConfigurablePluginsTabController/State)
 - BashCard / AgentLoopCard / WebSearchCard 三卡片
 
 ## Depends On (上游依赖)

@@ -3,7 +3,7 @@
 """验证 buildDrillElements 数据逻辑: 从 index.html 提取 DATA, 用 Node 跑组内下钻构建"""
 import json, os, re
 
-BASE = r"D:\Opencode_Download\Mission-file\2026-08\0816-plugin-dag"
+BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0819-plugin-dag-rc7"
 HTML = os.path.join(BASE, "04-interactive", "index.html")
 
 with open(HTML, "r", encoding="utf-8") as f:

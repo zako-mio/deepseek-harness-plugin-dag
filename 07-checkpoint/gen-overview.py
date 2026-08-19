@@ -7,7 +7,7 @@ cytoscape 数据驱动交互图: 112 节点(76核心+36外部seam) + 194核心�
 """
 import json, os, html
 
-BASE = r"D:\Opencode_Download\Mission-file\2026-08\0816-plugin-dag"
+BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0819-plugin-dag-rc7"
 DAG = os.path.join(BASE, "01-dag-data", "core-dag.json")
 EXT = os.path.join(BASE, "01-dag-data", "external-seams.json")
 OUT = os.path.join(BASE, "04-interactive", "index.html")
@@ -120,35 +120,37 @@ html_page = """<!DOCTYPE html>
   <h1>DeepSeek Harness 插件 DAG <span class="badge">交互总览</span></h1>
   <a href="../index.html">← 返回任务目录</a>
   <a href="../03-groups/index.html">组目录</a>
+  <span id="groupcrumb" style="display:none;color:var(--accent);font-size:13px;font-weight:600;"></span>
+  <button id="backbtn" style="display:none;background:#20324f;color:#7fb0ff;border:1px solid #2a3a55;border-radius:20px;padding:3px 14px;font-size:12px;cursor:pointer;">← 返回组级视图</button>
   <span class="badge ext">外部 seam 基座</span>
-  <span class="hint">滚轮缩放：放大→插件节点；缩小→组节点。拖拽平移。点击节点→跳转插件页。</span>
+  <span class="hint">组级视图：点击组节点进入组内插件 DAG；组内视图：点击插件跳转详情页。拖拽平移、滚轮缩放。</span>
 </header>
 <div id="side">
   <h2>图例</h2>
   <div class="legend">
-    <b>插件节点</b>（76 个核心插件）<br>
-    <b>外部 seam 节点</b>（36 个基座包）<br>
+    <b>插件节点</b>（173 个：L1 76 核心 + L2 58 web-app + L3 39）<br>
+    <b>外部 seam 节点</b>（49 个基座包）<br>
     <b>依赖边</b>：A → B 表示 A 依赖 B<br>
-    <b>缩放</b>：k≥1 显示插件；k&lt;1 聚合为组<br><br>
-    组：运行时框架/类型契约/核心服务/LLM域/文件系统/Shell/沙箱/审批/命令/凭据/附件/作业/目标/技能/子代理/工作流/上下文治理/Web 等 24 组
+    <b>视图</b>：组级（38 组）→ 点击组进入组内插件 DAG<br><br>
+    组：运行时框架/类型契约/核心服务/LLM域/文件系统/Shell/沙箱/审批/命令/凭据/附件/作业/目标/技能/子代理/工作流/上下文治理/Web 等 37 组
   </div>
   <h2 style="margin-top:14px;">组配色</h2>
   <div id="glegend"></div>
 </div>
-<div id="zoominfo">缩放 <b id="zval">1.00</b> · 模式 <b id="zmode">插件级</b> · 节点 <b id="zcount">0</b></div>
+<div id="zoominfo">模式 <b id="zmode">组级</b> · 节点 <b id="zcount">0</b></div>
 <div id="graph"></div>
 
 <script src="vendor/cytoscape.min.js"></script>
+<script src="vendor/cytoscape-dagre.min.js"></script>
 <script>
 const DATA = __DATA__;
 
-// ---- 构建元素 ----
-function buildElements(mode){
-  if (mode === 'plugin'){
-    const nodes = DATA.plugins.concat(DATA.seams);
-    return { nodes, edges: DATA.edges };
-  }
-  // group 模式: 24 组 + EXT
+// ===== 状态 =====
+let currentGroup = null;   // null = 组级视图; 'G01'..  = 该组内视图
+const zoomInfo = document.getElementById('zoominfo');
+
+// ---- 组级视图元素: 37 组 + EXT ----
+function buildGroupNodes(){
   const gids = Object.keys(DATA.groups);
   const nodes = gids.map(g => ({
     data:{ id:'grp-'+g, label: DATA.groups[g].name, kind:'group', group:g, gname:DATA.groups[g].name }
@@ -157,72 +159,131 @@ function buildElements(mode){
   return { nodes, edges: DATA.groupEdges };
 }
 
+// ---- 组内视图元素: 该组插件 + 上下游 stub ----
+function buildGroupDrill(g){
+  const members = DATA.plugins.filter(p => p.data.group === g);
+  const memberIds = new Set(members.map(p => p.data.id));
+  const seamIds = new Set(DATA.seams.map(s => s.data.id));
+  const allPlugins = DATA.plugins.concat(DATA.seams);
+  const byId = {};
+  allPlugins.forEach(p => byId[p.data.id] = p);
+
+  // 收集该组插件连出/连入的上下游节点
+  const relatedIds = new Set(memberIds);
+  const edges = [];
+  DATA.edges.forEach(e => {
+    const s = e.data.source, t = e.data.target;
+    const sIn = memberIds.has(s), tIn = memberIds.has(t);
+    if (sIn && tIn){ // 组内边
+      edges.push(e);
+    } else if (sIn || tIn){ // 跨组边: 引入对端 stub
+      const other = sIn ? t : s;
+      if (byId[other]){ relatedIds.add(other); edges.push(e); }
+    }
+  });
+
+  const nodes = [];
+  relatedIds.forEach(id => {
+    const p = byId[id];
+    if (!p) return;
+    const isMember = memberIds.has(id);
+    nodes.push({
+      data:{ id: p.data.id, label: p.data.label, kind: p.data.kind, group: p.data.group,
+             gname: p.data.gname, layer: p.data.layer, url: p.data.url, member: isMember,
+             mode: isMember ? 'member' : 'stub' }
+    });
+  });
+  return { nodes, edges };
+}
+
+// ---- 渲染 ----
+function render(){
+  let els;
+  if (currentGroup === null){
+    els = buildGroupNodes();
+  } else {
+    els = buildGroupDrill(currentGroup);
+  }
+  cy.elements().remove();
+  cy.add(els.nodes);
+  cy.add(els.edges);
+  cy.layout({ name:'dagre', rankDir:'LR', nodeSep:36, rankSep:60, padding:40 }).run();
+  // 更新状态栏
+  const cnt = cy.nodes().length;
+  document.getElementById('zcount').textContent = cnt;
+  if (currentGroup === null){
+    document.getElementById('zmode').textContent = '组级';
+    document.getElementById('groupcrumb').textContent = '';
+    document.getElementById('backbtn').style.display = 'none';
+  } else {
+    const gname = DATA.groups[currentGroup] ? DATA.groups[currentGroup].name : 'EXT';
+    document.getElementById('zmode').textContent = currentGroup + ' · ' + gname;
+    document.getElementById('groupcrumb').textContent = currentGroup + ' · ' + gname;
+    document.getElementById('backbtn').style.display = 'inline-block';
+  }
+}
+
 const cy = cytoscape({
   container: document.getElementById('graph'),
-  elements: buildElements('plugin'),
+  elements: [],
   style: [
     { selector:'node', style:{
       label:'data(label)', 'text-valign':'center','text-halign':'center', color:'#fff',
       'font-size':9, 'text-wrap':'wrap', 'text-max-width':90
     }},
-    { selector:'node.plugin', style:{
+    { selector:'node[kind="plugin"]', style:{
       'background-color': function(ele){ return DATA.groupColor[ele.data('group')] || '#2b3550'; },
       'border-width':1.5,'border-color':'rgba(255,255,255,0.35)','width':56,'height':30, shape:'round-rectangle'
     }},
-    { selector:'node.seam', style:{
+    { selector:'node[kind="seam"]', style:{
       'background-color':'#3a2f1a','border-width':1.5,'border-color':'#8a6a30',
       'width':52,'height':28, shape:'round-rectangle'
     }},
-    { selector:'node.group', style:{
+    { selector:'node[kind="group"]', style:{
       'background-color': function(ele){ return ele.data('group')==='EXT' ? '#3a2f1a' : (DATA.groupColor[ele.data('group')] || '#243040'); },
       'border-width':3,'border-color':'rgba(255,255,255,0.5)','width':130,'height':46,'font-size':13
+    }},
+    // 组内视图: 非本组成员 (stub) 灰显
+    { selector:'node[mode="stub"]', style:{
+      'background-color':'#2a2e38','border-width':1,'border-color':'#555a66',
+      'width':50,'height':26, opacity:0.6, 'font-size':8
     }},
     { selector:'edge', style:{
       'curve-style':'bezier','target-arrow-shape':'triangle','arrow-scale':0.7,
       'line-color':'#4a5265','target-arrow-color':'#4a5265','width':1.1
     }},
-    { selector:'edge.seam', style:{ 'line-color':'#8a6a30','target-arrow-color':'#8a6a30','width':1.2, 'line-style':'dashed' } }
+    { selector:'edge[kind="seam"]', style:{ 'line-color':'#8a6a30','target-arrow-color':'#8a6a30','width':1.2, 'line-style':'dashed' } }
   ],
   layout: { name:'dagre', rankDir:'LR', nodeSep:36, rankSep:60, padding:40 },
-  wheelSensitivity: 0.2,
-  minZoom: 0.15,
-  maxZoom: 3.5,
+  wheelSensitivity: 0.3,
+  minZoom: 0.1,
+  maxZoom: 4,
 });
+window.__cy = cy; // 暴露给调试/测试
 
-function modeFromZoom(k){ return k >= 0.9 ? 'plugin' : 'group'; }
-
-function refresh(){
-  const k = cy.zoom();
-  const mode = modeFromZoom(k);
-  document.getElementById('zval').textContent = k.toFixed(2);
-  document.getElementById('zmode').textContent = mode === 'plugin' ? '插件级' : '组级';
-  document.getElementById('zcount').textContent = cy.nodes().length;
-  // 模式切换时重建
-  const first = cy.nodes().first();
-  const curKind = first ? first.data('kind') : null;
-  if ((mode === 'plugin' && curKind !== 'plugin' && curKind !== 'seam') ||
-      (mode === 'group' && curKind === 'plugin')){
-    const pos = cy.pan();
-    const zoom = cy.zoom();
-    cy.elements().remove();
-    const els = buildElements(mode);
-    cy.add(els.nodes);
-    cy.add(els.edges);
-    cy.layout({ name:'dagre', rankDir:'LR', nodeSep:36, rankSep:60, padding:40 }).run();
-    cy.zoom({ level: zoom, position: pos });
+// 返回组级视图
+function goBack(){
+  if (currentGroup !== null){
+    currentGroup = null;
+    render();
   }
 }
+document.getElementById('backbtn').addEventListener('click', goBack);
 
-cy.on('zoom', refresh);
+// 点击节点: 组级视图点击组 → 进入组内; 组内视图点击插件 → 跳转插件页
 cy.on('tap', 'node', (evt) => {
   const n = evt.target;
-  const url = n.data('url');
-  if (url) window.location.href = url;
-  else {
-    // 组节点: 放大到插件级并聚焦该组
+  if (currentGroup === null){
+    // 组级: 点击组节点进入组内视图
     const g = n.data('group');
-    const members = cy.$('node[group="' + g + '"]');
-    if (members.length) { cy.animate({ fit:{ eles: members, padding: 60 }, duration: 400 }); }
+    if (g && n.data('kind') === 'group'){
+      currentGroup = g === 'EXT' ? 'EXT' : g;
+      render();
+    }
+  } else {
+    // 组内: 点击插件跳转, 点击 stub 跳转对应页
+    const url = n.data('url');
+    if (url) window.location.href = url;
   }
 });
 
@@ -238,7 +299,8 @@ Object.keys(DATA.groups).forEach(g => {
   gl.appendChild(d);
 });
 
-refresh();
+// 初始渲染: 组级视图
+render();
 </script>
 </body>
 </html>

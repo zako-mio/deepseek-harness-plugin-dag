@@ -7,13 +7,13 @@
 - 源码路径: `packages/host/apiproxy`
 
 ## 为什么需要它（设计初衷）
-所有客户端共用的 API 网关：TS 契约 + fetch 载体 + 网关插件，承载 session/host/events RPC。
+所有客户端共用的 API 网关：TS 契约 + fetch 载体 + 网关插件，承载 session/host/events RPC。RC7：设置域去白名单化、分页切页逻辑修复、图片批量写入改 saveImages()。
 
 来源：
 - https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/host/apiproxy/README.md
 
 ## 实现逻辑
-ApiProxyService 提供 ctx.apiProxy 传输无关网关：createApiProxy 实现 api/ 契约各域（sessions/subagents/workspace/host/goals/skills/agentPresets/settings/credentials/llm/events/downloads/respond），模型选择读写 ctx.agentDefaultModel，session-export 支持 ZIP 下载；静态 inject 声明 11 个宿主服务，另经 ctx.get 可选解析投影/设置/凭据等。
+ApiProxyService 提供 ctx.apiProxy 传输无关网关：createApiProxy 实现 api/ 契约各域（sessions/subagents/workspace/host/goals/skills/agentPresets/settings/credentials/llm/events/downloads/respond），模型选择读写 ctx.agentDefaultModel，session-export 支持 ZIP 下载；静态 inject 声明 11 个宿主服务，另经 ctx.get 可选解析投影/设置/凭据等。RC7：移除设置命名空间白名单（仓库外插件注册自己的分节即可被浏览器配置，未注册的名字折叠为 seam 自己的 settings-rejected）；会话历史分页改为按消息边界回扫切页(修复 Math.min 边界计算隐患)；图片批量写入改 ctx.attachments.saveImages()。
 
 ## Provides
 - ctx.apiProxy（ApiProxy 网关：sessions/subagents/workspace/host/goals/skills/agentPresets/settings/credentials/llm/events/downloads/respond）

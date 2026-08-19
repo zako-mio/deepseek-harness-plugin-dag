@@ -9,7 +9,7 @@
 ## 为什么需要它（设计初衷）
 Web 客户端（浏览器侧）的引导与运行核心。它把 Host 端广播的会话事件流扇出到 Session/Workspace 对象，维护 SlotRegistry（渲染数据源）与 SessionRuntime（会话列表/作用域状态/事件窗口/历史分页），使浏览器无需持有任何实体即可以投影方式渲染 Agent 会话。它是 dsh 前端所有 UI 包依赖的对象层地基，解决'浏览器如何复现并驱动远端 Agent 会话'的问题。
 
-发展史：dsh 插件化架构的客户端三大件之一（runtime/ui-settings/ui-conversation），api-contracts v3→v4 演进，SlotCore→SlotRegistry 封装，SessionRuntime 与 WorkspaceRuntime 逐步拆分为独立服务层。版本 0.1.0-rc.5，随仓库 2026-08 公开。
+发展史：dsh 插件化架构的客户端三大件之一（runtime/ui-settings/ui-conversation），api-contracts v3→v4 演进，SlotCore→SlotRegistry 封装，SessionRuntime 与 WorkspaceRuntime 逐步拆分为独立服务层。版本 0.1.0-rc.7，随仓库 2026-08 公开。
 
 来源：
 - https://github.com/deepseek-ai/deepseek-harness

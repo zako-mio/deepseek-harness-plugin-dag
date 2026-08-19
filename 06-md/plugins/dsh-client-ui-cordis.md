@@ -7,14 +7,14 @@
 - 源码路径: `packages/extensions/ui-cordis`
 
 ## 为什么需要它（设计初衷）
-Cordis 动态插件浏览器端：全局面板操作 host 持有的每个定义 + 只读 cordis_define 卡片记录会话定义。
+Cordis 动态插件浏览器端：全局面板操作 host 持有的每个定义 + 只读 cordis_define 卡片记录会话定义。RC7 改 fixed 定位并复用 useDismissOnOutsidePointer 关闭交互。
 
 来源：
 - https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/extensions/ui-cordis/README.md
 - https://www.npmjs.com/package/@deepseek-ai/dsh-client-ui-cordis
 
 ## 实现逻辑
-cordis 动态插件管理 UI。建立 CordisDynamicPort 经 ctx.remote.dynamicCordisRunner Remote 调 stopFromPanel/undefineFromPanel/inventory；createCordisInventory 订阅 remote.$on('cordis/dynamic-package'|'dynamic-retract'|'request-run'|'request-run-resolved') 与 connection/reset 刷新；注册 sidebar.footer.action id=cordis-panel（CordisPanel：inventory/activeRuns/approve/decline/startUserRun）；注册 tool.call.toolview keyed cordis_define/cordis_run（含 tool.view.cordis keyed child）/cordis_stop/cordis_undefine；以 InputTriggerSource 注册 '@' cordis 源（@pluginId 引用）。
+cordis 动态插件管理 UI。建立 CordisDynamicPort 经 ctx.remote.dynamicCordisRunner Remote 调 stopFromPanel/undefineFromPanel/inventory；createCordisInventory 订阅 remote.$on('cordis/dynamic-package'|'dynamic-retract'|'request-run'|'request-run-resolved') 与 connection/reset 刷新；注册 sidebar.footer.action id=cordis-panel（CordisPanel：inventory/activeRuns/approve/decline/startUserRun）；注册 tool.call.toolview keyed cordis_define/cordis_run（含 tool.view.cordis keyed child）/cordis_stop/cordis_undefine；以 InputTriggerSource 注册 '@' cordis 源（@pluginId 引用）。RC7：CordisPanel 改 position: fixed 定位（侧栏裁剪 overflow），外部点击关闭改 useDismissOnOutsidePointer(自 ui-primitives)。
 
 ## Provides
 - sidebar.footer.action id=cordis-panel(CordisPanel)

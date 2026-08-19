@@ -4,7 +4,7 @@
 import json, os, re, sys
 sys.stdout.reconfigure(encoding='utf-8')
 
-BASE = r"D:\Opencode_Download\Mission-file\2026-08\0816-plugin-dag"
+BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0819-plugin-dag-rc7"
 HTML = os.path.join(BASE, "04-interactive", "index.html")
 
 with open(HTML, "r", encoding="utf-8") as f:

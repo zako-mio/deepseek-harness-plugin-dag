@@ -70,7 +70,95 @@ th{background:var(--panel);color:#b8c2d4;}
   <span class="badge">Layer 0</span><span class="badge">G25</span><span class="badge l2">L2 web-app</span>
 </header>
 <main>
-<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">运行时框架</a><a href="../03-groups/G02.html">类型契约</a><a href="../03-groups/G03.html">核心服务</a><a href="../03-groups/G04.html">LLM核心</a><a href="../03-groups/G05.html">LLM适配</a><a href="../03-groups/G06.html">LLM治理</a><a href="../03-groups/G07.html">会话持久化</a><a href="../03-groups/G08.html">会话展示</a><a href="../03-groups/G09.html">审批权限</a><a href="../03-groups/G10.html">命令交互</a><a href="../03-groups/G11.html">凭据设置</a><a href="../03-groups/G12.html">附件</a><a href="../03-groups/G13.html">文件系统</a><a href="../03-groups/G14.html">Shell工具</a><a href="../03-groups/G15.html">沙箱执行</a><a href="../03-groups/G16.html">作业</a><a href="../03-groups/G17.html">目标计划</a><a href="../03-groups/G18.html">技能</a><a href="../03-groups/G19.html">子代理</a><a href="../03-groups/G20.html">工作流</a><a href="../03-groups/G21.html">上下文治理</a><a href="../03-groups/G22.html">上下文注入</a><a href="../03-groups/G23.html">工具守卫</a><a href="../03-groups/G24.html">Web搜索</a><a href="../03-groups/G25.html">宿主服务</a><a href="../03-groups/G26.html">客户端runtime</a><a href="../03-groups/G27.html">会话交互UI</a><a href="../03-groups/G28.html">设置输入UI</a><a href="../03-groups/G29.html">UI底座</a><a href="../03-groups/G30.html">外部执行后端</a><a href="../03-groups/G31.html">协议与SDK</a><a href="../03-groups/G32.html">LSP集成</a><a href="../03-groups/G33.html">子代理外部后端</a><a href="../03-groups/G34.html">Web上下文扩展</a><a href="../03-groups/G35.html">会话存储变体</a><a href="../03-groups/G36.html">Hooks工具扩展</a><a href="../03-groups/G37.html">示例与框架</a></div><div class="dagnav"><div class="label">依赖链 · 上游（该插件依赖的前驱）：</div><div class="chips"><span style="color:var(--dim);font-size:12px;">无依赖（基础插件）</span></div><div class="label" style="margin-top:8px;">依赖链 · 下游（依赖该插件的节点）：</div><div class="chips"><a class="chip ext" href="dsh-client-connection.html">dsh-client-connection</a><a class="chip l2" href="dsh-client-hmr.html">dsh-client-hmr</a><a class="chip l2" href="dsh-client-modules.html">dsh-client-modules</a><a class="chip l2" href="dsh-host-directory-picker-auto.html">dsh-host-directory-picker-auto</a><a class="chip l3" href="dsh-host-frontend-static.html">dsh-host-frontend-static</a><a class="chip l2" href="dsh-web-app.html">dsh-web-app</a></div><div class="label" style="margin-top:8px;">同一拓扑层（Layer 0，层次遍历层序）：</div><div class="chips"><a class="chip" href="cordis-plugin-timer.html">cordis-plugin-timer</a><a class="chip" href="dsh-attachment-local.html">dsh-attachment-local</a><a class="chip" href="dsh-client-schema-form.html">dsh-client-schema-form</a><a class="chip" href="dsh-client-ui-primitives.html">dsh-client-ui-primitives</a><a class="chip" href="dsh-client-ui-slots.html">dsh-client-ui-slots</a><a class="chip" href="dsh-credentials-local.html">dsh-credentials-local</a><a class="chip" href="dsh-fs-e2b.html">dsh-fs-e2b</a><a class="chip" href="dsh-host-directory-picker.html">dsh-host-directory-picker</a><a class="chip" href="dsh-host-plugin-inventory.html">dsh-host-plugin-inventory</a><a class="chip self" href="dsh-host-webserver.html">dsh-host-webserver</a><a class="chip" href="dsh-llm.html">dsh-llm</a><a class="chip" href="dsh-native-command.html">dsh-native-command</a><a class="chip" href="dsh-settings-file.html">dsh-settings-file</a><a class="chip" href="dsh-spill-local.html">dsh-spill-local</a><a class="chip" href="dsh-storage.html">dsh-storage</a><a class="chip" href="dsh-subprocess-e2b.html">dsh-subprocess-e2b</a><a class="chip" href="dsh-subprocess-local.html">dsh-subprocess-local</a><a class="chip" href="dsh-typert-generator.html">dsh-typert-generator</a><a class="chip" href="dsh-typert-registry.html">dsh-typert-registry</a></div></div><div class="layernav"><span class="chip self">Layer 0</span><a href="cordis-plugin-hmr.html">↓ Layer 1（16 插件）</a></div><h2>插件信息</h2><table><tr><th>包名</th><td>@deepseek-ai/dsh-host-webserver</td></tr><tr><th>分组</th><td>G25 · 宿主服务</td></tr><tr><th>拓扑层</th><td>Layer 0（层次遍历：被依赖方先于依赖方）</td></tr><tr><th>源码路径</th><td><code>packages/host/webserver</code></td></tr><tr><th>来源层</th><td>L2 web-app bundle（base 之上装配）</td></tr></table><div class="whybox"><span class="tag">为什么需要它 · 设计初衷</span><p>解决 Web 客户端与 harness 主进程的 HTTP 通信载体问题：提供 node:http 服务器，注册 HTTP 精确/前缀路由与 upgrade(WebSocket) 路由、fallback 处理器、index.html 转换钩子。不承载任何 harness 业务概念、不提供文件服务，仅作为路由注册基座，供连接插件、静态资源插件等挂载。</p><div class="hist">📜 定位为 dev-facing v1 的 Web 载体，仅绑定 127.0.0.1/0.0.0.0，明确不做 TLS/认证/源策略（部署加固交给反代）。Electron 走 file:// + IPC，不走此服务器。</div><div class="src">📚 来源：<br><a href="https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/host/webserver/README.md" target="_blank">https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/host/webserver/README.md</a><br><a href="https://www.npmjs.com/package/@deepseek-ai/dsh-host-webserver" target="_blank">https://www.npmjs.com/package/@deepseek-ai/dsh-host-webserver</a><br></div></div><h2>① 实现逻辑</h2><p>node:http 服务器 + ctx.webServer 服务：exact/prefix 路由表 register、upgrade 路由 registerUpgrade、单占用 fallback 兜底座 registerFallback、index 变换 tapIndex；监听即激活，bind host/port 来自行配置表达式（webStartup 提供）；不感知 harness 概念、不打印 URL。</p><h2>② 注册/提供（provides）</h2><ul class="provides"><li>ctx.webServer（WebServer：register/registerUpgrade/registerFallback/tapIndex，port/host getter）</li></ul><h2>③ 依赖（depends_on · 上游前驱）</h2><p style="color:var(--dim);">无依赖（基础插件）</p><h2>④ 被依赖（dependents · 下游消费者）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-client-connection.html">dsh-client-connection</a></span><div class="purpose">/api 前缀路由与 registerUpgrade 的宿主</div><div class="evi">packages/client/connection/src/index.ts:6（import type WebRoute/WebUpgradeRoute from dsh-host-webserver）；package.json peerDependencies</div></div><div class="dep-item"><span class="name"><a href="dsh-client-hmr.html">dsh-client-hmr</a></span><div class="purpose">node 半通过 ctx.webServer.register 挂 SSE 路由（:166-179）</div><div class="evi">packages/client/hmr/src/index.ts:17（import type dsh-host-webserver）；peerDependencies @deepseek-ai/dsh-host-webserver</div></div><div class="dep-item"><span class="name"><a href="dsh-client-modules.html">dsh-client-modules</a></span><div class="purpose">注册 /plugins 前缀路由与 tapIndex 注入</div><div class="evi">packages/client/modules/src/index.ts:32（import type dsh-host-webserver）；Service.inject = [&#x27;webServer&#x27;,&#x27;loader&#x27;]（:185）</div></div><div class="dep-item"><span class="name"><a href="dsh-host-directory-picker-auto.html">dsh-host-directory-picker-auto</a></span><div class="purpose">Context merge（ctx.webServer）</div><div class="evi">packages/host/directory-picker-auto/package.json:41; src/index.ts:17</div></div><div class="dep-item"><span class="name"><a href="dsh-host-frontend-static.html">dsh-host-frontend-static</a></span><div class="purpose">HTTP 服务器与 index taps 注册</div><div class="evi">package.json:35 peerDep + src/index.ts:19 import type {}（side-effect merge）；E2: :25 inject=[&#x27;webServer&#x27;]、:97 ctx.webServer.applyIndexTaps、:98 ctx.webServer.registerFallback</div></div><div class="dep-item"><span class="name"><a href="dsh-web-app.html">dsh-web-app</a></span><div class="purpose">Context merge（ctx.webServer）</div><div class="evi">packages/bundle/web-app/src/index.ts:21</div></div></div>
+<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">运行时框架</a><a href="../03-groups/G02.html">类型契约</a><a href="../03-groups/G03.html">核心服务</a><a href="../03-groups/G04.html">LLM核心</a><a href="../03-groups/G05.html">LLM适配</a><a href="../03-groups/G06.html">LLM治理</a><a href="../03-groups/G07.html">会话持久化</a><a href="../03-groups/G08.html">会话展示</a><a href="../03-groups/G09.html">审批权限</a><a href="../03-groups/G10.html">命令交互</a><a href="../03-groups/G11.html">凭据设置</a><a href="../03-groups/G12.html">附件</a><a href="../03-groups/G13.html">文件系统</a><a href="../03-groups/G14.html">Shell工具</a><a href="../03-groups/G15.html">沙箱执行</a><a href="../03-groups/G16.html">作业</a><a href="../03-groups/G17.html">目标计划</a><a href="../03-groups/G18.html">技能</a><a href="../03-groups/G19.html">子代理</a><a href="../03-groups/G20.html">工作流</a><a href="../03-groups/G21.html">上下文治理</a><a href="../03-groups/G22.html">上下文注入</a><a href="../03-groups/G23.html">工具守卫</a><a href="../03-groups/G24.html">Web搜索</a><a href="../03-groups/G25.html">宿主服务</a><a href="../03-groups/G26.html">客户端runtime</a><a href="../03-groups/G27.html">会话交互UI</a><a href="../03-groups/G28.html">设置输入UI</a><a href="../03-groups/G29.html">UI底座</a><a href="../03-groups/G30.html">外部执行后端</a><a href="../03-groups/G31.html">协议与SDK</a><a href="../03-groups/G32.html">LSP集成</a><a href="../03-groups/G33.html">子代理外部后端</a><a href="../03-groups/G34.html">Web上下文扩展</a><a href="../03-groups/G35.html">会话存储变体</a><a href="../03-groups/G36.html">Hooks工具扩展</a><a href="../03-groups/G37.html">示例与框架</a></div><div class="dagnav"><div class="label">依赖链 · 上游（该插件依赖的前驱）：</div><div class="chips"><span style="color:var(--dim);font-size:12px;">无依赖（基础插件）</span></div><div class="label" style="margin-top:8px;">依赖链 · 下游（依赖该插件的节点）：</div><div class="chips"><a class="chip ext" href="dsh-client-connection.html">dsh-client-connection</a><a class="chip l2" href="dsh-client-hmr.html">dsh-client-hmr</a><a class="chip l2" href="dsh-client-modules.html">dsh-client-modules</a><a class="chip l2" href="dsh-host-directory-picker-auto.html">dsh-host-directory-picker-auto</a><a class="chip l3" href="dsh-host-frontend-static.html">dsh-host-frontend-static</a><a class="chip l2" href="dsh-web-app.html">dsh-web-app</a></div><div class="label" style="margin-top:8px;">同一拓扑层（Layer 0，层次遍历层序）：</div><div class="chips"><a class="chip" href="cordis-plugin-timer.html">cordis-plugin-timer</a><a class="chip" href="dsh-attachment-local.html">dsh-attachment-local</a><a class="chip" href="dsh-client-schema-form.html">dsh-client-schema-form</a><a class="chip" href="dsh-client-ui-primitives.html">dsh-client-ui-primitives</a><a class="chip" href="dsh-client-ui-slots.html">dsh-client-ui-slots</a><a class="chip" href="dsh-credentials-local.html">dsh-credentials-local</a><a class="chip" href="dsh-fs-e2b.html">dsh-fs-e2b</a><a class="chip" href="dsh-host-directory-picker.html">dsh-host-directory-picker</a><a class="chip" href="dsh-host-plugin-inventory.html">dsh-host-plugin-inventory</a><a class="chip self" href="dsh-host-webserver.html">dsh-host-webserver</a><a class="chip" href="dsh-llm.html">dsh-llm</a><a class="chip" href="dsh-native-command.html">dsh-native-command</a><a class="chip" href="dsh-settings-file.html">dsh-settings-file</a><a class="chip" href="dsh-spill-local.html">dsh-spill-local</a><a class="chip" href="dsh-storage.html">dsh-storage</a><a class="chip" href="dsh-subprocess-e2b.html">dsh-subprocess-e2b</a><a class="chip" href="dsh-subprocess-local.html">dsh-subprocess-local</a><a class="chip" href="dsh-typert-generator.html">dsh-typert-generator</a><a class="chip" href="dsh-typert-registry.html">dsh-typert-registry</a></div></div><div class="layernav"><span class="chip self">Layer 0</span><a href="cordis-plugin-hmr.html">↓ Layer 1（16 插件）</a></div><h2>插件信息</h2><table><tr><th>包名</th><td>@deepseek-ai/dsh-host-webserver</td></tr><tr><th>分组</th><td>G25 · 宿主服务</td></tr><tr><th>拓扑层</th><td>Layer 0（层次遍历：被依赖方先于依赖方）</td></tr><tr><th>源码路径</th><td><code>packages/host/webserver</code></td></tr><tr><th>来源层</th><td>L2 web-app bundle（base 之上装配）</td></tr></table><div class="whybox"><span class="tag">为什么需要它 · 设计初衷</span><p>解决 Web 客户端与 harness 主进程的 HTTP 通信载体问题：提供 node:http 服务器，注册 HTTP 精确/前缀路由与 upgrade(WebSocket) 路由、fallback 处理器、index.html 转换钩子。不承载任何 harness 业务概念、不提供文件服务，仅作为路由注册基座，供连接插件、静态资源插件等挂载。</p><div class="hist">📜 定位为 dev-facing v1 的 Web 载体，仅绑定 127.0.0.1/0.0.0.0，明确不做 TLS/认证/源策略（部署加固交给反代）。Electron 走 file:// + IPC，不走此服务器。</div><div class="src">📚 来源：<br><a href="https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/host/webserver/README.md" target="_blank">https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/host/webserver/README.md</a><br><a href="https://www.npmjs.com/package/@deepseek-ai/dsh-host-webserver" target="_blank">https://www.npmjs.com/package/@deepseek-ai/dsh-host-webserver</a><br></div></div><h2>① 实现逻辑</h2><p>node:http 服务器 + ctx.webServer 服务：exact/prefix 路由表 register、upgrade 路由 registerUpgrade、单占用 fallback 兜底座 registerFallback、index 变换 tapIndex；监听即激活，bind host/port 来自行配置表达式（webStartup 提供）；不感知 harness 概念、不打印 URL。</p>
+<style>
+#dyn-dag{width:100%;height:480px;background:var(--panel);border:1px solid var(--border);border-radius:8px;margin:12px 0;}
+#dyn-dag-label{font-size:12px;color:var(--dim);margin:10px 0 4px;}
+#dyn-dag-legend{display:flex;gap:16px;font-size:12px;color:var(--dim);margin:6px 0 2px;flex-wrap:wrap;}
+#dyn-dag-legend .item{display:flex;align-items:center;gap:5px;}
+#dyn-dag-legend .dot{width:10px;height:10px;border-radius:3px;display:inline-block;}
+.dyn-self{background:var(--accent);}
+.dyn-up{background:#e8933b;}
+.dyn-down{background:#2fb98a;}
+.dyn-seam{background:var(--ext);}
+</style>
+
+<div id="dyn-dag-label">内部结构动态 DAG（深色主题：橙色=上游依赖 · 绿色=下游依赖 · 棕色=外部seam · 蓝=本插件）</div>
+<div id="dyn-dag-legend">
+  <span class="item"><span class="dot dyn-self"></span>本插件</span>
+  <span class="item"><span class="dot dyn-up"></span>上游依赖</span>
+  <span class="item"><span class="dot dyn-down"></span>下游依赖</span>
+  <span class="item"><span class="dot dyn-seam"></span>外部 seam</span>
+</div>
+<div id="dyn-dag"></div>
+
+<script src="../04-interactive/vendor/cytoscape.min.js"></script>
+<script src="../04-interactive/vendor/cytoscape-dagre.min.js"></script>
+<script>
+(function(){
+  const raw = {"elements": [{"data": {"id": "dsh-host-webserver", "label": "dsh-host-webserver", "kind": "self", "cls": "#4f8cff", "url": "dsh-host-webserver.html"}}, {"data": {"id": "dsh-client-connection", "label": "dsh-client-connection", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-connection.html"}}, {"data": {"id": "dsh-client-hmr", "label": "dsh-client-hmr", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-hmr.html"}}, {"data": {"id": "dsh-client-modules", "label": "dsh-client-modules", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-modules.html"}}, {"data": {"id": "dsh-host-directory-picker-auto", "label": "dsh-host-directory-picker-auto", "kind": "down", "cls": "#2fb98a", "url": "dsh-host-directory-picker-auto.html"}}, {"data": {"id": "dsh-host-frontend-static", "label": "dsh-host-frontend-static", "kind": "down", "cls": "#2fb98a", "url": "dsh-host-frontend-static.html"}}, {"data": {"id": "dsh-web-app", "label": "dsh-web-app", "kind": "down", "cls": "#2fb98a", "url": "dsh-web-app.html"}}, {"data": {"id": "dsh-host-webserver->dsh-client-connection", "source": "dsh-host-webserver", "target": "dsh-client-connection"}}, {"data": {"id": "dsh-host-webserver->dsh-client-hmr", "source": "dsh-host-webserver", "target": "dsh-client-hmr"}}, {"data": {"id": "dsh-host-webserver->dsh-client-modules", "source": "dsh-host-webserver", "target": "dsh-client-modules"}}, {"data": {"id": "dsh-host-webserver->dsh-host-directory-picker-auto", "source": "dsh-host-webserver", "target": "dsh-host-directory-picker-auto"}}, {"data": {"id": "dsh-host-webserver->dsh-host-frontend-static", "source": "dsh-host-webserver", "target": "dsh-host-frontend-static"}}, {"data": {"id": "dsh-host-webserver->dsh-web-app", "source": "dsh-host-webserver", "target": "dsh-web-app"}}]};
+  const cy = cytoscape({
+    container: document.getElementById('dyn-dag'),
+    elements: raw.elements,
+    style: [
+      {
+        selector: 'node',
+        style: {
+          'label': 'data(label)',
+          'background-color': 'data(cls)',
+          'color': '#e6e8ee',
+          'font-size': 11,
+          'text-valign': 'bottom',
+          'text-margin-y': 4,
+          'width': 46,
+          'height': 46,
+          'shape': 'round-rectangle',
+          'border-width': 2,
+          'border-color': '#2a2f3a'
+        }
+      },
+      {
+        selector: 'node[kind="self"]',
+        style: {
+          'border-width': 3,
+          'border-color': '#4f8cff',
+          'width': 60,
+          'height': 60,
+          'font-size': 12,
+          'font-weight': 700
+        }
+      },
+      {
+        selector: 'edge',
+        style: {
+          'width': 1.5,
+          'line-color': '#4a5263',
+          'target-arrow-color': '#4a5263',
+          'target-arrow-shape': 'triangle',
+          'curve-style': 'bezier'
+        }
+      }
+    ],
+    layout: {
+      name: 'dagre',
+      rankDir: 'LR',
+      nodeSep: 30,
+      rankSep: 60,
+      padding: 20
+    },
+    wheelSensitivity: 0.2,
+    minZoom: 0.2,
+    maxZoom: 2.5
+  });
+  cy.on('tap', 'node', (evt) => {
+    const url = evt.target.data('url');
+    if (url) window.location.href = url;
+  });
+  // 等渲染完自适应容器尺寸
+  setTimeout(() => cy.resize(), 100);
+})();
+</script>
+<h2>② 注册/提供（provides）</h2><ul class="provides"><li>ctx.webServer（WebServer：register/registerUpgrade/registerFallback/tapIndex，port/host getter）</li></ul><h2>③ 依赖（depends_on · 上游前驱）</h2><p style="color:var(--dim);">无依赖（基础插件）</p><h2>④ 被依赖（dependents · 下游消费者）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-client-connection.html">dsh-client-connection</a></span><div class="purpose">/api 前缀路由与 registerUpgrade 的宿主</div><div class="evi">packages/client/connection/src/index.ts:6（import type WebRoute/WebUpgradeRoute from dsh-host-webserver）；package.json peerDependencies</div></div><div class="dep-item"><span class="name"><a href="dsh-client-hmr.html">dsh-client-hmr</a></span><div class="purpose">node 半通过 ctx.webServer.register 挂 SSE 路由（:166-179）</div><div class="evi">packages/client/hmr/src/index.ts:17（import type dsh-host-webserver）；peerDependencies @deepseek-ai/dsh-host-webserver</div></div><div class="dep-item"><span class="name"><a href="dsh-client-modules.html">dsh-client-modules</a></span><div class="purpose">注册 /plugins 前缀路由与 tapIndex 注入</div><div class="evi">packages/client/modules/src/index.ts:32（import type dsh-host-webserver）；Service.inject = [&#x27;webServer&#x27;,&#x27;loader&#x27;]（:185）</div></div><div class="dep-item"><span class="name"><a href="dsh-host-directory-picker-auto.html">dsh-host-directory-picker-auto</a></span><div class="purpose">Context merge（ctx.webServer）</div><div class="evi">packages/host/directory-picker-auto/package.json:41; src/index.ts:17</div></div><div class="dep-item"><span class="name"><a href="dsh-host-frontend-static.html">dsh-host-frontend-static</a></span><div class="purpose">HTTP 服务器与 index taps 注册</div><div class="evi">package.json:35 peerDep + src/index.ts:19 import type {}（side-effect merge）；E2: :25 inject=[&#x27;webServer&#x27;]、:97 ctx.webServer.applyIndexTaps、:98 ctx.webServer.registerFallback</div></div><div class="dep-item"><span class="name"><a href="dsh-web-app.html">dsh-web-app</a></span><div class="purpose">Context merge（ctx.webServer）</div><div class="evi">packages/bundle/web-app/src/index.ts:21</div></div></div>
 </main>
 <footer>DeepSeek Harness 插件级 DAG 依赖链分析 · L1 核心集 + L2 web-app + L3 其余插件 · 源码三依据(E1编译/E2运行时/E3组合)逐条溯源</footer>
 </body>

@@ -4,7 +4,7 @@
 import json, os, sys
 sys.stdout.reconfigure(encoding='utf-8')
 
-CHK = r"D:\Opencode_Download\Mission-file\2026-08\0816-plugin-dag\07-checkpoint"
+CHK = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0819-plugin-dag-rc7\07-checkpoint"
 INV = os.path.join(CHK, "stage-00-l2-inventory.json")
 
 with open(INV, "r", encoding="utf-8") as f:

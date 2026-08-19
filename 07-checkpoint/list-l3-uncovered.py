@@ -5,8 +5,8 @@ import json, os, sys
 sys.stdout.reconfigure(encoding='utf-8')
 
 MAP = r"D:\Opencode_Download\Mission-file\2026-08\0814-deepseek-harness源码解析\07-checkpoint\PACKAGE-MAP.json"
-DAG = r"D:\Opencode_Download\Mission-file\2026-08\0816-plugin-dag\01-dag-data\webapp-dag.json"
-EXT = r"D:\Opencode_Download\Mission-file\2026-08\0816-plugin-dag\01-dag-data\external-seams.json"
+DAG = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0819-plugin-dag-rc7\01-dag-data\webapp-dag.json"
+EXT = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0819-plugin-dag-rc7\01-dag-data\external-seams.json"
 
 with open(MAP, "r", encoding="utf-8") as f:
     pkgmap = json.load(f)

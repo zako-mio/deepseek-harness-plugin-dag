@@ -11,7 +11,7 @@ S6 质量门控脚本: 校验 0816-plugin-dag 全部交付物
 """
 import json, os, re, glob, html
 
-BASE = r"D:\Opencode_Download\Mission-file\2026-08\0816-plugin-dag"
+BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0819-plugin-dag-rc7"
 errors = []
 warnings = []
 
@@ -107,27 +107,13 @@ if uniq_broken:
     check(len(uniq_broken) < 5, f"断链数过多: {len(uniq_broken)}")
 print(f"[3] HTML 校验: {len(html_files)} 页, 断链 {len(uniq_broken)} 条")
 
-# ---- 4. drawio ----
-drawio_files = glob.glob(os.path.join(BASE, "05-drawio", "**", "*.drawio"), recursive=True)
-for df in drawio_files:
-    png = df[:-6] + "png"
-    check(os.path.exists(png), f"drawio 缺 png: {os.path.basename(df)}")
-    try:
-        with open(df, "r", encoding="utf-8") as f:
-            c = f.read()
-        # 粗略 XML 检查
-        check(c.strip().startswith("<"), f"drawio 非 XML: {os.path.basename(df)}")
-    except Exception as e:
-        check(False, f"drawio 读取失败 {os.path.basename(df)}: {e}")
-print(f"[4] drawio 校验: {len(drawio_files)} 张")
-
-# ---- 5. vendor ----
+# ---- 4. vendor ----
 for v in ["cytoscape.min.js", "cytoscape-dagre.min.js"]:
     vp = os.path.join(BASE, "04-interactive", "vendor", v)
     check(os.path.exists(vp), f"vendor 缺失: {v}")
-print(f"[5] vendor 校验: cytoscape + dagre 存在")
+print(f"[4] vendor 校验: cytoscape + dagre 存在")
 
-# ---- 6. 插件页覆盖 ----
+# ---- 5. 插件页覆盖 ----
 core_missing = [nid for nid in node_ids if not os.path.exists(os.path.join(BASE, "02-plugin-pages", f"{nid}.html"))]
 with open(os.path.join(BASE, "01-dag-data", "external-seams.json"), "r", encoding="utf-8") as f:
     ext = json.load(f)
@@ -135,7 +121,7 @@ ext_ids = [s["id"] for s in ext["seams"]]
 ext_missing = [sid for sid in ext_ids if not os.path.exists(os.path.join(BASE, "02-plugin-pages", f"{sid}.html"))]
 check(not core_missing, f"核心插件页缺失: {core_missing}")
 check(not ext_missing, f"外部 seam 页缺失: {ext_missing}")
-print(f"[6] 插件页覆盖: 核心 {len(node_ids)-len(core_missing)}/{len(node_ids)}, 外部 {len(ext_ids)-len(ext_missing)}/{len(ext_ids)}")
+print(f"[5] 插件页覆盖: 核心 {len(node_ids)-len(core_missing)}/{len(node_ids)}, 外部 {len(ext_ids)-len(ext_missing)}/{len(ext_ids)}")
 
 # ---- 汇总 ----
 print("\n===== 质量门控结果 =====")

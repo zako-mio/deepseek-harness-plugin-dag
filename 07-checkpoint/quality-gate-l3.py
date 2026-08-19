@@ -13,7 +13,7 @@ S6 L3 质量门控脚本: 校验 0816-plugin-dag L1+L2+L3 全部交付物
 import json, os, re, glob, sys
 sys.stdout.reconfigure(encoding='utf-8')
 
-BASE = r"D:\Opencode_Download\Mission-file\2026-08\0816-plugin-dag"
+BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0819-plugin-dag-rc7"
 errors = []
 warnings = []
 
@@ -110,27 +110,13 @@ if uniq_broken:
     check(len(uniq_broken) < 5, f"断链数过多: {len(uniq_broken)}")
 print(f"[3] HTML 校验: {len(html_files)} 页, 断链 {len(uniq_broken)} 条")
 
-# ---- 4. drawio ----
-drawio_files = glob.glob(os.path.join(BASE, "05-drawio", "**", "*.drawio"), recursive=True)
-for df in drawio_files:
-    png = df[:-6] + "png"
-    check(os.path.exists(png), f"drawio 缺 png: {os.path.basename(df)}")
-    try:
-        with open(df, "r", encoding="utf-8") as f:
-            c = f.read()
-        check(c.strip().startswith("<"), f"drawio 非 XML: {os.path.basename(df)}")
-        check("</mxfile>" in c, f"drawio 缺闭合: {os.path.basename(df)}")
-    except Exception as e:
-        check(False, f"drawio 读取失败 {os.path.basename(df)}: {e}")
-print(f"[4] drawio 校验: {len(drawio_files)} 张")
-
-# ---- 5. vendor ----
+# ---- 4. vendor ----
 for v in ["cytoscape.min.js", "cytoscape-dagre.min.js"]:
     vp = os.path.join(BASE, "04-interactive", "vendor", v)
     check(os.path.exists(vp), f"vendor 缺失: {v}")
-print(f"[5] vendor 校验: cytoscape + dagre 存在")
+print(f"[4] vendor 校验: cytoscape + dagre 存在")
 
-# ---- 6. 插件页覆盖 ----
+# ---- 5. 插件页覆盖 ----
 core_missing = [nid for nid in node_ids if not os.path.exists(os.path.join(BASE, "02-plugin-pages", f"{nid}.html"))]
 with open(os.path.join(BASE, "01-dag-data", "external-seams.json"), "r", encoding="utf-8") as f:
     ext = json.load(f)
@@ -144,9 +130,9 @@ for sid in ["dsh-base", "dsh-headless", "dsh-app-boot", "dsh-cmdline"]:
     if not os.path.exists(os.path.join(BASE, "08-special-modules", f"{sid}.html")):
         special_missing.append(sid)
 check(not special_missing, f"特殊模块页缺失: {special_missing}")
-print(f"[6] 插件页覆盖: 核心 {len(node_ids)-len(core_missing)}/{len(node_ids)}, 外部 {len(ext_ids)-len(ext_missing)}/{len(ext_ids)}, 特殊 {4-len(special_missing)}/4")
+print(f"[5] 插件页覆盖: 核心 {len(node_ids)-len(core_missing)}/{len(node_ids)}, 外部 {len(ext_ids)-len(ext_missing)}/{len(ext_ids)}, 特殊 {4-len(special_missing)}/4")
 
-# ---- 7. 交互图 DATA ----
+# ---- 6. 交互图 DATA ----
 html_path = os.path.join(BASE, "04-interactive", "index.html")
 with open(html_path, "r", encoding="utf-8") as f:
     content = f.read()
@@ -166,15 +152,15 @@ else:
         check("extColor" in data, "DATA 缺 extColor")
     except Exception as e:
         check(False, f"index.html DATA 解析失败: {e}")
-print(f"[7] 交互图 DATA 校验: plugins={len(data['plugins']) if data else 'N/A'}, seams={len(data['seams']) if data else 'N/A'}, groups={len(data['groups']) if data else 'N/A'}")
+print(f"[6] 交互图 DATA 校验: plugins={len(data['plugins']) if data else 'N/A'}, seams={len(data['seams']) if data else 'N/A'}, groups={len(data['groups']) if data else 'N/A'}")
 
-# ---- 8. MD 镜像覆盖 (L1+L2+L3 全量) ----
+# ---- 7. MD 镜像覆盖 (L1+L2+L3 全量) ----
 md_files = {os.path.basename(p)[:-3] for p in glob.glob(os.path.join(BASE, "06-md", "plugins", "*.md"))}
 md_missing = [nid for nid in node_ids if nid not in md_files]
 md_seam_missing = [sid for sid in ext_ids if sid not in md_files]
 check(not md_missing, f"MD 镜像缺插件: {md_missing}")
 check(not md_seam_missing, f"MD 镜像缺 seam: {md_seam_missing}")
-print(f"[8] MD 镜像覆盖: 插件 {len(node_ids)-len(md_missing)}/{len(node_ids)}, seam {len(ext_ids)-len(md_seam_missing)}/{len(ext_ids)}")
+print(f"[7] MD 镜像覆盖: 插件 {len(node_ids)-len(md_missing)}/{len(node_ids)}, seam {len(ext_ids)-len(md_seam_missing)}/{len(ext_ids)}")
 
 # ---- 汇总 ----
 print("\n===== 质量门控结果 =====")

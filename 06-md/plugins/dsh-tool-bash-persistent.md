@@ -7,13 +7,13 @@
 - 源码路径: `packages/shell/tool-bash-persistent`
 
 ## 为什么需要它（设计初衷）
-模型面向的 bash() 工具，复用 owner-scoped 持久 shell（cwd/环境跨调用保留）。
+模型面向的 bash() 工具，复用 owner-scoped 持久 shell（cwd/环境跨调用保留）。RC7 移除自定义 PS1 注入、完成判定改 waitReason==='stdin_read'。
 
 来源：
 - https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/shell/tool-bash-persistent/README.md
 
 ## 实现逻辑
-注册单个持久 `bash` 工具 (src/index.ts:374-398)；persistentShells 以 WeakMap/Map 缓存 owner→PTY session (:200-270)，经 ctx.terminals.spawn(backendType) (:234) 创建、stty/PS1 初始化 (:246-250)；命令以 nonce 起止标记包裹 (:62-83)，轮询 scrollback 收尾 (:145-168)，deadline 超时→reset (:280,:307-321)，shell 退出→reset (:330-341)；per-owner 串行队列 (:362-372)；inject ['tools','terminals'] (:402)。
+注册单个持久 `bash` 工具 (src/index.ts:374-398)；persistentShells 以 WeakMap/Map 缓存 owner→PTY session (:200-270)，经 ctx.terminals.spawn(backendType) (:234) 创建，初始化仅发送 stty -echo 抑制回显、不再注入自定义 PS1(提示符保留为后端自带，后端提示符就绪检测继续生效)(:240-247)；命令以 nonce 起止标记包裹 (:62-83)，轮询 scrollback 收尾、完成判定改 result.waitReason === 'stdin_read' (:337)，deadline 超时→reset (:280,:307-321)，shell 退出→reset (:330-341)；per-owner 串行队列 (:362-372)；inject ['tools','terminals'] (:402)。
 
 ## Provides
 - tool: bash（owner 作用域持久 shell）

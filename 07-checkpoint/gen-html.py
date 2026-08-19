@@ -12,7 +12,7 @@ S4 HTML 生成脚本
 """
 import json, os, html, urllib.parse
 
-BASE = r"D:\Opencode_Download\Mission-file\2026-08\0816-plugin-dag"
+BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0819-plugin-dag-rc7"
 DAG = os.path.join(BASE, "01-dag-data", "core-dag.json")
 EXT = os.path.join(BASE, "01-dag-data", "external-seams.json")
 PAGES = os.path.join(BASE, "02-plugin-pages")

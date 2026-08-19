@@ -7,14 +7,14 @@
 - 源码路径: `packages/llm/llm-pi-ai`
 
 ## 为什么需要它（设计初衷）
-pi-ai 支持的 DeepSeek 适配器，作为 dsh-llm-deepseek 的设计验证孪生实现，挂在 LLM seam 上。
+pi-ai 支持的 DeepSeek 适配器，作为 dsh-llm-deepseek 的设计验证孪生实现，挂在 LLM seam 上。RC7 以 ReplayEnvelope 双层回放(完整/图片)与 onReplayDegrade 降级增强回放保真。
 
 来源：
 - https://registry.npmjs.org/@deepseek-ai/dsh-llm-pi-ai
 - https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/llm/llm-pi-ai
 
 ## 实现逻辑
-pi-ai 库驱动的通用 LLM 适配器插件(inject ['llm'])。apply() 按 provider 配置 dict 生成 PiAiAdapter(继承 LlmAdapter)，routes 来自 pi-ai catalog 或手声明；每次请求解析 profile，key 经 credentials/launchEnvironment 解析；ctx.llm.registerConfigurableProviders 维护目录、registerModelDiscovery 提供端点问询、registerAdapter 注册路由；含模型回放与图片附件解析(resolveAttachments→ctx.get('attachments'))。
+pi-ai 库驱动的通用 LLM 适配器插件(inject ['llm'])。apply() 按 provider 配置 dict 生成 PiAiAdapter(继承 LlmAdapter)，routes 来自 pi-ai catalog 或手声明；每次请求解析 profile，key 经 credentials/launchEnvironment 解析；ctx.llm.registerConfigurableProviders 维护目录、registerModelDiscovery 提供端点问询、registerAdapter 注册路由；含模型回放与图片附件解析(resolveAttachments→ctx.get('attachments'))。RC7：引入 ReplayEnvelope 双层回放重构(toPiReplayState 生成响应+blocks)——图片附件可转发时保留完整回放，否则降级为 text-only 上下文并经 onReplayDegrade 回调上报降级原因。
 
 ## Provides
 - llm 适配器: 多 provider 路由(openai/anthropic/自定义)
@@ -22,6 +22,7 @@ pi-ai 库驱动的通用 LLM 适配器插件(inject ['llm'])。apply() 按 provi
 - 模型发现(registerModelDiscovery)
 - llm-pi-ai 设置段 schema
 - PiAiAdapter 类导出
+- ReplayEnvelope 双层回放 + onReplayDegrade 降级回调
 
 ## Depends On (上游依赖)
 - `dsh-llm` [运行时依赖] - inject ['llm']：registerAdapter 等

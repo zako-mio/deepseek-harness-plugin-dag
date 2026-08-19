@@ -70,7 +70,95 @@ th{background:var(--panel);color:#b8c2d4;}
   <span class="badge">Layer 16</span><span class="badge">G28</span><span class="badge l2">L2 web-app</span>
 </header>
 <main>
-<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">运行时框架</a><a href="../03-groups/G02.html">类型契约</a><a href="../03-groups/G03.html">核心服务</a><a href="../03-groups/G04.html">LLM核心</a><a href="../03-groups/G05.html">LLM适配</a><a href="../03-groups/G06.html">LLM治理</a><a href="../03-groups/G07.html">会话持久化</a><a href="../03-groups/G08.html">会话展示</a><a href="../03-groups/G09.html">审批权限</a><a href="../03-groups/G10.html">命令交互</a><a href="../03-groups/G11.html">凭据设置</a><a href="../03-groups/G12.html">附件</a><a href="../03-groups/G13.html">文件系统</a><a href="../03-groups/G14.html">Shell工具</a><a href="../03-groups/G15.html">沙箱执行</a><a href="../03-groups/G16.html">作业</a><a href="../03-groups/G17.html">目标计划</a><a href="../03-groups/G18.html">技能</a><a href="../03-groups/G19.html">子代理</a><a href="../03-groups/G20.html">工作流</a><a href="../03-groups/G21.html">上下文治理</a><a href="../03-groups/G22.html">上下文注入</a><a href="../03-groups/G23.html">工具守卫</a><a href="../03-groups/G24.html">Web搜索</a><a href="../03-groups/G25.html">宿主服务</a><a href="../03-groups/G26.html">客户端runtime</a><a href="../03-groups/G27.html">会话交互UI</a><a href="../03-groups/G28.html">设置输入UI</a><a href="../03-groups/G29.html">UI底座</a><a href="../03-groups/G30.html">外部执行后端</a><a href="../03-groups/G31.html">协议与SDK</a><a href="../03-groups/G32.html">LSP集成</a><a href="../03-groups/G33.html">子代理外部后端</a><a href="../03-groups/G34.html">Web上下文扩展</a><a href="../03-groups/G35.html">会话存储变体</a><a href="../03-groups/G36.html">Hooks工具扩展</a><a href="../03-groups/G37.html">示例与框架</a></div><div class="dagnav"><div class="label">依赖链 · 上游（该插件依赖的前驱）：</div><div class="chips"><a class="chip" href="dsh-api-remotes.html">dsh-api-remotes</a><a class="chip ext" href="dsh-client-connection.html">dsh-client-connection</a><a class="chip" href="dsh-client-ui-commands.html">dsh-client-ui-commands</a><a class="chip" href="dsh-client-ui-conversation.html">dsh-client-ui-conversation</a><a class="chip" href="dsh-session.html">dsh-session</a></div><div class="label" style="margin-top:8px;">依赖链 · 下游（依赖该插件的节点）：</div><div class="chips"><span style="color:var(--dim);font-size:12px;">无下游（叶子/被消费端）</span></div><div class="label" style="margin-top:8px;">同一拓扑层（Layer 16，层次遍历层序）：</div><div class="chips"><a class="chip" href="dsh-client-ui-cordis.html">dsh-client-ui-cordis</a><a class="chip" href="dsh-client-ui-directory-picker-browse.html">dsh-client-ui-directory-picker-browse</a><a class="chip" href="dsh-client-ui-directory-picker-native.html">dsh-client-ui-directory-picker-native</a><a class="chip self" href="dsh-client-ui-model-selection.html">dsh-client-ui-model-selection</a><a class="chip" href="dsh-client-ui-permission-presets.html">dsh-client-ui-permission-presets</a><a class="chip" href="dsh-client-ui-skill.html">dsh-client-ui-skill</a></div></div><div class="layernav"><a href="dsh-client-ui-agent-preset.html">↑ Layer 15（14 插件）</a><span class="chip self">Layer 16</span></div><h2>插件信息</h2><table><tr><th>包名</th><td>@deepseek-ai/dsh-client-ui-model-selection</td></tr><tr><th>分组</th><td>G28 · 设置输入UI</td></tr><tr><th>拓扑层</th><td>Layer 16（层次遍历：被依赖方先于依赖方）</td></tr><tr><th>源码路径</th><td><code>packages/client/ui-model-selection</code></td></tr><tr><th>来源层</th><td>L2 web-app bundle（base 之上装配）</td></tr></table><div class="whybox"><span class="tag">为什么需要它 · 设计初衷</span><p>浏览器侧模型选择：/model popup 与 composer 触发器共用一份会话级目录，经 session.models/selectModel 提交模型+推理强度。</p><div class="src">📚 来源：<br><a href="https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-model-selection/README.zh.md" target="_blank">https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-model-selection/README.zh.md</a><br><a href="https://github.com/deepseek-ai/deepseek-harness" target="_blank">https://github.com/deepseek-ai/deepseek-harness</a><br></div></div><h2>① 实现逻辑</h2><p>模型选择双入口共享每会话 ModelDirectory：注册 ModelDirectoryResolver（ctx.modelDirectories，service.ts:34-47）与 /model popupSelect 贡献（command.register，index.ts:122-151）、conversation.input.model seat（:154-175）。目录经 session.models RPC 加载、session.selectModel 提交（directory.ts:67,98-105），Host 报告当前选择为唯一事实；向 composer 发布 routable=false 输入封锁（service.ts:88-103）。</p><h2>② 注册/提供（provides）</h2><ul class="provides"><li>ctx.modelDirectories (ModelDirectoryResolver)</li><li>/model popupSelect 命令贡献</li><li>conversation.input.model seat (ModelSelect)</li><li>model 字典</li></ul><h2>③ 依赖（depends_on · 上游前驱）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-api-remotes.html">dsh-api-remotes</a></span><span class="mech">E2</span><div class="purpose">模型目录加载与选择提交</div><div class="evi">packages/client/ui-model-selection/src/client/directory.ts:67,98-105 (session.models / session.selectModel RPC)</div></div><div class="dep-item ext"><span class="name"><a href="dsh-client-connection.html">dsh-client-connection</a></span><span class="mech">E2</span><div class="purpose">会话 wire 面</div><div class="evi">packages/client/ui-model-selection/src/client/service.ts:76 (connection.api.sessions)</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-commands.html">dsh-client-ui-commands</a></span><span class="mech">E2</span><div class="purpose">popupSelect 贡献注册</div><div class="evi">packages/client/ui-model-selection/src/client/index.ts:100,122-150 (inject commandUi + command.register)</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-conversation.html">dsh-client-ui-conversation</a></span><span class="mech">E1</span><div class="purpose">composer model 槽声明</div><div class="evi">packages/client/ui-model-selection/src/client/index.ts:19 (type-only import input.model seat)</div></div><div class="dep-item"><span class="name"><a href="dsh-session.html">dsh-session</a></span><span class="mech">E2</span><div class="purpose">会话目录键与可用性判定</div><div class="evi">packages/client/ui-model-selection/src/client/service.ts:35,73-75,80 (inject sessions + sessions.scope + subagentAddress)</div></div></div><h2>④ 被依赖（dependents · 下游消费者）</h2><p style="color:var(--dim);">无下游（叶子/被消费端）</p>
+<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">运行时框架</a><a href="../03-groups/G02.html">类型契约</a><a href="../03-groups/G03.html">核心服务</a><a href="../03-groups/G04.html">LLM核心</a><a href="../03-groups/G05.html">LLM适配</a><a href="../03-groups/G06.html">LLM治理</a><a href="../03-groups/G07.html">会话持久化</a><a href="../03-groups/G08.html">会话展示</a><a href="../03-groups/G09.html">审批权限</a><a href="../03-groups/G10.html">命令交互</a><a href="../03-groups/G11.html">凭据设置</a><a href="../03-groups/G12.html">附件</a><a href="../03-groups/G13.html">文件系统</a><a href="../03-groups/G14.html">Shell工具</a><a href="../03-groups/G15.html">沙箱执行</a><a href="../03-groups/G16.html">作业</a><a href="../03-groups/G17.html">目标计划</a><a href="../03-groups/G18.html">技能</a><a href="../03-groups/G19.html">子代理</a><a href="../03-groups/G20.html">工作流</a><a href="../03-groups/G21.html">上下文治理</a><a href="../03-groups/G22.html">上下文注入</a><a href="../03-groups/G23.html">工具守卫</a><a href="../03-groups/G24.html">Web搜索</a><a href="../03-groups/G25.html">宿主服务</a><a href="../03-groups/G26.html">客户端runtime</a><a href="../03-groups/G27.html">会话交互UI</a><a href="../03-groups/G28.html">设置输入UI</a><a href="../03-groups/G29.html">UI底座</a><a href="../03-groups/G30.html">外部执行后端</a><a href="../03-groups/G31.html">协议与SDK</a><a href="../03-groups/G32.html">LSP集成</a><a href="../03-groups/G33.html">子代理外部后端</a><a href="../03-groups/G34.html">Web上下文扩展</a><a href="../03-groups/G35.html">会话存储变体</a><a href="../03-groups/G36.html">Hooks工具扩展</a><a href="../03-groups/G37.html">示例与框架</a></div><div class="dagnav"><div class="label">依赖链 · 上游（该插件依赖的前驱）：</div><div class="chips"><a class="chip" href="dsh-api-remotes.html">dsh-api-remotes</a><a class="chip ext" href="dsh-client-connection.html">dsh-client-connection</a><a class="chip" href="dsh-client-ui-commands.html">dsh-client-ui-commands</a><a class="chip" href="dsh-client-ui-conversation.html">dsh-client-ui-conversation</a><a class="chip" href="dsh-session.html">dsh-session</a></div><div class="label" style="margin-top:8px;">依赖链 · 下游（依赖该插件的节点）：</div><div class="chips"><span style="color:var(--dim);font-size:12px;">无下游（叶子/被消费端）</span></div><div class="label" style="margin-top:8px;">同一拓扑层（Layer 16，层次遍历层序）：</div><div class="chips"><a class="chip" href="dsh-client-ui-cordis.html">dsh-client-ui-cordis</a><a class="chip" href="dsh-client-ui-directory-picker-browse.html">dsh-client-ui-directory-picker-browse</a><a class="chip" href="dsh-client-ui-directory-picker-native.html">dsh-client-ui-directory-picker-native</a><a class="chip self" href="dsh-client-ui-model-selection.html">dsh-client-ui-model-selection</a><a class="chip" href="dsh-client-ui-permission-presets.html">dsh-client-ui-permission-presets</a><a class="chip" href="dsh-client-ui-skill.html">dsh-client-ui-skill</a></div></div><div class="layernav"><a href="dsh-client-ui-agent-preset.html">↑ Layer 15（14 插件）</a><span class="chip self">Layer 16</span></div><h2>插件信息</h2><table><tr><th>包名</th><td>@deepseek-ai/dsh-client-ui-model-selection</td></tr><tr><th>分组</th><td>G28 · 设置输入UI</td></tr><tr><th>拓扑层</th><td>Layer 16（层次遍历：被依赖方先于依赖方）</td></tr><tr><th>源码路径</th><td><code>packages/client/ui-model-selection</code></td></tr><tr><th>来源层</th><td>L2 web-app bundle（base 之上装配）</td></tr></table><div class="whybox"><span class="tag">为什么需要它 · 设计初衷</span><p>浏览器侧模型选择：/model popup 与 composer 触发器共用一份会话级目录，经 session.models/selectModel 提交模型+推理强度。</p><div class="src">📚 来源：<br><a href="https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-model-selection/README.zh.md" target="_blank">https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-model-selection/README.zh.md</a><br><a href="https://github.com/deepseek-ai/deepseek-harness" target="_blank">https://github.com/deepseek-ai/deepseek-harness</a><br></div></div><h2>① 实现逻辑</h2><p>模型选择双入口共享每会话 ModelDirectory：注册 ModelDirectoryResolver（ctx.modelDirectories，service.ts:34-47）与 /model popupSelect 贡献（command.register，index.ts:122-151）、conversation.input.model seat（:154-175）。目录经 session.models RPC 加载、session.selectModel 提交（directory.ts:67,98-105），Host 报告当前选择为唯一事实；向 composer 发布 routable=false 输入封锁（service.ts:88-103）。</p>
+<style>
+#dyn-dag{width:100%;height:480px;background:var(--panel);border:1px solid var(--border);border-radius:8px;margin:12px 0;}
+#dyn-dag-label{font-size:12px;color:var(--dim);margin:10px 0 4px;}
+#dyn-dag-legend{display:flex;gap:16px;font-size:12px;color:var(--dim);margin:6px 0 2px;flex-wrap:wrap;}
+#dyn-dag-legend .item{display:flex;align-items:center;gap:5px;}
+#dyn-dag-legend .dot{width:10px;height:10px;border-radius:3px;display:inline-block;}
+.dyn-self{background:var(--accent);}
+.dyn-up{background:#e8933b;}
+.dyn-down{background:#2fb98a;}
+.dyn-seam{background:var(--ext);}
+</style>
+
+<div id="dyn-dag-label">内部结构动态 DAG（深色主题：橙色=上游依赖 · 绿色=下游依赖 · 棕色=外部seam · 蓝=本插件）</div>
+<div id="dyn-dag-legend">
+  <span class="item"><span class="dot dyn-self"></span>本插件</span>
+  <span class="item"><span class="dot dyn-up"></span>上游依赖</span>
+  <span class="item"><span class="dot dyn-down"></span>下游依赖</span>
+  <span class="item"><span class="dot dyn-seam"></span>外部 seam</span>
+</div>
+<div id="dyn-dag"></div>
+
+<script src="../04-interactive/vendor/cytoscape.min.js"></script>
+<script src="../04-interactive/vendor/cytoscape-dagre.min.js"></script>
+<script>
+(function(){
+  const raw = {"elements": [{"data": {"id": "dsh-client-ui-model-selection", "label": "dsh-client-ui-model-selection", "kind": "self", "cls": "#4f8cff", "url": "dsh-client-ui-model-selection.html"}}, {"data": {"id": "dsh-api-remotes", "label": "dsh-api-remotes", "kind": "up", "cls": "#e8933b", "url": "dsh-api-remotes.html"}}, {"data": {"id": "dsh-client-connection", "label": "dsh-client-connection", "kind": "seam", "cls": "#b48a3c", "url": "dsh-client-connection.html"}}, {"data": {"id": "dsh-client-ui-commands", "label": "dsh-client-ui-commands", "kind": "up", "cls": "#e8933b", "url": "dsh-client-ui-commands.html"}}, {"data": {"id": "dsh-client-ui-conversation", "label": "dsh-client-ui-conversation", "kind": "up", "cls": "#e8933b", "url": "dsh-client-ui-conversation.html"}}, {"data": {"id": "dsh-session", "label": "dsh-session", "kind": "up", "cls": "#e8933b", "url": "dsh-session.html"}}, {"data": {"id": "dsh-api-remotes->dsh-client-ui-model-selection", "source": "dsh-api-remotes", "target": "dsh-client-ui-model-selection"}}, {"data": {"id": "dsh-client-connection->dsh-client-ui-model-selection", "source": "dsh-client-connection", "target": "dsh-client-ui-model-selection"}}, {"data": {"id": "dsh-client-ui-commands->dsh-client-ui-model-selection", "source": "dsh-client-ui-commands", "target": "dsh-client-ui-model-selection"}}, {"data": {"id": "dsh-client-ui-conversation->dsh-client-ui-model-selection", "source": "dsh-client-ui-conversation", "target": "dsh-client-ui-model-selection"}}, {"data": {"id": "dsh-session->dsh-client-ui-model-selection", "source": "dsh-session", "target": "dsh-client-ui-model-selection"}}]};
+  const cy = cytoscape({
+    container: document.getElementById('dyn-dag'),
+    elements: raw.elements,
+    style: [
+      {
+        selector: 'node',
+        style: {
+          'label': 'data(label)',
+          'background-color': 'data(cls)',
+          'color': '#e6e8ee',
+          'font-size': 11,
+          'text-valign': 'bottom',
+          'text-margin-y': 4,
+          'width': 46,
+          'height': 46,
+          'shape': 'round-rectangle',
+          'border-width': 2,
+          'border-color': '#2a2f3a'
+        }
+      },
+      {
+        selector: 'node[kind="self"]',
+        style: {
+          'border-width': 3,
+          'border-color': '#4f8cff',
+          'width': 60,
+          'height': 60,
+          'font-size': 12,
+          'font-weight': 700
+        }
+      },
+      {
+        selector: 'edge',
+        style: {
+          'width': 1.5,
+          'line-color': '#4a5263',
+          'target-arrow-color': '#4a5263',
+          'target-arrow-shape': 'triangle',
+          'curve-style': 'bezier'
+        }
+      }
+    ],
+    layout: {
+      name: 'dagre',
+      rankDir: 'LR',
+      nodeSep: 30,
+      rankSep: 60,
+      padding: 20
+    },
+    wheelSensitivity: 0.2,
+    minZoom: 0.2,
+    maxZoom: 2.5
+  });
+  cy.on('tap', 'node', (evt) => {
+    const url = evt.target.data('url');
+    if (url) window.location.href = url;
+  });
+  // 等渲染完自适应容器尺寸
+  setTimeout(() => cy.resize(), 100);
+})();
+</script>
+<h2>② 注册/提供（provides）</h2><ul class="provides"><li>ctx.modelDirectories (ModelDirectoryResolver)</li><li>/model popupSelect 命令贡献</li><li>conversation.input.model seat (ModelSelect)</li><li>model 字典</li></ul><h2>③ 依赖（depends_on · 上游前驱）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-api-remotes.html">dsh-api-remotes</a></span><span class="mech">E2</span><div class="purpose">模型目录加载与选择提交</div><div class="evi">packages/client/ui-model-selection/src/client/directory.ts:67,98-105 (session.models / session.selectModel RPC)</div></div><div class="dep-item ext"><span class="name"><a href="dsh-client-connection.html">dsh-client-connection</a></span><span class="mech">E2</span><div class="purpose">会话 wire 面</div><div class="evi">packages/client/ui-model-selection/src/client/service.ts:76 (connection.api.sessions)</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-commands.html">dsh-client-ui-commands</a></span><span class="mech">E2</span><div class="purpose">popupSelect 贡献注册</div><div class="evi">packages/client/ui-model-selection/src/client/index.ts:100,122-150 (inject commandUi + command.register)</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-conversation.html">dsh-client-ui-conversation</a></span><span class="mech">E1</span><div class="purpose">composer model 槽声明</div><div class="evi">packages/client/ui-model-selection/src/client/index.ts:19 (type-only import input.model seat)</div></div><div class="dep-item"><span class="name"><a href="dsh-session.html">dsh-session</a></span><span class="mech">E2</span><div class="purpose">会话目录键与可用性判定</div><div class="evi">packages/client/ui-model-selection/src/client/service.ts:35,73-75,80 (inject sessions + sessions.scope + subagentAddress)</div></div></div><h2>④ 被依赖（dependents · 下游消费者）</h2><p style="color:var(--dim);">无下游（叶子/被消费端）</p>
 </main>
 <footer>DeepSeek Harness 插件级 DAG 依赖链分析 · L1 核心集 + L2 web-app + L3 其余插件 · 源码三依据(E1编译/E2运行时/E3组合)逐条溯源</footer>
 </body>

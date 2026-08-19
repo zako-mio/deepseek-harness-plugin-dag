@@ -40,7 +40,7 @@ new_cycle = {
         "layer_c_memory_snapshot": "MEMORY.md 现有§:Reflection系统/中文偏好/编码安全/edit优先/Plan先探索/半自动留档/子Agent结构化JSON/Python脚本UTF-8/OpenCode配置路径/备份路径/MCP精兵策略/权限三层/Compaction阶梯式/plan与build prompt独立/全局MEMORY/Per-agent行为约束/auto-mode缓存前缀敏感/DeepSeek参数/DEEPSEEK_API_KEY环境变量/prefix-cache优化/recruit-assist复盘/browser-harness教训/opencode-config修正/多路并行领域分片检索/HTML双交付质量门控/多维权衡矩阵收敛选型法",
         "layer_d_archive_report": {
             "status": "已确认留档",
-            "path": "D:\\Opencode_Download\\Mission-file\\2026-08\\0816-plugin-dag",
+            "path": "/home/zako-mio/opencode/archive/Mission-file/2026-08/0819-plugin-dag-rc7",
             "summary": "第一层核心集插件级DAG分析:76核心插件+36外部seam+194边+8拓扑层+24组;交付112插件页HTML(每页实现逻辑+provides+上游/下游链式导航+源码引用)、交互DAG总览(cytoscape缩放联动+点击跳转,修复dagre缺失节点0bug)、78张drawio内部结构图、115文件MD镜像;质量门控ALL PASS;PLAN-layer2接力文件落盘供第二窗口续跑。全程委派子Agent执行(6路explore采集+4批drawio-worker),主Agent仅调度/聚合/建模/门控,含层次遍历拓扑分层与断链修复闭环。"
         }
     }

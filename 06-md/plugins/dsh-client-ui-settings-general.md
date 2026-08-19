@@ -7,13 +7,13 @@
 - 源码路径: `packages/client/ui-settings-general`
 
 ## 为什么需要它（设计初衷）
-设置所有者非复制/产品引导插件：General 分区、shell 触发器/头 chrome、设置字典与版本化欢迎页。
+设置所有者非复制/产品引导插件：General 分区、shell 触发器/头 chrome、设置字典与版本化欢迎页。RC7 统一 42px 视觉节奏。
 
 来源：
 - https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-settings-general/package.json
 
 ## 实现逻辑
-Settings 外壳与 ownerless 拷贝：注册 sidebar.settings occupant（SettingsRoot）并声明 settings.trigger/header/action/close/section/onboarding 子槽（index.ts:142-153），注册 General section（settings.section id=general，:170-177）、触发/头部 chrome、SettingsDocumentAction 本地文档、settings 字典。host 半注册 ui-onboarding 持久命名空间（src/index.ts:21-26）。
+Settings 外壳与 ownerless 拷贝：注册 sidebar.settings occupant（SettingsRoot）并声明 settings.trigger/header/action/close/section/onboarding 子槽（index.ts:142-153），注册 General section（settings.section id=general，:170-177）、触发/头部 chrome、SettingsDocumentAction 本地文档、settings 字典。host 半注册 ui-onboarding 持久命名空间（src/index.ts:21-26）。RC7：样式按 42px 节奏统一——触发行高 42px 与 Cordis footer action 对齐(侧栏 foot 42px 行/36px rail 圆节奏)。
 
 ## Provides
 - sidebar.settings occupant (SettingsRoot)

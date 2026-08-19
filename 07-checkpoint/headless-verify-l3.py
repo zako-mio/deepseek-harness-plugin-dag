@@ -9,7 +9,7 @@ S6 headless Chrome 验证 L3 交互图:
 import os, re, subprocess, sys, json
 sys.stdout.reconfigure(encoding='utf-8')
 
-BASE = r"D:\Opencode_Download\Mission-file\2026-08\0816-plugin-dag"
+BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0819-plugin-dag-rc7"
 HTML = os.path.join(BASE, "04-interactive", "index.html")
 OUT = os.path.join(BASE, "07-checkpoint", "screenshots")
 os.makedirs(OUT, exist_ok=True)

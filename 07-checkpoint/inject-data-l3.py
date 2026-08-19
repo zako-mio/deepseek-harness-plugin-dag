@@ -9,7 +9,7 @@ S3 L3 交互图 DATA 注入:
 import json, os, sys
 sys.stdout.reconfigure(encoding='utf-8')
 
-BASE = r"D:\Opencode_Download\Mission-file\2026-08\0816-plugin-dag"
+BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0819-plugin-dag-rc7"
 DAG = os.path.join(BASE, "01-dag-data", "webapp-dag.json")
 EXT = os.path.join(BASE, "01-dag-data", "external-seams.json")
 INV = os.path.join(BASE, "07-checkpoint", "stage-00-l2-inventory.json")
@@ -114,7 +114,8 @@ data_json = json.dumps(payload, ensure_ascii=False)
 with open(HTML, "rb") as f:
     raw = f.read()
 content = raw.decode("utf-8")
-lines = content.split("\r\n")
+lines = content.split("\n")
+lines = [l.rstrip("\r") for l in lines]
 
 data_line_idx = None
 for i, l in enumerate(lines):
@@ -129,13 +130,23 @@ print(f"[INFO] replacing line {data_line_idx+1} (len={len(lines[data_line_idx])}
 lines[data_line_idx] = "const DATA = " + data_json + ";"
 content = "\r\n".join(lines)
 
-# ---- disabled 样式检查 ----
+# ---- disabled 样式插入 (对齐 l2: 在 node.seam 之后插入 node[kind=disabled] 属性选择器) ----
+STYLE_INSERT = """    { selector:'node[kind="disabled"]', style:{
+      'background-color':'#3a3f4a','border-width':1.5,'border-color':'#c0504d',
+      'width':56,'height':30, shape:'round-rectangle', opacity:0.55
+    }},"""
+
+marker = "{ selector:'node[kind=\"group\"]', style:{"
 if 'node[kind="disabled"]' not in content:
-    print("[WARN] disabled style missing (manual check needed)")
+    if marker in content:
+        content = content.replace(marker, STYLE_INSERT + "\n    " + marker, 1)
+        print("[OK] inserted node[kind=disabled] style before node.group")
+    else:
+        print("[WARN] marker not found for disabled style insert")
 else:
     print("[OK] disabled style present")
 
-# ---- 写回 (UTF-8 无 BOM, CRLF) ----
+# ---- 写回 (UTF-8 无 BOM, LF) ----
 with open(HTML, "w", encoding="utf-8", newline="") as f:
     f.write(content)
 
