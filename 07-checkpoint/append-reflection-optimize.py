@@ -36,7 +36,7 @@ cycle = {
         "layer_c_memory_snapshot": "MEMORY.md 现有§：Reflection系统/命令/中文偏好/编码安全/Plan先探索/半自动留档/子Agent结构化JSON/Python UTF-8/OpenCode配置/备份/MCP精兵/权限三层/Compaction/plan与build prompt独立/全局MEMORY/Per-agent行为约束/auto-mode缓存前缀/DeepSeek参数/DEEPSEEK_API_KEY/prefix-cache/recruit复盘/browser-harness教训/opencode-config修正/多路并行领域分片检索/HTML双交付质量门控/多维权衡矩阵收敛选型法",
         "layer_d_archive_report": {
             "status": "已确认留档（0816 项目内新增执行报告）",
-            "path": "/home/zako-mio/opencode/archive/Mission-file/2026-08/0820-plugin-dag-rc8",
+            "path": "/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2",
             "summary": "0816-plugin-dag 优化（迁移 0817 经验）：全量联网调研 173 插件（52 深度+121 简版 why，官方 monorepo 权威源）→ 插件页新增'为什么需要它·设计初衷'区块 → 根入口统计同步 173/49/545/17/37/221 + 去站内 .md → 可读性门控三检查 → 门控 11 项 ALL PASS → commit 4460ae1 保留历史追加推送 + Pages built。经验：0817 经验可迁移（why区块/统计一致性门控/站内.md原则但区分外部来源引用）；权重分档支撑全量联网；门控防误报需理解数据模型；统计从数据源实测；git push 权限拦截需提前确认。"
         }
     }

@@ -4,7 +4,7 @@
 """
 import json, sys, collections
 
-BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0820-plugin-dag-rc8"
+BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2"
 sys.stdout.reconfigure(encoding="utf-8")
 
 with open(BASE + r"\07-checkpoint\plugin-weight.json", encoding="utf-8") as f:

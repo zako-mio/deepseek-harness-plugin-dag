@@ -2,7 +2,7 @@
 """S2b: 查 23 个未覆盖插件的信息（名称/组/层/权重）"""
 import json, os, sys
 
-BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0820-plugin-dag-rc8"
+BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2"
 sys.stdout.reconfigure(encoding="utf-8")
 
 with open(os.path.join(BASE, "01-dag-data", "webapp-dag.json"), encoding="utf-8") as f:

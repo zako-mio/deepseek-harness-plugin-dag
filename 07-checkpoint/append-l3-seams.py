@@ -4,9 +4,9 @@
 import json, os, sys
 sys.stdout.reconfigure(encoding='utf-8')
 
-EXT = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0820-plugin-dag-rc8\01-dag-data\external-seams.json"
+EXT = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2\01-dag-data\external-seams.json"
 MAP = r"D:\Opencode_Download\Mission-file\2026-08\0814-deepseek-harness源码解析\07-checkpoint\PACKAGE-MAP.json"
-INV = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0820-plugin-dag-rc8\07-checkpoint\stage-00-l3-inventory.json"
+INV = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2\07-checkpoint\stage-00-l3-inventory.json"
 
 with open(EXT, "r", encoding="utf-8") as f:
     ext = json.load(f)

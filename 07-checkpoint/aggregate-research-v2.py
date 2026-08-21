@@ -2,7 +2,7 @@
 """S2a: 聚合 6 路调研结果 v2（支持字典/数组混合结构）"""
 import json, os, sys, glob
 
-BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0820-plugin-dag-rc8"
+BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2"
 RES = os.path.join(BASE, "07-checkpoint", "research")
 sys.stdout.reconfigure(encoding="utf-8")
 

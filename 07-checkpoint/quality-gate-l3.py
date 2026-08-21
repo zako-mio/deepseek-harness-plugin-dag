@@ -13,7 +13,7 @@ S6 L3 质量门控脚本: 校验 0816-plugin-dag L1+L2+L3 全部交付物
 import json, os, re, glob, sys
 sys.stdout.reconfigure(encoding='utf-8')
 
-BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0820-plugin-dag-rc8"
+BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2"
 errors = []
 warnings = []
 

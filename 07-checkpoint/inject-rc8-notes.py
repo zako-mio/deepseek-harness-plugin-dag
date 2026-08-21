@@ -4,7 +4,7 @@
 import json, os, sys
 sys.stdout.reconfigure(encoding='utf-8')
 
-BASE = "/home/zako-mio/opencode/archive/Mission-file/2026-08/0820-plugin-dag-rc8"
+BASE = "/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2"
 PAGES = os.path.join(BASE, "02-plugin-pages")
 
 # 受影响的节点（rc8 移除了 primitives/slots peer 声明但源码仍 import）
