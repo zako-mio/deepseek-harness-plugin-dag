@@ -169,7 +169,7 @@ function buildGroupNodes(){
 
 // ---- 组内视图元素: 该组插件 + 上下游 stub ----
 function buildGroupDrill(g){
-  const members = DATA.plugins.filter(p => p.data.group === g);
+  const members = DATA.plugins.concat(DATA.seams).filter(p => p.data.group === g);
   const memberIds = new Set(members.map(p => p.data.id));
   const seamIds = new Set(DATA.seams.map(s => s.data.id));
   const allPlugins = DATA.plugins.concat(DATA.seams);
@@ -246,6 +246,10 @@ const cy = cytoscape({
     { selector:'node[kind="seam"]', style:{
       'background-color':'#3a2f1a','border-width':1.5,'border-color':'#8a6a30',
       'width':52,'height':28, shape:'round-rectangle'
+    }},
+    { selector:'node[kind="disabled"]', style:{
+      'background-color':'#3a3f4a','border-width':1.5,'border-color':'#c0504d',
+      'width':56,'height':30, shape:'round-rectangle', opacity:0.55
     }},
     { selector:'node[kind="group"]', style:{
       'background-color': function(ele){ return ele.data('group')==='EXT' ? '#3a2f1a' : (DATA.groupColor[ele.data('group')] || '#243040'); },

@@ -70,7 +70,7 @@ function buildGroupNodes(){
 
 // ---- 组内视图元素: 该组插件 + 上下游 stub ----
 function buildGroupDrill(g){
-  const members = DATA.plugins.filter(p => p.data.group === g);
+  const members = DATA.plugins.concat(DATA.seams).filter(p => p.data.group === g);
   const memberIds = new Set(members.map(p => p.data.id));
   const seamIds = new Set(DATA.seams.map(s => s.data.id));
   const allPlugins = DATA.plugins.concat(DATA.seams);
