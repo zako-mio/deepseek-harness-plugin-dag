@@ -1,7 +1,7 @@
 # DeepSeek Harness 插件级 DAG 依赖链分析
 
-> **版本**：`v0.1.0-rc.8`（基于官方源码 dsh-v0.1.0-rc.8，2026-08-19 发布）
-> **升级记录**：RC5 → RC7（2026-08-19）→ **RC8（2026-08-20）**。本次 RC8 升级新增 9 插件、删除 2 插件（web-react 改名并入 ui-renderer、schema-form 并入 ui-settings），源码实质变化 61 包。详见 `RC7-RC8-DIFF-REPORT.md`。
+> **版本**：`v0.1.1-rc.2`（基于官方源码 dsh-v0.1.1-rc.2，2026-08-21 发布）
+> **升级记录**：RC5 → RC7（2026-08-19）→ RC8（2026-08-20）→ **RC2（2026-08-21）**。本次 RC2 升级新增 1 包（`dsh-authorization` seam）、0 删除，源码实质变化 43 包。详见 `RC7-RC8-DIFF-REPORT.md`、`RC8-RC2-DIFF-REPORT.md`。
 
 ## 简介
 
@@ -40,7 +40,7 @@
 ```
 0816-plugin-dag/
 ├── 01-dag-data/          # DAG 数据: webapp-dag.json(180节点+578边+17层+39组) / core-dag.json(L1) / external-seams.json(49 seam)
-├── 02-plugin-pages/      # 每插件一页 HTML（180 核心/Web/L3 + 49 外部 seam = 229 页，1 双身份共享）
+├── 02-plugin-pages/      # 每插件一页 HTML（180 核心/Web/L3 + 50 外部 seam = 230 页，1 双身份共享）
 ├── 03-groups/            # 39 组索引页 + 组目录
 ├── 04-interactive/       # cytoscape 交互总览 (index.html, 组级+下钻) + vendor/(cytoscape+dagre)
 ├── 06-md/                # AI 友好 MD 镜像
@@ -52,7 +52,7 @@
 ## 核心数据（L1+L2+L3 合并 webapp-dag.json）
 
 - **180 节点**：76 L1 核心 + 58 L2 web-app + 46 L3 其余插件
-- **49 外部 seam 基座**（dsh-invariants/dsh-scope/dsh-timeout 等抽象包 + L3 追加 13：7 抽象基座 + 6 test-support）
+- **50 外部 seam 基座**（新增 dsh-authorization；dsh-invariants/dsh-scope/dsh-timeout 等抽象包 + L3 追加 13：7 抽象基座 + 6 test-support）
 - **578 依赖边**（含 22 个 web 变体 disabled 标注）
 - **17 拓扑层**（层次遍历：被依赖方先于依赖方）
 - **39 分组**（L1 24 组 + L2 5 组 + L3 8 组 + 新增 G38 多智能体协作 / G39 代码执行运行时：G30 外部执行后端 / G31 协议与SDK / G32 LSP集成 / G33 子代理外部后端 / G34 Web上下文扩展 / G35 会话存储变体 / G36 Hooks工具扩展 / G37 示例与框架）
@@ -101,7 +101,7 @@
 
 ## 质量门控
 
-`07-checkpoint/quality-gate-l3.py` 全部通过：JSON 合法 / DAG 无环（180/180）/ HTML 断链 0 / vendor 完整 / 插件页覆盖 180+49+4 特殊模块 / 交互图 DATA 校验（180 插件 + 49 seam + 39 组）/**MD 镜像覆盖 180+49**。
+`07-checkpoint/quality-gate-l3.py` 全部通过：JSON 合法 / DAG 无环（180/180）/ HTML 断链 0 / vendor 完整 / 插件页覆盖 180+50+4 特殊模块 / 交互图 DATA 校验（180 插件 + 50 seam + 39 组）/**MD 镜像覆盖 180+50**。
 headless + VLM 验证：组级视图 40 节点、L3 组下钻正常（G30 下钻 23 节点 / G37 下钻 36 节点）、中文渲染完整、模块 DAG 染色/排版正确。
 
 > ℹ️ **关于"红框"插件**：交互图中灰色红边的节点（22 个，如 dsh-skill-filesystem / dsh-tool-skill）是 **web 变体禁用 base 插件**的刻意标注（`node[kind="disabled"]` 样式），并非缺页面——它们的 HTML 页面与 MD 镜像均存在，点击可正常跳转。

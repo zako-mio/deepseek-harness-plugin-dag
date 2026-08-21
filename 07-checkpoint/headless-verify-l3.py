@@ -13,7 +13,7 @@ BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0820-plugin-dag-rc
 HTML = os.path.join(BASE, "04-interactive", "index.html")
 OUT = os.path.join(BASE, "07-checkpoint", "screenshots")
 os.makedirs(OUT, exist_ok=True)
-CHROME = r"/tmp/opencode/chrome/chrome-linux64/chrome"
+CHROME = "/snap/bin/chromium"
 
 with open(HTML, "r", encoding="utf-8") as f:
     content = f.read()

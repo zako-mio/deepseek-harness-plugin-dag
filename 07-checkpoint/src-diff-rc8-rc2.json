@@ -1,0 +1,2281 @@
+{
+  "summary": {
+    "added": [
+      "credentials/authorization"
+    ],
+    "removed": [],
+    "src_changed": [
+      "api/gateway",
+      "api/remotes",
+      "attachment/attachment",
+      "attachment/attachment-local",
+      "client/connection",
+      "client/modules",
+      "client/runtime",
+      "client/ui-conversation",
+      "client/ui-primitives",
+      "client/ui-settings-models",
+      "client/ui-settings-plugins",
+      "client/ui-subagent",
+      "client/ui-theme",
+      "client/ui-user-questions",
+      "client/ui-workspace",
+      "client/web",
+      "credentials/credentials",
+      "credentials/credentials-local",
+      "extensions/cordis-client-runner",
+      "extensions/cordis-host-runner",
+      "extensions/tool-cordis",
+      "fs/tool-fs",
+      "goal/goal",
+      "host/apiproxy",
+      "host/frontend-static",
+      "host/webserver",
+      "interaction/permission-presets",
+      "llm/llm",
+      "llm/llm-deepseek",
+      "llm/llm-pi-ai",
+      "llm/token-meter",
+      "plan/plan-mode",
+      "sandbox/sandbox-local",
+      "session/session-projection",
+      "session/session-projection-cache",
+      "session/session-stats",
+      "session/session-title",
+      "subagent/subagent",
+      "test-support/acp-snapshot",
+      "test-support/llm-replay",
+      "todo/tool-todo",
+      "typert/generator",
+      "util/atomic-write"
+    ],
+    "tests_only": [
+      "bundle/web-app",
+      "examples/acp-demo",
+      "examples/agent-spine-demo",
+      "interaction/commands",
+      "mcp/mcp-client",
+      "test-support/client-runtime"
+    ],
+    "version_only": [
+      "acp/acp",
+      "boot/app-boot",
+      "boot/cmdline",
+      "bundle/base",
+      "bundle/headless",
+      "client/hmr",
+      "client/locale",
+      "client/ui-agent-preset",
+      "client/ui-attachment",
+      "client/ui-brand-official",
+      "client/ui-commands",
+      "client/ui-deliverables",
+      "client/ui-directory-picker-browse",
+      "client/ui-directory-picker-native",
+      "client/ui-goal",
+      "client/ui-input-trigger",
+      "client/ui-jobs",
+      "client/ui-layout",
+      "client/ui-message-feedback",
+      "client/ui-model-selection",
+      "client/ui-permission-presets",
+      "client/ui-plan",
+      "client/ui-reference",
+      "client/ui-renderer",
+      "client/ui-settings",
+      "client/ui-settings-general",
+      "client/ui-settings-plugin-inventory",
+      "client/ui-sidebar",
+      "client/ui-skill",
+      "client/ui-slots",
+      "client/ui-tool",
+      "client/ui-trajectory",
+      "client/ui-workflow-run",
+      "code-runtime/code-runtime",
+      "code-runtime/code-runtime-python",
+      "code-runtime/code-runtime-worker-thread",
+      "compaction/command-compact",
+      "compaction/compaction",
+      "compaction/compaction-basic",
+      "compaction/compaction-tool-result-pruner",
+      "context/agent-instructions",
+      "context/file-reference",
+      "context/file-reference-local",
+      "context/session-reference",
+      "context/time-context",
+      "context/tmux-context",
+      "core/agent",
+      "core/agent-default-model",
+      "core/agent-loop",
+      "core/agent-tool-presentation",
+      "core/scope",
+      "core/session",
+      "core/system-prompt",
+      "core/tools",
+      "e2b/e2b",
+      "e2b/fs-e2b",
+      "e2b/subprocess-e2b",
+      "examples/jsonrpc-demo",
+      "experimental/agent-team",
+      "experimental/tool-agent-team",
+      "extensions/ui-cordis",
+      "feedback/command-feedback",
+      "feedback/message-feedback",
+      "fs/fs",
+      "fs/fs-local",
+      "fs/fs-observation-policy",
+      "fs/fs-sandbox",
+      "fs/tool-fs-search",
+      "fs/tool-str-replace-editor",
+      "goal/command-goal",
+      "goal/goal-round-driver",
+      "goal/tool-goal",
+      "guard/repeat-tool-reminder",
+      "guard/timeout-policy",
+      "hooks/hook-protocol",
+      "hooks/hooks-claude-code",
+      "hooks/hooks-codex",
+      "host/directory-picker",
+      "host/directory-picker-auto",
+      "host/directory-picker-browse",
+      "host/directory-picker-native",
+      "host/plugin-inventory",
+      "identity/anonymous-user-id",
+      "interaction/tool-ask-user",
+      "interaction/user-approval",
+      "interaction/user-questions",
+      "jobs/jobs",
+      "jobs/jobs-local",
+      "jobs/tool-jobs",
+      "llm/llm-retry",
+      "lsp/lsp",
+      "lsp/lsp-stdio",
+      "lsp/tool-lsp",
+      "preset/agent-presets",
+      "preset/persona",
+      "runtime-diagnostics/invariants",
+      "sandbox/sandbox",
+      "sandbox/sandbox-policy",
+      "sandbox/sandbox-windows-acl",
+      "schedule/schedule",
+      "sdk/client",
+      "sdk/protocol",
+      "sdk/server",
+      "session/session-checkpoint-policy",
+      "session/session-persistence",
+      "session/session-persistence-jsonl",
+      "session/session-persistence-sqlite",
+      "session/session-telemetry",
+      "session/session-telemetry-otel",
+      "session/session-title-all-prompts-llm",
+      "session/session-title-first-prompt-llm",
+      "session/session-title-llm",
+      "session-query/session-log-export",
+      "session-query/session-query",
+      "session-query/session-query-sqlite",
+      "session-query/tool-session-query",
+      "settings/settings",
+      "settings/settings-file",
+      "shell/bash-local",
+      "shell/bash-sandbox",
+      "shell/pwsh-local",
+      "shell/pwsh-sandbox",
+      "shell/shell",
+      "shell/shell-env",
+      "shell/tool-bash",
+      "shell/tool-bash-persistent",
+      "shell/tool-pwsh",
+      "shell/tool-pwsh-persistent",
+      "skill/skill",
+      "skill/skill-badge",
+      "skill/skill-filesystem",
+      "skill/tool-skill",
+      "spill/spill",
+      "spill/spill-local",
+      "spill/spill-policy",
+      "storage/storage",
+      "storage/storage-domain",
+      "storage/storage-json",
+      "storage/storage-sqlite",
+      "subagent/subagent-acp",
+      "subagent/subagent-claude-code",
+      "subagent/subagent-codex",
+      "subagent/subagent-dsh-sdk",
+      "subagent/subagent-fork-in-process",
+      "subagent/subagent-in-process-driver",
+      "subagent/subagent-spawn-in-process",
+      "subagent/tool-subagent",
+      "subagent/tool-subagent-control",
+      "subagent/tool-subagent-report",
+      "subprocess/subprocess",
+      "subprocess/subprocess-local",
+      "terminal/terminal",
+      "terminal/terminal-bash",
+      "terminal/tool-terminal",
+      "test-support/agent-loop-testkit",
+      "test-support/llm-mock-server",
+      "test-support/loader-smoke",
+      "typert/loader",
+      "typert/protocol",
+      "typert/registry",
+      "util/brand",
+      "util/home-paths",
+      "util/launch-environment",
+      "util/native-command",
+      "util/output-retention",
+      "util/timeout",
+      "web/tool-web",
+      "web/web",
+      "web/web-fetch-http",
+      "web/web-search-deepseek",
+      "web/web-search-exa",
+      "web/web-search-perplexity",
+      "workflow/tool-ralph",
+      "workflow/tool-workflow",
+      "workflow/workflow",
+      "workflow/workflow-worker-thread",
+      "workspace/workspace"
+    ],
+    "unchanged": []
+  },
+  "packages": {
+    "acp/acp": {
+      "old_path": "05-source/dsh-rc8/packages/acp/acp",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/acp/acp",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "api/gateway": {
+      "old_path": "05-source/dsh-rc8/packages/api/gateway",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/api/gateway",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "api/remotes": {
+      "old_path": "05-source/dsh-rc8/packages/api/remotes",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/api/remotes",
+      "src_changed": true,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "attachment/attachment": {
+      "old_path": "05-source/dsh-rc8/packages/attachment/attachment",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/attachment/attachment",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "attachment/attachment-local": {
+      "old_path": "05-source/dsh-rc8/packages/attachment/attachment-local",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/attachment/attachment-local",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "boot/app-boot": {
+      "old_path": "05-source/dsh-rc8/packages/boot/app-boot",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/boot/app-boot",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "boot/cmdline": {
+      "old_path": "05-source/dsh-rc8/packages/boot/cmdline",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/boot/cmdline",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "bundle/base": {
+      "old_path": "05-source/dsh-rc8/packages/bundle/base",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/bundle/base",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "bundle/headless": {
+      "old_path": "05-source/dsh-rc8/packages/bundle/headless",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/bundle/headless",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "bundle/web-app": {
+      "old_path": "05-source/dsh-rc8/packages/bundle/web-app",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/bundle/web-app",
+      "src_changed": false,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "tests_only"
+    },
+    "client/connection": {
+      "old_path": "05-source/dsh-rc8/packages/client/connection",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/connection",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "client/hmr": {
+      "old_path": "05-source/dsh-rc8/packages/client/hmr",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/hmr",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/locale": {
+      "old_path": "05-source/dsh-rc8/packages/client/locale",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/locale",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/modules": {
+      "old_path": "05-source/dsh-rc8/packages/client/modules",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/modules",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "client/runtime": {
+      "old_path": "05-source/dsh-rc8/packages/client/runtime",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/runtime",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "client/ui-agent-preset": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-agent-preset",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-agent-preset",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-attachment": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-attachment",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-attachment",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-brand-official": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-brand-official",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-brand-official",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-commands": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-commands",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-commands",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-conversation": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-conversation",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-conversation",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "client/ui-deliverables": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-deliverables",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-deliverables",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-directory-picker-browse": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-directory-picker-browse",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-directory-picker-browse",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-directory-picker-native": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-directory-picker-native",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-directory-picker-native",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-goal": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-goal",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-goal",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-input-trigger": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-input-trigger",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-input-trigger",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-jobs": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-jobs",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-jobs",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-layout": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-layout",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-layout",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-message-feedback": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-message-feedback",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-message-feedback",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-model-selection": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-model-selection",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-model-selection",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-permission-presets": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-permission-presets",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-permission-presets",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-plan": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-plan",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-plan",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-primitives": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-primitives",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-primitives",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "client/ui-reference": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-reference",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-reference",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-renderer": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-renderer",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-renderer",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-settings": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-settings",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-settings",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-settings-general": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-settings-general",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-settings-general",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-settings-models": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-settings-models",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-settings-models",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "client/ui-settings-plugin-inventory": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-settings-plugin-inventory",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-settings-plugin-inventory",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-settings-plugins": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-settings-plugins",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-settings-plugins",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "client/ui-sidebar": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-sidebar",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-sidebar",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-skill": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-skill",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-skill",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-slots": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-slots",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-slots",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-subagent": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-subagent",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-subagent",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": true,
+      "status": "src_changed"
+    },
+    "client/ui-theme": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-theme",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-theme",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "client/ui-tool": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-tool",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-tool",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-trajectory": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-trajectory",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-trajectory",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-user-questions": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-user-questions",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-user-questions",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "client/ui-workflow-run": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-workflow-run",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-workflow-run",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "client/ui-workspace": {
+      "old_path": "05-source/dsh-rc8/packages/client/ui-workspace",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/ui-workspace",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "client/web": {
+      "old_path": "05-source/dsh-rc8/packages/client/web",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/client/web",
+      "src_changed": true,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "code-runtime/code-runtime": {
+      "old_path": "05-source/dsh-rc8/packages/code-runtime/code-runtime",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/code-runtime/code-runtime",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "code-runtime/code-runtime-python": {
+      "old_path": "05-source/dsh-rc8/packages/code-runtime/code-runtime-python",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/code-runtime/code-runtime-python",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "code-runtime/code-runtime-worker-thread": {
+      "old_path": "05-source/dsh-rc8/packages/code-runtime/code-runtime-worker-thread",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/code-runtime/code-runtime-worker-thread",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "compaction/command-compact": {
+      "old_path": "05-source/dsh-rc8/packages/compaction/command-compact",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/compaction/command-compact",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "compaction/compaction": {
+      "old_path": "05-source/dsh-rc8/packages/compaction/compaction",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/compaction/compaction",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "compaction/compaction-basic": {
+      "old_path": "05-source/dsh-rc8/packages/compaction/compaction-basic",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/compaction/compaction-basic",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "compaction/compaction-tool-result-pruner": {
+      "old_path": "05-source/dsh-rc8/packages/compaction/compaction-tool-result-pruner",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/compaction/compaction-tool-result-pruner",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "context/agent-instructions": {
+      "old_path": "05-source/dsh-rc8/packages/context/agent-instructions",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/context/agent-instructions",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "context/file-reference": {
+      "old_path": "05-source/dsh-rc8/packages/context/file-reference",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/context/file-reference",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "context/file-reference-local": {
+      "old_path": "05-source/dsh-rc8/packages/context/file-reference-local",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/context/file-reference-local",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "context/session-reference": {
+      "old_path": "05-source/dsh-rc8/packages/context/session-reference",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/context/session-reference",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "context/time-context": {
+      "old_path": "05-source/dsh-rc8/packages/context/time-context",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/context/time-context",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "context/tmux-context": {
+      "old_path": "05-source/dsh-rc8/packages/context/tmux-context",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/context/tmux-context",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "core/agent": {
+      "old_path": "05-source/dsh-rc8/packages/core/agent",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/core/agent",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "core/agent-default-model": {
+      "old_path": "05-source/dsh-rc8/packages/core/agent-default-model",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/core/agent-default-model",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "core/agent-loop": {
+      "old_path": "05-source/dsh-rc8/packages/core/agent-loop",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/core/agent-loop",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "core/agent-tool-presentation": {
+      "old_path": "05-source/dsh-rc8/packages/core/agent-tool-presentation",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/core/agent-tool-presentation",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "core/scope": {
+      "old_path": "05-source/dsh-rc8/packages/core/scope",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/core/scope",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "core/session": {
+      "old_path": "05-source/dsh-rc8/packages/core/session",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/core/session",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "core/system-prompt": {
+      "old_path": "05-source/dsh-rc8/packages/core/system-prompt",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/core/system-prompt",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "core/tools": {
+      "old_path": "05-source/dsh-rc8/packages/core/tools",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/core/tools",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "credentials/authorization": {
+      "status": "added",
+      "path": "deepseek-harness-dsh-v0.1.1-rc.2/packages/credentials/authorization"
+    },
+    "credentials/credentials": {
+      "old_path": "05-source/dsh-rc8/packages/credentials/credentials",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/credentials/credentials",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "credentials/credentials-local": {
+      "old_path": "05-source/dsh-rc8/packages/credentials/credentials-local",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/credentials/credentials-local",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "e2b/e2b": {
+      "old_path": "05-source/dsh-rc8/packages/e2b/e2b",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/e2b/e2b",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "e2b/fs-e2b": {
+      "old_path": "05-source/dsh-rc8/packages/e2b/fs-e2b",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/e2b/fs-e2b",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "e2b/subprocess-e2b": {
+      "old_path": "05-source/dsh-rc8/packages/e2b/subprocess-e2b",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/e2b/subprocess-e2b",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "examples/acp-demo": {
+      "old_path": "05-source/dsh-rc8/packages/examples/acp-demo",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/examples/acp-demo",
+      "src_changed": false,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "tests_only"
+    },
+    "examples/agent-spine-demo": {
+      "old_path": "05-source/dsh-rc8/packages/examples/agent-spine-demo",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/examples/agent-spine-demo",
+      "src_changed": false,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "tests_only"
+    },
+    "examples/jsonrpc-demo": {
+      "old_path": "05-source/dsh-rc8/packages/examples/jsonrpc-demo",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/examples/jsonrpc-demo",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "experimental/agent-team": {
+      "old_path": "05-source/dsh-rc8/packages/experimental/agent-team",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/experimental/agent-team",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "experimental/tool-agent-team": {
+      "old_path": "05-source/dsh-rc8/packages/experimental/tool-agent-team",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/experimental/tool-agent-team",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "extensions/cordis-client-runner": {
+      "old_path": "05-source/dsh-rc8/packages/extensions/cordis-client-runner",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/extensions/cordis-client-runner",
+      "src_changed": true,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "extensions/cordis-host-runner": {
+      "old_path": "05-source/dsh-rc8/packages/extensions/cordis-host-runner",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/extensions/cordis-host-runner",
+      "src_changed": true,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "extensions/tool-cordis": {
+      "old_path": "05-source/dsh-rc8/packages/extensions/tool-cordis",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/extensions/tool-cordis",
+      "src_changed": true,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "extensions/ui-cordis": {
+      "old_path": "05-source/dsh-rc8/packages/extensions/ui-cordis",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/extensions/ui-cordis",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "feedback/command-feedback": {
+      "old_path": "05-source/dsh-rc8/packages/feedback/command-feedback",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/feedback/command-feedback",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "feedback/message-feedback": {
+      "old_path": "05-source/dsh-rc8/packages/feedback/message-feedback",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/feedback/message-feedback",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "fs/fs": {
+      "old_path": "05-source/dsh-rc8/packages/fs/fs",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/fs/fs",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "fs/fs-local": {
+      "old_path": "05-source/dsh-rc8/packages/fs/fs-local",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/fs/fs-local",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "fs/fs-observation-policy": {
+      "old_path": "05-source/dsh-rc8/packages/fs/fs-observation-policy",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/fs/fs-observation-policy",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "fs/fs-sandbox": {
+      "old_path": "05-source/dsh-rc8/packages/fs/fs-sandbox",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/fs/fs-sandbox",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "fs/tool-fs": {
+      "old_path": "05-source/dsh-rc8/packages/fs/tool-fs",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/fs/tool-fs",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "fs/tool-fs-search": {
+      "old_path": "05-source/dsh-rc8/packages/fs/tool-fs-search",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/fs/tool-fs-search",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "fs/tool-str-replace-editor": {
+      "old_path": "05-source/dsh-rc8/packages/fs/tool-str-replace-editor",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/fs/tool-str-replace-editor",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "goal/command-goal": {
+      "old_path": "05-source/dsh-rc8/packages/goal/command-goal",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/goal/command-goal",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "goal/goal": {
+      "old_path": "05-source/dsh-rc8/packages/goal/goal",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/goal/goal",
+      "src_changed": true,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "goal/goal-round-driver": {
+      "old_path": "05-source/dsh-rc8/packages/goal/goal-round-driver",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/goal/goal-round-driver",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "goal/tool-goal": {
+      "old_path": "05-source/dsh-rc8/packages/goal/tool-goal",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/goal/tool-goal",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "guard/repeat-tool-reminder": {
+      "old_path": "05-source/dsh-rc8/packages/guard/repeat-tool-reminder",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/guard/repeat-tool-reminder",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "guard/timeout-policy": {
+      "old_path": "05-source/dsh-rc8/packages/guard/timeout-policy",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/guard/timeout-policy",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "hooks/hook-protocol": {
+      "old_path": "05-source/dsh-rc8/packages/hooks/hook-protocol",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/hooks/hook-protocol",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "hooks/hooks-claude-code": {
+      "old_path": "05-source/dsh-rc8/packages/hooks/hooks-claude-code",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/hooks/hooks-claude-code",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "hooks/hooks-codex": {
+      "old_path": "05-source/dsh-rc8/packages/hooks/hooks-codex",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/hooks/hooks-codex",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "host/apiproxy": {
+      "old_path": "05-source/dsh-rc8/packages/host/apiproxy",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/host/apiproxy",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "host/directory-picker": {
+      "old_path": "05-source/dsh-rc8/packages/host/directory-picker",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/host/directory-picker",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "host/directory-picker-auto": {
+      "old_path": "05-source/dsh-rc8/packages/host/directory-picker-auto",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/host/directory-picker-auto",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "host/directory-picker-browse": {
+      "old_path": "05-source/dsh-rc8/packages/host/directory-picker-browse",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/host/directory-picker-browse",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "host/directory-picker-native": {
+      "old_path": "05-source/dsh-rc8/packages/host/directory-picker-native",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/host/directory-picker-native",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "host/frontend-static": {
+      "old_path": "05-source/dsh-rc8/packages/host/frontend-static",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/host/frontend-static",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": true,
+      "status": "src_changed"
+    },
+    "host/plugin-inventory": {
+      "old_path": "05-source/dsh-rc8/packages/host/plugin-inventory",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/host/plugin-inventory",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "host/webserver": {
+      "old_path": "05-source/dsh-rc8/packages/host/webserver",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/host/webserver",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "identity/anonymous-user-id": {
+      "old_path": "05-source/dsh-rc8/packages/identity/anonymous-user-id",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/identity/anonymous-user-id",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "interaction/commands": {
+      "old_path": "05-source/dsh-rc8/packages/interaction/commands",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/interaction/commands",
+      "src_changed": false,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "tests_only"
+    },
+    "interaction/permission-presets": {
+      "old_path": "05-source/dsh-rc8/packages/interaction/permission-presets",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/interaction/permission-presets",
+      "src_changed": true,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "interaction/tool-ask-user": {
+      "old_path": "05-source/dsh-rc8/packages/interaction/tool-ask-user",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/interaction/tool-ask-user",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "interaction/user-approval": {
+      "old_path": "05-source/dsh-rc8/packages/interaction/user-approval",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/interaction/user-approval",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "interaction/user-questions": {
+      "old_path": "05-source/dsh-rc8/packages/interaction/user-questions",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/interaction/user-questions",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "jobs/jobs": {
+      "old_path": "05-source/dsh-rc8/packages/jobs/jobs",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/jobs/jobs",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "jobs/jobs-local": {
+      "old_path": "05-source/dsh-rc8/packages/jobs/jobs-local",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/jobs/jobs-local",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "jobs/tool-jobs": {
+      "old_path": "05-source/dsh-rc8/packages/jobs/tool-jobs",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/jobs/tool-jobs",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "llm/llm": {
+      "old_path": "05-source/dsh-rc8/packages/llm/llm",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/llm/llm",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "llm/llm-deepseek": {
+      "old_path": "05-source/dsh-rc8/packages/llm/llm-deepseek",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/llm/llm-deepseek",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": true,
+      "status": "src_changed"
+    },
+    "llm/llm-pi-ai": {
+      "old_path": "05-source/dsh-rc8/packages/llm/llm-pi-ai",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/llm/llm-pi-ai",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": true,
+      "status": "src_changed"
+    },
+    "llm/llm-retry": {
+      "old_path": "05-source/dsh-rc8/packages/llm/llm-retry",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/llm/llm-retry",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "llm/token-meter": {
+      "old_path": "05-source/dsh-rc8/packages/llm/token-meter",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/llm/token-meter",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "lsp/lsp": {
+      "old_path": "05-source/dsh-rc8/packages/lsp/lsp",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/lsp/lsp",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "lsp/lsp-stdio": {
+      "old_path": "05-source/dsh-rc8/packages/lsp/lsp-stdio",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/lsp/lsp-stdio",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "lsp/tool-lsp": {
+      "old_path": "05-source/dsh-rc8/packages/lsp/tool-lsp",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/lsp/tool-lsp",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "mcp/mcp-client": {
+      "old_path": "05-source/dsh-rc8/packages/mcp/mcp-client",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/mcp/mcp-client",
+      "src_changed": false,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "tests_only"
+    },
+    "plan/plan-mode": {
+      "old_path": "05-source/dsh-rc8/packages/plan/plan-mode",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/plan/plan-mode",
+      "src_changed": true,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "preset/agent-presets": {
+      "old_path": "05-source/dsh-rc8/packages/preset/agent-presets",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/preset/agent-presets",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "preset/persona": {
+      "old_path": "05-source/dsh-rc8/packages/preset/persona",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/preset/persona",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "runtime-diagnostics/invariants": {
+      "old_path": "05-source/dsh-rc8/packages/runtime-diagnostics/invariants",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/runtime-diagnostics/invariants",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "sandbox/sandbox": {
+      "old_path": "05-source/dsh-rc8/packages/sandbox/sandbox",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/sandbox/sandbox",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "sandbox/sandbox-local": {
+      "old_path": "05-source/dsh-rc8/packages/sandbox/sandbox-local",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/sandbox/sandbox-local",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "sandbox/sandbox-policy": {
+      "old_path": "05-source/dsh-rc8/packages/sandbox/sandbox-policy",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/sandbox/sandbox-policy",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "sandbox/sandbox-windows-acl": {
+      "old_path": "05-source/dsh-rc8/packages/sandbox/sandbox-windows-acl",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/sandbox/sandbox-windows-acl",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "schedule/schedule": {
+      "old_path": "05-source/dsh-rc8/packages/schedule/schedule",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/schedule/schedule",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "sdk/client": {
+      "old_path": "05-source/dsh-rc8/packages/sdk/client",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/sdk/client",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "sdk/protocol": {
+      "old_path": "05-source/dsh-rc8/packages/sdk/protocol",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/sdk/protocol",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "sdk/server": {
+      "old_path": "05-source/dsh-rc8/packages/sdk/server",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/sdk/server",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "session/session-checkpoint-policy": {
+      "old_path": "05-source/dsh-rc8/packages/session/session-checkpoint-policy",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/session/session-checkpoint-policy",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "session/session-persistence": {
+      "old_path": "05-source/dsh-rc8/packages/session/session-persistence",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/session/session-persistence",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "session/session-persistence-jsonl": {
+      "old_path": "05-source/dsh-rc8/packages/session/session-persistence-jsonl",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/session/session-persistence-jsonl",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "session/session-persistence-sqlite": {
+      "old_path": "05-source/dsh-rc8/packages/session/session-persistence-sqlite",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/session/session-persistence-sqlite",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "session/session-projection": {
+      "old_path": "05-source/dsh-rc8/packages/session/session-projection",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/session/session-projection",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "session/session-projection-cache": {
+      "old_path": "05-source/dsh-rc8/packages/session/session-projection-cache",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/session/session-projection-cache",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "session/session-stats": {
+      "old_path": "05-source/dsh-rc8/packages/session/session-stats",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/session/session-stats",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "session/session-telemetry": {
+      "old_path": "05-source/dsh-rc8/packages/session/session-telemetry",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/session/session-telemetry",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "session/session-telemetry-otel": {
+      "old_path": "05-source/dsh-rc8/packages/session/session-telemetry-otel",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/session/session-telemetry-otel",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "session/session-title": {
+      "old_path": "05-source/dsh-rc8/packages/session/session-title",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/session/session-title",
+      "src_changed": true,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "session/session-title-all-prompts-llm": {
+      "old_path": "05-source/dsh-rc8/packages/session/session-title-all-prompts-llm",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/session/session-title-all-prompts-llm",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "session/session-title-first-prompt-llm": {
+      "old_path": "05-source/dsh-rc8/packages/session/session-title-first-prompt-llm",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/session/session-title-first-prompt-llm",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "session/session-title-llm": {
+      "old_path": "05-source/dsh-rc8/packages/session/session-title-llm",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/session/session-title-llm",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "session-query/session-log-export": {
+      "old_path": "05-source/dsh-rc8/packages/session-query/session-log-export",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/session-query/session-log-export",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "session-query/session-query": {
+      "old_path": "05-source/dsh-rc8/packages/session-query/session-query",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/session-query/session-query",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "session-query/session-query-sqlite": {
+      "old_path": "05-source/dsh-rc8/packages/session-query/session-query-sqlite",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/session-query/session-query-sqlite",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "session-query/tool-session-query": {
+      "old_path": "05-source/dsh-rc8/packages/session-query/tool-session-query",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/session-query/tool-session-query",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "settings/settings": {
+      "old_path": "05-source/dsh-rc8/packages/settings/settings",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/settings/settings",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "settings/settings-file": {
+      "old_path": "05-source/dsh-rc8/packages/settings/settings-file",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/settings/settings-file",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "shell/bash-local": {
+      "old_path": "05-source/dsh-rc8/packages/shell/bash-local",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/shell/bash-local",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "shell/bash-sandbox": {
+      "old_path": "05-source/dsh-rc8/packages/shell/bash-sandbox",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/shell/bash-sandbox",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "shell/pwsh-local": {
+      "old_path": "05-source/dsh-rc8/packages/shell/pwsh-local",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/shell/pwsh-local",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "shell/pwsh-sandbox": {
+      "old_path": "05-source/dsh-rc8/packages/shell/pwsh-sandbox",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/shell/pwsh-sandbox",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "shell/shell": {
+      "old_path": "05-source/dsh-rc8/packages/shell/shell",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/shell/shell",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "shell/shell-env": {
+      "old_path": "05-source/dsh-rc8/packages/shell/shell-env",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/shell/shell-env",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "shell/tool-bash": {
+      "old_path": "05-source/dsh-rc8/packages/shell/tool-bash",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/shell/tool-bash",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "shell/tool-bash-persistent": {
+      "old_path": "05-source/dsh-rc8/packages/shell/tool-bash-persistent",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/shell/tool-bash-persistent",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "shell/tool-pwsh": {
+      "old_path": "05-source/dsh-rc8/packages/shell/tool-pwsh",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/shell/tool-pwsh",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "shell/tool-pwsh-persistent": {
+      "old_path": "05-source/dsh-rc8/packages/shell/tool-pwsh-persistent",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/shell/tool-pwsh-persistent",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "skill/skill": {
+      "old_path": "05-source/dsh-rc8/packages/skill/skill",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/skill/skill",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "skill/skill-badge": {
+      "old_path": "05-source/dsh-rc8/packages/skill/skill-badge",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/skill/skill-badge",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "skill/skill-filesystem": {
+      "old_path": "05-source/dsh-rc8/packages/skill/skill-filesystem",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/skill/skill-filesystem",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "skill/tool-skill": {
+      "old_path": "05-source/dsh-rc8/packages/skill/tool-skill",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/skill/tool-skill",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "spill/spill": {
+      "old_path": "05-source/dsh-rc8/packages/spill/spill",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/spill/spill",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "spill/spill-local": {
+      "old_path": "05-source/dsh-rc8/packages/spill/spill-local",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/spill/spill-local",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "spill/spill-policy": {
+      "old_path": "05-source/dsh-rc8/packages/spill/spill-policy",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/spill/spill-policy",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "storage/storage": {
+      "old_path": "05-source/dsh-rc8/packages/storage/storage",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/storage/storage",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "storage/storage-domain": {
+      "old_path": "05-source/dsh-rc8/packages/storage/storage-domain",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/storage/storage-domain",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "storage/storage-json": {
+      "old_path": "05-source/dsh-rc8/packages/storage/storage-json",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/storage/storage-json",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "storage/storage-sqlite": {
+      "old_path": "05-source/dsh-rc8/packages/storage/storage-sqlite",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/storage/storage-sqlite",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "subagent/subagent": {
+      "old_path": "05-source/dsh-rc8/packages/subagent/subagent",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/subagent/subagent",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "subagent/subagent-acp": {
+      "old_path": "05-source/dsh-rc8/packages/subagent/subagent-acp",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/subagent/subagent-acp",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "subagent/subagent-claude-code": {
+      "old_path": "05-source/dsh-rc8/packages/subagent/subagent-claude-code",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/subagent/subagent-claude-code",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "subagent/subagent-codex": {
+      "old_path": "05-source/dsh-rc8/packages/subagent/subagent-codex",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/subagent/subagent-codex",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "subagent/subagent-dsh-sdk": {
+      "old_path": "05-source/dsh-rc8/packages/subagent/subagent-dsh-sdk",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/subagent/subagent-dsh-sdk",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "subagent/subagent-fork-in-process": {
+      "old_path": "05-source/dsh-rc8/packages/subagent/subagent-fork-in-process",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/subagent/subagent-fork-in-process",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "subagent/subagent-in-process-driver": {
+      "old_path": "05-source/dsh-rc8/packages/subagent/subagent-in-process-driver",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/subagent/subagent-in-process-driver",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "subagent/subagent-spawn-in-process": {
+      "old_path": "05-source/dsh-rc8/packages/subagent/subagent-spawn-in-process",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/subagent/subagent-spawn-in-process",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "subagent/tool-subagent": {
+      "old_path": "05-source/dsh-rc8/packages/subagent/tool-subagent",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/subagent/tool-subagent",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "subagent/tool-subagent-control": {
+      "old_path": "05-source/dsh-rc8/packages/subagent/tool-subagent-control",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/subagent/tool-subagent-control",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "subagent/tool-subagent-report": {
+      "old_path": "05-source/dsh-rc8/packages/subagent/tool-subagent-report",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/subagent/tool-subagent-report",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "subprocess/subprocess": {
+      "old_path": "05-source/dsh-rc8/packages/subprocess/subprocess",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/subprocess/subprocess",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "subprocess/subprocess-local": {
+      "old_path": "05-source/dsh-rc8/packages/subprocess/subprocess-local",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/subprocess/subprocess-local",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "terminal/terminal": {
+      "old_path": "05-source/dsh-rc8/packages/terminal/terminal",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/terminal/terminal",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "terminal/terminal-bash": {
+      "old_path": "05-source/dsh-rc8/packages/terminal/terminal-bash",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/terminal/terminal-bash",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "terminal/tool-terminal": {
+      "old_path": "05-source/dsh-rc8/packages/terminal/tool-terminal",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/terminal/tool-terminal",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "test-support/acp-snapshot": {
+      "old_path": "05-source/dsh-rc8/packages/test-support/acp-snapshot",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/test-support/acp-snapshot",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "test-support/agent-loop-testkit": {
+      "old_path": "05-source/dsh-rc8/packages/test-support/agent-loop-testkit",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/test-support/agent-loop-testkit",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "test-support/client-runtime": {
+      "old_path": "05-source/dsh-rc8/packages/test-support/client-runtime",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/test-support/client-runtime",
+      "src_changed": false,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "tests_only"
+    },
+    "test-support/llm-mock-server": {
+      "old_path": "05-source/dsh-rc8/packages/test-support/llm-mock-server",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/test-support/llm-mock-server",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "test-support/llm-replay": {
+      "old_path": "05-source/dsh-rc8/packages/test-support/llm-replay",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/test-support/llm-replay",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "test-support/loader-smoke": {
+      "old_path": "05-source/dsh-rc8/packages/test-support/loader-smoke",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/test-support/loader-smoke",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "todo/tool-todo": {
+      "old_path": "05-source/dsh-rc8/packages/todo/tool-todo",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/todo/tool-todo",
+      "src_changed": true,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "typert/generator": {
+      "old_path": "05-source/dsh-rc8/packages/typert/generator",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/typert/generator",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "typert/loader": {
+      "old_path": "05-source/dsh-rc8/packages/typert/loader",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/typert/loader",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "typert/protocol": {
+      "old_path": "05-source/dsh-rc8/packages/typert/protocol",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/typert/protocol",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "typert/registry": {
+      "old_path": "05-source/dsh-rc8/packages/typert/registry",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/typert/registry",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "util/atomic-write": {
+      "old_path": "05-source/dsh-rc8/packages/util/atomic-write",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/util/atomic-write",
+      "src_changed": true,
+      "tests_changed": true,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "src_changed"
+    },
+    "util/brand": {
+      "old_path": "05-source/dsh-rc8/packages/util/brand",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/util/brand",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "util/home-paths": {
+      "old_path": "05-source/dsh-rc8/packages/util/home-paths",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/util/home-paths",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "util/launch-environment": {
+      "old_path": "05-source/dsh-rc8/packages/util/launch-environment",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/util/launch-environment",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "util/native-command": {
+      "old_path": "05-source/dsh-rc8/packages/util/native-command",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/util/native-command",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "util/output-retention": {
+      "old_path": "05-source/dsh-rc8/packages/util/output-retention",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/util/output-retention",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "util/timeout": {
+      "old_path": "05-source/dsh-rc8/packages/util/timeout",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/util/timeout",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "web/tool-web": {
+      "old_path": "05-source/dsh-rc8/packages/web/tool-web",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/web/tool-web",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "web/web": {
+      "old_path": "05-source/dsh-rc8/packages/web/web",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/web/web",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "web/web-fetch-http": {
+      "old_path": "05-source/dsh-rc8/packages/web/web-fetch-http",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/web/web-fetch-http",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "web/web-search-deepseek": {
+      "old_path": "05-source/dsh-rc8/packages/web/web-search-deepseek",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/web/web-search-deepseek",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "web/web-search-exa": {
+      "old_path": "05-source/dsh-rc8/packages/web/web-search-exa",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/web/web-search-exa",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "web/web-search-perplexity": {
+      "old_path": "05-source/dsh-rc8/packages/web/web-search-perplexity",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/web/web-search-perplexity",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "workflow/tool-ralph": {
+      "old_path": "05-source/dsh-rc8/packages/workflow/tool-ralph",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/workflow/tool-ralph",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "workflow/tool-workflow": {
+      "old_path": "05-source/dsh-rc8/packages/workflow/tool-workflow",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/workflow/tool-workflow",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "workflow/workflow": {
+      "old_path": "05-source/dsh-rc8/packages/workflow/workflow",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/workflow/workflow",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "workflow/workflow-worker-thread": {
+      "old_path": "05-source/dsh-rc8/packages/workflow/workflow-worker-thread",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/workflow/workflow-worker-thread",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    },
+    "workspace/workspace": {
+      "old_path": "05-source/dsh-rc8/packages/workspace/workspace",
+      "new_path": "05-source/dsh-v0.1.1-rc.2/deepseek-harness-dsh-v0.1.1-rc.2/packages/workspace/workspace",
+      "src_changed": false,
+      "tests_changed": false,
+      "package_json_changed": true,
+      "package_json_stripped_changed": false,
+      "status": "version_only"
+    }
+  }
+}

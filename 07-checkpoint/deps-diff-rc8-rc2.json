@@ -1,0 +1,37 @@
+[
+  {
+    "pkg": [
+      "credentials",
+      "authorization"
+    ],
+    "status": "added",
+    "deps": [
+      "@deepseek-ai/dsh-credentials",
+      "@deepseek-ai/dsh-invariants",
+      "@deepseek-ai/dsh-llm",
+      "@deepseek-ai/cordis"
+    ]
+  },
+  {
+    "pkg": [
+      "llm",
+      "llm-deepseek"
+    ],
+    "added": [
+      "@deepseek-ai/dsh-atomic-write",
+      "@deepseek-ai/dsh-brand",
+      "@deepseek-ai/dsh-home-paths"
+    ],
+    "removed": []
+  },
+  {
+    "pkg": [
+      "llm",
+      "llm-pi-ai"
+    ],
+    "added": [
+      "@deepseek-ai/dsh-authorization"
+    ],
+    "removed": []
+  }
+]

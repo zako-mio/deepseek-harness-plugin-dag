@@ -1,8 +1,8 @@
 {
   "meta": {
     "mission": "deepseek-harness 插件级 DAG 依赖链分析 - L1 核心集 + L2 web-app + L3 其余插件",
-    "generated_at": "2026-08-20",
-    "source": "webapp-dag.json (L1+L2) + stage-01-l3-r1~r5.json (5路 explore 三依据分析)",
+    "generated_at": "2026-08-21",
+    "source": "webapp-dag.json (L1+L2+L3, RC8 baseline) + RC2 dependency diff update",
     "plugin_count": 180,
     "edge_count": 578,
     "layer_count": 17,

@@ -89,6 +89,14 @@ payload = {
     "extColor": "#b48a3c"
 }
 
+# 动态图例统计
+l1_count = sum(1 for n in nodes.values() if n.get("source_layer") == "L1")
+l2_count = sum(1 for n in nodes.values() if n.get("source_layer") == "L2")
+l3_count = sum(1 for n in nodes.values() if n.get("source_layer") == "L3")
+plugin_count = len(nodes)
+seam_count = len(ext_map)
+group_count = len(groups)
+
 html_page = """<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -128,11 +136,11 @@ html_page = """<!DOCTYPE html>
 <div id="side">
   <h2>图例</h2>
   <div class="legend">
-    <b>插件节点</b>（173 个：L1 76 核心 + L2 58 web-app + L3 39）<br>
-    <b>外部 seam 节点</b>（49 个基座包）<br>
+    <b>插件节点</b>（{plugin_count} 个：L1 {l1_count} 核心 + L2 {l2_count} web-app + L3 {l3_count}）<br>
+    <b>外部 seam 节点</b>（{seam_count} 个基座包）<br>
     <b>依赖边</b>：A → B 表示 A 依赖 B<br>
-    <b>视图</b>：组级（38 组）→ 点击组进入组内插件 DAG<br><br>
-    组：运行时框架/类型契约/核心服务/LLM域/文件系统/Shell/沙箱/审批/命令/凭据/附件/作业/目标/技能/子代理/工作流/上下文治理/Web 等 37 组
+    <b>视图</b>：组级（{group_count} 组）→ 点击组进入组内插件 DAG<br><br>
+    组：运行时框架/类型契约/核心服务/LLM域/文件系统/Shell/沙箱/审批/命令/凭据/附件/作业/目标/技能/子代理/工作流/上下文治理/Web 等 {group_count} 组
   </div>
   <h2 style="margin-top:14px;">组配色</h2>
   <div id="glegend"></div>
@@ -306,9 +314,16 @@ render();
 </html>
 """
 
-# 注入 JSON 数据
+# 注入 JSON 数据 + 动态图例统计
 data_json = json.dumps(payload, ensure_ascii=False)
-html_page = html_page.replace("__DATA__", data_json)
+html_page = (html_page
+    .replace("__DATA__", data_json)
+    .replace("{plugin_count}", str(plugin_count))
+    .replace("{l1_count}", str(l1_count))
+    .replace("{l2_count}", str(l2_count))
+    .replace("{l3_count}", str(l3_count))
+    .replace("{seam_count}", str(seam_count))
+    .replace("{group_count}", str(group_count)))
 
 with open(OUT, "w", encoding="utf-8") as f:
     f.write(html_page)

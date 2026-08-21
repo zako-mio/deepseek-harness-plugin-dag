@@ -1,6 +1,6 @@
 # 插件分组清单
 
-共 39 组 / 180 核心插件 / 49 外部 seam
+共 39 组 / 180 核心插件 / 50 外部 seam
 
 ## G01 · 运行时框架 (2 插件)
 - [cordis-plugin-timer](plugins/cordis-plugin-timer.md) - L0 (L1 核心集)

@@ -1,6 +1,363 @@
 {
-  "count": 49,
+  "count": 50,
   "seams": [
+    {
+      "id": "cordis-plugin-include",
+      "name": "@deepseek-ai/cordis-plugin-include",
+      "path": "",
+      "ts_count": 0,
+      "description": "",
+      "ref_count": 1,
+      "referred_by": [
+        "cordis-plugin-hmr"
+      ],
+      "mechanisms": [
+        "E1"
+      ]
+    },
+    {
+      "id": "cordis-plugin-loader",
+      "name": "@deepseek-ai/cordis-plugin-loader",
+      "path": "",
+      "ts_count": 0,
+      "description": "",
+      "ref_count": 2,
+      "referred_by": [
+        "cordis-plugin-hmr",
+        "dsh-typert-loader"
+      ],
+      "mechanisms": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "dsh-acp",
+      "name": "@deepseek-ai/dsh-acp",
+      "path": "packages/acp/acp",
+      "ts_count": 3,
+      "description": "Automation-only Agent Client Protocol server for driving DeepSeek Harness agents over JSON-RPC stdio",
+      "ref_count": 1,
+      "referred_by": [
+        "dsh-acp-demo"
+      ],
+      "mechanisms": [
+        "E2"
+      ],
+      "l3_note": "抽象基座",
+      "note_l3": "8 插件无一依赖；仅 packages/examples/acp-demo/src/index.ts:17 import * as acp。dsh-subagent-acp 走外部 @agentclientprotocol/sdk，不走本 seam"
+    },
+    {
+      "id": "dsh-acp-snapshot",
+      "name": "@deepseek-ai/dsh-acp-snapshot",
+      "path": "packages/test-support/acp-snapshot",
+      "ts_count": 6,
+      "description": "ACP test kit: shared subprocess launcher, snapshot scenario harness, expected-output normalizers, and suite factory",
+      "ref_count": 0,
+      "referred_by": [],
+      "mechanisms": [],
+      "l3_note": "test-support"
+    },
+    {
+      "id": "dsh-agent-loop-testkit",
+      "name": "@deepseek-ai/dsh-agent-loop-testkit",
+      "path": "packages/test-support/agent-loop-testkit",
+      "ts_count": 2,
+      "description": "Shared prerequisite mounting for tests that exercise the concrete agent loop",
+      "ref_count": 0,
+      "referred_by": [],
+      "mechanisms": [],
+      "l3_note": "test-support"
+    },
+    {
+      "id": "dsh-anonymous-user-id",
+      "name": "@deepseek-ai/dsh-anonymous-user-id",
+      "path": "packages/identity/anonymous-user-id",
+      "ts_count": 2,
+      "description": "Shared anonymous user identity for DeepSeek Harness telemetry and feedback correlation",
+      "ref_count": 3,
+      "referred_by": [
+        "dsh-command-feedback",
+        "dsh-llm-deepseek",
+        "dsh-session-telemetry-otel"
+      ],
+      "mechanisms": [
+        "E1"
+      ]
+    },
+    {
+      "id": "dsh-atomic-write",
+      "name": "@deepseek-ai/dsh-atomic-write",
+      "path": "packages/util/atomic-write",
+      "ts_count": 2,
+      "description": "Zero-dependency atomic file replacement: exclusive-create random-suffix temp + rename carrying the caller-stated permissions (writeFileAtomic)",
+      "ref_count": 3,
+      "referred_by": [
+        "dsh-credentials-local",
+        "dsh-llm-deepseek",
+        "dsh-settings-file"
+      ],
+      "mechanisms": [
+        "E1"
+      ]
+    },
+    {
+      "id": "dsh-attachment",
+      "name": "@deepseek-ai/dsh-attachment",
+      "path": "packages/attachment/attachment",
+      "ts_count": 5,
+      "description": "Durable immutable attachment storage seam for the DeepSeek Harness",
+      "ref_count": 8,
+      "referred_by": [
+        "dsh-acp",
+        "dsh-attachment-local",
+        "dsh-commands",
+        "dsh-llm",
+        "dsh-llm-deepseek",
+        "dsh-llm-pi-ai",
+        "dsh-mcp-client",
+        "dsh-tool-fs"
+      ],
+      "mechanisms": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "dsh-authorization",
+      "name": "@deepseek-ai/dsh-authorization",
+      "path": "packages/credentials/authorization",
+      "ts_count": 3,
+      "description": "Authorization seam (ctx.authorization): plugin-owned flows that obtain a credential through a conversation with the human",
+      "ref_count": 1,
+      "referred_by": [
+        "dsh-llm-pi-ai"
+      ],
+      "mechanisms": [
+        "E1"
+      ]
+    },
+    {
+      "id": "dsh-bash-local",
+      "name": "@deepseek-ai/dsh-bash-local",
+      "path": "packages/shell/bash-local",
+      "ts_count": 2,
+      "description": "Local-subprocess implementation of the DeepSeek Harness bash executor seam",
+      "ref_count": 1,
+      "referred_by": [
+        "dsh-bash-sandbox"
+      ],
+      "mechanisms": [
+        "E3"
+      ]
+    },
+    {
+      "id": "dsh-brand",
+      "name": "@deepseek-ai/dsh-brand",
+      "path": "packages/util/brand",
+      "ts_count": 2,
+      "description": "Type-only Branded<B> nominal-typing primitive for the DeepSeek Harness",
+      "ref_count": 6,
+      "referred_by": [
+        "dsh-llm",
+        "dsh-llm-deepseek",
+        "dsh-llm-retry",
+        "dsh-schedule",
+        "dsh-session",
+        "dsh-session-title"
+      ],
+      "mechanisms": [
+        "E1"
+      ]
+    },
+    {
+      "id": "dsh-bundle-base",
+      "name": "@deepseek-ai/dsh-bundle-base",
+      "path": "",
+      "ts_count": 0,
+      "description": "",
+      "ref_count": 4,
+      "referred_by": [
+        "dsh-session-persistence-sqlite",
+        "dsh-session-title-all-prompts-llm",
+        "dsh-skill-badge",
+        "dsh-web-fetch-http"
+      ],
+      "mechanisms": [
+        "E1",
+        "E3"
+      ]
+    },
+    {
+      "id": "dsh-client-connection",
+      "name": "@deepseek-ai/dsh-client-connection",
+      "path": "packages/client/connection",
+      "ts_count": 16,
+      "description": "Wire consumer layer: HTTP-up/WebSocket-down client, ConnectionController dual streams with reconnect, and fixture api",
+      "ref_count": 3,
+      "referred_by": [
+        "dsh-api-gateway",
+        "dsh-client-ui-tool",
+        "dsh-client-ui-workspace"
+      ],
+      "mechanisms": [
+        "E2"
+      ]
+    },
+    {
+      "id": "dsh-client-test-runtime",
+      "name": "@deepseek-ai/dsh-client-test-runtime",
+      "path": "packages/test-support/client-runtime",
+      "ts_count": 10,
+      "description": "jsdom slot test runtime: real Cordis Context + SlotRegistry + web-react renderer with test-owned session/workspace doubles for feature specs",
+      "ref_count": 0,
+      "referred_by": [],
+      "mechanisms": [],
+      "l3_note": "test-support"
+    },
+    {
+      "id": "dsh-code-runtime",
+      "name": "@deepseek-ai/dsh-code-runtime",
+      "path": "packages/code-runtime/code-runtime",
+      "ts_count": 3,
+      "description": "Abstract code-execution seam (ctx.codeRuntime) for the DeepSeek Harness",
+      "ref_count": 2,
+      "referred_by": [
+        "dsh-code-runtime-python",
+        "dsh-tools"
+      ],
+      "mechanisms": [
+        "E2"
+      ]
+    },
+    {
+      "id": "dsh-compaction",
+      "name": "@deepseek-ai/dsh-compaction",
+      "path": "packages/compaction/compaction",
+      "ts_count": 6,
+      "description": "Abstract compaction service seam (ctx.compaction) for the DeepSeek Harness",
+      "ref_count": 4,
+      "referred_by": [
+        "dsh-command-compact",
+        "dsh-compaction-tool-result-pruner",
+        "dsh-session-reference",
+        "dsh-token-meter"
+      ],
+      "mechanisms": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "dsh-credentials",
+      "name": "@deepseek-ai/dsh-credentials",
+      "path": "packages/credentials/credentials",
+      "ts_count": 3,
+      "description": "Abstract credential seam (ctx.credentials): settings carry references to secrets, providers own the values",
+      "ref_count": 4,
+      "referred_by": [
+        "dsh-credentials-local",
+        "dsh-llm-deepseek",
+        "dsh-llm-pi-ai",
+        "dsh-web-search-deepseek"
+      ],
+      "mechanisms": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "dsh-e2b",
+      "name": "@deepseek-ai/dsh-e2b",
+      "path": "packages/e2b/e2b",
+      "ts_count": 2,
+      "description": "Shared E2B sandbox lifecycle for DeepSeek Harness provider adapters",
+      "ref_count": 2,
+      "referred_by": [
+        "dsh-fs-e2b",
+        "dsh-subprocess-e2b"
+      ],
+      "mechanisms": [
+        "E1"
+      ],
+      "l3_note": "抽象基座",
+      "note_l3": "8 插件无一依赖；实引方为 packages/e2b/subprocess-e2b 与 packages/e2b/fs-e2b(其他路插件)"
+    },
+    {
+      "id": "dsh-fs",
+      "name": "@deepseek-ai/dsh-fs",
+      "path": "packages/fs/fs",
+      "ts_count": 3,
+      "description": "Abstract filesystem capability seam (ctx.fs) for the DeepSeek Harness — vocabulary types, the FileSystem service (text IO + optional version-guarded atomic mutations), and the fs/* policy event vocabulary",
+      "ref_count": 8,
+      "referred_by": [
+        "dsh-agent-instructions",
+        "dsh-fs-e2b",
+        "dsh-fs-observation-policy",
+        "dsh-fs-sandbox",
+        "dsh-lsp-stdio",
+        "dsh-skill-filesystem",
+        "dsh-tool-fs",
+        "dsh-tool-str-replace-editor"
+      ],
+      "mechanisms": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "dsh-fs-local",
+      "name": "@deepseek-ai/dsh-fs-local",
+      "path": "packages/fs/fs-local",
+      "ts_count": 4,
+      "description": "Local-filesystem implementation of the DeepSeek Harness filesystem seam (ctx.fs)",
+      "ref_count": 1,
+      "referred_by": [
+        "dsh-fs-sandbox"
+      ],
+      "mechanisms": [
+        "E1"
+      ]
+    },
+    {
+      "id": "dsh-home-paths",
+      "name": "@deepseek-ai/dsh-home-paths",
+      "path": "packages/util/home-paths",
+      "ts_count": 2,
+      "description": "Shared filesystem path helpers for the DeepSeek Harness",
+      "ref_count": 7,
+      "referred_by": [
+        "dsh-agent-spine-demo",
+        "dsh-attachment-local",
+        "dsh-credentials-local",
+        "dsh-llm-deepseek",
+        "dsh-settings-file",
+        "dsh-shell-env",
+        "dsh-skill-filesystem"
+      ],
+      "mechanisms": [
+        "E1"
+      ]
+    },
+    {
+      "id": "dsh-hook-protocol",
+      "name": "@deepseek-ai/dsh-hook-protocol",
+      "path": "packages/hooks/hook-protocol",
+      "ts_count": 9,
+      "description": "Shared Claude Code / Codex hook wire protocol: matcher engine, stdin/exit-code/stdout codec, multi-hook merge, and hook/* session events",
+      "ref_count": 2,
+      "referred_by": [
+        "dsh-hooks-claude-code",
+        "dsh-hooks-codex"
+      ],
+      "mechanisms": [
+        "E1"
+      ],
+      "l3_note": "抽象基座",
+      "note_l3": "8 插件无一依赖；实引方为 packages/hooks/hooks-codex 与 hooks-claude-code(其他路插件)"
+    },
     {
       "id": "dsh-invariants",
       "name": "@deepseek-ai/dsh-invariants",
@@ -80,193 +437,6 @@
       ]
     },
     {
-      "id": "dsh-scope",
-      "name": "@deepseek-ai/dsh-scope",
-      "path": "packages/core/scope",
-      "ts_count": 4,
-      "description": "Scoped-context registration primitive (scope tags, scope-filtered event dispatch) for the DeepSeek Harness",
-      "ref_count": 12,
-      "referred_by": [
-        "dsh-agent",
-        "dsh-agent-loop",
-        "dsh-commands",
-        "dsh-goal",
-        "dsh-jobs-local",
-        "dsh-sdk-jsonrpc-server",
-        "dsh-session",
-        "dsh-skill",
-        "dsh-subagent",
-        "dsh-system-prompt",
-        "dsh-tool-cordis",
-        "dsh-user-approval"
-      ],
-      "mechanisms": [
-        "E1",
-        "E2"
-      ]
-    },
-    {
-      "id": "dsh-timeout",
-      "name": "@deepseek-ai/dsh-timeout",
-      "path": "packages/util/timeout",
-      "ts_count": 2,
-      "description": "Zero-dependency timeout/deadline primitive: clampTimeout, deadline, timeoutOf, TimeoutReason (timing + classification only, no termination)",
-      "ref_count": 18,
-      "referred_by": [
-        "dsh-jobs-local",
-        "dsh-llm",
-        "dsh-llm-deepseek",
-        "dsh-llm-pi-ai",
-        "dsh-llm-retry",
-        "dsh-lsp-stdio",
-        "dsh-subagent-acp",
-        "dsh-subagent-claude-code",
-        "dsh-subagent-codex",
-        "dsh-subprocess-e2b",
-        "dsh-subprocess-local",
-        "dsh-tool-bash-persistent",
-        "dsh-tool-call-timeout-policy",
-        "dsh-tool-fs-search",
-        "dsh-tool-lsp",
-        "dsh-tool-pwsh-persistent",
-        "dsh-tool-session-query",
-        "dsh-web-fetch-http"
-      ],
-      "mechanisms": [
-        "E1"
-      ]
-    },
-    {
-      "id": "dsh-settings",
-      "name": "@deepseek-ai/dsh-settings",
-      "path": "packages/settings/settings",
-      "ts_count": 4,
-      "description": "Abstract user-settings seam (ctx.settings) for the DeepSeek Harness",
-      "ref_count": 7,
-      "referred_by": [
-        "dsh-agent-default-model",
-        "dsh-agent-loop",
-        "dsh-llm-deepseek",
-        "dsh-llm-pi-ai",
-        "dsh-permission-presets",
-        "dsh-settings-file",
-        "dsh-web-search-deepseek"
-      ],
-      "mechanisms": [
-        "E1",
-        "E2",
-        "E3"
-      ]
-    },
-    {
-      "id": "dsh-fs",
-      "name": "@deepseek-ai/dsh-fs",
-      "path": "packages/fs/fs",
-      "ts_count": 3,
-      "description": "Abstract filesystem capability seam (ctx.fs) for the DeepSeek Harness — vocabulary types, the FileSystem service (text IO + optional version-guarded atomic mutations), and the fs/* policy event vocabulary",
-      "ref_count": 8,
-      "referred_by": [
-        "dsh-agent-instructions",
-        "dsh-fs-e2b",
-        "dsh-fs-observation-policy",
-        "dsh-fs-sandbox",
-        "dsh-lsp-stdio",
-        "dsh-skill-filesystem",
-        "dsh-tool-fs",
-        "dsh-tool-str-replace-editor"
-      ],
-      "mechanisms": [
-        "E1",
-        "E2",
-        "E3"
-      ]
-    },
-    {
-      "id": "dsh-session-persistence",
-      "name": "@deepseek-ai/dsh-session-persistence",
-      "path": "packages/session/session-persistence",
-      "ts_count": 6,
-      "description": "Abstract durable session persistence seam (ctx.sessionPersistence) for the DeepSeek Harness",
-      "ref_count": 11,
-      "referred_by": [
-        "dsh-agent-loop",
-        "dsh-experimental-agent-team",
-        "dsh-hooks-claude-code",
-        "dsh-hooks-codex",
-        "dsh-schedule",
-        "dsh-session-checkpoint-policy",
-        "dsh-session-persistence-jsonl",
-        "dsh-session-persistence-sqlite",
-        "dsh-session-query-sqlite",
-        "dsh-shell-env",
-        "dsh-subagent"
-      ],
-      "mechanisms": [
-        "E1",
-        "E2",
-        "E3"
-      ]
-    },
-    {
-      "id": "dsh-typert-protocol",
-      "name": "@deepseek-ai/dsh-typert-protocol",
-      "path": "packages/typert/protocol",
-      "ts_count": 3,
-      "description": "Compiler-independent Remote metadata and Typert provider protocols",
-      "ref_count": 9,
-      "referred_by": [
-        "dsh-agent",
-        "dsh-api-gateway",
-        "dsh-client-ui-goal",
-        "dsh-commands",
-        "dsh-file-reference",
-        "dsh-goal",
-        "dsh-session",
-        "dsh-session-reference",
-        "dsh-typert-registry"
-      ],
-      "mechanisms": [
-        "E1"
-      ]
-    },
-    {
-      "id": "dsh-brand",
-      "name": "@deepseek-ai/dsh-brand",
-      "path": "packages/util/brand",
-      "ts_count": 2,
-      "description": "Type-only Branded<B> nominal-typing primitive for the DeepSeek Harness",
-      "ref_count": 5,
-      "referred_by": [
-        "dsh-llm",
-        "dsh-llm-retry",
-        "dsh-schedule",
-        "dsh-session",
-        "dsh-session-title"
-      ],
-      "mechanisms": [
-        "E1"
-      ]
-    },
-    {
-      "id": "dsh-home-paths",
-      "name": "@deepseek-ai/dsh-home-paths",
-      "path": "packages/util/home-paths",
-      "ts_count": 2,
-      "description": "Shared filesystem path helpers for the DeepSeek Harness",
-      "ref_count": 6,
-      "referred_by": [
-        "dsh-agent-spine-demo",
-        "dsh-attachment-local",
-        "dsh-credentials-local",
-        "dsh-settings-file",
-        "dsh-shell-env",
-        "dsh-skill-filesystem"
-      ],
-      "mechanisms": [
-        "E1"
-      ]
-    },
-    {
       "id": "dsh-jobs",
       "name": "@deepseek-ai/dsh-jobs",
       "path": "packages/jobs/jobs",
@@ -280,69 +450,6 @@
         "dsh-tool-pwsh",
         "dsh-tool-subagent",
         "dsh-tool-terminal"
-      ],
-      "mechanisms": [
-        "E1",
-        "E2"
-      ]
-    },
-    {
-      "id": "dsh-shell",
-      "name": "@deepseek-ai/dsh-shell",
-      "path": "packages/shell/shell",
-      "ts_count": 4,
-      "description": "Abstract bash executor seam (ctx.shell) for the DeepSeek Harness",
-      "ref_count": 8,
-      "referred_by": [
-        "dsh-bash-sandbox",
-        "dsh-hooks-claude-code",
-        "dsh-hooks-codex",
-        "dsh-permission-presets",
-        "dsh-shell-env",
-        "dsh-tmux-context",
-        "dsh-tool-bash",
-        "dsh-tool-pwsh"
-      ],
-      "mechanisms": [
-        "E1",
-        "E2",
-        "E3"
-      ]
-    },
-    {
-      "id": "dsh-attachment",
-      "name": "@deepseek-ai/dsh-attachment",
-      "path": "packages/attachment/attachment",
-      "ts_count": 5,
-      "description": "Durable immutable attachment storage seam for the DeepSeek Harness",
-      "ref_count": 8,
-      "referred_by": [
-        "dsh-acp",
-        "dsh-attachment-local",
-        "dsh-commands",
-        "dsh-llm",
-        "dsh-llm-deepseek",
-        "dsh-llm-pi-ai",
-        "dsh-mcp-client",
-        "dsh-tool-fs"
-      ],
-      "mechanisms": [
-        "E1",
-        "E2"
-      ]
-    },
-    {
-      "id": "dsh-credentials",
-      "name": "@deepseek-ai/dsh-credentials",
-      "path": "packages/credentials/credentials",
-      "ts_count": 3,
-      "description": "Abstract credential seam (ctx.credentials): settings carry references to secrets, providers own the values",
-      "ref_count": 4,
-      "referred_by": [
-        "dsh-credentials-local",
-        "dsh-llm-deepseek",
-        "dsh-llm-pi-ai",
-        "dsh-web-search-deepseek"
       ],
       "mechanisms": [
         "E1",
@@ -369,512 +476,6 @@
         "E1",
         "E2"
       ]
-    },
-    {
-      "id": "dsh-sandbox",
-      "name": "@deepseek-ai/dsh-sandbox",
-      "path": "packages/sandbox/sandbox",
-      "ts_count": 4,
-      "description": "Abstract process-sandbox seam (ctx.sandbox) for the DeepSeek Harness: same-world confinement vocabulary and the SandboxProvider contract",
-      "ref_count": 5,
-      "referred_by": [
-        "dsh-fs-sandbox",
-        "dsh-sandbox-local",
-        "dsh-sandbox-policy",
-        "dsh-terminal-bash",
-        "dsh-tool-str-replace-editor"
-      ],
-      "mechanisms": [
-        "E1"
-      ]
-    },
-    {
-      "id": "dsh-subprocess",
-      "name": "@deepseek-ai/dsh-subprocess",
-      "path": "packages/subprocess/subprocess",
-      "ts_count": 3,
-      "description": "Subprocess seam (ctx.subprocess) for the DeepSeek Harness — managed process groups, bounded spill-backed output, and escalated kills behind one abstract service",
-      "ref_count": 12,
-      "referred_by": [
-        "dsh-bash-sandbox",
-        "dsh-lsp-stdio",
-        "dsh-pwsh-sandbox",
-        "dsh-subagent-acp",
-        "dsh-subagent-claude-code",
-        "dsh-subagent-codex",
-        "dsh-subagent-dsh-sdk",
-        "dsh-subprocess-e2b",
-        "dsh-subprocess-local",
-        "dsh-terminal-bash",
-        "dsh-tool-fs-search",
-        "dsh-web-app"
-      ],
-      "mechanisms": [
-        "E1",
-        "E2"
-      ]
-    },
-    {
-      "id": "dsh-anonymous-user-id",
-      "name": "@deepseek-ai/dsh-anonymous-user-id",
-      "path": "packages/identity/anonymous-user-id",
-      "ts_count": 2,
-      "description": "Shared anonymous user identity for DeepSeek Harness telemetry and feedback correlation",
-      "ref_count": 3,
-      "referred_by": [
-        "dsh-command-feedback",
-        "dsh-llm-deepseek",
-        "dsh-session-telemetry-otel"
-      ],
-      "mechanisms": [
-        "E1"
-      ]
-    },
-    {
-      "id": "dsh-compaction",
-      "name": "@deepseek-ai/dsh-compaction",
-      "path": "packages/compaction/compaction",
-      "ts_count": 6,
-      "description": "Abstract compaction service seam (ctx.compaction) for the DeepSeek Harness",
-      "ref_count": 4,
-      "referred_by": [
-        "dsh-command-compact",
-        "dsh-compaction-tool-result-pruner",
-        "dsh-session-reference",
-        "dsh-token-meter"
-      ],
-      "mechanisms": [
-        "E1",
-        "E2",
-        "E3"
-      ]
-    },
-    {
-      "id": "dsh-session-telemetry",
-      "name": "@deepseek-ai/dsh-session-telemetry",
-      "path": "packages/session/session-telemetry",
-      "ts_count": 3,
-      "description": "SessionTelemetryBackend seam for the DeepSeek Harness: session-event capture, projection, redaction, and handoff to a reporting backend",
-      "ref_count": 3,
-      "referred_by": [
-        "dsh-command-feedback",
-        "dsh-session-telemetry-otel"
-      ],
-      "mechanisms": [
-        "E2",
-        "E3"
-      ]
-    },
-    {
-      "id": "dsh-spill",
-      "name": "@deepseek-ai/dsh-spill",
-      "path": "packages/spill/spill",
-      "ts_count": 3,
-      "description": "Abstract spill storage seam (ctx.spillStore) for the DeepSeek Harness — save oversized tool text and return a retrieval locator",
-      "ref_count": 3,
-      "referred_by": [
-        "dsh-spill-local",
-        "dsh-spill-policy",
-        "dsh-tool-fs-search"
-      ],
-      "mechanisms": [
-        "E2",
-        "E3"
-      ]
-    },
-    {
-      "id": "dsh-workflow",
-      "name": "@deepseek-ai/dsh-workflow",
-      "path": "packages/workflow/workflow",
-      "ts_count": 4,
-      "description": "Workflow capability seam: ctx.workflowEngine service, run vocabulary, and workflow/* events",
-      "ref_count": 3,
-      "referred_by": [
-        "dsh-tool-ralph",
-        "dsh-tool-workflow",
-        "dsh-workflow-worker-thread"
-      ],
-      "mechanisms": [
-        "E1"
-      ]
-    },
-    {
-      "id": "cordis-plugin-loader",
-      "name": "@deepseek-ai/cordis-plugin-loader",
-      "path": "",
-      "ts_count": 0,
-      "description": "",
-      "ref_count": 2,
-      "referred_by": [
-        "cordis-plugin-hmr",
-        "dsh-typert-loader"
-      ],
-      "mechanisms": [
-        "E1",
-        "E2"
-      ]
-    },
-    {
-      "id": "dsh-atomic-write",
-      "name": "@deepseek-ai/dsh-atomic-write",
-      "path": "packages/util/atomic-write",
-      "ts_count": 2,
-      "description": "Zero-dependency atomic file replacement: exclusive-create random-suffix temp + rename carrying the caller-stated permissions (writeFileAtomic)",
-      "ref_count": 2,
-      "referred_by": [
-        "dsh-credentials-local",
-        "dsh-settings-file"
-      ],
-      "mechanisms": [
-        "E1"
-      ]
-    },
-    {
-      "id": "dsh-output-retention",
-      "name": "@deepseek-ai/dsh-output-retention",
-      "path": "packages/util/output-retention",
-      "ts_count": 2,
-      "description": "Zero-dependency bounded-retention primitive: ItemRetainer/TextRetainer + neutral notice helpers (what did we keep, what did we omit)",
-      "ref_count": 4,
-      "referred_by": [
-        "dsh-session-reference",
-        "dsh-spill-policy",
-        "dsh-tool-fs-search",
-        "dsh-tool-terminal"
-      ],
-      "mechanisms": [
-        "E1",
-        "E3"
-      ]
-    },
-    {
-      "id": "dsh-session-title-llm",
-      "name": "@deepseek-ai/dsh-session-title-llm",
-      "path": "packages/session/session-title-llm",
-      "ts_count": 2,
-      "description": "Shared LLM generation policy for DeepSeek Harness session-title providers",
-      "ref_count": 2,
-      "referred_by": [
-        "dsh-session-title-all-prompts-llm",
-        "dsh-session-title-first-prompt-llm"
-      ],
-      "mechanisms": [
-        "E1"
-      ]
-    },
-    {
-      "id": "dsh-subagent-in-process-driver",
-      "name": "@deepseek-ai/dsh-subagent-in-process-driver",
-      "path": "packages/subagent/subagent-in-process-driver",
-      "ts_count": 3,
-      "description": "Shared in-process subagent run driver: drives a child agent on ctx.agents (used by the spawn and fork backends)",
-      "ref_count": 2,
-      "referred_by": [
-        "dsh-subagent-fork-in-process",
-        "dsh-subagent-spawn-in-process"
-      ],
-      "mechanisms": [
-        "E1"
-      ]
-    },
-    {
-      "id": "cordis-plugin-include",
-      "name": "@deepseek-ai/cordis-plugin-include",
-      "path": "",
-      "ts_count": 0,
-      "description": "",
-      "ref_count": 1,
-      "referred_by": [
-        "cordis-plugin-hmr"
-      ],
-      "mechanisms": [
-        "E1"
-      ]
-    },
-    {
-      "id": "dsh-bash-local",
-      "name": "@deepseek-ai/dsh-bash-local",
-      "path": "packages/shell/bash-local",
-      "ts_count": 2,
-      "description": "Local-subprocess implementation of the DeepSeek Harness bash executor seam",
-      "ref_count": 1,
-      "referred_by": [
-        "dsh-bash-sandbox"
-      ],
-      "mechanisms": [
-        "E3"
-      ]
-    },
-    {
-      "id": "dsh-bundle-base",
-      "name": "@deepseek-ai/dsh-bundle-base",
-      "path": "",
-      "ts_count": 0,
-      "description": "",
-      "ref_count": 4,
-      "referred_by": [
-        "dsh-session-persistence-sqlite",
-        "dsh-session-title-all-prompts-llm",
-        "dsh-skill-badge",
-        "dsh-web-fetch-http"
-      ],
-      "mechanisms": [
-        "E1",
-        "E3"
-      ]
-    },
-    {
-      "id": "dsh-client-connection",
-      "name": "@deepseek-ai/dsh-client-connection",
-      "path": "packages/client/connection",
-      "ts_count": 16,
-      "description": "Wire consumer layer: HTTP-up/WebSocket-down client, ConnectionController dual streams with reconnect, and fixture api",
-      "ref_count": 3,
-      "referred_by": [
-        "dsh-api-gateway",
-        "dsh-client-ui-tool",
-        "dsh-client-ui-workspace"
-      ],
-      "mechanisms": [
-        "E2"
-      ]
-    },
-    {
-      "id": "dsh-code-runtime",
-      "name": "@deepseek-ai/dsh-code-runtime",
-      "path": "packages/code-runtime/code-runtime",
-      "ts_count": 3,
-      "description": "Abstract code-execution seam (ctx.codeRuntime) for the DeepSeek Harness",
-      "ref_count": 2,
-      "referred_by": [
-        "dsh-code-runtime-python",
-        "dsh-tools"
-      ],
-      "mechanisms": [
-        "E2"
-      ]
-    },
-    {
-      "id": "dsh-fs-local",
-      "name": "@deepseek-ai/dsh-fs-local",
-      "path": "packages/fs/fs-local",
-      "ts_count": 4,
-      "description": "Local-filesystem implementation of the DeepSeek Harness filesystem seam (ctx.fs)",
-      "ref_count": 1,
-      "referred_by": [
-        "dsh-fs-sandbox"
-      ],
-      "mechanisms": [
-        "E1"
-      ]
-    },
-    {
-      "id": "dsh-node-addon-landlock-run",
-      "name": "@deepseek-ai/dsh-node-addon-landlock-run",
-      "path": "",
-      "ts_count": 0,
-      "description": "",
-      "ref_count": 1,
-      "referred_by": [
-        "dsh-sandbox-local"
-      ],
-      "mechanisms": [
-        "E1"
-      ]
-    },
-    {
-      "id": "dsh-pwsh-local",
-      "name": "@deepseek-ai/dsh-pwsh-local",
-      "path": "packages/shell/pwsh-local",
-      "ts_count": 3,
-      "description": "Local PowerShell implementation of the DeepSeek Harness bash executor seam",
-      "ref_count": 2,
-      "referred_by": [
-        "dsh-pwsh-sandbox",
-        "dsh-terminal-bash"
-      ],
-      "mechanisms": [
-        "E3"
-      ]
-    },
-    {
-      "id": "dsh-sandbox-windows-acl",
-      "name": "@deepseek-ai/dsh-sandbox-windows-acl",
-      "path": "packages/sandbox/sandbox-windows-acl",
-      "ts_count": 12,
-      "description": "Windows ACL write-restriction sandbox backend (restricted-token spawn with capability-SID write allowlist) for the DeepSeek Harness sandbox seam",
-      "ref_count": 1,
-      "referred_by": [
-        "dsh-sandbox-local"
-      ],
-      "mechanisms": [
-        "E1"
-      ]
-    },
-    {
-      "id": "dsh-session-query",
-      "name": "@deepseek-ai/dsh-session-query",
-      "path": "packages/session-query/session-query",
-      "ts_count": 11,
-      "description": "Combined session query service contract with concrete reads, traces, and filters",
-      "ref_count": 3,
-      "referred_by": [
-        "dsh-session-query-sqlite",
-        "dsh-session-reference",
-        "dsh-tool-session-query"
-      ],
-      "mechanisms": [
-        "E2",
-        "E3"
-      ]
-    },
-    {
-      "id": "dsh-acp",
-      "name": "@deepseek-ai/dsh-acp",
-      "path": "packages/acp/acp",
-      "ts_count": 3,
-      "description": "Automation-only Agent Client Protocol server for driving DeepSeek Harness agents over JSON-RPC stdio",
-      "ref_count": 1,
-      "referred_by": [
-        "dsh-acp-demo"
-      ],
-      "mechanisms": [
-        "E2"
-      ],
-      "l3_note": "抽象基座",
-      "note_l3": "8 插件无一依赖；仅 packages/examples/acp-demo/src/index.ts:17 import * as acp。dsh-subagent-acp 走外部 @agentclientprotocol/sdk，不走本 seam"
-    },
-    {
-      "id": "dsh-e2b",
-      "name": "@deepseek-ai/dsh-e2b",
-      "path": "packages/e2b/e2b",
-      "ts_count": 2,
-      "description": "Shared E2B sandbox lifecycle for DeepSeek Harness provider adapters",
-      "ref_count": 2,
-      "referred_by": [
-        "dsh-fs-e2b",
-        "dsh-subprocess-e2b"
-      ],
-      "mechanisms": [
-        "E1"
-      ],
-      "l3_note": "抽象基座",
-      "note_l3": "8 插件无一依赖；实引方为 packages/e2b/subprocess-e2b 与 packages/e2b/fs-e2b(其他路插件)"
-    },
-    {
-      "id": "dsh-hook-protocol",
-      "name": "@deepseek-ai/dsh-hook-protocol",
-      "path": "packages/hooks/hook-protocol",
-      "ts_count": 9,
-      "description": "Shared Claude Code / Codex hook wire protocol: matcher engine, stdin/exit-code/stdout codec, multi-hook merge, and hook/* session events",
-      "ref_count": 2,
-      "referred_by": [
-        "dsh-hooks-claude-code",
-        "dsh-hooks-codex"
-      ],
-      "mechanisms": [
-        "E1"
-      ],
-      "l3_note": "抽象基座",
-      "note_l3": "8 插件无一依赖；实引方为 packages/hooks/hooks-codex 与 hooks-claude-code(其他路插件)"
-    },
-    {
-      "id": "dsh-lsp",
-      "name": "@deepseek-ai/dsh-lsp",
-      "path": "packages/lsp/lsp",
-      "ts_count": 4,
-      "description": "Abstract LSP capability seam (ctx.lsp) for the DeepSeek Harness — language-server provider registry keyed by branded id and extension mapping, order-independent per-query selection, normalized definition/references/implementation/hover requests and results, and the LspError taxonomy",
-      "ref_count": 2,
-      "referred_by": [
-        "dsh-lsp-stdio",
-        "dsh-tool-lsp"
-      ],
-      "mechanisms": [
-        "E1",
-        "E2"
-      ],
-      "l3_note": "抽象基座"
-    },
-    {
-      "id": "dsh-mcp-client",
-      "name": "@deepseek-ai/dsh-mcp-client",
-      "path": "packages/mcp/mcp-client",
-      "ts_count": 5,
-      "description": "MCP client bridge: connects to MCP servers and registers their tools on ctx.tools",
-      "ref_count": 0,
-      "referred_by": [],
-      "mechanisms": [],
-      "l3_note": "抽象基座",
-      "note_l3": "8 插件无一依赖；实引方为 mcp 工具类插件(其他路)"
-    },
-    {
-      "id": "dsh-sdk-protocol",
-      "name": "@deepseek-ai/dsh-sdk-protocol",
-      "path": "packages/sdk/protocol",
-      "ts_count": 4,
-      "description": "Shared wire protocol for the DeepSeek Harness SDK runtime: the newline-delimited JSON-RPC stdio transport and the named request, result, and notification types spoken between the runtime server and SDK clients",
-      "ref_count": 3,
-      "referred_by": [
-        "dsh-sdk-client",
-        "dsh-sdk-jsonrpc-server",
-        "dsh-subagent-codex"
-      ],
-      "mechanisms": [
-        "E1"
-      ],
-      "l3_note": "抽象基座"
-    },
-    {
-      "id": "dsh-terminal",
-      "name": "@deepseek-ai/dsh-terminal",
-      "path": "packages/terminal/terminal",
-      "ts_count": 3,
-      "description": "Persistent PTY session seam for the DeepSeek Harness — owner-scoped ids, backend registry, interactive sends, reads, signals, and awaited cleanup",
-      "ref_count": 4,
-      "referred_by": [
-        "dsh-terminal-bash",
-        "dsh-tool-bash-persistent",
-        "dsh-tool-pwsh-persistent",
-        "dsh-tool-terminal"
-      ],
-      "mechanisms": [
-        "E1"
-      ],
-      "l3_note": "抽象基座",
-      "note_l3": "8 插件无一依赖；实引方为 packages/terminal/tool-terminal、terminal-bash、packages/shell/tool-bash-persistent(其他路插件)"
-    },
-    {
-      "id": "dsh-acp-snapshot",
-      "name": "@deepseek-ai/dsh-acp-snapshot",
-      "path": "packages/test-support/acp-snapshot",
-      "ts_count": 6,
-      "description": "ACP test kit: shared subprocess launcher, snapshot scenario harness, expected-output normalizers, and suite factory",
-      "ref_count": 0,
-      "referred_by": [],
-      "mechanisms": [],
-      "l3_note": "test-support"
-    },
-    {
-      "id": "dsh-agent-loop-testkit",
-      "name": "@deepseek-ai/dsh-agent-loop-testkit",
-      "path": "packages/test-support/agent-loop-testkit",
-      "ts_count": 2,
-      "description": "Shared prerequisite mounting for tests that exercise the concrete agent loop",
-      "ref_count": 0,
-      "referred_by": [],
-      "mechanisms": [],
-      "l3_note": "test-support"
-    },
-    {
-      "id": "dsh-client-test-runtime",
-      "name": "@deepseek-ai/dsh-client-test-runtime",
-      "path": "packages/test-support/client-runtime",
-      "ts_count": 10,
-      "description": "jsdom slot test runtime: real Cordis Context + SlotRegistry + web-react renderer with test-owned session/workspace doubles for feature specs",
-      "ref_count": 0,
-      "referred_by": [],
-      "mechanisms": [],
-      "l3_note": "test-support"
     },
     {
       "id": "dsh-llm-mock-server",
@@ -908,6 +509,422 @@
       "referred_by": [],
       "mechanisms": [],
       "l3_note": "test-support"
+    },
+    {
+      "id": "dsh-lsp",
+      "name": "@deepseek-ai/dsh-lsp",
+      "path": "packages/lsp/lsp",
+      "ts_count": 4,
+      "description": "Abstract LSP capability seam (ctx.lsp) for the DeepSeek Harness — language-server provider registry keyed by branded id and extension mapping, order-independent per-query selection, normalized definition/references/implementation/hover requests and results, and the LspError taxonomy",
+      "ref_count": 2,
+      "referred_by": [
+        "dsh-lsp-stdio",
+        "dsh-tool-lsp"
+      ],
+      "mechanisms": [
+        "E1",
+        "E2"
+      ],
+      "l3_note": "抽象基座"
+    },
+    {
+      "id": "dsh-mcp-client",
+      "name": "@deepseek-ai/dsh-mcp-client",
+      "path": "packages/mcp/mcp-client",
+      "ts_count": 5,
+      "description": "MCP client bridge: connects to MCP servers and registers their tools on ctx.tools",
+      "ref_count": 0,
+      "referred_by": [],
+      "mechanisms": [],
+      "l3_note": "抽象基座",
+      "note_l3": "8 插件无一依赖；实引方为 mcp 工具类插件(其他路)"
+    },
+    {
+      "id": "dsh-node-addon-landlock-run",
+      "name": "@deepseek-ai/dsh-node-addon-landlock-run",
+      "path": "",
+      "ts_count": 0,
+      "description": "",
+      "ref_count": 1,
+      "referred_by": [
+        "dsh-sandbox-local"
+      ],
+      "mechanisms": [
+        "E1"
+      ]
+    },
+    {
+      "id": "dsh-output-retention",
+      "name": "@deepseek-ai/dsh-output-retention",
+      "path": "packages/util/output-retention",
+      "ts_count": 2,
+      "description": "Zero-dependency bounded-retention primitive: ItemRetainer/TextRetainer + neutral notice helpers (what did we keep, what did we omit)",
+      "ref_count": 4,
+      "referred_by": [
+        "dsh-session-reference",
+        "dsh-spill-policy",
+        "dsh-tool-fs-search",
+        "dsh-tool-terminal"
+      ],
+      "mechanisms": [
+        "E1",
+        "E3"
+      ]
+    },
+    {
+      "id": "dsh-pwsh-local",
+      "name": "@deepseek-ai/dsh-pwsh-local",
+      "path": "packages/shell/pwsh-local",
+      "ts_count": 3,
+      "description": "Local PowerShell implementation of the DeepSeek Harness bash executor seam",
+      "ref_count": 2,
+      "referred_by": [
+        "dsh-pwsh-sandbox",
+        "dsh-terminal-bash"
+      ],
+      "mechanisms": [
+        "E3"
+      ]
+    },
+    {
+      "id": "dsh-sandbox",
+      "name": "@deepseek-ai/dsh-sandbox",
+      "path": "packages/sandbox/sandbox",
+      "ts_count": 4,
+      "description": "Abstract process-sandbox seam (ctx.sandbox) for the DeepSeek Harness: same-world confinement vocabulary and the SandboxProvider contract",
+      "ref_count": 5,
+      "referred_by": [
+        "dsh-fs-sandbox",
+        "dsh-sandbox-local",
+        "dsh-sandbox-policy",
+        "dsh-terminal-bash",
+        "dsh-tool-str-replace-editor"
+      ],
+      "mechanisms": [
+        "E1"
+      ]
+    },
+    {
+      "id": "dsh-sandbox-windows-acl",
+      "name": "@deepseek-ai/dsh-sandbox-windows-acl",
+      "path": "packages/sandbox/sandbox-windows-acl",
+      "ts_count": 12,
+      "description": "Windows ACL write-restriction sandbox backend (restricted-token spawn with capability-SID write allowlist) for the DeepSeek Harness sandbox seam",
+      "ref_count": 1,
+      "referred_by": [
+        "dsh-sandbox-local"
+      ],
+      "mechanisms": [
+        "E1"
+      ]
+    },
+    {
+      "id": "dsh-scope",
+      "name": "@deepseek-ai/dsh-scope",
+      "path": "packages/core/scope",
+      "ts_count": 4,
+      "description": "Scoped-context registration primitive (scope tags, scope-filtered event dispatch) for the DeepSeek Harness",
+      "ref_count": 12,
+      "referred_by": [
+        "dsh-agent",
+        "dsh-agent-loop",
+        "dsh-commands",
+        "dsh-goal",
+        "dsh-jobs-local",
+        "dsh-sdk-jsonrpc-server",
+        "dsh-session",
+        "dsh-skill",
+        "dsh-subagent",
+        "dsh-system-prompt",
+        "dsh-tool-cordis",
+        "dsh-user-approval"
+      ],
+      "mechanisms": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "dsh-sdk-protocol",
+      "name": "@deepseek-ai/dsh-sdk-protocol",
+      "path": "packages/sdk/protocol",
+      "ts_count": 4,
+      "description": "Shared wire protocol for the DeepSeek Harness SDK runtime: the newline-delimited JSON-RPC stdio transport and the named request, result, and notification types spoken between the runtime server and SDK clients",
+      "ref_count": 3,
+      "referred_by": [
+        "dsh-sdk-client",
+        "dsh-sdk-jsonrpc-server",
+        "dsh-subagent-codex"
+      ],
+      "mechanisms": [
+        "E1"
+      ],
+      "l3_note": "抽象基座"
+    },
+    {
+      "id": "dsh-session-persistence",
+      "name": "@deepseek-ai/dsh-session-persistence",
+      "path": "packages/session/session-persistence",
+      "ts_count": 6,
+      "description": "Abstract durable session persistence seam (ctx.sessionPersistence) for the DeepSeek Harness",
+      "ref_count": 11,
+      "referred_by": [
+        "dsh-agent-loop",
+        "dsh-experimental-agent-team",
+        "dsh-hooks-claude-code",
+        "dsh-hooks-codex",
+        "dsh-schedule",
+        "dsh-session-checkpoint-policy",
+        "dsh-session-persistence-jsonl",
+        "dsh-session-persistence-sqlite",
+        "dsh-session-query-sqlite",
+        "dsh-shell-env",
+        "dsh-subagent"
+      ],
+      "mechanisms": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "dsh-session-query",
+      "name": "@deepseek-ai/dsh-session-query",
+      "path": "packages/session-query/session-query",
+      "ts_count": 11,
+      "description": "Combined session query service contract with concrete reads, traces, and filters",
+      "ref_count": 3,
+      "referred_by": [
+        "dsh-session-query-sqlite",
+        "dsh-session-reference",
+        "dsh-tool-session-query"
+      ],
+      "mechanisms": [
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "dsh-session-telemetry",
+      "name": "@deepseek-ai/dsh-session-telemetry",
+      "path": "packages/session/session-telemetry",
+      "ts_count": 3,
+      "description": "SessionTelemetryBackend seam for the DeepSeek Harness: session-event capture, projection, redaction, and handoff to a reporting backend",
+      "ref_count": 3,
+      "referred_by": [
+        "dsh-command-feedback",
+        "dsh-session-telemetry-otel"
+      ],
+      "mechanisms": [
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "dsh-session-title-llm",
+      "name": "@deepseek-ai/dsh-session-title-llm",
+      "path": "packages/session/session-title-llm",
+      "ts_count": 2,
+      "description": "Shared LLM generation policy for DeepSeek Harness session-title providers",
+      "ref_count": 2,
+      "referred_by": [
+        "dsh-session-title-all-prompts-llm",
+        "dsh-session-title-first-prompt-llm"
+      ],
+      "mechanisms": [
+        "E1"
+      ]
+    },
+    {
+      "id": "dsh-settings",
+      "name": "@deepseek-ai/dsh-settings",
+      "path": "packages/settings/settings",
+      "ts_count": 4,
+      "description": "Abstract user-settings seam (ctx.settings) for the DeepSeek Harness",
+      "ref_count": 7,
+      "referred_by": [
+        "dsh-agent-default-model",
+        "dsh-agent-loop",
+        "dsh-llm-deepseek",
+        "dsh-llm-pi-ai",
+        "dsh-permission-presets",
+        "dsh-settings-file",
+        "dsh-web-search-deepseek"
+      ],
+      "mechanisms": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "dsh-shell",
+      "name": "@deepseek-ai/dsh-shell",
+      "path": "packages/shell/shell",
+      "ts_count": 4,
+      "description": "Abstract bash executor seam (ctx.shell) for the DeepSeek Harness",
+      "ref_count": 8,
+      "referred_by": [
+        "dsh-bash-sandbox",
+        "dsh-hooks-claude-code",
+        "dsh-hooks-codex",
+        "dsh-permission-presets",
+        "dsh-shell-env",
+        "dsh-tmux-context",
+        "dsh-tool-bash",
+        "dsh-tool-pwsh"
+      ],
+      "mechanisms": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "dsh-spill",
+      "name": "@deepseek-ai/dsh-spill",
+      "path": "packages/spill/spill",
+      "ts_count": 3,
+      "description": "Abstract spill storage seam (ctx.spillStore) for the DeepSeek Harness — save oversized tool text and return a retrieval locator",
+      "ref_count": 3,
+      "referred_by": [
+        "dsh-spill-local",
+        "dsh-spill-policy",
+        "dsh-tool-fs-search"
+      ],
+      "mechanisms": [
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "dsh-subagent-in-process-driver",
+      "name": "@deepseek-ai/dsh-subagent-in-process-driver",
+      "path": "packages/subagent/subagent-in-process-driver",
+      "ts_count": 3,
+      "description": "Shared in-process subagent run driver: drives a child agent on ctx.agents (used by the spawn and fork backends)",
+      "ref_count": 2,
+      "referred_by": [
+        "dsh-subagent-fork-in-process",
+        "dsh-subagent-spawn-in-process"
+      ],
+      "mechanisms": [
+        "E1"
+      ]
+    },
+    {
+      "id": "dsh-subprocess",
+      "name": "@deepseek-ai/dsh-subprocess",
+      "path": "packages/subprocess/subprocess",
+      "ts_count": 3,
+      "description": "Subprocess seam (ctx.subprocess) for the DeepSeek Harness — managed process groups, bounded spill-backed output, and escalated kills behind one abstract service",
+      "ref_count": 12,
+      "referred_by": [
+        "dsh-bash-sandbox",
+        "dsh-lsp-stdio",
+        "dsh-pwsh-sandbox",
+        "dsh-subagent-acp",
+        "dsh-subagent-claude-code",
+        "dsh-subagent-codex",
+        "dsh-subagent-dsh-sdk",
+        "dsh-subprocess-e2b",
+        "dsh-subprocess-local",
+        "dsh-terminal-bash",
+        "dsh-tool-fs-search",
+        "dsh-web-app"
+      ],
+      "mechanisms": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "dsh-terminal",
+      "name": "@deepseek-ai/dsh-terminal",
+      "path": "packages/terminal/terminal",
+      "ts_count": 3,
+      "description": "Persistent PTY session seam for the DeepSeek Harness — owner-scoped ids, backend registry, interactive sends, reads, signals, and awaited cleanup",
+      "ref_count": 4,
+      "referred_by": [
+        "dsh-terminal-bash",
+        "dsh-tool-bash-persistent",
+        "dsh-tool-pwsh-persistent",
+        "dsh-tool-terminal"
+      ],
+      "mechanisms": [
+        "E1"
+      ],
+      "l3_note": "抽象基座",
+      "note_l3": "8 插件无一依赖；实引方为 packages/terminal/tool-terminal、terminal-bash、packages/shell/tool-bash-persistent(其他路插件)"
+    },
+    {
+      "id": "dsh-timeout",
+      "name": "@deepseek-ai/dsh-timeout",
+      "path": "packages/util/timeout",
+      "ts_count": 2,
+      "description": "Zero-dependency timeout/deadline primitive: clampTimeout, deadline, timeoutOf, TimeoutReason (timing + classification only, no termination)",
+      "ref_count": 18,
+      "referred_by": [
+        "dsh-jobs-local",
+        "dsh-llm",
+        "dsh-llm-deepseek",
+        "dsh-llm-pi-ai",
+        "dsh-llm-retry",
+        "dsh-lsp-stdio",
+        "dsh-subagent-acp",
+        "dsh-subagent-claude-code",
+        "dsh-subagent-codex",
+        "dsh-subprocess-e2b",
+        "dsh-subprocess-local",
+        "dsh-tool-bash-persistent",
+        "dsh-tool-call-timeout-policy",
+        "dsh-tool-fs-search",
+        "dsh-tool-lsp",
+        "dsh-tool-pwsh-persistent",
+        "dsh-tool-session-query",
+        "dsh-web-fetch-http"
+      ],
+      "mechanisms": [
+        "E1"
+      ]
+    },
+    {
+      "id": "dsh-typert-protocol",
+      "name": "@deepseek-ai/dsh-typert-protocol",
+      "path": "packages/typert/protocol",
+      "ts_count": 3,
+      "description": "Compiler-independent Remote metadata and Typert provider protocols",
+      "ref_count": 9,
+      "referred_by": [
+        "dsh-agent",
+        "dsh-api-gateway",
+        "dsh-client-ui-goal",
+        "dsh-commands",
+        "dsh-file-reference",
+        "dsh-goal",
+        "dsh-session",
+        "dsh-session-reference",
+        "dsh-typert-registry"
+      ],
+      "mechanisms": [
+        "E1"
+      ]
+    },
+    {
+      "id": "dsh-workflow",
+      "name": "@deepseek-ai/dsh-workflow",
+      "path": "packages/workflow/workflow",
+      "ts_count": 4,
+      "description": "Workflow capability seam: ctx.workflowEngine service, run vocabulary, and workflow/* events",
+      "ref_count": 3,
+      "referred_by": [
+        "dsh-tool-ralph",
+        "dsh-tool-workflow",
+        "dsh-workflow-worker-thread"
+      ],
+      "mechanisms": [
+        "E1"
+      ]
     }
   ]
 }

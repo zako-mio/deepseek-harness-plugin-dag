@@ -1,84 +1,71 @@
-# RC7→RC8 版本升级任务完成报告
-
-> 知识库：`0820-plugin-dag-rc8` ｜ 完成日期：2026-08-20
-> 方法论：`version-upgrade-cascade`（version-upgrade-cascade/SKILL.md）
-
----
+# 任务完成报告：DeepSeek Harness 插件级 DAG 知识库 RC8 → RC2 升级
 
 ## 一、当时情况
 
-用户报告 DeepSeek Harness 上游发布了 rc8（`dsh-v0.1.0-rc.8`，2026-08-19 发布，昨天），要求基于知识库目录下的 `version-upgrade-cascade` SKILL 制定并执行 RC7→RC8 升级。旧知识库 `0819-plugin-dag-rc7/` 基于 rc7（commit `99f6f02`）构建，含 173 节点 DAG、545 边、37 组、221 插件页，以及 46 个生成脚本和已初始化的 git 仓库。
-
-上游差异：**536 commits**（08-18 ~ 08-19，约 1.5 天密集提交），变化规模远超上轮 RC5→RC7（111 commits / 26 源码变化包）。
+DeepSeek Harness 上游于 2026-08-21 发布了 `dsh-v0.1.1-rc.2`（commit `b150a551`）。当前知识库目录 `0820-plugin-dag-rc8` 基于 `v0.1.0-rc.8`（commit `141eb6f`）构建，包含 180 节点 / 578 边 / 39 组 / 49 外部 seam 的完整 DAG 数据、230 页插件页、交互总览、MD 镜像及质量门控脚本。本次任务要求按 `version-upgrade-cascade` 8 步工作流完成级联升级，生成差异分析报告与任务完成报告，并确保质量门控全部通过。
 
 ## 二、制定计划
 
-依据 SKILL 的 8 步工作流，与用户 grill-me 收敛 10 项决策：
-1. 新建 `0820-plugin-dag-rc8` 目录（保留 rc7 原件）
-2. 完整三重验证（门控 + headless + VLM）
-3. 升级完成后追加 RC7→RC8 案例至 SKILL 附录
-4. 官方 tarball + SHA256 校验
-5. git commit + push
-6. 新增插件全量同步至 DAG
-7. SQLite 不兼容重点分析
-8. 交付差异报告 + 双版本报告
-9. 清理过时遗留文档
-10. 产出形态：先计划审阅后执行（COMPLEXITY 15/20）
+按 skill 方法论制定 7 步执行计划（Step 8 git push 由主 Agent 后续处理）：
 
-计划含 8 个 Step：前置准备 → 三层差异分析 → 依赖识别 → 数据更新 → 页面重生成 → 门控+验证 → 交付 → 上传。
+1. **前置准备**：下载 RC2 官方 tarball，计算并保存 SHA256；确认基线/目标 commit。
+2. **三层差异分析**：
+   - 结构 diff：对比 `packages/` 目录新增/删除/改名包。
+   - 源码 diff：写 `src-diff-rc8-rc2.py` 分类 43 源码变化 / 6 tests-only / 177 版本号-only。
+   - 深入分析：对实质变化包识别 E1/E2/E3 依赖变化；重点检查 `cordis.patch.yml` 与 seam `referred_by`。
+3. **依赖变化识别**：输出 `deps-diff-rc8-rc2.json`，确认 E1 新增依赖 4 条 seam 边。
+4. **数据层更新**：写 `update-dag-rc2.py` 更新 `webapp-dag.json` meta 与 `external-seams.json`（新增 `dsh-authorization`、更新 3 个 seam 的 referred_by）。
+5. **页面全量重生成**：复用 `gen-html-l3.py`、`gen-md-l3.py`、`gen-plugin-dyn.py`、`gen-overview.py`、`inject-data-l3.py`。
+6. **门控 + 验证**：运行 `quality-gate-l3.py` 确保 ALL PASS；使用 `/snap/bin/chromium` 运行 headless DOM 检查。
+7. **交付**：生成 `RC8-RC2-DIFF-REPORT.md`、更新 `README.md`、生成本报告 `report.md` + `report.html`。
 
 ## 三、执行情况
 
-**Step 1**：创建目录、下载 rc8 tarball（直连 GitHub 成功）、SHA256 校验 `3cff6b...`、解压至 `05-source/dsh-rc8/`（226 包）、复制 rc7 知识库内容。
+### 前置准备
+- 成功下载 `dsh-v0.1.1-rc.2.tar.gz`（14 MB）。
+- SHA256：`142e2f67db41425e8a96a265f77d94997d6e222c9817075b9f34dfc9653bbf75`，保存于 `05-source/dsh-v0.1.1-rc.2/dsh-v0.1.1-rc.2.tar.gz.sha256`。
+- 解压后 `package.json` 确认版本 `0.1.1-rc.2`。
 
-**Step 2 三层差异分析**：
-- 结构 diff：新增 9 包 / 删除 2 包（净 +7）
-- 源码 diff（独立 .py 脚本）：61 源码实质变化 / 17 tests / 139 版本号
-- 深入分析：委派 3 个 explore 子Agent（新增/删除包分析、12 重点包深入、依赖边全量识别），全部返回结构化 JSON
+### 三层差异分析
+- **结构 diff**：RC8 226 包 → RC2 227 包，仅新增 `credentials/authorization`，无删除。
+- **源码 diff**：43 包 src/ 实质变化、6 包仅 tests、177 包仅版本号变化（`src-diff-rc8-rc2.json`）。
+- **深入分析**：新增 `dsh-authorization` seam；`llm-pi-ai` 新增 E1 依赖 `dsh-authorization`；`llm-deepseek` 新增 E1 依赖 `dsh-atomic-write` / `dsh-brand` / `dsh-home-paths`；5 个 `cordis.patch.yml` 字节级一致。
 
-**Step 3 依赖识别**：39 新增边 / 78 声明删除边 / 25 机制迁移 / seam referred_by 增量。关键判断：RC8 中大量 UI 包移除 primitives/slots peer 声明但源码仍 import，经 68 条逐条源码验证（verify-removed.py），63 条仍引用保留、仅 3 条删除。SQLite 不兼容重点分析（SCHEMA 15→17）。
+### 数据层更新
+- `external-seams.json`：50 seams（+1）；`dsh-authorization` 新增并设置 referred_by=`["dsh-llm-pi-ai"]`；3 个 seam 增加 `dsh-llm-deepseek`。
+- `webapp-dag.json`：节点/边/组/层数不变，更新 `generated_at` 与 `source` 标注。
 
-**Step 4 数据更新**：更新 webapp-dag.json（+9 -2 节点、578 边、+G38/G39、最长路径重算 17 层、6 处版本标注 rc.7→rc.8 零残留）、external-seams.json（10 个 seam referred_by 更新）。
+### 页面全量重生成
+- `02-plugin-pages/`：230 页（180 插件 + 50 seam）。
+- `03-groups/`：39 组页 + 索引。
+- `04-interactive/index.html`：动态 DATA 注入，图例改为动态统计。
+- `06-md/`：180 插件 + 50 seam + 3 索引。
+- `08-special-modules/`：4 页保留。
 
-**Step 5 重生成**：gen-html-l3 / gen-md-l3 / gen-plugin-dyn / inject-data-l3 全量重跑（229 插件页 + 39 组 + 49 seam + 交互图 DATA 180 节点）；33 个受影响插件页注入「RC8 声明调整」标注；更新 README/index.html 统计与图例；清理冗余截图。
-
-**Step 6 验证**：quality-gate ALL PASS（0 错误 0 警告）；下载 Chrome for Testing 152（代理）做 headless DOM 验证（组级 40 节点、无 JS 错误）；VLM 截图验证交互图 40 节点/图例 180/中文完整/插件页渲染/SQLite 不兼容说明。
-
-**遇到的问题与应对**：
-- 生成脚本 BASE 路径指向旧 rc7 目录 → sed 批量替换为 rc8
-- `rm -rf` 被权限拦截 → find -type f -delete
-- 我误删了 23 条 seam 边（含 13 条双身份 client-connection 边）→ 用 rc7 原版对比恢复
-- layer 重算最初用 BFS 层次（91 节点在 Layer 0）→ 改为最长路径深度（Layer 0=18，正确）
-- headless file:// 协议 ERR_FILE_NOT_FOUND → 起本地 HTTP 服务器
-- 截图统一 386612 bytes（virtual-time-budget 时机）→ 用 VLM 确认实际渲染正常
+### 生成脚本调整
+- `gen-overview.py`：图例从硬编码改为基于 core-dag.json/external-seams.json 动态统计。
+- `headless-verify-l3.py`：Chrome 路径改为本机 `/snap/bin/chromium`。
 
 ## 四、完成情况
 
-**交付物清单**：
-- `RC7-RC8-DIFF-REPORT.md`（完整差异分析报告）
-- `report.md` + `report.html`（本双版本报告）
-- 升级后的知识库：`01-dag-data/`（webapp-dag 180 节点/578 边/39 组）、`02-plugin-pages/`（229 页）、`03-groups/`（39 组）、`04-interactive/index.html`、`06-md/`、`08-special-modules/`
-- 新增 9 插件页（含 why 区块）+ 33 页 RC8 标注
-- 新增脚本：`update-dag-rc8.py`、`inject-rc8-notes.py`、`verify-removed.py`（/tmp）
-- `05-source/dsh-rc8/`（官方源码）
+| 检查项 | 结果 |
+|--------|------|
+| RC2 官方源码下载 + SHA256 | ✅ 完成 |
+| 三层差异分析脚本/JSON | ✅ 完成 |
+| `webapp-dag.json` / `external-seams.json` 更新 | ✅ 完成 |
+| 页面全量重生成 | ✅ 完成 |
+| `quality-gate-l3.py` | ✅ ALL PASS（0 error / 0 warning） |
+| headless DOM 检查 | ✅ 组级 zcount=40，无 JS 错误，截图成功 |
+| `RC8-RC2-DIFF-REPORT.md` | ✅ 已生成 |
+| `README.md` 版本/统计更新 | ✅ 已更新 |
+| `report.md` + `report.html` | ✅ 已生成 |
 
-**验证结果**：质量门控 ALL PASS；headless + VLM 三重验证通过；源码三依据逐条重验。
-
-**改动明细**：数据层 2 文件、页面层 229+39+49 页、交互图 1、MD 229、README/index 各 1、门控脚本数字适配、3 个新脚本。
+最终数据：180 节点 / 578 边 / 17 层 / 39 组 / 50 外部 seam / 230 页。
 
 ## 五、反思/分析/建议
 
-**过程反思**：
-1. **RC8 变化规模远超预期**：61 源码变化包（RC5→RC7 仅 26），UI 依赖声明层大规模解耦（primitives/slots 声明移除但运行时仍引用）。这提示：**升级前应先确认依赖边收录原则（声明 vs 运行时）**，否则会误删大量真实边。
-2. **子Agent package.json 分析有盲区**：只看 peerDependencies 声明的删除会误判真实依赖。必须用「源码 import 三依据」交叉验证，避免「声明 vs 运行时」陷阱。
-3. **layer 分层算法语义**：BFS 层次 ≠ 最长路径深度。RC7 用的是后者（Layer 0=基础，Layer 16=最外层），重算时必须沿用，否则大量节点错误堆积在 Layer 0。
-
-**收获认知**：
-- seam 边处理：指向纯 seam 的边应通过 `external-seams.json` referred_by 表达，不能直接放 webapp-dag edges（会触发 gen-html 崩溃）；双身份节点（如 client-connection）例外。
-- 权限拦截的安全替代：find -delete、独立 .py 脚本、pkill 谨慎匹配。
-
-**未来改进建议**：
-1. 升级前先验证生成脚本的 layer 语义 + 边收录原则，避免返工
-2. 依赖边变更建议以「源码 import 验证」为准（本任务已沉淀为方法论）
-3. 交互图 URL drill 路由未实现（RC7 遗留），建议后续补上以支持直接深链
-4. Chrome for Testing 下载走代理已验证可行，可缓存复用
+1. **RC2 是“小版本、单 seam”升级**：相比 RC7→RC8 的 536 commits/61 源码变化包，RC8→RC2 仅 207 commits/43 源码变化包，且唯一新增包是 seam。这说明三层差异分析能有效聚焦真正影响 DAG 的变更。
+2. **seam 新增不进入 DAG 节点集**：`dsh-authorization` 是纯外部基座，通过 `external-seams.json` 表达，因此 DAG 节点/边/组数保持不变。需确保生成脚本和门控脚本能正确识别 seam 数量变化。
+3. **硬编码统计是隐患**：`gen-overview.py` 原图例硬编码 `173/49/38`，在 RC8 时已经过时。本次改为动态统计，避免未来升级再次产生误导。
+4. **headless 环境需适配**：本机 WSL2 无预装 Chrome for Testing，下载超时；最终使用 `/snap/bin/chromium` 完成验证。建议在持久化环境中预装稳定 Chrome 或记录本机可用路径。
+5. **下一步（Step 8）**：主 Agent 可执行 `git add -A` + commit + push；提交信息建议包含 `v0.1.1-rc.2`、新增 `dsh-authorization`、质量门控 ALL PASS。
