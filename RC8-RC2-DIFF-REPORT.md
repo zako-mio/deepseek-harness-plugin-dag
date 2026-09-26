@@ -1,7 +1,7 @@
 # RC8 → RC2 差异分析报告
 
 > DeepSeek Harness 插件级 DAG 知识库升级差异分析
-> 分析日期：2026-08-21 ｜ 知识库：`0822-plugin-dag-v0.1.1-rc2`
+> 分析日期：2026-08-21 ｜ 知识库：`0927-dsh-plugin-dag-017rc2`
 > 基线：RC8（commit `141eb6f`，tag `dsh-v0.1.0-rc.8`，2026-08-19）→ 目标：RC2（commit `b150a551`，tag `dsh-v0.1.1-rc.2`，2026-08-21）
 > 方法论：`version-upgrade-cascade`（三层差异分析 + 全量重生成 + 三重验证）
 

@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 """追加 cycle-20260817-plugin-dag-l2 到 pending.json (4层封装)"""
 import json, os, sys
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE = os.path.dirname(SCRIPT_DIR)
 
 PENDING = r"D:\Opencode_Download\Reflection\pending.json"
 
@@ -39,7 +41,7 @@ new_cycle = {
         "layer_c_memory_snapshot": "MEMORY.md 现有§:Reflection系统/中文偏好/编码安全/edit优先/Plan先探索/半自动留档/子Agent结构化JSON/Python脚本UTF-8/OpenCode配置路径/备份路径/MCP精兵策略/权限三层/Compaction阶梯式/plan与build prompt独立/全局MEMORY/Per-agent行为约束/auto-mode缓存前缀敏感/DeepSeek参数/DEEPSEEK_API_KEY环境变量/prefix-cache优化/recruit-assist复盘/browser-harness教训/opencode-config修正/多路并行领域分片检索/HTML双交付质量门控/多维权衡矩阵收敛选型法",
         "layer_d_archive_report": {
             "status": "待用户确认留档",
-            "path": "/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2",
+            "path": BASE,
             "summary": "第二层web-app bundle插件级DAG分析:在L1(76核心+36seam)之上追加58插件(宿主层16/客户端runtime10/会话交互UI11/设置输入UI13/UI底座8),合并后134节点/434边/17拓扑层/29组;交付170插件页HTML(L2页+L1页重生成含L2下游)、交互图组级30节点+点击下钻+22 disabled标注、57张drawio内部结构图、PLAN-layer3接力文件。质量门控ALL PASS+headless/VLM验证通过。核心方法论沉淀:L2环修复(E3装配元信息过滤+slot注册方向修正+dependents不反推边)可复用L3。"
         }
     }

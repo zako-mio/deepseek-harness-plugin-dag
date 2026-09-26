@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 """验证 4 路 L2 采集 JSON 合法性与 58 节点覆盖"""
 import json, os, sys
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE = os.path.dirname(SCRIPT_DIR)
 sys.stdout.reconfigure(encoding='utf-8')
 
-CHK = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2\07-checkpoint"
+CHK = os.path.join(BASE, '07-checkpoint')
 INV = os.path.join(CHK, "stage-00-l2-inventory.json")
 
 with open(INV, "r", encoding="utf-8") as f:

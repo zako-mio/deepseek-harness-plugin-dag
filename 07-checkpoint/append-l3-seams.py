@@ -2,11 +2,13 @@
 # -*- coding: utf-8 -*-
 """L3 S0: 追加 13 个 L3 seam 到 external-seams.json (schema 同现有 36 个)"""
 import json, os, sys
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE = os.path.dirname(SCRIPT_DIR)
 sys.stdout.reconfigure(encoding='utf-8')
 
-EXT = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2\01-dag-data\external-seams.json"
+EXT = os.path.join(BASE, '01-dag-data', 'external-seams.json')
 MAP = r"D:\Opencode_Download\Mission-file\2026-08\0814-deepseek-harness源码解析\07-checkpoint\PACKAGE-MAP.json"
-INV = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2\07-checkpoint\stage-00-l3-inventory.json"
+INV = os.path.join(BASE, '07-checkpoint', 'stage-00-l3-inventory.json')
 
 with open(EXT, "r", encoding="utf-8") as f:
     ext = json.load(f)

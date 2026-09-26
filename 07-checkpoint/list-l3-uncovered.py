@@ -5,8 +5,8 @@ import json, os, sys
 sys.stdout.reconfigure(encoding='utf-8')
 
 MAP = r"D:\Opencode_Download\Mission-file\2026-08\0814-deepseek-harness源码解析\07-checkpoint\PACKAGE-MAP.json"
-DAG = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2\01-dag-data\webapp-dag.json"
-EXT = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2\01-dag-data\external-seams.json"
+DAG = os.path.join(BASE, '01-dag-data', 'webapp-dag.json')
+EXT = os.path.join(BASE, '01-dag-data', 'external-seams.json')
 
 with open(MAP, "r", encoding="utf-8") as f:
     pkgmap = json.load(f)
@@ -33,6 +33,8 @@ for name, p in all_pkgs.items():
 print(f"[INFO] 未覆盖包: {len(uncovered)}")
 print(f"\n=== 未覆盖包按域分组 ===")
 from collections import defaultdict
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE = os.path.dirname(SCRIPT_DIR)
 domains = defaultdict(list)
 for p in uncovered:
     parts = p["path"].split("/")

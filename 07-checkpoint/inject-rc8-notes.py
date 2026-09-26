@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 """RC8 升级标注注入：在受 primitives/slots 声明移除影响但运行时仍引用的插件页插入说明"""
 import json, os, sys
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE = os.path.dirname(SCRIPT_DIR)
 sys.stdout.reconfigure(encoding='utf-8')
 
-BASE = "/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2"
+BASE = BASE
 PAGES = os.path.join(BASE, "02-plugin-pages")
 
 # 受影响的节点（rc8 移除了 primitives/slots peer 声明但源码仍 import）

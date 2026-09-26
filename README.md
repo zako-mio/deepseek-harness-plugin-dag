@@ -1,6 +1,7 @@
 # DeepSeek Harness 插件级 DAG 依赖链分析
 
 > **版本**：`v0.1.7-rc.2`（基于官方源码 dsh-v0.1.7-rc.2，2026-09-24 发布，commit `477b4f42`）
+> **留档位置**：本库于 2026-09-27 由 `Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2` 整仓迁移至 `Mission-file/2026-09/0927-dsh-plugin-dag-017rc2`（Git 仓与远端不变；历史差异报告中的旧目录名为迁移前名称）。
 > **升级记录**：RC5 → RC7（08-19）→ RC8（08-20）→ RC2（08-21）→ **0.1.7-rc.2（09-27 全量重建）**。本次跨度 **6875 commits / 6 个 minor**，包树 227 → **312**（+102 / −17），**210/210 共有包源码全部变化**（0 个「仅版本号变化包」），故放弃增量级联、改走**全量重推导**。详见 `RC2-0.1.7-DIFF-REPORT.md`。
 
 ## 简介
@@ -54,7 +55,7 @@
 ## 目录结构
 
 ```
-0822-plugin-dag-v0.1.1-rc2/
+0927-dsh-plugin-dag-017rc2/
 ├── 01-dag-data/          # webapp-dag.json（239节点/1077边/19层/50组/536 seam_edges）/ core-dag.json（L1 90节点）/ external-seams.json（73 seam）
 ├── 02-plugin-pages/      # 每插件一页 HTML（239 插件 + 73 seam = 312 页）
 ├── 03-groups/            # 50 组索引页 + 组目录

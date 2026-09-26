@@ -2,10 +2,12 @@
 # -*- coding: utf-8 -*-
 """从 task tool-output 文件提取 R3 JSON 数组 → stage-01-l2-r3.json"""
 import json, os, re, sys
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE = os.path.dirname(SCRIPT_DIR)
 sys.stdout.reconfigure(encoding='utf-8')
 
 SRC = r"C:\Users\15057\.local\share\opencode\tool-output\tool_00baa1011001Q4I4HIbEOtjPZy"
-OUT = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2\07-checkpoint\stage-01-l2-r3.json"
+OUT = os.path.join(BASE, '07-checkpoint', 'stage-01-l2-r3.json')
 
 with open(SRC, "r", encoding="utf-8") as f:
     content = f.read()

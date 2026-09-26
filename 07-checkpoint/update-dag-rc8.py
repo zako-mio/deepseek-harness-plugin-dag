@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 """RC8 DAG 数据层更新：新增/删除节点、更新重点节点、新增/删除边、更新组、seam、版本标注"""
 import json, os, sys
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE = os.path.dirname(SCRIPT_DIR)
 sys.stdout.reconfigure(encoding='utf-8')
 
-BASE = "/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2"
+BASE = BASE
 DAG_PATH = os.path.join(BASE, "01-dag-data", "webapp-dag.json")
 SEAMS_PATH = os.path.join(BASE, "01-dag-data", "external-seams.json")
 

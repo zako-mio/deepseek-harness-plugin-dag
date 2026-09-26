@@ -5,7 +5,7 @@
 ## 源码根目录
 
 ```
-/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2/05-source/dsh-v0.1.7-rc.2/deepseek-harness-dsh-v0.1.7-rc.2
+/home/zako-mio/opencode/archive/Mission-file/2026-09/0927-dsh-plugin-dag-017rc2/05-source/dsh-v0.1.7-rc.2/deepseek-harness-dsh-v0.1.7-rc.2
 ```
 
 插件路径 = `packages/<domain>/<name>`（分片文件已给出 `path`）。
