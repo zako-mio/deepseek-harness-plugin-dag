@@ -90,7 +90,9 @@ README 全量重写、`index.html` 统计与说明更新、`RC2-0.1.7-DIFF-REPOR
 | 视觉确认 | ✅ | 图例 239/73/50、面包屑、seam 虚线边正常 |
 | 差异报告 / README / 报告 | ✅ | `RC2-0.1.7-DIFF-REPORT.md` / `README.md` / 本报告 |
 | GitHub 同步 | ✅ | 新分支 `v0.1.7-rc.2` + 切默认分支 |
-| 维护图（dsh-architecture-map）同步 | ✅ | 官方层 + 自定义层 + changelog（见该库 UPDATE-LOG） |
+| 留档迁移 | ✅ | 整仓 0822-… → `0927-dsh-plugin-dag-017rc2`（31338 文件 / 456MB 全量核对一致，git 与远端不变） |
+| 部署升级（追加决策） | ✅ | 本机 dsh 0.1.5-rc.2 → **0.1.7-rc.2**（build exit 0 / `--version` 0.1.7-rc.2 / systemd 3080 首页 HTTP 200）；插件继续不挂 |
+| 维护图（dsh-architecture-map）同步 | ✅ | 官方层 + 自定义层 + 第 4/5 期 changelog（见该库 UPDATE-LOG） |
 
 **最终数据**：239 节点（L1 90 / L2 82 / L3 67）/ 1077 节点间边 + 536 seam 边 / 19 层 / 50 组 / 73 seam / 8 特殊模块 / 312 插件页。
 
@@ -103,3 +105,18 @@ README 全量重写、`index.html` 统计与说明更新、`RC2-0.1.7-DIFF-REPOR
 5. **公开库的仓库卫生要有明确取舍**：解压树入库让仓库 5 周内膨胀到 200MB+，收益（可离线 diff）远低于 tarball + SHA256（同样可复现）。已在 `.gitignore` 与 `05-source/README.md` 固化该约定。
 6. **遗留建议**：① 把 `07-checkpoint/v017-*` 的「分片 → 委派 → 合并」流程固化为可续跑 SOP（当前 21 片委派是人工编排）；② 交互图可对 `type_only` 边加虚线样式，供人工区分运行/类型依赖；③ `headless-verify` 可加「点击组节点」的真实交互路径（当前走 URL 深链）。
 7. **下一步（可选）**：把本机 dsh 部署从 `0.1.5-rc.2` 升到 `0.1.7-rc.2`，并按 `dsh-architecture-map` 的融合单流程重跑自定义层（`~/.dsh` 8 插件）兼容性审计——本次未涉及部署升级。
+
+## 六、追加决策：留档迁移 + 本机部署升级
+
+### 6.1 留档目录迁移（用户决策）
+- 整仓（含 `.git` 与远端绑定）由 `Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2` **原子 mv** 至 `Mission-file/2026-09/0927-dsh-plugin-dag-017rc2`。
+- **全量核对**：迁移前后文件数均 31338、目录大小均 456MB、`git status` 干净、`git remote` 不变、HEAD 仍为 `f91c383`。
+- **收尾清扫**：剩余 13 个（维护库另 24 个）残留硬编码绝对路径脚本改为 `dirname(dirname(__file__))` 自推导（含 Windows 反斜杠形式），`py_compile` 全量 0 失败；全库「旧路径 / 旧目录名」残留 **0**。
+
+### 6.2 本机 dsh 部署升级（用户决策：升到 0.1.7-rc.2，插件继续不挂）
+- **前置断言**：无运行中 dsh 进程 / 3080 空闲 / systemd inactive / 磁盘余 897G。
+- **执行**：`mv` 原子备份到 `~/.dsh-backups/dsh-0.1.5-rc.2-20260927`（1.8G，零拷贝）→ `git clone --depth 1 --branch dsh-v0.1.7-rc.2`（commit `477b4f4`）→ 回灌 `.env` / `launch-web.sh` / `launch-headless.sh` → `pnpm install`（39.8s）→ `pnpm run build`（exit 0，343 client artifacts）。
+- **验证**：`--version` = `0.1.7-rc.2`；`.dsh-build/client-build-environment.json` = 0.1.7-rc.2 / 477b4f4 / 343 artifacts；systemd 启动成功、127.0.0.1:3080 监听、带 token 首页 HTTP 200（34303 bytes）且 `__DSH_BOOT__` 与 60+ 客户端插件包已加载；引导日志 0 error；随后按惯例**还原服务为 inactive**。
+- **性能适配**：构建耗时较长，按用户要求改为**后台非阻塞 + 短轮询**执行，并对构建进程 `renice +15` 降低对交互的影响。
+- **⚠ 未通项与归因**：模型调用返回 `QUOTA: Insufficient Balance`。按「旧树 vs 新树同时验证」方法，在**旧树（0.1.5-rc.2 备份）复现同一错误（不同 request_id）**，且新树源码中无该字符串 ⇒ 判定为**账户余额问题，非升级回归**；另 `all_proxy` SOCKS 告警在两棵树同样出现，属既有环境项。**需用户处理账户余额后模型调用方可通**。
+- **插件状态**：8 个自定义插件维持不挂（注释化可逆），与用户决策一致。
