@@ -1,155 +1,68 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-S3 L3 交互图 DATA 注入:
-读取 webapp-dag.json (173 节点) + external-seams.json (49 seam) + stage-00-l2-inventory.json (disabled 清单)
-生成完整 DATA 注入 index.html (替换 const DATA = {...} 行)
-扩展 palette 至 37 组配色
+S3 L3 交互图 DATA 注入（幂等同步器）。
+
+管线顺序: gen-overview.py  →  inject-data-l3.py
+- gen-overview.py 是 04-interactive/index.html 的唯一权威生成器（含新组级网格 + 下钻数据）。
+- 本脚本从 gen-overview.build_payload() 复用同一份 payload（绝不重复实现数据逻辑），
+  定位 `const DATA = ...;` 行并原地替换。
+- 幂等: payload 与页内现有 DATA 一致时不改动字节；因此「同输入 → 同产物」的确定性成立，
+  且历史事故（旧版本脚本用只有插件数据的 payload 覆盖整行、冲掉 grid 数据）不再复现。
 """
-import json, os, sys
-sys.stdout.reconfigure(encoding='utf-8')
+import json, os, re, sys, importlib.util
+
+sys.stdout.reconfigure(encoding="utf-8")
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE = os.path.dirname(SCRIPT_DIR)
-DAG = os.path.join(BASE, "01-dag-data", "webapp-dag.json")
-EXT = os.path.join(BASE, "01-dag-data", "external-seams.json")
-INV = os.path.join(BASE, "07-checkpoint", "v017", "disabled-rows.json")
 HTML = os.path.join(BASE, "04-interactive", "index.html")
 
-with open(DAG, "r", encoding="utf-8") as f:
-    dag = json.load(f)
-with open(EXT, "r", encoding="utf-8") as f:
-    ext = json.load(f)
-with open(INV, "r", encoding="utf-8") as f:
-    inv = json.load(f)
 
-nodes = {n["id"]: n for n in dag["nodes"]}
-groups = {g["id"]: g for g in dag["groups"]}
-edges = dag["edges"]
-ext_map = {e["id"]: e for e in ext["seams"]}
+def load_builder():
+    spec = importlib.util.spec_from_file_location("gen_overview", os.path.join(SCRIPT_DIR, "gen-overview.py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
-# disabled 清单
-disabled_ids = set()
-for d in inv.get("disabled_base_rows", []):
-    if d.get("node") and d["node"] in nodes:
-        disabled_ids.add(d["node"])
-print(f"[INFO] disabled base rows: {len(disabled_ids)} -> {sorted(disabled_ids)}")
 
-# 组配色 (37 组 + EXT)
-palette = ["#4f8cff","#7b61ff","#2fb98a","#e8933b","#e05563","#3b9fe0","#9a7bf0","#e0a03b",
-           "#3bc4a0","#d0546b","#6c8df5","#b48a3c","#54a0e8","#8a5cf0","#3ab7c4","#e07b54",
-           "#5f8de0","#9b6bd4","#4aa8a0","#d06a4a","#6b9bd4","#b07bd4","#4ac48e","#d48a5b",
-           "#e8a13b","#6b8fe8","#3bc48a","#d07bd4","#4f8ce8",
-           "#c44f6e","#4f9ce8","#8a7bf0","#2fbfa0","#e0a03b","#d46b54","#6b8fe8","#a05be0"]
-gids = sorted(groups.keys())
-GROUP_COLORS = {}
-for i, gid in enumerate(gids):
-    GROUP_COLORS[gid] = palette[i % len(palette)]
+def main():
+    mod = load_builder()
+    payload, _stats = mod.build_payload()
+    data_json = json.dumps(payload, ensure_ascii=False)
+    new_line = "const DATA = " + data_json + ";"
 
-# ---- 插件节点 (173) ----
-plugin_nodes = []
-for nid, n in nodes.items():
-    kind = "disabled" if nid in disabled_ids else "plugin"
-    plugin_nodes.append({
-        "data": {
-            "id": nid, "label": nid, "kind": kind, "group": n["group"],
-            "gname": n["group_name"], "layer": n["layer"],
-            "url": f"../02-plugin-pages/{nid}.html"
-        }
-    })
+    with open(HTML, "r", encoding="utf-8", newline="") as f:
+        content = f.read()
 
-# ---- 外部 seam 节点 (49) ----
-ext_nodes = []
-for sid, s in ext_map.items():
-    ext_nodes.append({
-        "data": {
-            "id": sid, "label": sid, "kind": "seam", "group": "EXT",
-            "gname": "外部基座seam", "layer": 0, "url": f"../02-plugin-pages/{sid}.html"
-        }
-    })
+    lines = content.split("\n")  # 保留行尾 '\r'
+    idx = None
+    for i, l in enumerate(lines):
+        if l.startswith("const DATA = "):
+            idx = i
+            break
+    if idx is None:
+        print("[ERR] const DATA 行未找到")
+        raise SystemExit(1)
 
-# ---- 依赖边 ----
-edge_list = []
-for e in edges:
-    edge_list.append({"data": {"id": f"{e['from']}->{e['to']}", "source": e["from"], "target": e["to"], "kind": "core"}})
-
-# ---- 外部 seam 边 (plugin -> seam) ----
-for sid, s in ext_map.items():
-    for dep in s.get("referred_by", []):
-        if dep in nodes:
-            edge_list.append({"data": {"id": f"{dep}->{sid}", "source": dep, "target": sid, "kind": "seam"}})
-
-# ---- 组聚合边 ----
-group_edges = []
-def add_group_edge(gs, gt):
-    key = f"grp-{gs}->grp-{gt}"
-    if not any(ge["data"]["id"] == key for ge in group_edges):
-        group_edges.append({"data": {"id": key, "source": "grp-"+gs, "target": "grp-"+gt, "kind": "group"}})
-
-for e in edges:
-    gs = nodes[e["from"]]["group"]
-    gt = nodes[e["to"]]["group"]
-    if gs != gt:
-        add_group_edge(gs, gt)
-for sid, s in ext_map.items():
-    for dep in s.get("referred_by", []):
-        if dep in nodes:
-            add_group_edge(nodes[dep]["group"], "EXT")
-
-print(f"[INFO] groups in DAG: {len(gids)} -> 组级视图节点 = {len(gids) + 1}(+EXT)")
-
-payload = {
-    "plugins": plugin_nodes,
-    "seams": ext_nodes,
-    "edges": edge_list,
-    "groupEdges": group_edges,
-    "groups": {gid: {"name": groups[gid]["name"], "color": GROUP_COLORS[gid]} for gid in gids},
-    "groupColor": GROUP_COLORS,
-    "extColor": "#b48a3c",
-    "disabledIds": sorted(disabled_ids)
-}
-
-data_json = json.dumps(payload, ensure_ascii=False)
-
-# ---- 替换 const DATA = 行 ----
-with open(HTML, "rb") as f:
-    raw = f.read()
-content = raw.decode("utf-8")
-lines = content.split("\n")
-lines = [l.rstrip("\r") for l in lines]
-
-data_line_idx = None
-for i, l in enumerate(lines):
-    if l.startswith("const DATA = "):
-        data_line_idx = i
-        break
-if data_line_idx is None:
-    print("[ERR] const DATA line not found")
-    raise SystemExit(1)
-
-print(f"[INFO] replacing line {data_line_idx+1} (len={len(lines[data_line_idx])})")
-lines[data_line_idx] = "const DATA = " + data_json + ";"
-content = "\r\n".join(lines)
-
-# ---- disabled 样式插入 (对齐 l2: 在 node.seam 之后插入 node[kind=disabled] 属性选择器) ----
-STYLE_INSERT = """    { selector:'node[kind="disabled"]', style:{
-      'background-color':'#3a3f4a','border-width':1.5,'border-color':'#c0504d',
-      'width':56,'height':30, shape:'round-rectangle', opacity:0.55
-    }},"""
-
-marker = "{ selector:'node[kind=\"group\"]', style:{"
-if 'node[kind="disabled"]' not in content:
-    if marker in content:
-        content = content.replace(marker, STYLE_INSERT + "\n    " + marker, 1)
-        print("[OK] inserted node[kind=disabled] style before node.group")
+    cr = "\r" if lines[idx].endswith("\r") else ""
+    if lines[idx] == new_line + cr:
+        print(f"[OK] DATA 已同步（{len(new_line)} 字符），无改动")
     else:
-        print("[WARN] marker not found for disabled style insert")
-else:
-    print("[OK] disabled style present")
+        old_len = len(lines[idx])
+        lines[idx] = new_line + cr
+        with open(HTML, "w", encoding="utf-8", newline="") as f:
+            f.write("\n".join(lines))
+        print(f"[OK] DATA 行已替换: {old_len} -> {len(lines[idx])} 字符")
 
-# ---- 写回 (UTF-8 无 BOM, LF) ----
-with open(HTML, "w", encoding="utf-8", newline="") as f:
-    f.write(content)
+    # disabled 样式选择器必须存在（质量门控检查项）
+    if 'node[kind="disabled"]' not in content:
+        print("[WARN] 样式缺 node[kind=disabled]")
 
-print(f"[OK] injected DATA: plugins={len(plugin_nodes)}, seams={len(ext_nodes)}, edges={len(edge_list)}, groupEdges={len(group_edges)}")
-print(f"[OK] groups={len(gids)+1}(含EXT), disabled={len(disabled_ids)}")
+    print(f"[OK] plugins={len(payload['plugins'])} seams={len(payload['seams'])} "
+          f"groups={len(payload['groups'])} gridNodes={len(payload['grid']['nodes'])} "
+          f"disabled={len(payload['disabledIds'])}")
+
+
+if __name__ == "__main__":
+    main()

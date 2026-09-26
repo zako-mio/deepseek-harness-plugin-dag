@@ -3,61 +3,120 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DeepSeek Harness 插件级 DAG 依赖链分析</title>
+<title>DeepSeek Harness 插件级 DAG 依赖链分析 · 主页仪表盘 v0.1.7-rc.2</title>
 <style>
-  :root { --bg:#0f1117; --panel:#161a22; --border:#2a2f3a; --text:#e6e8ee; --dim:#9aa3b2; --accent:#4f8cff; --ext:#b48a3c; --ok:#2fb98a; }
-  * { box-sizing:border-box; margin:0; padding:0; }
-  body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; line-height:1.7; }
-  header { background:var(--panel); border-bottom:1px solid var(--border); padding:28px 32px; }
-  header h1 { font-size:24px; margin-bottom:6px; }
-  header p { color:var(--dim); font-size:14px; max-width:900px; }
-  main { padding:28px 32px; max-width:1100px; margin:0 auto; }
-  h2 { font-size:18px; margin:28px 0 14px; color:#cfd6e4; border-bottom:1px solid var(--border); padding-bottom:8px; }
-  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; margin:12px 0; }
-  .card { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px 18px; }
-  .card h3 { font-size:15px; color:var(--accent); margin-bottom:6px; }
-  .card a { color:var(--accent); text-decoration:none; }
-  .card a:hover { text-decoration:underline; }
-  .card p { font-size:13px; color:var(--dim); }
-  .stat { display:inline-block; background:#1d2a3f; border:1px solid #2b3d5f; border-radius:8px; padding:10px 16px; margin:4px; text-align:center; }
-  .stat b { display:block; font-size:22px; color:#fff; }
-  .stat span { font-size:12px; color:var(--dim); }
-  .links a { display:inline-block; margin:4px 8px 4px 0; padding:6px 14px; background:var(--panel); border:1px solid var(--border); border-radius:8px; color:var(--accent); text-decoration:none; font-size:13px; }
-  .links a:hover { border-color:var(--accent); }
+:root{--bg:#0f1117;--panel:#161a22;--border:#2a2f3a;--text:#e6e8ee;--dim:#9aa3b2;--accent:#4f8cff;--ok:#2fb98a;--ext:#b48a3c;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+header{background:var(--panel);border-bottom:1px solid var(--border);padding:26px 32px;}
+header h1{font-size:23px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+header .sub{color:var(--dim);font-size:14px;max-width:1000px;margin-top:8px;}
+.badge{background:#20324f;color:#7fb0ff;padding:2px 11px;border-radius:20px;font-size:12px;font-weight:600;}
+main{padding:26px 32px 44px;max-width:1180px;margin:0 auto;}
+h2{font-size:17px;margin:28px 0 12px;color:#cfd6e4;border-bottom:1px solid var(--border);padding-bottom:8px;}
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:14px 0 6px;}
+.stat{background:#1d2a3f;border:1px solid #2b3d5f;border-radius:9px;padding:14px 12px;text-align:center;min-height:96px;display:flex;flex-direction:column;justify-content:center;}
+.stat b{display:block;font-size:26px;color:#fff;line-height:1.2;}
+.stat span{display:block;font-size:12.5px;color:#cfd6e4;margin-top:4px;}
+.stat small{display:block;font-size:11px;color:var(--dim);margin-top:5px;}
+@media (max-width:960px){.stats{grid-template-columns:repeat(3,1fr);}}
+@media (max-width:560px){.stats{grid-template-columns:repeat(2,1fr);}}
+.bigcards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:10px 0;align-items:stretch;}
+a.bigcard{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:8px;text-decoration:none;color:inherit;transition:border-color .15s,background .15s,transform .15s;}
+a.bigcard:hover{border-color:var(--accent);background:#1b2333;transform:translateY(-2px);}
+a.bigcard:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+a.bigcard h3{font-size:16px;color:var(--accent);display:flex;justify-content:space-between;align-items:center;gap:8px;}
+a.bigcard h3 .arrow{color:var(--dim);font-size:14px;}
+a.bigcard:hover h3 .arrow{color:var(--accent);}
+a.bigcard p{font-size:13px;color:var(--dim);flex:1;}
+a.bigcard .ex{font-size:12px;color:#7fb0ff;word-break:break-all;font-family:Consolas,monospace;}
+@media (max-width:820px){.bigcards{grid-template-columns:1fr;}}
+.links{display:flex;flex-wrap:wrap;gap:9px;margin:10px 0;}
+.links a{font-size:13px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 14px;color:var(--accent);text-decoration:none;}
+.links a:hover{border-color:var(--accent);}
+.links a .cnt{color:var(--dim);font-size:11px;margin-left:6px;}
+.links a.ai{border-style:dashed;}
+.regbox{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0;}
+@media (max-width:820px){.regbox{grid-template-columns:1fr;}}
+.regcard{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+.regcard .rt{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;}
+.regcard .rt a{color:inherit;text-decoration:none;}
+.regcard .rt a:hover{color:var(--accent);}
+.regcard .dot{width:11px;height:11px;border-radius:3px;flex:none;}
+.regcard .rc{font-size:12.5px;color:#cfd6e4;margin:6px 0 2px;}
+.regcard .rnote{font-size:11px;color:var(--dim);margin-bottom:10px;}
+.clchips{display:flex;flex-wrap:wrap;gap:6px;}
+.clchips a{font-size:11.5px;border-radius:6px;padding:3px 9px;text-decoration:none;border:1px solid transparent;}
+.clchips a:hover{border-color:var(--accent);}
+.method{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 18px;font-size:13px;color:#c3cbd8;}
+.method b{color:#e6e8ee;}
+.method li{margin:4px 0 4px 18px;}
+footer{margin-top:36px;padding:16px 32px;border-top:1px solid var(--border);color:var(--dim);font-size:12px;text-align:center;}
 </style>
 </head>
 <body>
 <header>
-  <h1>DeepSeek Harness 插件级 DAG 依赖链分析</h1>
-  <p>以 cordis 插件为最小分析单元，三硬依据（E1 编译 / E2 运行时 / E3 组合）+ 源码行引用逐条溯源，回答每个插件「实现了什么」「依赖谁」「被谁依赖」。<b>2026-09-27 全量重建至 dsh-v0.1.7-rc.2</b>：L1 核心集（base bundle）+ L2 web-app bundle（宿主层/前端 runtime/ui-*）+ L3 其余（SDK/ACP/hooks/实验特性/SSH/Browser-Use 等 5 个 bundle 之外的可挂载插件）已全部完成。</p>
+<h1>DeepSeek Harness 插件级 DAG 依赖链分析 <span class="badge">v0.1.7-rc.2</span></h1>
+<div class="sub">以 cordis 插件为最小分析单元，三硬依据（E1 编译 / E2 运行时 / E3 组合）逐条源码溯源，回答每个插件「实现了什么 / 依赖谁 / 被谁依赖」。<br>2026-09-27 全量重建至 dsh-v0.1.7-rc.2：L1 核心集 + L2 web-app + L3 其余可挂载插件全部完成。</div>
 </header>
 <main>
-  <h2>核心统计</h2>
-  <div>
-    <div class="stat"><b>239</b><span>插件节点（90 L1 + 82 L2 + 67 L3）</span></div>
-    <div class="stat"><b>73</b><span>外部 seam 基座</span></div>
-    <div class="stat"><b>1077</b><span>节点间依赖边（另 536 条 seam 边）</span></div>
-    <div class="stat"><b>19</b><span>拓扑层</span></div>
-    <div class="stat"><b>50</b><span>分组</span></div>
-    <div class="stat"><b>312</b><span>HTML 插件页（239 DAG 节点 + 73 seam）</span></div>
-  </div>
-
-  <h2>入口导航</h2>
-  <div class="links">
-    <a href="04-interactive/index.html">交互 DAG 总览（组级视图+点击下钻）</a>
-    <a href="03-groups/index.html">分组目录</a>
-  </div>
-
-  <h2>查看方式</h2>
-  <div class="cards">
-    <div class="card"><h3>交互图</h3><p>cytoscape 本地渲染，组级视图 51 节点（50 组 + EXT）彩色，点击组节点下钻组内插件 DAG；支持 <code>?drill=Gxx</code> / <code>#Gxx</code> 深链；disabled 插件灰显红边。<a href="04-interactive/index.html">打开 →</a></p></div>
-    <div class="card"><h3>插件页</h3><p>每插件一页：设计初衷 + 实现逻辑 + provides + 上游/下游 DAG 链式导航 + 源码引用。<a href="02-plugin-pages/dsh-session.html">示例 dsh-session →</a></p></div>
-    <div class="card"><h3>分组索引</h3><p>50 组索引（按 packages 域划分，客户端 UI 单独成组），每组列出组内插件与拓扑层。<a href="03-groups/index.html">打开 →</a></p></div>
-    <div class="card"><h3>MD 镜像</h3><p>AI 友好 Markdown 简表，供检索与二次加工（非人类浏览入口，见 README）。</p></div>
-  </div>
-
-  <h2>方法说明</h2>
-  <p>依赖判定三硬依据：<b>E1 编译依赖</b>（package.json peerDependencies / import）、<b>E2 运行时依赖</b>（ctx 服务注入 / ctx.get / 事件订阅）、<b>E3 组合依赖</b>（cordis.patch.yml 装配）。拓扑分层采用<b>最长路径</b>（被依赖方先于依赖方，Layer 0 为基础能力，Layer 18 为最外层客户端插件）；<b>type-only 类型导入边</b>标注但不参与分层（TS 类型环合法）；1 条运行时反馈边标 soft；另有 19 个装配行 disabled 标注（灰显红边）。特殊模块 8 页（base/headless/web-app/sdk-app/sdk-minimal/acp-app + app-boot/cmdline）。</p>
+<h2>核心统计</h2>
+<div class="stats" id="statbar">
+<div class="stat"><b>239</b><span>插件节点</span><small>L1 90 · L2 82 · L3 67</small></div>
+<div class="stat"><b>73</b><span>外部 seam 基座</span><small>抽象基座 / 工具库 / 测试支撑</small></div>
+<div class="stat"><b>1077</b><span>节点间依赖边</span><small>另 536 条 seam 边</small></div>
+<div class="stat"><b>19</b><span>拓扑层</span><small>最长路径分层</small></div>
+<div class="stat"><b>50</b><span>分组</span><small>按 packages 域划分</small></div>
+<div class="stat"><b>312</b><span>HTML 插件页</span><small>239 插件 + 73 seam</small></div>
+</div>
+<h2>主入口</h2>
+<div class="bigcards">
+<a class="bigcard" href="04-interactive/index.html"><h3>交互 DAG 总览 <span class="arrow">→</span></h3><p>cytoscape 本地渲染：组级 51 节点（50 组 + EXT），点击下钻组内插件 DAG，支持 <code>?drill=Gxx</code> / <code>#Gxx</code> 深链；disabled 插件灰显红边。</p><span class="ex">04-interactive/index.html</span></a>
+<a class="bigcard" href="03-groups/index.html"><h3>分组索引 <span class="arrow">→</span></h3><p>50 组按装配来源分为 3 区、9 个功能簇；每组含插件列表、层跨度与来源徽标。</p><span class="ex">03-groups/index.html</span></a>
+<a class="bigcard" href="02-plugin-pages/dsh-session.html"><h3>插件页 <span class="arrow">→</span></h3><p>每节点一页（共 312 页：239 插件 + 73 seam）：插件信息 + 实现逻辑 + provides + 依赖/被依赖 + DAG 链式导航 + 源码引用。</p><span class="ex">示例 → 02-plugin-pages/dsh-session.html</span></a>
+</div>
+<h2>次级入口</h2>
+<div class="links">
+<a href="08-special-modules/">特殊模块<span class="cnt">8 页</span></a>
+<a class="ai" href="06-md/00-index.md">AI 检索 MD 镜像<span class="cnt">Markdown</span></a>
+<a href="report.html">任务报告</a>
+<a class="ai" href="RC2-0.1.7-DIFF-REPORT.md">RC 差异报告<span class="cnt">RC2-0.1.7 · MD</span></a>
+<a class="ai" href="RC7-RC8-DIFF-REPORT.md">RC 差异报告<span class="cnt">RC7-RC8 · MD</span></a>
+<a class="ai" href="RC8-RC2-DIFF-REPORT.md">RC 差异报告<span class="cnt">RC8-RC2 · MD</span></a>
+<a href="01-dag-data/webapp-dag.json">DAG 数据 JSON</a>
+<a class="ai" href="README.md">README<span class="cnt">MD</span></a>
+</div>
+<div class="links">
+<a href="08-special-modules/dsh-acp-app.html">dsh-acp-app</a>
+<a href="08-special-modules/dsh-app-boot.html">dsh-app-boot</a>
+<a href="08-special-modules/dsh-base.html">dsh-base</a>
+<a href="08-special-modules/dsh-cmdline.html">dsh-cmdline</a>
+<a href="08-special-modules/dsh-headless.html">dsh-headless</a>
+<a href="08-special-modules/dsh-sdk-app.html">dsh-sdk-app</a>
+<a href="08-special-modules/dsh-sdk-minimal.html">dsh-sdk-minimal</a>
+<a href="08-special-modules/dsh-web-app.html">dsh-web-app</a>
+</div>
+<h2>分区总览</h2>
+<div class="regbox">
+<div class="regcard"><div class="rt"><span class="dot" style="background:#4f8cff"></span><a href="03-groups/index.html#L1">L1 核心集</a></div><div class="rc"><b>29 组</b> / <b>112 插件</b>（组内成员合计）</div><div class="rnote">插件自身 source_layer 计为 L1 90</div><div class="clchips">
+<a href="03-groups/index.html#F1" style="background:#4f8cff22;color:#4f8cff">F1 运行时基座 (5)</a>
+<a href="03-groups/index.html#F2" style="background:#4f8cff22;color:#4f8cff">F2 会话与上下文 (7)</a>
+<a href="03-groups/index.html#F3" style="background:#4f8cff22;color:#4f8cff">F3 智能与协议 (3)</a>
+<a href="03-groups/index.html#F4" style="background:#4f8cff22;color:#4f8cff">F4 工具与执行面 (11)</a>
+<a href="03-groups/index.html#F5" style="background:#4f8cff22;color:#4f8cff">F5 宿主与工作区 (3)</a>
+</div></div>
+<div class="regcard"><div class="rt"><span class="dot" style="background:#9a7bf0"></span><a href="03-groups/index.html#L2">L2 web-app</a></div><div class="rc"><b>10 组</b> / <b>89 插件</b>（组内成员合计）</div><div class="rnote">插件自身 source_layer 计为 L2 82</div><div class="clchips">
+<a href="03-groups/index.html#F6" style="background:#9a7bf022;color:#9a7bf0">F6 客户端 UI (1)</a>
+<a href="03-groups/index.html#F7" style="background:#9a7bf022;color:#9a7bf0">F7 客户端运行时与宿主接入 (9)</a>
+</div></div>
+<div class="regcard"><div class="rt"><span class="dot" style="background:#2fb98a"></span><a href="03-groups/index.html#L3">L3 其余可挂载</a></div><div class="rc"><b>11 组</b> / <b>38 插件</b>（组内成员合计）</div><div class="rnote">插件自身 source_layer 计为 L3 67</div><div class="clchips">
+<a href="03-groups/index.html#F8" style="background:#2fb98a22;color:#2fb98a">F8 协议与远程 (5)</a>
+<a href="03-groups/index.html#F9" style="background:#2fb98a22;color:#2fb98a">F9 实验与扩展 (6)</a>
+</div></div>
+</div>
+<h2>方法说明</h2>
+<div class="method"><ul><li><b>E1 编译依赖</b>：package.json peerDependencies / import 语句。</li><li><b>E2 运行时依赖</b>：ctx 服务注入 / ctx.get / 事件订阅。</li><li><b>E3 组合依赖</b>：cordis.patch.yml 装配位置。</li><li>拓扑分层采用<b>最长路径</b>（被依赖方先于依赖方，Layer 0 基础 → Layer 18 最外层）；type-only 类型导入边标注但不参与分层（TS 类型环合法），1 条运行时反馈边标 soft，19 个装配行 disabled 灰显。</li></ul></div>
 </main>
+<footer>DeepSeek Harness 插件级 DAG 依赖链分析 · v0.1.7-rc.2 · 2026-09-27 全量重建 · 统计数字由 gen-root-index.py 从 webapp-dag.json / external-seams.json 派生</footer>
 </body>
 </html>
