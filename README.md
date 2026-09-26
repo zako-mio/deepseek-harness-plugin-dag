@@ -44,11 +44,14 @@
 
 | 想做什么 | 去哪 |
 |---------|------|
+| **主页仪表盘**（核心统计条 + 主入口三卡 + 分区总览） | `index.html` |
 | **交互 DAG 总览**（组级视图 + 点击下钻 + `?drill=Gxx` 深链） | `04-interactive/index.html` |
-| 分组目录 | `03-groups/index.html` |
+| 分组目录（区 → 簇卡片 + seam 分区默认折叠） | `03-groups/index.html` |
 | 每插件一页（含**模块内部结构动态 DAG**） | `02-plugin-pages/`（312 页） |
 | 特殊模块结构（base/web-app/sdk/boot…） | `08-special-modules/`（8 页） |
+| 任务报告 | `report.html`（人类版） / `report.md`（AI 镜像） |
 | AI 检索 MD 镜像 | `06-md/00-index.md`（239 插件 + 73 seam 全量） |
+| 差异报告（AI 镜像，3 份） | `RC2-0.1.7-DIFF-REPORT.md` / `RC7-RC8-DIFF-REPORT.md` / `RC8-RC2-DIFF-REPORT.md` |
 | DAG 数据（JSON） | `01-dag-data/webapp-dag.json`（239 节点 + 1077 边 + 536 seam_edges） |
 | 模块级 import 数据 | `07-checkpoint/plugin-internal-all.json` |
 
@@ -62,10 +65,13 @@
 ├── 04-interactive/       # cytoscape 交互总览（组级 + 下钻 + URL 深链）+ vendor/
 ├── 05-source/            # 官方源码：dsh-rc8 / dsh-v0.1.1-rc.2 / dsh-v0.1.7-rc.2（tarball+SHA256；解压树 gitignore）
 ├── 06-md/                # AI 友好 MD 镜像
-├── 07-checkpoint/        # 生成管线（含 v017/ 本轮全量重建中间产物）
+├── 07-checkpoint/        # 生成管线（含 v017/ 本轮全量重建中间产物、prototype/ 评审原型生成器）
 ├── 08-special-modules/   # 特殊模块 8 页
+├── 09-prototype/         # 评审原型（只读 demo，**非生产入口**；生成器见 07-checkpoint/prototype/）
 └── index.html            # 根入口
 ```
+
+> ⚠️ `09-prototype/` 与 `07-checkpoint/prototype/` 原为带 `_` 前缀的 demo 目录。因 **GitHub Pages 的 Jekyll 会忽略 `_` 前缀目录**，其内容上线即不可见，故本次统一去前缀改名为上述目录。**目录名不含 `_` 前缀**是 Pages 可见的硬前提，后续勿再改回。
 
 ## 生成管线（07-checkpoint，可重放）
 
@@ -82,9 +88,25 @@
 | `v017-build-dag.py` | 合并 → DAG（最长路径分层 + 反馈边 soft + type-only 标注）→ `01-dag-data/*.json` |
 | `v017-prep-inputs.py` | 生成 `special-modules.json`（8 模块）/ `disabled-rows.json`（19 行） |
 | `v017-clean-pages.py` | 删除不在新节点集内的陈旧页面 |
-| `gen-html-l3.py` / `gen-md-l3.py` / `gen-plugin-dyn.py` / `gen-overview.py` / `inject-data-l3.py` | 全量页面重生成（复用既有生成器） |
-| `quality-gate-l3.py` | 8 项门控（已强化：纳入 v017 全部 JSON / 8 特殊模块全集 / seam_edges↔referred_by 一致性 / 分层方向一致性） |
+| `gen-html-l3.py` | HTML 全量生成器（`--only {all,plugin-pages,groups-pages,groups-index,special}` 分阶段；**默认 dry-run，须显式 `--write` 才落盘** —— 2026-09-27 误跑事故的根因修复，见下） |
+| `gen-plugin-dyn.py` | 插件页「动态 DAG」**事后注入器**（跑完 `gen-html-l3.py --only plugin-pages --write` 后必须补跑，否则插件页丢区块） |
+| `gen-overview.py` | `04-interactive/index.html` 的**唯一权威生成器**（组级 `layout:'preset'` + 下钻数据，坐标 Python 侧算定，渲染零随机） |
+| `inject-data-l3.py` | `04-interactive/index.html` 的**幂等 DATA 同步器**（复用 `gen-overview.build_payload()` 同一 payload 原地替换 `const DATA = ...;`；内容一致时不改动字节） |
+| `gen-root-index.py` | 根 `index.html` 主页**唯一生成器**（统计数字全部从 `webapp-dag.json` / `external-seams.json` 派生；确定性，重复运行 byte-identical） |
+| `prototype/gen-{grid,groups,home}-demo.py` | `09-prototype/` **评审原型** 3 页生成器（只读产出，**非生产入口**；页面顶部带「本页为评审原型」醒目标注） |
+| `gen-md-l3.py` | `06-md/` AI 检索镜像生成器 |
+| `quality-gate-l3.py` | 结构/数据一致性门控（8 项，已强化：纳入 v017 全部 JSON / 8 特殊模块全集 / seam_edges↔referred_by 一致性 / 分层方向一致性） |
+| `quality-gate-readable.py` | 可读性/骨架不变量门控（A–F 六项 + `--selftest` 负向自检，见「质量门控」） |
 | `headless-verify-l3.py` | chromium headless DOM 断言（**非空断言**：下钻视图 ≠ 组级视图）+ 截图 |
+
+> ⚠️ **管线配对顺序（事故机制，务必遵守）**：`gen-html-l3.py` 生成的插件页**不含**「动态 DAG」区块，
+> 该区块由 `gen-plugin-dyn.py` **事后注入**。因此执行 `gen-html-l3.py --only plugin-pages --write`
+> （或 `--only all --write`）之后，**必须补跑** `python3 07-checkpoint/gen-plugin-dyn.py`，
+> 否则 239 个插件页会丢失动态 DAG（每页约 −3982 字符）。
+> 2026-09-27 02:43 的误跑事故正是：一次 `python3 gen-html-l3.py --help`（当时该脚本无 argparse，
+> `--help` 被静默忽略 → 全量执行）重写了 `02-plugin-pages`(239) + `03-groups`(51) + `08-special-modules`(8)，
+> 冲掉 `gen-plugin-dyn.py` 注入层，靠 `git checkout` 回滚。现已加「默认 dry-run + 显式 `--write`」保护，
+> 并由可读性门控判据 **D**（`id="dyn-dag"` 覆盖数 == `len(nodes)`）作事故防线：下次误跑即刻报警。
 
 ## 关键发现（v0.1.7-rc.2）
 
@@ -97,8 +119,12 @@
 
 ## 质量门控
 
-`07-checkpoint/quality-gate-l3.py` **ALL PASS**（0 error / 1 warning）：
-1. JSON 合法（**84 个文件**，含 v017 全部中间产物）
+本库有两道相互独立、可机检的门控：
+
+### 1. `07-checkpoint/quality-gate-l3.py` —— 结构 / 数据一致性
+
+**ALL PASS**（当前实测：ERRORS 0 / WARNINGS 1）：
+1. JSON 合法（**85 个文件**，含 v017 全部中间产物）
 2. DAG 无环（运行时边 795 条 → 239/239 可达）+ layers 全覆盖 + **分层方向一致性**（每条运行时边 level[from] > level[to]）
 3. HTML：UTF-8 无替换字符 / div 开闭平衡 / 内链断链 **0**（373 页）
 4. vendor 完整（cytoscape + dagre）
@@ -107,6 +133,20 @@
 7. MD 镜像覆盖 239/239 + 73/73
 8. （唯一 WARN）含 type-only 边时存在 57 节点类型层环 —— TS 合法，仅上报
 
+### 2. `07-checkpoint/quality-gate-readable.py` —— 可读性 / 骨架不变量
+
+**ALL PASS**（A–F 全 OK；阈值全部由「逐页统计 / 数据源长度」推导，非拍脑袋）：
+- **A 页面区块骨架**：DAG 插件页 239/239 命中「插件信息 / ① 实现逻辑 / ② 注册/提供（provides）/ ③ 依赖（depends_on·上游前驱）/ ④ 被依赖（dependents·下游消费者）」五段；seam 页 73/73 命中「基座 seam 说明 / 被依赖（下游）/ 依赖机制分布」三段
+- **B `.md` 链接自标注 + HTML 人类入口**：站内 5 条 `.md` 链接的链接文本均含 `MD`/`Markdown`/`AI`；且 `index.html` 链接 `report.html` 且该文件存在（人类入口一律 HTML，`.md` 仅作 AI/机器镜像且必须自标注形态）
+- **C `index.html` 统计一致性**：统计块数字与数据源实测一致（239/73/1077/19/50/312）
+- **D 动态 DAG 注入覆盖**：含 `id="dyn-dag"` 的插件页数 == `len(nodes)` == 239（**事故防线**）
+- **E 主图不变量**：`grp-` 节点 51 == 50 组 + EXT；组级为确定性 `layout:'preset'`（节点含 position、无 dagre 组级布局）；差异化高亮三色语义（上游橙 `#e8933b` / 下游绿 `#2fb98a` / 自身蓝 `#4f8cff`）
+- **F 分组索引不变量**：`03-groups/index.html` 的 `Gxx` 链接去重 50、`../02-plugin-pages/*.html` 链接去重 73、区锚点 `L1/L2/L3` 各 1、簇锚点 `F1..F9` 各 1
+
+> `quality-gate-readable.py --selftest` 为内置**负向自检**：对每个判据在临时副本上定点破坏
+> （删区块 / 换无标注链接文本 / 删 `id="dyn-dag"` / 删 grp- 节点 / 改区锚点），断言对应判据
+> **确实 FAIL**（证明判据非恒真），真实产物零改动。
+
 `headless-verify-l3.py`（`/snap/bin/chromium --headless=new`）：组级视图 `zmode=组级 / zcount=51`；下钻 `G01` → `zmode=G01 · ACP 协议 / zcount=10`（**断言下钻视图 ≠ 组级视图，防假绿**）；三张截图字节数各异，目视确认中文完整、图例 239/73/50、面包屑与 seam 虚线边正常。
 
 ## 已知保留项
@@ -114,3 +154,5 @@
 - 页面中 `0.1.0-rc.8` / `0.1.1-rc.2` 等为各包**历史版本演进记录**，按设计保留。
 - `type_only` 边在交互图中与运行时边同色显示（未做虚线区分），下游消费者可按 `edges[].type_only` 字段自行过滤。
 - `05-source/dsh-v0.1.7-rc.2/` 的**解压树不入库**（155MB），仅 tarball + SHA256 入库；解压命令见该目录说明。
+- `02-plugin-pages/*.html` 与 `03-groups/G*.html` 内嵌的 **50 组 treenav 本轮未改**（仍为平铺 chip，未做层级折叠）。
+- `03-groups/index.html` 已改为**区 / 簇卡片目录**，seam 分区以 `<details>` **默认折叠**。

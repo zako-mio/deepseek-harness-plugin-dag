@@ -120,3 +120,108 @@ README 全量重写、`index.html` 统计与说明更新、`RC2-0.1.7-DIFF-REPOR
 - **性能适配**：构建耗时较长，按用户要求改为**后台非阻塞 + 短轮询**执行，并对构建进程 `renice +15` 降低对交互的影响。
 - **⚠ 未通项与归因**：模型调用返回 `QUOTA: Insufficient Balance`。按「旧树 vs 新树同时验证」方法，在**旧树（0.1.5-rc.2 备份）复现同一错误（不同 request_id）**，且新树源码中无该字符串 ⇒ 判定为**账户余额问题，非升级回归**；另 `all_proxy` SOCKS 告警在两棵树同样出现，属既有环境项。**需用户处理账户余额后模型调用方可通**。
 - **插件状态**：8 个自定义插件维持不挂（注释化可逆），与用户决策一致。
+
+## 七、增补：主页排版 · 索引设计 · 主 DAG 默认布局改版（2026-09-27）
+
+> 本轮为**页面层改版**（不动 DAG 数据层，239 节点 / 1077 边不变），范围锁定三个页面：根主页 `index.html`、组索引 `03-groups/index.html`、主交互图 `04-interactive/index.html`。流程 = 需求对齐（3 轮 question）→ 只读原型 `09-prototype/` 评审 → 并行执行 → 双门控 + headless 复验 → 收口。
+
+### 7.1 当时情况
+
+**用户原始诉求**：「主页排版、索引设计和主 DAG 图各节点默认位置有问题，先对齐需求。」
+
+**三个页面的改造前实测问题**：
+
+| 页面 | 改造前实测问题 |
+|---|---|
+| 根主页 `index.html` | 统计条用 `inline-block` 排布，「312 HTML 插件页」被挤成**孤行**；存在**死卡**（无点击目标）；**入口缺失**（关键页无直达入口） |
+| 组索引 `03-groups/index.html` | 50 组 chip 墙无层级、整页高达 **5444px**；seam 列表整块渲染成 `cordis ·`（根因：`01-dag-data/external-seams.json` **73/73 条 `description` 为空**）单列撑到 **2371px** |
+| 主交互图 `04-interactive/index.html` | dagre **LR** 布局使 51（50 组 + EXT）节点包围盒达 **3416×5608**；自动 fit 后 zoom **0.154** 不可读；`#graph{right:0}` 被 300px 侧栏**遮挡** |
+
+（改造前取证：`index.html` 统计卡为 `.stat{display:inline-block;margin:4px}`；`04-interactive/index.html` 为 `cy.layout({name:'dagre',rankDir:'LR'…})` + `#graph{position:fixed;left:0;right:0}` 与 `#side{width:300px;right:0}`；`external-seams.json` 经脚本复核 `count=73`、`empty_desc=73`。）
+
+### 7.2 制定计划
+
+**需求对齐（3 轮 question 的决策点）**：
+
+1. **索引设计范围** —— 裁定**三者都算**（主页 + 组索引 + 主图），作为同一套入口体系一并改，避免各改各的。
+2. **主页定位** —— 重排为**仪表盘**：统计卡等宽自适应、零孤行、全部可点、关键页显式入口。
+3. **主图目标** —— **一屏可读** + **按区排布** + **保留按组高亮**（不牺牲既有交互能力）。
+4. **落地方式** —— **改脚本 + 补生成器**，产物一律由生成器派生、不手改（主页此前为手工维护，本轮补出唯一生成器）。
+
+**关键「数据实测否决」过程**（两版分区方案被实测否决）：
+
+| 候选分区方案 | 实测数据 | 结论 |
+|---|---|---|
+| 按「域」分区 | 组与 `packages/<域>` 为 **1:1** | **无效**（分区即分组本身，无信息增益） |
+| 按「拓扑层」分区 | 组级图 **35/51 节点成环**、且组**跨层**（如 G06 跨 L0–L18） | **无良定义**（有环图不存在良定义拓扑分层） |
+| **装配来源 L1/L2/L3 三区 + 9 功能簇二级 + 确定性 preset 网格** | 一级 = `L1/L2/L3`（EXT 独立列）；二级 = `F1–F9` 固定功能簇；坐标全部 Python 侧算好、渲染零随机 | **采纳** |
+
+**流程约束**：先出**只读原型 demo**（落 `09-prototype/`，不碰任何生产页）供评审，通过后才全量改生产页与生成器。
+
+### 7.3 执行情况
+
+**并行子 Agent 分工与集成收口**：
+
+- 三条线并行：① 主页（`gen-root-index.py`）；② 组索引 + 插件页骨架（`gen-html-l3.py`）；③ 主图数据 + 下钻几何（`gen-overview.py` + `inject-data-l3.py`）。
+- **竞态与收口**：主页生成器需要 `03-groups/index.html` 的锚点（`#L1`/`#F1`…），而二者并行产出 ⇒ 由**主 Agent 在全部任务结束后重跑依赖方**（`gen-root-index.py` 最后执行），消除「引用未就绪锚点」的时序竞态。
+
+**事故与回滚（02:43）**：
+
+- **现象**：某子 Agent 执行 `python3 07-checkpoint/gen-html-l3.py --help`；该脚本当时**无 argparse**，`--help` 被忽略而**全量执行**，重写 239 插件页 + 51 组页 + 8 特殊模块页，**冲掉动态 DAG 注入层**（`dyn-dag`）。
+- **取证**：以目录级 md5 快照比对 `02-plugin-pages/`、`03-groups/`、`08-special-modules/`，确认非预期变化；对照 `inject-data-l3.py` 幂等注入产物缺失定位「注入层丢失」。
+- **回滚**：`git checkout -- <路径>/` 三目录恢复至事故前快照；随后重跑「生成器 → 注入器」正确管线。
+- **根因封堵（三层）**：① `gen-html-l3.py` 改为 argparse 显式 `--only` 分阶段、默认不写盘；② 生成器一律**默认 dry-run + 显式 `--write`**；③ `inject-data-l3.py` 改为幂等同步器（payload 与页内 DATA 一致则不改字节），杜绝历史「用只有插件数据的 payload 覆盖整行」类事故再现。
+
+**假绿返工（下钻视图第一轮判据）**：
+
+- 第一轮 headless 判据用 `includeLabels:false` 统计节点包围盒相交数 ⇒ **放过了标签碰撞**（标签已渲染但未纳入判据）。
+- 实测暴露：含标签重叠 **G06=249 / EXT=359 / G09=126 / G23=119**；边默认 `opacity 0.95` **糊屏**。
+- 处置：判据改为**含标签**的 `renderedBoundingBox()` 两两相交 == 0 + 出界 == 0 + `zoom≥0.9`，边默认 `opacity` 降到 **0.12**，并把强判据**写进 headless 验证**（对 50 组 + EXT 逐一执行）。
+
+### 7.4 完成情况
+
+**交付物明细**：
+
+- **3 个页面**：`index.html`（主页仪表盘）、`03-groups/index.html`（区 → 簇 → 组卡片索引）、`04-interactive/index.html`（主 DAG 默认网格布局 + 下钻 + hover 差异化）。
+- **8 个生成器 / 门控**：
+
+| 序号 | 文件 | 角色 |
+|---|---|---|
+| 1 | `07-checkpoint/gen-root-index.py` | 主页仪表盘唯一生成器（新建；此前手工维护） |
+| 2 | `07-checkpoint/gen-overview.py` | `04-interactive/index.html` 权威生成器（新排布） |
+| 3 | `07-checkpoint/gen-html-l3.py` | 插件页 / 组页 / 组索引 / 特殊模块生成器 |
+| 4 | `07-checkpoint/inject-data-l3.py` | 交互图 DATA 幂等注入器 |
+| 5 | `07-checkpoint/headless-verify-l3.py` | 下钻几何强判据 headless 门控 |
+| 6 | `07-checkpoint/quality-gate-readable.py` | 可读性 / 可点性门控 |
+| 7 | `07-checkpoint/gen-report-html.py` | 本报告 `report.md → report.html` 派生器 |
+| 8 | `07-checkpoint/_demo/*.py` | 3 个只读原型 demo 生成器（随原型目录统一升为 `09-prototype/`） |
+
+- **README**：更新（本轮改版说明 + 页面入口 + 生成器用法）。
+- **原型目录**：`_demo/` → **`09-prototype/`**（`07-checkpoint/_demo/` → `07-checkpoint/prototype/`）。
+
+**实测数字对比表（阈值 — 改造前 — 改造后）**：
+
+| 项 | 阈值 / 目标 | 改造前 | 改造后 |
+|---|---|---|---|
+| 主图包围盒 | 一屏可读 | 3416×5608 | **1373×853** |
+| 主图 fit zoom | ≥ 0.90 | 0.154 | **0.92** |
+| 主图内容填充率 | ≥ 0.80 | 自动 fit 不可控 | **0.93**（0.9258） |
+| 主页统计条 | 零孤行 | 「312 HTML 插件页」孤行 | **6 卡等宽零孤行** |
+| 主页三断点行计数 | 无孤行 | 未控 | 1280 / 800 / 520 → **6 / 3+3 / 2+2+2** |
+| 组索引页高 | 压缩 | 5444px | **3169px** |
+| 组卡可点性 | 整块可点 | 存在死区 | **50 组整块可点（面积占比 1.0）** |
+| seam 卡网格 | 无硬断词 | `cordis ·` 单列 2371px | **73 卡 4 列网格，硬断词 0** |
+| 下钻（50 组 + EXT） | 全量强判据 | 含标签重叠 | **重叠 0 / 出界 0 / zoom ≥ 0.9** |
+| 下钻边默认强调 | 不糊屏 | opacity 0.95 | **opacity 0.12** |
+| hover 差异化 | 与数据源一致 | 无 | **橙 22 / 绿 3 / 双向 3 / 暗 22，并集 28 == 数据源独立算出的期望邻域** |
+| 确定性 | 同输入同字节 | — | **管线两次 md5 一致** |
+| 门控 | ALL PASS | — | **双门控 ALL PASS** |
+
+**文件清单（本轮新增 / 修改）**：`index.html`、`03-groups/index.html`、`04-interactive/index.html`、`07-checkpoint/gen-root-index.py`、`07-checkpoint/gen-overview.py`、`07-checkpoint/gen-html-l3.py`、`07-checkpoint/inject-data-l3.py`、`07-checkpoint/headless-verify-l3.py`、`07-checkpoint/quality-gate-readable.py`、`07-checkpoint/_demo/`（3 个 demo 生成器）、`README.md`。
+
+### 7.5 反思/分析/建议
+
+1. **无 argparse 的生产脚本不可试探执行**。`gen-html-l3.py --help` 因无 argparse 被忽略而全量执行，冲掉 239 页注入层。**建议：生成器一律默认 dry-run + 显式 `--write` 才写盘，并把写盘范围收窄到最小目录。**
+2. **事后注入层是「重跑即静默丢失」点**。生成器重跑会覆盖注入内容且不报错。**建议：重跑生成器必须补跑注入器（`gen → inject` 成对），并为注入层设专用覆盖判据（缺 `dyn-dag` 即 FAIL）。**
+3. **判据断言范围窄于被检对象的完整渲染形态 ⇒ 假绿**。`includeLabels:false` 只测节点框、放过标签碰撞。**对称失效：哑火门控**（判据对象已被删除 → 恒 FAIL），`quality-gate-readable.py` 在干净基线上就 FAIL 属此类。**建议：判据落地前先实测对象存在性 + 内置负向自测（负例必须 FAIL、正例必须 PASS）。**
+4. **有环图无良定义拓扑分层，确定性几何反推比自动 fit 更可靠；并行产出的依赖方须由主 Agent 收口**。组级图 35/51 成环 ⇒ 自动分层与自动 fit 都不可控，改「Python 侧算坐标 + preset」后一屏可读（zoom 0.92）；主页依赖组索引锚点属并行竞态，由主 Agent 在全部任务结束后重跑依赖方收敛。**建议：几何布局走确定性算路 + 断言，跨任务依赖统一在末尾收口。**

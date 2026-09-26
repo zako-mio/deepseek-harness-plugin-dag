@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>评审原型（只读 demo） · DeepSeek Harness 插件 DAG</title>
+<style>
+:root{--bg:#0f1117;--panel:#161a22;--border:#2a2f3a;--text:#e6e8ee;--dim:#9aa3b2;--accent:#4f8cff;--warn:#e0b25e;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.proto-banner{background:#3a2f1a;color:var(--warn);border-bottom:1px solid #4a3a15;padding:9px 16px;text-align:center;font-size:13px;}
+.proto-banner a{color:#ffd08a;text-decoration:underline;}
+header{background:var(--panel);border-bottom:1px solid var(--border);padding:24px 32px;}
+header .crumb{color:var(--dim);font-size:13px;}
+header .crumb a{color:var(--accent);text-decoration:none;}
+header .crumb a:hover{text-decoration:underline;}
+header h1{font-size:22px;margin-top:6px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.badge{background:#3a2f1a;color:var(--warn);padding:2px 11px;border-radius:20px;font-size:12px;font-weight:600;}
+header .sub{color:var(--dim);font-size:13.5px;max-width:960px;margin-top:8px;}
+header .sub a{color:var(--accent);text-decoration:none;}
+header .sub a:hover{text-decoration:underline;}
+main{padding:26px 32px 44px;max-width:1180px;margin:0 auto;}
+h2{font-size:17px;margin:28px 0 12px;color:#cfd6e4;border-bottom:1px solid var(--border);padding-bottom:8px;}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:12px 0;}
+@media (max-width:820px){.cards{grid-template-columns:1fr;}}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:8px;}
+.card h3{font-size:16px;color:var(--accent);}
+.card .file{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:#7fb0ff;}
+.card p{font-size:13px;color:var(--dim);flex:1;}
+.card a.go{align-self:flex-start;font-size:13px;color:#fff;background:#26507f;border:1px solid #4f8cff;border-radius:8px;padding:6px 14px;text-decoration:none;margin-top:4px;}
+.card a.go:hover{background:#2f6396;}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px;}
+th,td{border:1px solid var(--border);padding:9px 12px;text-align:left;vertical-align:top;}
+th{background:#1b202a;color:#cfd6e4;font-weight:600;}
+td a{color:var(--accent);text-decoration:none;}
+td a:hover{text-decoration:underline;}
+.note{background:#1b202a;border:1px solid var(--border);border-radius:10px;padding:14px 18px;font-size:13px;color:#c3cbd8;}
+.note li{margin:4px 0 4px 18px;}
+.note b{color:#e6e8ee;}
+footer{margin-top:36px;padding:16px 32px;border-top:1px solid var(--border);color:var(--dim);font-size:12px;text-align:center;}
+</style>
+</head>
+<body>
+<div class="proto-banner">本页为评审原型，非生产入口；生产入口见 <a href="../index.html">../index.html</a></div>
+<header>
+  <div class="crumb"><a href="../index.html">任务目录</a> / <span>评审原型</span></div>
+  <h1>评审原型（只读 demo） <span class="badge">非生产入口</span></h1>
+  <div class="sub">本目录 3 个 HTML 为<b>评审用原型</b>，用于比对生产页的重排 / 重设计方案。它们<b>不参与质量门控</b>，也<b>不是生产入口</b>；生产入口见 <a href="../index.html">../index.html</a>。</div>
+</header>
+<main>
+  <h2>原型清单</h2>
+  <div class="cards">
+    <div class="card">
+      <h3>主页仪表盘（重排原型）</h3>
+      <span class="file">home.html</span>
+      <p>核心统计条 + 主入口三卡 + 分区总览的重排版式候选。统计数字与生产主页同源（均由 <code>webapp-dag.json</code> / <code>external-seams.json</code> 派生）。</p>
+      <a class="go" href="home.html">打开原型 →</a>
+    </div>
+    <div class="card">
+      <h3>主 DAG 组级视图（新排布）</h3>
+      <span class="file">grid.html</span>
+      <p>组级 51 节点（50 组 + EXT）的新排布方案：一级分区 L1/L2/L3/EXT、二级功能簇 F1–F10，坐标确定性 preset。</p>
+      <a class="go" href="grid.html">打开原型 →</a>
+    </div>
+    <div class="card">
+      <h3>分组索引（3 区 + 9 簇）</h3>
+      <span class="file">groups.html</span>
+      <p>50 组按装配来源分 3 区、9 个功能簇的卡片目录 + seam 基座清单 + 特殊模块入口。</p>
+      <a class="go" href="groups.html">打开原型 →</a>
+    </div>
+  </div>
+
+  <h2>原型 ↔ 生产页 对应关系与差异</h2>
+  <table>
+    <thead>
+      <tr><th>评审原型</th><th>对应生产页</th><th>关系</th><th>原型保留的 demo 限制</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a href="home.html">home.html</a></td>
+        <td><a href="../index.html">../index.html</a></td>
+        <td>主页仪表盘重排版式候选</td>
+        <td>只读静态原型，无交互；生产主页由 <code>gen-root-index.py</code> 确定性派生统计数字</td>
+      </tr>
+      <tr>
+        <td><a href="grid.html">grid.html</a></td>
+        <td><a href="../04-interactive/index.html">../04-interactive/index.html</a></td>
+        <td>主 DAG 组级视图新排布方案</td>
+        <td><b>下钻未实现</b>——双击节点仅弹窗占位；生产页已实现下钻（<code>?drill=Gxx</code> / <code>#Gxx</code> 深链 + 全量 50 组几何强判据）</td>
+      </tr>
+      <tr>
+        <td><a href="groups.html">groups.html</a></td>
+        <td><a href="../03-groups/index.html">../03-groups/index.html</a></td>
+        <td>分组索引 3 区 + 9 功能簇重设计</td>
+        <td>只读原型；该版式已并入生产分组索引</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>说明</h2>
+  <div class="note">
+    <ul>
+      <li>原型页相对链接均以 <code>../</code> 开头，与生产页同深度，可直接在本地 / GitHub Pages 打开。</li>
+      <li>原型仅作评审留证（<b>只读</b>），不接入生产导航，也不被 <code>quality-gate-l3.py</code> / <code>quality-gate-readable.py</code> 覆盖。</li>
+      <li>生成器：<code>07-checkpoint/prototype/gen-{grid,groups,home}-demo.py</code>（路径常量已指向本目录）。</li>
+    </ul>
+  </div>
+</main>
+<footer>评审原型（只读 demo） · 非生产入口 · 生产入口见 ../index.html</footer>
+</body>
+</html>
