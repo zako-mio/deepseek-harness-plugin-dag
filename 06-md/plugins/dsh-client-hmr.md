@@ -1,28 +1,26 @@
 # dsh-client-hmr
 
 - 包名: `@deepseek-ai/dsh-client-hmr`
-- 分组: G26 客户端runtime
-- 拓扑层: Layer 7
+- 分组: G05 客户端运行时
+- 拓扑层: Layer 2
 - 来源层: L2 web-app
 - 源码路径: `packages/client/hmr`
 
-## 为什么需要它（设计初衷）
-仅开发环境的热重载驱动：SSE 重建帧 → 失效/预取 → 经 vendored Loader 入口做 fiber 切换，加速客户端插件开发。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/hmr/package.json
-
 ## 实现逻辑
-双面插件。node 半：以 500ms 间隔 stat-poll 扫描 clientModules.graph() 中每个行 id 的 client bundle 文件（polling 设计——网络挂载无 inotify），mtime/size 变化时调 ctx.clientModules.rebuilt(id) 触发重哈希，并注册 /plugins/events SSE 通道（连接时推 graph 帧、重建时推 rebuilt 帧）。browser 半：EventSource 订阅同一 SSE，收到 rebuilt 帧后按 invalidate→prefetch→registry.delete→drain 旧 fiber→removeOwnedStyles→entry.refresh() 顺序热交换插件 fiber（registry-first teardown 避免 Loader 自处置标记 disabled）。串行队列防帧交错。无回滚策略。
+Host 侧以单一定时器 stat-poll 每个 graph 行的客户端 bundle（设计上用轮询，因网络挂载无 inotify），元数据变化即调 `clientModules.rebuilt(id)` 发布新 generation (src/index.ts:68-156)。同时注册 `/plugins/events` SSE 路由，把 graph 变化与 rebuilt 帧广播给浏览器 (src/index.ts:158-207)。另发布 invariant 伴生插件，以 StatWatcher 计数基线校验 bundle 轮询器随 fiber 销毁而终止 (src/invariant.ts:31-59)。
 
 ## Provides
-- /plugins/events SSE 通道（graph/rebuilt 帧，PluginsEventFrame）
+- 客户端 bundle 变更的 stat 轮询监测与 clientModules.rebuilt 触发
+- /plugins/events SSE 频道 (graph 与 rebuilt 帧广播)
+- client-hmr-invariant 伴生不变量 (StatWatcher 泄漏检测)
 
 ## Depends On (上游依赖)
-- `dsh-client-modules` [编译依赖] - node 半消费 clientModules 服务的 graph()/clientPath()/onGraphChanged()/onRebuilt() 与 rebuilt() 重哈希钩子
-  - 证据: `packages/client/hmr/src/index.ts:16-17（import type dsh-client-modules）；package.json peerDependencies @deepseek-ai/dsh-client-modules`
-- `dsh-host-webserver` [编译依赖] - node 半通过 ctx.webServer.register 挂 SSE 路由（:166-179）
-  - 证据: `packages/client/hmr/src/index.ts:17（import type dsh-host-webserver）；peerDependencies @deepseek-ai/dsh-host-webserver`
+- `dsh-client-modules` [E1+E2] - 读取客户端模块图与 artifact 基线，并把重建事件反馈回图
+  - 证据: `src/index.ts:15 + src/index.ts:27 inject 'clientModules' + src/index.ts:148 ctx.clientModules.onGraphChanged`
+- `dsh-host-webserver` [E1+E2] - 挂载 /plugins/events SSE 路由
+  - 证据: `src/index.ts:16 + src/index.ts:27 inject 'webServer' + src/index.ts:181 ctx.webServer.register`
+- `dsh-invariants` [运行时依赖] - 注册包级不变量，检查 bundle 监视器不被泄漏
+  - 证据: `src/invariant.ts:7 + src/invariant.ts:14 inject 'invariants' + src/invariant.ts:59 ctx.invariants.register`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

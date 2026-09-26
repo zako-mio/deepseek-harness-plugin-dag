@@ -1,31 +1,34 @@
 # dsh-client-ui-attachment
 
 - 包名: `@deepseek-ai/dsh-client-ui-attachment`
-- 分组: G29 UI底座
-- 拓扑层: Layer 1
+- 分组: G06 客户端 UI 包
+- 拓扑层: Layer 17
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-attachment`
 
-## 为什么需要它（设计初衷）
-纯 React 附件原子组件（零 cordis 依赖）：草稿图片轨、消息图片画廊与原始图灯箱。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-attachment/package.json
-
 ## 实现逻辑
-附件渲染 atoms（零 cordis）。AttachmentRail（composer 草稿图片轨）、MessageImage/ImageGallery（聊天历史图片画廊）、ImageLightbox（原图灯箱）、DropOverlay（全页拖放遮罩）；owners 经自己 locale 命名空间解析文案传入（无应用状态读取）。作为纯 React 底座被 ui-conversation 消费。
+纯呈现插件：apply 只依赖 slots，把 ComposerAttachments 注册进 'conversation.input.attachments'，把 MessageImages 分别注册进 'conversation.message.images'、'conversation.trajectory.images' 与 'tool.call.images' 四个洞 (src/client/index.ts:16-33)。拖拽逻辑是独立的文档级监听器 installDocumentDropEvents，以 dragDepth 计数判断拖入/拖出、用 webkitGetAsEntry 识别目录，并在 drop 时回调 onAddFiles(files, directories) (src/client/drop-events.ts:9-87)。图片渲染用 dsh-attachment 的 ImageAttachmentRef 与 primitives 完成 (src/MessageImage.tsx:2-5)。宿主半为空 apply (src/index.ts)。
 
 ## Provides
-- AttachmentRail
-- ImageGallery/MessageImage
-- ImageLightbox
-- DropOverlay
-- ImageLoader/MessageImageLabels 等类型
+- slot: conversation.input.attachments (输入框附件条 ComposerAttachments)
+- slot: conversation.message.images (消息图片画廊 MessageImages)
+- slot: conversation.trajectory.images (轨迹视图图片画廊)
+- slot: tool.call.images (工具调用图片画廊，复用消息画廊渲染器)
+- 组件 AttachmentRail/DropOverlay/FileCard 与文档级文件拖放监听器 installDocumentDropEvents
 
 ## Depends On (上游依赖)
-- `dsh-client-ui-primitives` [编译依赖] - 基础 atoms
-  - 证据: `package.json:31 dependencies`
+- `dsh-client-ui-chat` [E1+E2] - 依赖 Chat 视图声明的 conversation.message.images 槽
+  - 证据: `src/client/MessageImages.tsx:1 import @deepseek-ai/dsh-client-ui-chat/client + src/client/index.ts:3 type merge`
+- `dsh-client-ui-conversation` [E1+E2] - 占据 composer/message/trajectory 图片槽位
+  - 证据: `src/client/drop-events.ts:2 ComposerAttachmentsProps + src/client/index.ts:16-27 ctx.slots.inject('conversation.*')`
+- `dsh-client-ui-primitives` [编译依赖] - 附件卡片与图片画廊的基础组件
+  - 证据: `src/FileCard.tsx:1 import @deepseek-ai/dsh-client-ui-primitives`
+- `dsh-client-ui-renderer` [E1+E2] - 引入并驱动槽位注册服务
+  - 证据: `src/client/index.ts:5 merge + src/client/index.ts:16 ctx.slots.inject`
+- `dsh-client-ui-tool` [E1+E2] - 占据工具调用图片槽
+  - 证据: `src/client/index.ts:6 merge + src/client/index.ts:30 ctx.slots.inject('tool.call.images')`
+- `dsh-client-ui-trajectory` [E1+E2] - 占据轨迹视图图片槽
+  - 证据: `src/client/index.ts:7 merge + src/client/index.ts:24 ctx.slots.inject('conversation.trajectory.images')`
 
 ## Dependents (下游被依赖)
-- `dsh-client-ui-conversation` - 图片 draft rail/lightbox/overlay 渲染 atoms
-- `dsh-web-app` - web-app装配附件UI
+- 无下游（叶子/被消费端）

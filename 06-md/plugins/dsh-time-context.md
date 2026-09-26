@@ -1,33 +1,28 @@
 # dsh-time-context
 
 - 包名: `@deepseek-ai/dsh-time-context`
-- 分组: G34 Web上下文扩展
-- 拓扑层: Layer 3
-- 来源层: L3 其余
+- 分组: G08 上下文注入
+- 拓扑层: Layer 5
+- 来源层: L2 web-app
 - 源码路径: `packages/context/time-context`
 
-## 为什么需要它（设计初衷）
-可选的按步骤持久上下文，注入当前时间与经过时间，供模型感知时间。
-
-来源：
-- https://registry.npmjs.org/@deepseek-ai/dsh-time-context
-- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/context/time-context
-
 ## 实现逻辑
-opt-in 请求时钟上下文插件：apply() 注册 prepend 的 'agent/pre-step' 监听器（inject ['agents']）。每个符合条件 step 在决定消息中附加持久、来源归属（source.kind='plugin', form='snapshot'）的 UserMessage：当前时间（Intl.DateTimeFormat 按选定时区格式化）+ 距上一条模型可见消息（step=1）或上一次 step 上下文（step>1）的 elapsed 时长。浏览器时区感知：deriveBrowserTimeZoneContext 从请求消息中解析浏览器时区，无唯一浏览器 zone 时回退进程时区（config.timeZone 可覆盖）；refreshIntervalMs 提供会话内最小注入间隔（读 raw durable 事件找上次注入，避免进程本地缓存）。验证：非法 refreshIntervalMs/无法解析时区即插件加载失败。precedingMessageTime 只统计 user/message|assistant/message|tool/result 模型可见事件。
+可选的请求时钟上下文：在 agent/pre-step 前置监听中按刷新间隔节流，向请求历史追加一条持久、来源归属的时间读数（turn/step、浏览器时区、格式化的时间戳与距上次的耗时）（src/index.ts:185-225、src/index.ts:100-115）。浏览器时区从本回合用户消息的 clientTimeZone 派生，唯一时区时用于渲染时间戳，混合/缺失时渲染澄清策略行（src/request-zone.ts:48-80、src/index.ts:203-214）。注册 sessionProjections 的 timeContext 投影折叠最近消息时刻与注入时刻，用于节流判定（src/index.ts:157-183）。另附 invariant companion 校验时间读数与回合位置/时间戳一致（src/invariant.ts:77-159）。
 
 ## Provides
-- agent/pre-step prepend 监听器（每次请求注入时间快照 UserMessage）
-- 持久时间上下文（turn/step + 时区 + elapsed 时长 + 浏览器时区检测）
-- source.kind='plugin' form='snapshot' 的会话事件写入
+- session projection 'timeContext' (持久化最近消息时刻与注入时刻，供刷新节流复用)
 
 ## Depends On (上游依赖)
-- `dsh-agent` [编译依赖] - agent/pre-step 事件词表与 PreStepDecision 注入契约
-  - 证据: `packages/context/time-context/src/index.ts:10 Agent/PreStepDecision 类型；170 ctx.on('agent/pre-step')；package.json:38`
-- `dsh-llm` [编译依赖] - 构造注入的 UserMessage 载荷
-  - 证据: `packages/context/time-context/src/index.ts:11 createUserMessage + UserMessage 类型`
-- `dsh-session` [编译依赖] - 扫描会话事件定位前序消息/上次注入/requestMessages
-  - 证据: `packages/context/time-context/src/index.ts:59 agent.session.events 事件重放（user/message/tool/result/turn/start）+ package.json:40`
+- `dsh-agent` [E1+E2] - 在 agent 步前注入时间上下文读数，并读取 turn/step 位置
+  - 证据: `src/index.ts:11 import type Agent/PreStepDecision + src/index.ts:185 ctx.on('agent/pre-step', {prepend:true})`
+- `dsh-invariants` [E1+E2] - 注册包级不变量，校验时间读数格式、位置与时间戳在加载与派发时可重放一致
+  - 证据: `src/invariant.ts:5 import type InvariantFailure/InvariantInstaller + src/invariant.ts:25 inject ['invariants'] + src/invariant.ts:194 ctx.invariants.register`
+- `dsh-llm` [编译依赖] - 构造带来源标记的时间快照 user 消息，并复用消息来源合并类型
+  - 证据: `src/index.ts:12 import createUserMessage + src/index.ts:13 import type ContextFormed + src/index.ts:20 import type UserMessage + src/request-zone.ts:3 import type UserMessage`
+- `dsh-session` [E1+E2] - 倒序读取会话历史以收集本回合已进入的用户消息并定位回合起点
+  - 证据: `src/index.ts:21 import SessionSeq + src/invariant.ts:4 import type Session/SessionEvent + src/index.ts:89 agent.session.eventAt(SessionSeq(seq))`
+- `dsh-session-projection` [E1+E2] - 注册并读取 timeContext 投影以驱动注入节流，且向 SessionProjectionStateMap 做类型合并
+  - 证据: `src/index.ts:22 type-only import + src/index.ts:53 inject ['agents','sessionProjections'] + src/index.ts:157 ctx.sessionProjections.register + src/index.ts:192 ctx.sessionProjections.stateOf`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

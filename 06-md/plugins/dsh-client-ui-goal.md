@@ -1,45 +1,45 @@
 # dsh-client-ui-goal
 
 - 包名: `@deepseek-ai/dsh-client-ui-goal`
-- 分组: G27 会话交互UI
-- 拓扑层: Layer 15
+- 分组: G06 客户端 UI 包
+- 拓扑层: Layer 17
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-goal`
 
-## 为什么需要它（设计初衷）
-会话目标 UI：停靠在作曲家上方的 GoalBar，从 goal 会话投影读取，展示同一会话内目标进度。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-goal/package.json
-
 ## 实现逻辑
-GoalBar 输入坞。投影模式 surface：goal 实时值经 session.projections.faceOf('goal') 读取（不持 store/事件监听）；goalCommandInputDefinition（match command/run name=goal）注册进 conversationEvents，以 keyed 'command-input' 渲染 /goal 命令行输入；GoalDock 注册进 conversation.input.dock（id=goal, order=10），inject 封装四个 mutation verb——onEdit/onPause/onResume/onClear 经 ctx.remote.goals.edit/pause/resume/clear（携带 CAS ref：goal.id+revision，由 host 对账）。
+GoalBar 停靠条：apply 先在 ctx.uiConversation.events 注册 goal-command-input 定义、注册 goal 字典，再把 GoalCommandInputView 以 key 'command-input' 注册进 'conversation.chat.node' (src/client/index.ts:68-75)，并把 GoalDock 以 order 10 注册进 'conversation.input.dock' (src/client/index.ts:92-144)。注入面为每会话建 createGoalActivationSource（读 session.projections.faceOf('goal') 并订阅 goal/activation-changed 与 connection/reset），再经 ctx.remote.goals 暴露 edit/pause/resume/clear 四个携带投影 CAS ref 的改动动词 (src/client/index.ts:97-142; src/client/slots.ts:47-63)。宿主半为空 apply (src/index.ts:9)。
 
 ## Provides
-- conversation.input.dock id=goal(GoalDock/GoalBar)
-- conversation.chat.node keyed 'command-input'(GoalCommandInputView)
-- ConversationNodeDefinition 'goal-command-input'
-- ChatNodeDataMap 'command-input' 合并
+- slot: conversation.chat.node#command-input (GoalCommandInputView)
+- slot: conversation.input.dock#goal (order 10 的 GoalBar 停靠条)
+- Locale 命名空间 goal
+- 会话投影响应面 hooks.goalActivation 与改动动词 onEdit/onPause/onResume/onClear (GoalBarInjected)
+- SessionReferenceSourceMap 键 goalActivation (等待初始历史与 RPC 结果的活跃读取)
+- 上抛 GoalBar/GoalDock 组件与 GoalActionResult/GoalBarActions 类型
 
 ## Depends On (上游依赖)
-- `dsh-api-remotes` [运行时依赖] - goal 域 Remote 端点（host goals 服务）
-  - 证据: `index.ts:13 type-only + index.ts:41 inject remote.goals + index.ts:81/86/91/96 ctx.remote.goals.edit/pause/resume/clear`
-- `dsh-client-locale` [编译依赖] - goal 命名空间字典
-  - 证据: `index.ts:17 type-only + index.ts:49 locale.register`
-- `dsh-client-runtime` [编译依赖] - 会话绑定与投影 face
-  - 证据: `index.ts:11 ClientContext,SessionId`
-- `dsh-client-ui-conversation` [编译依赖] - 消费 input.dock 座位与 conversationEvents 注册表
-  - 证据: `index.ts:15 type-only + index.ts:51-55/72-99 注册 input.dock 与 chat.node + package.json:52`
-- `dsh-client-ui-primitives` [编译依赖] - UI atoms
-  - 证据: `GoalBar.tsx:13-16 图标 + Tooltip`
-- `dsh-commands` [编译依赖] - command/run 事件与 CommandId 契约
-  - 证据: `goal-command-input.ts:2-3 dsh-commands/brand,types + package.json:55`
-- `dsh-goal` [编译依赖] - goal 投影 key 类型与 GoalRef 契约
-  - 证据: `index.ts:19 dsh-goal/client + package.json:56 peerDependencies`
-- `dsh-session` [编译依赖] - SessionEvent<'command/run'> 类型
-  - 证据: `goal-command-input.ts:1 dsh-session/types`
-- `dsh-session-projection` [运行时依赖] - goal 会话投影读取（CAS ref 来源）
-  - 证据: `index.ts:19 GoalProjection/GoalRef 类型 + index.ts:61-65 sessions.binding(sessionId).session.projections.faceOf('goal')`
+- `dsh-api-remotes` [E1+E2] - 目标 Remote 读取与 CAS 改动
+  - 证据: `src/client/index.ts:15 ctx.remote merge + src/client/index.ts:112-140 ctx.remote.goals.get/edit/pause/resume/clear`
+- `dsh-api-session-controller` [运行时依赖] - 保留会话并在初始历史打开后访问 Host
+  - 证据: `src/client/index.ts:17 merge + src/client/index.ts:98-107 sessions.binding/using`
+- `dsh-client-locale` [E1+E2] - 注册 goal 字典
+  - 证据: `src/client/index.ts:23 merge + src/client/index.ts:69 ctx.locale.register(NS)`
+- `dsh-client-ui-chat` [运行时依赖] - 依赖 Chat 声明的 conversation.chat.node 槽
+  - 证据: `src/client/index.ts:19 merge + src/client/index.ts:71 slots.inject('conversation.chat.node')`
+- `dsh-client-ui-conversation` [运行时依赖] - 注册 goal 命令输入节点定义并占用 input.dock 槽
+  - 证据: `src/client/index.ts:21 merge + src/client/index.ts:68 ctx.uiConversation.events.register`
+- `dsh-client-ui-primitives` [编译依赖] - 命令输入视图基础组件
+  - 证据: `src/client/GoalCommandInputView.tsx:2 import @deepseek-ai/dsh-client-ui-primitives`
+- `dsh-client-ui-renderer` [编译依赖] - 引入 slots 服务声明
+  - 证据: `src/client/index.ts:25 merge`
+- `dsh-client-ui-session` [编译依赖] - 声明 Session 标准 useProjection 座位
+  - 证据: `src/client/index.ts:27 merge (useProjection 标准位)`
+- `dsh-commands` [编译依赖] - goal 命令输入节点类型
+  - 证据: `src/client/goal-command-input.ts:2-3 import @deepseek-ai/dsh-commands`
+- `dsh-goal` [编译依赖] - 目标投影与目标标识类型
+  - 证据: `src/client/GoalBar.tsx:12 + src/client/slots.ts:12 import GoalProjection/GoalId from @deepseek-ai/dsh-goal/client`
+- `dsh-session` [编译依赖] - 会话标识类型
+  - 证据: `src/client/index.ts:12 import SessionId from @deepseek-ai/dsh-session/types`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

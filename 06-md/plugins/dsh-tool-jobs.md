@@ -1,37 +1,25 @@
 # dsh-tool-jobs
 
 - 包名: `@deepseek-ai/dsh-tool-jobs`
-- 分组: G16 作业
+- 分组: G22 作业调度
 - 拓扑层: Layer 5
 - 来源层: L1 核心集
 - 源码路径: `packages/jobs/tool-jobs`
 
-## 为什么需要它（设计初衷）
-给模型提供后台任务控制工具（job_output/job_list/job_kill），管理 ctx.jobs 注册表中的通用后台任务。
-
-来源：
-- https://registry.npmjs.org/@deepseek-ai/dsh-tool-jobs
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/jobs/tool-jobs/README.zh.md
-
 ## 实现逻辑
-apply() 注册 job_output/job_list/job_kill 三个模型工具：attachController('tool-jobs') 使 producers 可 start；onJobDone 把未报告完成以 notice 注入 busy owner 或 followup 唤醒 idle owner(wakeup 默认，maxConsecutiveWakes 限界)；tools/pre-execute 捕获 outputLimitBytes；systemPrompt.section 给模型指导；agent/inbox/claimed 用户输入重置 wake 预算。
+在 ctx.jobs 之上注册模型可见的 job_output/job_list/job_kill 三个工具 (src/index.ts:310-414)，并在加载时 attachController('tool-jobs') 让生产者可启动作业 (src/index.ts:247)。订阅 jobs 事件把未被模型取回的完成通知注入忙碌 owner 的下一步、或唤醒空闲 owner（受 maxConsecutiveWakes 约束）(src/index.ts:271-308)。按 job 的 outputLimitBytes 截断 job_output/job_kill 的模型可见内容 (src/index.ts:225-244)，render.ts 负责把读取增量渲染为 stdout/stderr 分区与 [status] 行 (src/render.ts:75-84)。
 
 ## Provides
-- ctx.tools: job_output/job_list/job_kill
-- jobs controller attachment('tool-jobs')
-- completion notice 注入/唤醒
-- systemPrompt section tool:jobs
-- tools/pre-execute 输出限制监听
 
 ## Depends On (上游依赖)
-- `dsh-agent` [编译依赖] - completion 通知投递
-  - 证据: `packages/jobs/tool-jobs/src/index.ts:19,294-299`
-- `dsh-jobs-local` [组合依赖] - controller 注册落地
-  - 证据: `packages/jobs/tool-jobs/src/index.ts:260`
-- `dsh-system-prompt` [组合依赖] - 模型跨调用指导
-  - 证据: `packages/jobs/tool-jobs/src/index.ts:263`
-- `dsh-tools` [组合依赖] - 工具注册与执行管道
-  - 证据: `packages/jobs/tool-jobs/src/index.ts:14,233,302`
+- `dsh-agent` [E1+E2] - 把完成通知投递到 owner Agent（inject/followup）并据其 input 重置唤醒预算
+  - 证据: `src/index.ts:20 import type Agent + src/index.ts:212 ctx.on('agent/inbox/claimed')`
+- `dsh-llm` [编译依赖] - 构造带来源标记的用户消息作为完成通知并做长度约束
+  - 证据: `src/index.ts:13 import createUserMessage/boundContextSummary`
+- `dsh-system-prompt` [运行时依赖] - 注入 tool:jobs 段系统提示，指导模型跟踪/收集后台作业
+  - 证据: `src/index.ts:31 inject systemPrompt + src/index.ts:250 ctx.systemPrompt.section`
+- `dsh-tools` [E1+E2] - 以上游工具定义注册三个作业控制工具并挂接 tools/pre-execute 拦截
+  - 证据: `src/index.ts:16 import defineTool + src/index.ts:31 inject tools + src/index.ts:310 ctx.tools.register`
 
 ## Dependents (下游被依赖)
-- `dsh-agent-spine-demo` - 可选 ctx.plugin(toolJobs) 模型面任务工具
+- 无下游（叶子/被消费端）

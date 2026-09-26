@@ -1,37 +1,27 @@
 # dsh-skill
 
 - 包名: `@deepseek-ai/dsh-skill`
-- 分组: G18 技能
-- 拓扑层: Layer 1
+- 分组: G37 技能
+- 拓扑层: Layer 2
 - 来源层: L1 核心集
 - 源码路径: `packages/skill/skill`
 
-## 为什么需要它（设计初衷）
-纯 agent skill 提供方注册表（ctx.skills）：宿主+按 scope 分层结构，不感知来源（本地/嵌入式/HTTP），提供方经 registerProvider 注册；按 modelInvocable/userInvocable 策略区分目录。为 harness 提供可插拔的技能发现/加载能力，是 skill 能力族的注册中心。
-
-发展史：位于 packages/skill/skill，2026-08-10 首批发布，0.1.0-rc.6 转公开。本地实现为 dsh-skill-filesystem；面向模型的 skill 工具由 dsh-tool-skill 消费，注册表本身不渲染模型指引。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/skill/skill/README.zh.md
-- https://registry.npmjs.org/@deepseek-ai/dsh-skill
-
 ## 实现逻辑
-Agent skill provider 注册表(能力接缝的 Service Definition 角色)。SkillRegistry(ctx.skills) 用 ScopedLayers 维护 global + per-scope 分层：registerProvider 分层注册，register 接收运行时 skill。读取面 list()/snapshot()/get()：collect 以 (cwd, scopeChain, revision) 为缓存键合并各层，就近层同名胜出；变更经 'skills/change' 事件通知。renderSkillContent 渲染成统一 <skill_content> 模型块。
+技能能力 seam 的 Service Definition：实现分层技能注册表 SkillRegistry（以 'skills' 名注册 ctx 服务），按调用上下文 scope 把 provider 与运行时技能分入 global 层与各 scope 层，读取时合并 global 与 scope 链、同层内按 rank 解析同名胜出者，并按 revision+cwd+scope 链做目录缓存 (src/index.ts:356-660)。对外暴露 list/snapshot/get 读取目录与技能正文，registerProvider/register 供 provider 与运行时贡献注册，变更时提升 revision 并使缓存失效、向 skills/change 事件广播 (src/index.ts:390-517, src/index.ts:621-659)。
 
 ## Provides
-- ctx.skills(registerProvider/register/list/snapshot/get)
-- skills/change 事件
-- SkillProvider 契约
-- renderSkillContent/escapeText + skill-invocation MessageSourceMap
+- ctx.skills (技能注册表 seam：合并多渠道 provider 目录、按 scope 分层与 rank 解析唯一胜出技能，暴露 list/snapshot/get)
+- skills/change 事件 (技能目录失效通知，订阅者据此重新拉取目录)
 
 ## Depends On (上游依赖)
-- `dsh-llm` [编译依赖] - assertNever + MessageSourceMap 注入
-  - 证据: `packages/skill/skill/src/index.ts:14,155-160`
+- `dsh-llm` [编译依赖] - 声明合并 dsh-llm 的 MessageSourceMap 以注册 'skill-invocation' 消息来源类型 (src/index.ts:154-159)
+  - 证据: `package.json:31 peerDep + src/index.ts:14 import type`
+- `dsh-scope` [编译依赖] - 复用 ScopedLayers/NamedEntries/scopeOf/scopeChainOf 实现按 agent scope 分层的注册表与缓存键 (src/index.ts:362-371)
+  - 证据: `package.json:32 peerDep + src/index.ts:16-17 import`
 
 ## Dependents (下游被依赖)
-- `dsh-agent-spine-demo` - ctx.plugin(SkillRegistry) 技能注册表(可选)
-- `dsh-client-ui-skill` - 技能目录 Remote 列表
-- `dsh-host-apiproxy` - isUserInvocable（skills 域）
-- `dsh-skill-badge` - provider 注册 seam
-- `dsh-skill-filesystem` - provider 注册 seam
-- `dsh-tool-skill` - 技能目录与正文加载
+- `dsh-api-session-controller` - 会话技能目录
+- `dsh-skill-badge` - 向技能注册表注册 bundled provider，并复用其 BUNDLED_SKILL_RANK 与 SkillCandidate/SkillProvider 契约
+- `dsh-skill-filesystem` - 实现并注册文件系统技能提供者，复用其 rank 常量、候选/定义与观察结果类型契约
+- `dsh-skill-office` - 向技能注册表注册 office bundled provider，并复用其 BUNDLED_SKILL_RANK 与 SkillCandidate/SkillProvider 契约
+- `dsh-tool-skill` - 解析并加载技能、渲染正文块，并读取目录快照用于计算 digest 与发布

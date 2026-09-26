@@ -1,0 +1,206 @@
+[
+  {
+    "id": "dsh-client-ui-cordis",
+    "name": "@deepseek-ai/dsh-client-ui-cordis",
+    "implementation": "以 Web 客户端 Cordis 插件形式把动态插件（cordis_define / cordis_run）的 UI 接入客户端：apply() 先构造 CordisDynamicPort，经 ctx.remote.dynamicCordisRunner 读取库存并执行停止/移除 (src/client/index.ts:45-62)；随后建立 inventory，并订阅 remote 转发的 cordis/dynamic-package、cordis/dynamic-retract、cordis/request-run(-resolved) 事件触发刷新，且在连接重置时 reset+refresh (src/client/index.ts:75-84)。最后向 sidebar.footer.action 与 tool.call.toolview 分别注册 CordisPanel 与 cordis_define/cordis_run/cordis_stop/cordis_undefine 工具卡片 (src/client/index.ts:86-145)。",
+    "provides": [
+      "Web 客户端 UI 表面：在 sidebar.footer.action 注入 cordis 动态插件面板，在 tool.call.toolview 注入 cordis_define/cordis_run/cordis_stop/cordis_undefine 工具卡片"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1+E2", "evidence": "src/client/index.ts:86 ctx.slots.inject/register + src/client/inventory.ts:20 import", "purpose": "把 cordis 面板与卡片注册进客户端 UI slot 注册表"},
+      {"plugin_id": "dsh-client-ui-tool", "mechanism": "E1+E2", "evidence": "src/client/index.ts:117-136 tool.call.toolview 注册 + src/client/CordisActionRow.tsx:7 import", "purpose": "为 cordis_* 工具调用提供 tool view 卡片渲染"},
+      {"plugin_id": "dsh-cordis-client-runner", "mechanism": "E1+E2", "evidence": "src/client/index.ts:66 ctx.dynamicCordisRunner + src/client/CordisPanel.tsx:12 import", "purpose": "读取客户端运行面快照并驱动审批、启动与停止"},
+      {"plugin_id": "dsh-api-remotes", "mechanism": "E1+E2", "evidence": "src/client/index.ts:75-80 ctx.remote.$on + src/client/CordisPanel.tsx:13 import", "purpose": "经 Remote 命名空间同步宿主侧 cordis 事件与库存"},
+      {"plugin_id": "dsh-client-ui-sidebar", "mechanism": "E1", "evidence": "src/client/index.ts:86 sidebar.footer.action 注册 + src/client/CordisPanel.tsx:11 import", "purpose": "把 cordis 面板挂载到侧边栏页脚动作位"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E1+E2", "evidence": "src/client/index.ts:43 ctx.locale.register + src/client/index.ts:6 import", "purpose": "注册本插件的 zh/en 文案字典"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "src/client/index.ts:4 SessionId 类型 import", "purpose": "以 SessionId 标识会话作用域的运行卡片"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/CordisPreparingRow.tsx:3 import", "purpose": "复用客户端基础 UI 原子组件"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1", "evidence": "src/client/index.ts:9 import", "purpose": "接入客户端渲染面类型与能力"},
+      {"plugin_id": "dsh-client-ui-session", "mechanism": "E1", "evidence": "src/client/index.ts:10 import", "purpose": "接入会话 UI 集成面"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-cordis-client-runner",
+    "name": "@deepseek-ai/dsh-cordis-client-runner",
+    "implementation": "浏览器半的动态包运行器：用 DynamicCordisPackageRunner 与 CordisRunOrchestrator 把模型写的前端源码经 closure→guard→module table→loader entry 装载成活的 cordis 插件，并把审批、宿主半调用、客户端代码拉取都折叠为 remote 调用 (src/client/index.ts:206-278)。运行结果面通过 ctx.provide('dynamicCordisRunner', face) 暴露活动运行、渲染失败、审批与快照 (src/client/index.ts:279-291)，页面激活时不预载任何动态包。另注册客户端 Cordis Inspect provider 并把 manifest 同步给宿主、路由 inspect 查询 (src/client/index.ts:190-204, 303-308)。",
+    "provides": [
+      "ctx.dynamicCordisRunner (客户端动态插件运行面：装载/停止浏览器半、审批、渲染失败上报与页面快照)",
+      "ctx.cordisInspect (客户端 Inspect provider 注册与查询路由)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-api-remotes", "mechanism": "E1+E2", "evidence": "src/client/index.ts:211-277 ctx.remote.* 调用 + src/client/index.ts:17 import", "purpose": "跨平面调用宿主半运行、获取客户端代码与上报失败"},
+      {"plugin_id": "dsh-client-modules", "mechanism": "E1+E2", "evidence": "src/client/index.ts:182 inject 'modules' + src/client/runtime.ts:23 import", "purpose": "提供浏览器侧模块系统以装载动态包入口"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1+E2", "evidence": "src/client/index.ts:182 inject 'slots' + src/client/guard.ts:18 import", "purpose": "用 slot 注册表承接动态半向 UI 的贡献"},
+      {"plugin_id": "dsh-client-ui-theme", "mechanism": "E1", "evidence": "src/client/guard.ts:19 import + src/client/providers.ts:6 import", "purpose": "动态半渲染时读取主题令牌"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/client/index.ts:20 import", "purpose": "以 JsonValue 约束跨线参数与返回值"},
+      {"plugin_id": "cordis-plugin-loader", "mechanism": "E1+E2", "evidence": "src/client/index.ts:182 inject 'loader' + src/client/runtime.ts:18 import", "purpose": "把求值后的动态包注册为 loader entry 并管理其生命周期"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-cordis-host-runner",
+    "name": "@deepseek-ai/dsh-cordis-host-runner",
+    "implementation": "DynamicCordisRunnerService（继承 TypertRemoteService）实现进程级动态插件注册表与宿主半生命周期：持有不可变包定义、每插件单一活动运行、经人工审批后激活客户端半，并支持 Host/Client 双向调用 (src/index.ts:129-149)。宿主半代码在 node:vm 沙箱中求值，沙箱仅暴露 tagged console、harness.defineTool/registerTool 与 Node API 陷阱（重定向到 ctx.fs/ctx.web/ctx.bash/cordis 定时器）(src/sandbox.ts:101-117)；CordisInspectRegistryService 则提供只读 Inspect provider 注册表与跨页查询路由 (src/inspect-registry.ts:45-69, 37-42)。运行期发出 cordis/request-run、cordis/dynamic-package、cordis/dynamic-retract、cordis/inspect-query(-resolved) 等事件 (src/index.ts:296-1021, src/inspect-registry.ts:153-189)。",
+    "provides": [
+      "ctx.dynamicCordisRunner (宿主动态插件注册表、宿主半沙箱生命周期与 Host/Client 调用表)",
+      "ctx.cordisInspect (宿主 Inspect provider 注册表与跨页查询路由)",
+      "事件 cordis/request-run、cordis/request-run-resolved、cordis/dynamic-package、cordis/dynamic-retract、cordis/inspect-query、cordis/inspect-query-resolved"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "src/index.ts:130 static inject ['tools'] + src/guard.ts:19 import", "purpose": "动态包经 harness 注册的工具须落入 tools 注册表"},
+      {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "src/index.ts:10 import + src/inspect-registry.ts:5 import", "purpose": "Inspect 查询与运行请求以 Agent 为其作用域主体"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "src/index.ts:11 createUserMessage + src/guard.ts:21 import", "purpose": "运行结果以用户消息源写入会话"},
+      {"plugin_id": "dsh-typert-protocol", "mechanism": "E1", "evidence": "src/index.ts:18 TypertRemoteService/Remote import", "purpose": "提供 Host Remote 服务基类与远程方法暴露"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/index.ts:19 import", "purpose": "跨线 payload 使用 JsonValue 约束"},
+      {"plugin_id": "dsh-scope", "mechanism": "E1", "evidence": "src/guard.ts:18 import", "purpose": "校验动态包作用域与守卫条件"},
+      {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "src/types.ts:6 import", "purpose": "动态插件/包/运行 ID 使用 branded 不透明标识"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "src/registry.ts:7 import + src/types.ts:7 import", "purpose": "运行与库存行以 SessionId 关联会话"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-cordis",
+    "name": "@deepseek-ai/dsh-tool-cordis",
+    "implementation": "注册两个只读运行时 API 发现工具：cordis_inspect_list 返回 ctx.cordisInspect.list() 的全部 provider 目录 (src/index.ts:22-39)，cordis_inspect_query 按 platform/provider/method/input 执行只读查询并需 Agent 背书的会话 (src/index.ts:41-72)。host.ts 另把四个 Host Inspect provider 注册进 ctx.cordisInspect：Service/Event 基于生成的 api-catalog 静态目录，Config 从活 Loader 树投影 Config schema，Tool 返回当前 Agent 可见的工具 schema (src/host.ts:16-19, src/providers.ts:39-81, src/config.ts:98-119)。",
+    "provides": [
+      "工具 cordis_inspect_list / cordis_inspect_query",
+      "Host Inspect provider：Service / Event / Config / Tool"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "src/index.ts:10 inject ['tools','cordisInspect'] + src/index.ts:5 import", "purpose": "defineTool 注册工具并用 ctx.tools 读取 Agent 可见 schema"},
+      {"plugin_id": "dsh-cordis-host-runner", "mechanism": "E1+E2", "evidence": "src/providers.ts:4 import + src/index.ts:10 cordisInspect 由该包提供", "purpose": "消费宿主 Inspect 注册表以注册 provider 与执行查询"},
+      {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "src/index.ts:3 import", "purpose": "查询需以 Agent 为其作用域主体"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/index.ts:4 import", "purpose": "Inspect 输入输出使用 JsonValue 约束"},
+      {"plugin_id": "cordis-plugin-loader", "mechanism": "E1", "evidence": "src/config.ts:4 import", "purpose": "Config provider 遍历 Loader entry 树并解析条目"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-command-feedback",
+    "name": "@deepseek-ai/dsh-command-feedback",
+    "implementation": "提供与 UI 触发解耦的会话反馈记录链路：recordFeedback() 以 session.append('feedback/record', …) 写入单条权威的 log-only 事件（去除首尾空白、空文本记为缺省）(src/index.ts:58-64)。SessionFeedbackService 作为 Host Remote 暴露 ctx.sessionFeedback.record，按 sessionId 取活会话或返回 session-not-found (src/index.ts:85-110)；apply() 同时注册全局 /feedback 斜杠命令并在无文本时返回用法错误 (src/index.ts:73-82, 117-126)。",
+    "provides": [
+      "ctx.sessionFeedback (Host Remote，供产品面写入会话级反馈)",
+      "feedback/record 会话事件与 /feedback 斜杠命令",
+      "FEEDBACK_CATEGORIES 反馈类别常量"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-commands", "mechanism": "E1+E2", "evidence": "src/index.ts:41 inject ['commands'] + src/index.ts:12 import", "purpose": "注册 /feedback 命令定义并与命令适配器对接"},
+      {"plugin_id": "dsh-session", "mechanism": "E1+E2", "evidence": "src/index.ts:86 static inject ['sessions'] + src/index.ts:14 import", "purpose": "向活会话追加 feedback/record 日志事件"},
+      {"plugin_id": "dsh-anonymous-user-id", "mechanism": "E1", "evidence": "src/index.ts:15 import", "purpose": "反馈确认中附带匿名用户标识"},
+      {"plugin_id": "dsh-typert-protocol", "mechanism": "E1", "evidence": "src/index.ts:16 TypertRemoteService/Remote import", "purpose": "以 Host Remote 基类暴露 sessionFeedback.record"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-message-feedback",
+    "name": "@deepseek-ai/dsh-message-feedback",
+    "implementation": "把「已定稿助手消息」的评分/备注写入会话日志：MessageFeedbackService 暴露 Remote list/put/delete (src/index.ts:154-218)，以 per-session 串行队列在冷写路径上打开 sessionPersistence 句柄、读-比-写并广播 feedback/committed (src/index.ts:261-280)；put 前先校验目标消息确为 assistant/message 且版本匹配，未变则保留版本且不追加事件 (src/index.ts:170-185)。活会话路径直接追加并 flush 后再校验持久化前缀一致 (src/index.ts:231-259)。",
+    "provides": [
+      "ctx.messageFeedback (Host Remote：消息级评分与备注的 list/put/delete)",
+      "feedback/committed 事件（冷路径持久化提交后广播）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-command-feedback", "mechanism": "E1", "evidence": "src/index.ts:12 FEEDBACK_CATEGORIES import + src/types.ts:11 import", "purpose": "复用同一反馈类别常量集"},
+      {"plugin_id": "dsh-session", "mechanism": "E1+E2", "evidence": "src/index.ts:119 inject ['sessionPersistence','sessions'] + src/index.ts:13 import", "purpose": "读取/追加会话事件并定位活会话"},
+      {"plugin_id": "dsh-session-persistence", "mechanism": "E1+E2", "evidence": "src/index.ts:119 inject 'sessionPersistence' + src/index.ts:17 import", "purpose": "冷会话直接打开持久化句柄读写反馈事件"},
+      {"plugin_id": "dsh-typert-protocol", "mechanism": "E1", "evidence": "src/index.ts:18 import", "purpose": "以 Host Remote 基类暴露 messageFeedback"},
+      {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "src/types.ts:8 import", "purpose": "会话/消息标识使用 branded 类型"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "src/types.ts:9 import", "purpose": "关联消息反馈与 LLM 消息标识契约"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-fs-local",
+    "name": "@deepseek-ai/dsh-fs-local",
+    "implementation": "LocalFileSystem 实现 ctx.fs 文件系统 seam：以 realpath 派生的 targetKey 作为目标身份，使别名共享版本守卫 (src/index.ts:133-138)；stat/读/流/列目录委托 fsio 辅助函数 (src/index.ts:157-200)，写与 edit 在 per-target FIFO 锁内完成版本守卫与原子替换，写前捕获有界 diff 基准，edit 走读-匹配-写临界区 (src/index.ts:202-291)。watch() 基于 chokidar 监视单文件或目录的变更 (src/index.ts:69-90)。",
+    "provides": [
+      "ctx.fs (本地宿主文件系统实现，供 fs-sandbox 等替换或包装)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-fs", "mechanism": "E1+E2", "evidence": "src/index.ts:14 FileSystem/FsError import + src/index.ts:2 ctx.fs 服务声明", "purpose": "实现并注册文件系统能力 seam 的服务定义"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-fs-observation-policy",
+    "name": "@deepseek-ai/dsh-fs-observation-policy",
+    "implementation": "事件专属的文件观察策略，不注册任何服务：ObservedStateGate 用 WeakMap(owner→targetKey→FsObservation) 记录每次权威的 present/absent 观察，区分「确认不存在」与「未见」 (src/index.ts:28-54, 91-94)。在 fs/write-intent 与 fs/edit-intent 两个单槽 waterfall 上据该状态派生 createIfAbsent/replaceIfVersion，或对未读/不存在抛 FS_NOT_OBSERVED/FS_NOT_FOUND (src/index.ts:65-88, 119-122)；fs/observed 上同步记录且保持同步非抛 (src/index.ts:127-129)。无此插件时工具退回 provider 的无条件变更行为。",
+    "provides": [],
+    "depends_on": [
+      {"plugin_id": "dsh-fs", "mechanism": "E1+E2", "evidence": "src/index.ts:11 FsError/FsTarget 类型 import + src/index.ts:119-127 fs/* 事件订阅", "purpose": "消费文件系统 seam 的 intent/observed 事件并抛结构化 FsError"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-fs-sandbox",
+    "name": "@deepseek-ai/dsh-fs-sandbox",
+    "implementation": "SandboxedFileSystem 继承 LocalFileSystem，复用其全部文本存储机制，只在两个变更入口加每调用策略围栏：writeText/editText 先经 checkedTarget (src/index.ts:80-109)。checkedTarget 按策略 mode 判定：read-only 抛 FS_SANDBOX_DENIED，workspace-write 立即用 resolve 重规范化路径并要求落在 writableRoots 内（返回该新目标以避免 check-here-write-there），danger-full-access 原样放行 (src/index.ts:122-144)；读操作完全透传。",
+    "provides": [
+      "ctx.fs (沙箱约束版文件系统实现，加载时替换 fs-local)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-fs-local", "mechanism": "E1+E2", "evidence": "src/index.ts:30 LocalFileSystem import + src/index.ts:55 extends LocalFileSystem", "purpose": "继承本地实现以复用原子写与编辑临界区"},
+      {"plugin_id": "dsh-fs", "mechanism": "E1", "evidence": "src/index.ts:32 FsError import", "purpose": "以 seam 的错误类型报告拒绝"},
+      {"plugin_id": "dsh-sandbox", "mechanism": "E1", "evidence": "src/index.ts:34 writableRoots import", "purpose": "按策略计算可写根集合以判定包含关系"},
+      {"plugin_id": "dsh-sandbox-policy", "mechanism": "E1+E2", "evidence": "src/index.ts:56 inject ['sandboxPolicy'] + src/index.ts:36 import", "purpose": "解析每调用会话的沙箱模式与工作区根"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-fs",
+    "name": "@deepseek-ai/dsh-tool-fs",
+    "implementation": "注册模型面 read/read_image/write/edit 工具套件：apply() 校验四个读取上限后挂载 read 工具，并用 ctx.inject(['attachments']) 条件注册 read_image（无附件存储时不注册）(src/index.ts:54-72)；写与 edit 共用一个 FsSandboxController 处理升级广告、每调用策略解析与拒绝标记映射 (src/index.ts:76-78)。工具层只声明 schema、校验、读取窗口与格式化，把实际读写交给 ctx.fs (src/index.ts:1-5)。",
+    "provides": [
+      "工具 read / read_image / write / edit"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "src/index.ts:22 inject ['tools','fs','systemPrompt'] + src/read.ts:8 import", "purpose": "通过工具注册表发布文件系统工具"},
+      {"plugin_id": "dsh-fs", "mechanism": "E1+E2", "evidence": "src/index.ts:22 inject 'fs' + src/edit.ts:11 import", "purpose": "所有读写经文件系统 seam 执行"},
+      {"plugin_id": "dsh-system-prompt", "mechanism": "E2", "evidence": "src/index.ts:22 inject 'systemPrompt' + src/edit.ts:76 ctx.systemPrompt", "purpose": "向系统提示注入工具使用指引"},
+      {"plugin_id": "dsh-user-approval", "mechanism": "E1", "evidence": "src/index.ts:10 import", "purpose": "沙箱升级等敏感操作走用户审批"},
+      {"plugin_id": "dsh-attachment", "mechanism": "E1+E2", "evidence": "src/index.ts:70 ctx.inject(['attachments']) + src/read-image.ts:16 import", "purpose": "read_image 需附件存储以持久化图像字节"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "src/read-image.ts:18 import", "purpose": "图像以 LLM 可消费的内容部件返回"},
+      {"plugin_id": "dsh-util-code-language", "mechanism": "E1", "evidence": "src/read-render.ts:182 import", "purpose": "按文件扩展名推断代码语言用于渲染"},
+      {"plugin_id": "dsh-sandbox", "mechanism": "E1", "evidence": "src/sandbox.ts:15 import", "purpose": "读取沙箱拒绝标记与执行策略类型"},
+      {"plugin_id": "dsh-sandbox-policy", "mechanism": "E1", "evidence": "src/sandbox.ts:17 import", "purpose": "解析每调用沙箱策略并映射拒绝错误"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-fs-search",
+    "name": "@deepseek-ai/dsh-tool-fs-search",
+    "implementation": "以 npm 包内置的 ripgrep 二进制注册模型面 glob/grep 工具：两者均经 ctx.subprocess.spawn() 以固定 argv 模板运行 rg，工具层负责 schema、参数校验、argv 构造、结果解析、保留与格式化结果 spill (src/index.ts:1-27, 128-159)；不注入 fs 也不经 shell，ctx.spillStore 用 ctx.get() 机会式读取 (src/index.ts:17-19, 69-70)。glob/grep 在 tools/post-execute 上做格式化结果落盘 (src/glob.ts:355, src/grep.ts:342)。",
+    "provides": [
+      "工具 glob / grep"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "src/index.ts:70 inject ['tools','systemPrompt','subprocess'] + src/search-core.ts:30 import", "purpose": "通过工具注册表发布 glob/grep 工具"},
+      {"plugin_id": "dsh-subprocess", "mechanism": "E1+E2", "evidence": "src/index.ts:70 inject 'subprocess' + src/search-core.ts:28 import", "purpose": "以子进程 seam 固定模板执行 ripgrep 并终止进程树"},
+      {"plugin_id": "dsh-system-prompt", "mechanism": "E2", "evidence": "src/index.ts:70 inject 'systemPrompt' + src/glob.ts:297 ctx.systemPrompt", "purpose": "向系统提示注入搜索工具使用指引"},
+      {"plugin_id": "dsh-spill", "mechanism": "E1", "evidence": "src/glob.ts:16 import + src/search-core.ts:29 import", "purpose": "把超限的格式化结果落盘为 spill 文件"},
+      {"plugin_id": "dsh-output-retention", "mechanism": "E1", "evidence": "src/grep.ts:17 import", "purpose": "按字节上限截断匹配结果且不破坏 UTF-8"},
+      {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "src/index.ts:31 MAX_TIMER_DELAY_MS import", "purpose": "校验 graceMs 不超过定时器最大延迟"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "src/search-core.ts:25 import", "purpose": "搜索结果以 LLM 可消费的内容部件返回"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/direct-call.ts:5 import", "purpose": "直调路径使用 JsonValue 约束"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-str-replace-editor",
+    "name": "@deepseek-ai/dsh-tool-str-replace-editor",
+    "implementation": "注册模型面 str_replace_editor 工具，支持 view/create/str_replace/insert 四类命令 (src/index.ts:429-430, 20-32)。每次读取或变更后 emit fs/observed 供观察策略记录 presence/absence (src/index.ts:110, 237, 272, 326)；变更前用 ctx.get('sandboxPolicy') 解析每调用策略并把 FS_SANDBOX_DENIED 映射为拒绝标记，构造期在 ctx.fs 受限但缺 sandboxPolicy 时报错 (src/index.ts:71-73, 249-270, 287-324, 364-366)。工具描述与输出经 maybeTruncate 按字符上限截断 (src/index.ts:34-38)。",
+    "provides": [
+      "工具 str_replace_editor (view / create / str_replace / insert)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "src/index.ts:503 inject ['tools','fs'] + src/index.ts:15 defineTool import", "purpose": "通过工具注册表发布 str_replace_editor"},
+      {"plugin_id": "dsh-fs", "mechanism": "E1+E2", "evidence": "src/index.ts:503 inject 'fs' + src/index.ts:9 FsError/FsTarget import", "purpose": "所有查看与变更经文件系统 seam 执行"},
+      {"plugin_id": "dsh-output-retention", "mechanism": "E1", "evidence": "src/index.ts:11 truncateWithoutSplittingSurrogatePair import", "purpose": "截断长输出且不拆散代理对"},
+      {"plugin_id": "dsh-sandbox", "mechanism": "E1", "evidence": "src/index.ts:12 sandboxDenialMarker import", "purpose": "把沙箱拒绝映射为模型可见标记"},
+      {"plugin_id": "dsh-sandbox-policy", "mechanism": "E1+E2", "evidence": "src/index.ts:71 ctx.get('sandboxPolicy') + src/index.ts:14 import", "purpose": "解析每调用沙箱策略并映射拒绝错误"}
+    ],
+    "dependents": []
+  }
+]

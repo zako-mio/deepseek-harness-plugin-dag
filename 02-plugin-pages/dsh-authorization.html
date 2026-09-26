@@ -65,12 +65,100 @@ th{background:var(--panel);color:#b8c2d4;}
 </head>
 <body>
 <header>
-  <span class="crumb"><a href="../index.html">DAG总览</a> / <a href="../03-groups/index.html">组目录</a> / 外部基座 seam</span>
+  <span class="crumb"><a href="../index.html">DAG总览</a> / <a href="../03-groups/index.html">组目录</a> / G10 凭据与授权</span>
   <h1>dsh-authorization · @deepseek-ai/dsh-authorization</h1>
-  <span class="badge ext">外部 seam</span>
+  <span class="badge">Layer 2</span><span class="badge">G10</span>
 </header>
 <main>
-<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">运行时框架</a><a href="../03-groups/G02.html">类型契约</a><a href="../03-groups/G03.html">核心服务</a><a href="../03-groups/G04.html">LLM核心</a><a href="../03-groups/G05.html">LLM适配</a><a href="../03-groups/G06.html">LLM治理</a><a href="../03-groups/G07.html">会话持久化</a><a href="../03-groups/G08.html">会话展示</a><a href="../03-groups/G09.html">审批权限</a><a href="../03-groups/G10.html">命令交互</a><a href="../03-groups/G11.html">凭据设置</a><a href="../03-groups/G12.html">附件</a><a href="../03-groups/G13.html">文件系统</a><a href="../03-groups/G14.html">Shell工具</a><a href="../03-groups/G15.html">沙箱执行</a><a href="../03-groups/G16.html">作业</a><a href="../03-groups/G17.html">目标计划</a><a href="../03-groups/G18.html">技能</a><a href="../03-groups/G19.html">子代理</a><a href="../03-groups/G20.html">工作流</a><a href="../03-groups/G21.html">上下文治理</a><a href="../03-groups/G22.html">上下文注入</a><a href="../03-groups/G23.html">工具守卫</a><a href="../03-groups/G24.html">Web搜索</a><a href="../03-groups/G25.html">宿主服务</a><a href="../03-groups/G26.html">客户端runtime</a><a href="../03-groups/G27.html">会话交互UI</a><a href="../03-groups/G28.html">设置输入UI</a><a href="../03-groups/G29.html">UI底座</a><a href="../03-groups/G30.html">外部执行后端</a><a href="../03-groups/G31.html">协议与SDK</a><a href="../03-groups/G32.html">LSP集成</a><a href="../03-groups/G33.html">子代理外部后端</a><a href="../03-groups/G34.html">Web上下文扩展</a><a href="../03-groups/G35.html">会话存储变体</a><a href="../03-groups/G36.html">Hooks工具扩展</a><a href="../03-groups/G37.html">示例与框架</a><a href="../03-groups/G38.html">多智能体协作</a><a href="../03-groups/G39.html">代码执行运行时</a></div><div class="dagnav"><div class="label">被核心/Web/L3 集插件依赖（下游消费者）：</div><div class="chips"><a class="chip" href="dsh-llm-pi-ai.html">dsh-llm-pi-ai</a></div></div><h2>基座 seam 说明</h2><p>Authorization seam (ctx.authorization): plugin-owned flows that obtain a credential through a conversation with the human</p><table><tr><th>包名</th><td>@deepseek-ai/dsh-authorization</td></tr><tr><th>源码路径</th><td><code>packages/credentials/authorization</code></td></tr><tr><th>被插件引用</th><td>1 次</td></tr></table><h2>被依赖（下游）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-llm-pi-ai.html">dsh-llm-pi-ai</a></span></div></div><h2>依赖机制分布</h2><p>E1</p>
+<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">ACP 协议</a><a href="../03-groups/G02.html">API 网关与控制器</a><a href="../03-groups/G03.html">附件</a><a href="../03-groups/G04.html">启动与插件管理</a><a href="../03-groups/G05.html">客户端运行时</a><a href="../03-groups/G06.html">客户端 UI 包</a><a href="../03-groups/G07.html">上下文压缩</a><a href="../03-groups/G08.html">上下文注入</a><a href="../03-groups/G09.html">核心运行时</a><a href="../03-groups/G10.html">凭据与授权</a><a href="../03-groups/G11.html">交付物</a><a href="../03-groups/G12.html">文档处理</a><a href="../03-groups/G13.html">实验特性</a><a href="../03-groups/G14.html">宿主扩展</a><a href="../03-groups/G15.html">反馈通道</a><a href="../03-groups/G16.html">文件系统</a><a href="../03-groups/G17.html">目标与计划</a><a href="../03-groups/G18.html">工具守卫</a><a href="../03-groups/G19.html">Hooks 扩展</a><a href="../03-groups/G20.html">宿主服务</a><a href="../03-groups/G21.html">交互命令</a><a href="../03-groups/G22.html">作业调度</a><a href="../03-groups/G23.html">LLM 适配</a><a href="../03-groups/G24.html">LSP 集成</a><a href="../03-groups/G25.html">MCP 协议</a><a href="../03-groups/G26.html">规划模式</a><a href="../03-groups/G27.html">Agent 预设</a><a href="../03-groups/G28.html">代码执行运行时</a><a href="../03-groups/G29.html">运行时诊断</a><a href="../03-groups/G30.html">沙箱</a><a href="../03-groups/G31.html">定时调度</a><a href="../03-groups/G32.html">SDK 与协议</a><a href="../03-groups/G33.html">会话核心</a><a href="../03-groups/G34.html">会话检索</a><a href="../03-groups/G35.html">设置</a><a href="../03-groups/G36.html">Shell 执行</a><a href="../03-groups/G37.html">技能</a><a href="../03-groups/G38.html">溢出存储</a><a href="../03-groups/G39.html">SSH 远程执行</a><a href="../03-groups/G40.html">存储</a><a href="../03-groups/G41.html">子代理</a><a href="../03-groups/G42.html">子进程</a><a href="../03-groups/G43.html">终端</a><a href="../03-groups/G44.html">待办</a><a href="../03-groups/G45.html">类型契约</a><a href="../03-groups/G46.html">框架 vendor</a><a href="../03-groups/G47.html">Web 访问</a><a href="../03-groups/G48.html">Webhook</a><a href="../03-groups/G49.html">工作流</a><a href="../03-groups/G50.html">工作区</a></div><div class="dagnav"><div class="label">依赖链 · 上游（该插件依赖的前驱）：</div><div class="chips"><a class="chip" href="dsh-invariants.html">dsh-invariants</a><a class="chip" href="dsh-llm.html">dsh-llm</a></div><div class="label" style="margin-top:8px;">依赖链 · 下游（依赖该插件的节点）：</div><div class="chips"><a class="chip" href="dsh-deepseek-account-platform.html">dsh-deepseek-account-platform</a><a class="chip" href="dsh-llm-pi-ai.html">dsh-llm-pi-ai</a></div><div class="label" style="margin-top:8px;">同一拓扑层（Layer 2，层次遍历层序）：</div><div class="chips"><a class="chip self" href="dsh-authorization.html">dsh-authorization</a><a class="chip" href="dsh-client-connection.html">dsh-client-connection</a><a class="chip" href="dsh-client-hmr.html">dsh-client-hmr</a><a class="chip" href="dsh-client-web.html">dsh-client-web</a><a class="chip" href="dsh-hmr.html">dsh-hmr</a><a class="chip" href="dsh-llm-deepseek-account.html">dsh-llm-deepseek-account</a><a class="chip" href="dsh-llm-deepseek-api-key.html">dsh-llm-deepseek-api-key</a><a class="chip" href="dsh-session.html">dsh-session</a><a class="chip" href="dsh-skill.html">dsh-skill</a><a class="chip" href="dsh-system-prompt.html">dsh-system-prompt</a><a class="chip" href="dsh-web.html">dsh-web</a></div></div><div class="layernav"><a href="cordis-plugin-group.html">↑ Layer 1（13 插件）</a><span class="chip self">Layer 2</span><a href="dsh-api-gateway.html">↓ Layer 3（24 插件）</a></div><h2>插件信息</h2><table><tr><th>包名</th><td>@deepseek-ai/dsh-authorization</td></tr><tr><th>分组</th><td>G10 · 凭据与授权</td></tr><tr><th>拓扑层</th><td>Layer 2（层次遍历：被依赖方先于依赖方）</td></tr><tr><th>源码路径</th><td><code>packages/credentials/authorization</code></td></tr></table><h2>① 实现逻辑</h2><p>定义 `ctx.authorization` 能力 seam：`AuthorizationService` 继承 cordis `Service` 并 `static inject=[&#x27;credentials&#x27;]`（src/index.ts:189-198），以 `registerFlow()` 按 `CredentialKey` 注册「凭据获取流程」且一个 key 只允许一个 flow（src/index.ts:209-225）。`begin()` 用 `running` Map 保证同一 key 单飞、校验 method 合法性，并把流程屏蔽在一个中立会话（notify/commit/prompt）后执行（src/index.ts:283-323）。seam 只在流程于本次尝试内确实提交了凭据记录后才报 `authorized`（`observed.committed` + `describeRecord`，src/index.ts:392-453），并以容错扇出广播 `authorization/settled`（src/index.ts:338-358）。`invariant.ts` 独立校验 settled 后 key 不再 in-flight（src/invariant.ts:24-37），`types.ts` 给出不含 cordis/service 依赖的 wire 安全类型（src/types.ts:1-91）。</p>
+<style>
+#dyn-dag{width:100%;height:480px;background:var(--panel);border:1px solid var(--border);border-radius:8px;margin:12px 0;}
+#dyn-dag-label{font-size:12px;color:var(--dim);margin:10px 0 4px;}
+#dyn-dag-legend{display:flex;gap:16px;font-size:12px;color:var(--dim);margin:6px 0 2px;flex-wrap:wrap;}
+#dyn-dag-legend .item{display:flex;align-items:center;gap:5px;}
+#dyn-dag-legend .dot{width:10px;height:10px;border-radius:3px;display:inline-block;}
+.dyn-self{background:var(--accent);}
+.dyn-up{background:#e8933b;}
+.dyn-down{background:#2fb98a;}
+.dyn-seam{background:var(--ext);}
+</style>
+
+<div id="dyn-dag-label">内部结构动态 DAG（深色主题：橙色=上游依赖 · 绿色=下游依赖 · 棕色=外部seam · 蓝=本插件）</div>
+<div id="dyn-dag-legend">
+  <span class="item"><span class="dot dyn-self"></span>本插件</span>
+  <span class="item"><span class="dot dyn-up"></span>上游依赖</span>
+  <span class="item"><span class="dot dyn-down"></span>下游依赖</span>
+  <span class="item"><span class="dot dyn-seam"></span>外部 seam</span>
+</div>
+<div id="dyn-dag"></div>
+
+<script src="../04-interactive/vendor/cytoscape.min.js"></script>
+<script src="../04-interactive/vendor/cytoscape-dagre.min.js"></script>
+<script>
+(function(){
+  const raw = {"elements": [{"data": {"id": "dsh-authorization", "label": "dsh-authorization", "kind": "self", "cls": "#4f8cff", "url": "dsh-authorization.html"}}, {"data": {"id": "dsh-invariants", "label": "dsh-invariants", "kind": "up", "cls": "#e8933b", "url": "dsh-invariants.html"}}, {"data": {"id": "dsh-llm", "label": "dsh-llm", "kind": "up", "cls": "#e8933b", "url": "dsh-llm.html"}}, {"data": {"id": "dsh-deepseek-account-platform", "label": "dsh-deepseek-account-platform", "kind": "down", "cls": "#2fb98a", "url": "dsh-deepseek-account-platform.html"}}, {"data": {"id": "dsh-llm-pi-ai", "label": "dsh-llm-pi-ai", "kind": "down", "cls": "#2fb98a", "url": "dsh-llm-pi-ai.html"}}, {"data": {"id": "dsh-invariants->dsh-authorization", "source": "dsh-invariants", "target": "dsh-authorization"}}, {"data": {"id": "dsh-llm->dsh-authorization", "source": "dsh-llm", "target": "dsh-authorization"}}, {"data": {"id": "dsh-authorization->dsh-deepseek-account-platform", "source": "dsh-authorization", "target": "dsh-deepseek-account-platform"}}, {"data": {"id": "dsh-authorization->dsh-llm-pi-ai", "source": "dsh-authorization", "target": "dsh-llm-pi-ai"}}]};
+  const cy = cytoscape({
+    container: document.getElementById('dyn-dag'),
+    elements: raw.elements,
+    style: [
+      {
+        selector: 'node',
+        style: {
+          'label': 'data(label)',
+          'background-color': 'data(cls)',
+          'color': '#e6e8ee',
+          'font-size': 11,
+          'text-valign': 'bottom',
+          'text-margin-y': 4,
+          'width': 46,
+          'height': 46,
+          'shape': 'round-rectangle',
+          'border-width': 2,
+          'border-color': '#2a2f3a'
+        }
+      },
+      {
+        selector: 'node[kind="self"]',
+        style: {
+          'border-width': 3,
+          'border-color': '#4f8cff',
+          'width': 60,
+          'height': 60,
+          'font-size': 12,
+          'font-weight': 700
+        }
+      },
+      {
+        selector: 'edge',
+        style: {
+          'width': 1.5,
+          'line-color': '#4a5263',
+          'target-arrow-color': '#4a5263',
+          'target-arrow-shape': 'triangle',
+          'curve-style': 'bezier'
+        }
+      }
+    ],
+    layout: {
+      name: 'dagre',
+      rankDir: 'LR',
+      nodeSep: 30,
+      rankSep: 60,
+      padding: 20
+    },
+    wheelSensitivity: 0.2,
+    minZoom: 0.2,
+    maxZoom: 2.5
+  });
+  cy.on('tap', 'node', (evt) => {
+    const url = evt.target.data('url');
+    if (url) window.location.href = url;
+  });
+  // 等渲染完自适应容器尺寸
+  setTimeout(() => cy.resize(), 100);
+})();
+</script>
+<h2>② 注册/提供（provides）</h2><ul class="provides"><li>ctx.authorization (凭据授权 seam：注册/列出/取消/执行凭据获取流程，按 key 单飞)</li><li>事件 authorization/settled (一次授权尝试终态广播，含 failed)</li></ul><h2>③ 依赖（depends_on · 上游前驱）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-invariants.html">dsh-invariants</a></span><span class="mech">E1+E2</span><div class="purpose">注册 single-flight 释放不变式，检测 settled 后 key 残留 in-flight</div><div class="evi">src/invariant.ts:7 import InvariantInstaller + src/invariant.ts:14 inject [&#x27;invariants&#x27;] + src/invariant.ts:45 register</div></div><div class="dep-item"><span class="name"><a href="dsh-llm.html">dsh-llm</a></span><span class="mech">E1</span><div class="purpose">AuthorizationError 复用 HarnessError 稳定错误分类</div><div class="evi">src/index.ts:31 import HarnessError</div></div></div><h2>④ 被依赖（dependents · 下游消费者）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-deepseek-account-platform.html">dsh-deepseek-account-platform</a></span><div class="purpose">把浏览器 PKCE 登录注册为授权流程并驱动一次尝试</div><div class="evi">src/index.ts:12 import AuthorizationSession + src/index.ts:85 inject + src/index.ts:138 registerFlow + src/index.ts:413 begin</div></div><div class="dep-item"><span class="name"><a href="dsh-llm-pi-ai.html">dsh-llm-pi-ai</a></span><div class="purpose">把 pi-ai 的登录会话翻译成 harness 中立的通知/提问流程</div><div class="evi">src/login.ts:12 import type AuthorizationMethod + src/login.ts:138 ctx.authorization.registerFlow</div></div></div>
 </main>
 <footer>DeepSeek Harness 插件级 DAG 依赖链分析 · L1 核心集 + L2 web-app + L3 其余插件 · 源码三依据(E1编译/E2运行时/E3组合)逐条溯源</footer>
 </body>

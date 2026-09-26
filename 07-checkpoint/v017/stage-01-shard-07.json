@@ -1,0 +1,438 @@
+[
+  {
+    "id": "dsh-command-compact",
+    "name": "@deepseek-ai/dsh-command-compact",
+    "implementation": "面向人类的 `/compact` 命令插件：注入 commands 与 compaction 两个 seam，在 apply() 中通过 ctx.commands.register 注册无参数命令，把调用转发给 ctx.compaction.compactNow(agent, signal, commandId)（src/index.ts:101-106、src/index.ts:67）。执行结果按 ManualCompactionError 的封闭错误码（busy/cancelled/changed/summary/commit/persistence）映射为简洁的人类可读文案（src/index.ts:24-56）。使用 ctx.effect 管理生命周期，注册前先 yield 一个 drain 回调等待在途 handler 结算，避免拆卸期新调用进入（src/index.ts:97-107）。",
+    "provides": [],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-commands",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:7 import CommandDefinitionId + src/index.ts:9 import type CommandInvocation/CommandResult + src/index.ts:12 inject 'commands' + src/index.ts:101 ctx.commands.register",
+        "purpose": "承载 `/compact` 命令的注册面与命令调用/结果类型，命令必须注册进 commands 注册表才能被人类命令适配器看见"
+      },
+      {
+        "plugin_id": "dsh-compaction",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:8 import ManualCompactionError + src/index.ts:12 inject 'compaction' + src/index.ts:67 ctx.compaction.compactNow",
+        "purpose": "通过压缩 seam 触发一次手动压缩，并复用其封闭失败码把预期失败翻译为人类文案"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-compaction-basic",
+    "name": "@deepseek-ai/dsh-compaction-basic",
+    "implementation": "压缩 seam 的基础后端实现 BasicCompactionEngine，继承 CompactionEngine 并实现 summarize/compactIfNeeded/compactRegion/compactNow 四个钩子（src/index.ts:113、src/index.ts:247、src/index.ts:269、src/index.ts:358、src/index.ts:383）。summarize 通过一次 ctx.llm.stream() 复用会话原有 system/tools/消息前缀做 KV-cache 友好的摘要调用（src/summarizer.ts:120-181）；region.ts 负责可压缩区间的选择、工具配对边界校验与 compaction/start→summary→end 的持久化事务（src/region.ts:117-155、src/region.ts:173-276）。apply 阶段注册 agent/pre-step 压力检测、agent/request-error 上下文溢出恢复（按 maxOverflowRetries 重试）等自动监听器（src/index.ts:148-235）。配置在加载期做严格校验并按路由模型解析阈值/保留/摘要预算（src/config.ts:68-110、src/config.ts:153-217）。",
+    "provides": [
+      "ctx.compaction (压缩 seam 的基础后端实现，提供基于 tokenMeter 压力测量的自动/手动压缩)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-compaction",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:9 import CompactionEngine/ManualCompactionError + src/index.ts:113 extends CompactionEngine + src/region.ts:11 compactCheckpointSource/toolPairingBalancedBefore + src/region.ts:17 type import",
+        "purpose": "继承 seam 基类并复用其事务原语（checkpoint source、工具配对边界、压缩结果类型），成为 seam 的后端 provider"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:15 import type Agent/PreStepDecision + src/index.ts:158 ctx.on('agent/pre-step') + src/index.ts:178 ctx.on('agent/status') + src/index.ts:190 ctx.on('agent/request-error') + src/index.ts:390 agent.runMaintenance",
+        "purpose": "在 agent 的步边界与请求错误扩展点上挂自动压缩与溢出恢复，并借 agent.runMaintenance 预约空闲会话的手动压缩"
+      },
+      {
+        "plugin_id": "dsh-commands",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:16 import type CommandId + src/region.ts:18 import type CommandId + src/region.ts:392 sourceCommandId",
+        "purpose": "手动命令发起的压缩需把发起命令身份写进压缩生命周期事件用于呈现关联"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:11 import type Session/SessionSeq + src/index.ts:114 inject 'sessions' + src/index.ts:184 ctx.on('session/event') + src/index.ts:411 ctx.sessions.flush + src/region.ts:22 import SessionSeq/Session/SessionEvent",
+        "purpose": "直接读写会话表面的追加/替换事务与事件流，并在手动压缩后通过 sessions.flush 做持久化检查点"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:12 import CONTEXT_WINDOW_EXCEEDED_CODE + src/index.ts:114 inject 'llm' + src/index.ts:304 ctx.llm.resolveModelInfo + src/summarizer.ts:163 ctx.llm.stream + src/region.ts:19 createUserMessage/errorChain",
+        "purpose": "解析路由模型上下文容量以计算压力阈值，并通过 llm 流式调用执行摘要、构造备份检查点消息"
+      },
+      {
+        "plugin_id": "dsh-token-meter",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:114 inject 'tokenMeter' + src/index.ts:277 ctx.tokenMeter.measure + src/region.ts:21 import type TokenMeasurement/TokenMeter + src/region.ts:417 meter.estimateMessage",
+        "purpose": "用统一 token 计量器测量表面压力、估算摘要替换体积，并驱动所有保留与收缩定价决策"
+      },
+      {
+        "plugin_id": "dsh-compaction-tool-result-pruner",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:18 type-only import (makes sibling service available to ctx.get) + src/index.ts:292 this.ctx.get('toolResultPruner') + src/index.ts:295 prune.pruneSession",
+        "purpose": "可选地先执行无模型工具结果裁剪降低压力，再决定是否摘要；缺少该插件时保持可独立组合"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:14 import assertNever + src/config.ts:8 deepFreeze + src/summarizer.ts:9 deepFreeze",
+        "purpose": "复用深冻结与封闭联合穷尽断言工具，保证解析配置与摘要消息不可变"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-compaction-image-offload",
+    "name": "@deepseek-ai/dsh-compaction-image-offload",
+    "implementation": "图像卸载执行器：当具备图像能力的路由以 IMAGE_OFFLOAD_REQUIRED 拒绝请求时，插件通过 offloadOldestImages 选取最旧的保留输入图像并追加一条 image/offload 决策事件（src/index.ts:27-32、src/image-offload.ts:16-45）。注册的 imageOffloadProjection 在重放时把被选中的图像块标记为 offloaded，形成持久化的表面修复而不是花费重试预算（src/projection.ts:40-73、src/project-message.ts:13-35）。同时对压缩摘要失败（compaction/summary-error）走同一卸载恢复路径（src/index.ts:33-40）。",
+    "provides": [],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:14 import IMAGE_OFFLOAD_REQUIRED_CODE/LlmError + src/image-offload.ts:3 import type ContentBlock + src/project-message.ts:3 import type ContentBlock/Message + src/projection.ts:3 import type Message",
+        "purpose": "识别适配器上报的 IMAGE_OFFLOAD_REQUIRED 失败码，并按 dsh-llm 的内容块/消息类型改写图像块"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:19 inject 'sessions' + src/index.ts:26 ctx.sessions.registerMessageProjection + src/image-offload.ts:4 import type Session/SessionSeq + src/projection.ts:4-5 subpath 类型 import",
+        "purpose": "在会话表面上追加 image/offload 事件并注册纯函数消息投影，使卸载决策可重放且不改动节点身份"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:13 import type RequestErrorAction + src/index.ts:19 inject 'agents' + src/index.ts:27 ctx.on('agent/request-error')",
+        "purpose": "在 agent 请求错误扩展点上拦截图像卸载失败并返回 retry 动作，发起一次表面修复后的重试"
+      },
+      {
+        "plugin_id": "dsh-compaction",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:12 type-only import + src/index.ts:33 ctx.on('compaction/summary-error')",
+        "purpose": "订阅压缩 seam 的摘要错误瀑布，在摘要调用也因图像超限失败时执行同一卸载恢复"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/project-message.ts:4 import deepFreeze",
+        "purpose": "投影出的替换消息需深冻结以保证不可变"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-compaction-tool-result-pruner",
+    "name": "@deepseek-ai/dsh-compaction-tool-result-pruner",
+    "implementation": "无模型、可重放的工具结果裁剪服务 ToolResultPruner：按字符预算把超预算的文段替换为 head+marker+tail，按 Unicode 码点切分以免劈开代理对（src/index.ts:83-122、src/index.ts:68-74）。pruneSession 对当前表面的全部 tool/result 节点做一次稳定快照裁剪，并为每个被遮蔽节点先追加一条 compaction/prune 影子价格事件（经 tokenMeter 计价），再追加带 surfaceOp=replace 的替换事件（src/index.ts:136-182）。配置阈值在加载期校验 head+marker+tail ≤ threshold（src/config.ts:36-65）。",
+    "provides": [
+      "ctx.toolResultPruner (确定性工具结果裁剪服务：按字符预算裁剪并写 compaction/prune 影子价格事件)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-token-meter",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:15 type-only import + src/index.ts:47 static inject ['tokenMeter'] + src/index.ts:163 this.ctx.tokenMeter.estimateMessage",
+        "purpose": "为每个被遮蔽节点计价以写入影子价格事件，使纯消费者无需保留逐节点状态即可扣减"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:9 import freezeMessage + src/index.ts:10 import type ContentBlock + src/types.ts:1 import type ToolCallId",
+        "purpose": "构造不可变的替换工具结果消息并复用其内容块/调用 id 类型"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:11 import type Session/SessionEvent/SessionSeq/ToolResultMessage + src/types.ts:2 import type SessionSeq + src/index.ts:160 session.append('compaction/prune')",
+        "purpose": "读取当前表面节点并按 surfaceOp 替换/追加会话事件，实现可重放的裁剪事务"
+      },
+      {
+        "plugin_id": "dsh-compaction",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:13 type-only import (the compaction/* SessionEventMap merges)",
+        "purpose": "引入 compaction/* 事件映射的类型合并，使 compaction/prune 影子价格事件成为合法会话事件"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/config.ts:3 import deepFreeze",
+        "purpose": "解析后的字符预算配置需深冻结为不可变"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-agent-instructions",
+    "name": "@deepseek-ai/dsh-agent-instructions",
+    "implementation": "AGENTS.md 兼容的工作区指令加载器：启动/恢复基线在首个请求前进入持久上下文，成功触及文件的 fs 工具会把嵌套/变更/移除的指令合入 inbox（src/index.ts:84-225）。通过 ctx.fs 逐目录探测候选指令文件、按字节预算渲染、按 trimmed-content 摘要去重，并把变更状态协商进 sessionProjections 的 turnBoundary 判定（src/index.ts:286-294、src/state.ts:247-433）。监听 session/event(step/end)、agent/pre-step、tools/result 以在正确提交边界刷新指令上下文（src/index.ts:307、src/index.ts:315、src/index.ts:343）。仅在 ctx.fs 存在时生效，无 provider 时退化为 no-op（src/index.ts:119-120）。",
+    "provides": [],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:14 import type Agent/PreStepDecision + src/index.ts:315 ctx.on('agent/pre-step') + src/state.ts:7 import type Agent",
+        "purpose": "在 agent 步前把工作区指令上下文拼入请求消息序列，并读取 agent.session 的可见表面状态"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:15 import createUserMessage + src/state.ts:8 createUserMessage + src/state.ts:9 import type Message",
+        "purpose": "把渲染后的指令文本构造成带 source 标记的 user 消息注入上下文"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:16 import type Session/UserMessage + src/index.ts:184 type import + src/index.ts:307 ctx.on('session/event') + src/state.ts:10 import type Session/UserMessage",
+        "purpose": "读写会话表面历史以判定指令是否已注入，并在 step/end 边界触发刷新"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:17 type-only import + src/index.ts:34 inject ['sessionProjections'] + src/index.ts:287 ctx.sessionProjections.stateOf(session, 'turnBoundary')",
+        "purpose": "依赖 turnBoundary 投影判断当前步是否开放，决定指令刷新是立即排队还是延迟到步结束"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:18 import type ToolExecution/ToolExecutionResult/ToolExecutionToken + src/index.ts:343 ctx.on('tools/result')",
+        "purpose": "从成功的 read/write/edit 工具结果中提取 file_path，把被触及路径转成指令刷新线索"
+      },
+      {
+        "plugin_id": "dsh-fs",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:119 ctx.get('fs') + src/files.ts:10 import type FileSystem/FsInfo/FsTarget/FsVersion + src/state.ts:11 import type FileSystem/FsVersion",
+        "purpose": "通过可选 fs provider 探测与流式读取指令文件，并在缺少 provider 时安全降级"
+      },
+      {
+        "plugin_id": "dsh-home-paths",
+        "mechanism": "E1",
+        "evidence": "src/config.ts:9 import resolveDshHome + src/files.ts:11 import dshHomeDisplay",
+        "purpose": "解析用户级全局 AGENTS.md 的家目录位置与显示路径"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/files.ts:12 import assertNever",
+        "purpose": "文件探测三态联合的穷尽断言，避免新增状态被静默忽略"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-file-reference-local",
+    "name": "@deepseek-ai/dsh-file-reference-local",
+    "implementation": "ctx.fileReferences 的本地文件系统实现 LocalFileReferenceService，继承 dsh-file-reference 的服务基类并以 WorkspaceFileSearch 对 agent 工作目录建立可取消/可复用的模糊索引（src/index.ts:44-127、src/search.ts:84-255）。索引只含路径；目录前缀查询走实时列举，裸模糊查询共享一次有界遍历，且失效时旧索引继续应答、重建在后台进行（src/search.ts:114-130、src/search.ts:159-199）。按 agent 生命周期安装/卸载 system-prompt 的 context:file-reference 段落与搜索缓存，并在 tool/result 时使缓存失效（src/index.ts:66-102）。",
+    "provides": [
+      "ctx.fileReferences (@file 引用的本地文件系统候选发现实现，供 @ 补全)",
+      "system-prompt section context:file-reference (@ 引用使用说明段落，仅在 read 工具可用时展示)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-file-reference",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:10 import FileReferenceService/FILE_REFERENCE_PROMPT + src/index.ts:44 extends FileReferenceService + src/index.ts:31 import grammar subpath + src/search.ts:11 import type FileReferenceCandidate",
+        "purpose": "作为 fileReference 能力 seam 的 provider 实现基类抽象方法 list()，并复用其语法/提示词工具"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:9 import type Agent + src/index.ts:45 static inject ['agents'] + src/index.ts:91 ctx.agents.list + src/index.ts:92-93 ctx.on('agent/created'/'agent/disposed')",
+        "purpose": "按 agent 维护搜索索引与提示词 fiber 生命周期，并用 agent 的会话 cwd 作为搜索根"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:14 type-only import + src/index.ts:73 agent.ctx.tools.get('read', agent) + src/index.ts:98 ctx.on('session/event') tool-result invalidate",
+        "purpose": "仅在 read 工具存在时展示 @ 提示词，并在工具结果后使工作区索引失效"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E2",
+        "evidence": "src/index.ts:98 ctx.on('session/event', ...) + src/index.ts:100 ctx.agents.get(session.id)",
+        "purpose": "订阅会话事件流以在工具结果提交后失效文件索引"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-session-reference",
+    "name": "@deepseek-ai/dsh-session-reference",
+    "implementation": "跨会话引用解析服务 SessionReferenceResolver（ctx.sessionReferenceResolver）：把宿主解析出的结构化会话引用读取为当前表面快照，经订阅 system-prompt/assemble 记录的最近路由计算模型相对字节预算，再把投影出的对话按字节上限保留/截断并渲染为不可信只读上下文（src/index.ts:127-142、src/index.ts:299-358、src/projection.ts:73-146）。在 agent/pre-step 前置监听中把直接用户消息里的规范 @[label](dsh-session:…) 提及替换为可读 @label，并在其后插入聚合的引用快照消息（src/index.ts:135-177、src/uri.ts:48-87）。被截断的预览会把完整转录喂给可选 spillStore，并附一条省略说明（src/spill.ts:23-50）。",
+    "provides": [
+      "ctx.sessionReferenceResolver (跨会话引用解析服务：读取他会话快照并按字节预算渲染为可信度受限的持久上下文)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-session-query",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:22 import type SessionRecord/SessionSurfaceSnapshot + src/index.ts:86 static inject ['sessionQuery'] + src/index.ts:202 ctx.sessionQuery.listSessions + src/index.ts:316 ctx.sessionQuery.readSurface",
+        "purpose": "通过会话查询 seam 列举候选会话并按精确读取当前表面快照，是引用数据的主来源"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:10 import type Agent/PreStepDecision + src/index.ts:135 ctx.on('agent/pre-step')",
+        "purpose": "在 agent 步前把会话引用上下文拼入直接用户消息之后"
+      },
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:11 import Remote/TypertRemoteService + src/index.ts:85 extends TypertRemoteService + src/index.ts:271 @Remote('candidates')",
+        "purpose": "把候选列举暴露为类型化远端方法供宿主适配器调用"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:12 import createUserMessage/freezeMessage/LlmError + src/index.ts:13 import type ContentBlock/LlmResolvedModelInfo/UserMessage + src/types.ts:8-9 子路径类型 import",
+        "purpose": "构造引用上下文 user 消息、冻结直接消息，并识别 NO_ADAPTER 以回退默认字节预算"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:14 import type SessionId + src/projection.ts:7-8 import SessionSeq/类型 + src/spill.ts:3 import type SessionId + src/types.ts:10 + src/uri.ts:4",
+        "purpose": "使用会话 id / 序列号等不透明标识类型区分源会话与捕获位置"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:17 import type ProjectionSnapshot + src/index.ts:248 this.ctx.get('sessionProjections') + src/index.ts:250 projections.snapshot(attached, ['title','subagent'])",
+        "purpose": "从 title/subagent 投影快照派生候选的提及标签与显示标题，避免折叠整个日志"
+      },
+      {
+        "plugin_id": "dsh-session-projection-cache",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:18 type-only import + src/index.ts:251 this.ctx.get('sessionProjectionCache')?.cachedSnapshot",
+        "purpose": "对冷会话从持久投影缓存回答标题，无需打开其日志"
+      },
+      {
+        "plugin_id": "dsh-session-title",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:19 type-only import (title projection key merge)",
+        "purpose": "引入 title 投影键的类型合并以读取会话标题作为提及标签"
+      },
+      {
+        "plugin_id": "dsh-subagent",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:20 type-only import (subagent label projection)",
+        "purpose": "引入 subagent 投影值的类型以优先使用子代理创建标签作为显示标题"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:21 type-only import + src/index.ts:127 ctx.on('system-prompt/assemble', {prepend:true})",
+        "purpose": "在系统提示装配完成后捕获 provider/model 变量作为引用字节预算的模型来源"
+      },
+      {
+        "plugin_id": "dsh-compaction",
+        "mechanism": "E1",
+        "evidence": "src/projection.ts:3 import isCompactCheckpointSource",
+        "purpose": "识别压缩检查点消息，投影会话对话时保留检查点并避免误删"
+      },
+      {
+        "plugin_id": "dsh-output-retention",
+        "mechanism": "E1",
+        "evidence": "src/projection.ts:5 import TextRetainer",
+        "purpose": "用 headTail 保留器精确截断超预算消息并报告省略字节数"
+      },
+      {
+        "plugin_id": "dsh-spill",
+        "mechanism": "E1+E2",
+        "evidence": "src/spill.ts:4 import type SaveTextSpill/SpillRef/SpillStore + src/index.ts:332 this.ctx.get('spillStore')",
+        "purpose": "把被截断预览的完整转录保存到 spill 存储并在上下文中给出可取回定位"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "src/uri.ts:3 import brandString",
+        "purpose": "把解码出的会话 id 字符串重新品牌化为不透明的 SessionId"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/projection.ts:6 import assertNever",
+        "purpose": "表面事件类型的穷尽断言，防止新增事件被静默跳过"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-time-context",
+    "name": "@deepseek-ai/dsh-time-context",
+    "implementation": "可选的请求时钟上下文：在 agent/pre-step 前置监听中按刷新间隔节流，向请求历史追加一条持久、来源归属的时间读数（turn/step、浏览器时区、格式化的时间戳与距上次的耗时）（src/index.ts:185-225、src/index.ts:100-115）。浏览器时区从本回合用户消息的 clientTimeZone 派生，唯一时区时用于渲染时间戳，混合/缺失时渲染澄清策略行（src/request-zone.ts:48-80、src/index.ts:203-214）。注册 sessionProjections 的 timeContext 投影折叠最近消息时刻与注入时刻，用于节流判定（src/index.ts:157-183）。另附 invariant companion 校验时间读数与回合位置/时间戳一致（src/invariant.ts:77-159）。",
+    "provides": [
+      "session projection 'timeContext' (持久化最近消息时刻与注入时刻，供刷新节流复用)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:11 import type Agent/PreStepDecision + src/index.ts:185 ctx.on('agent/pre-step', {prepend:true})",
+        "purpose": "在 agent 步前注入时间上下文读数，并读取 turn/step 位置"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:12 import createUserMessage + src/index.ts:13 import type ContextFormed + src/index.ts:20 import type UserMessage + src/request-zone.ts:3 import type UserMessage",
+        "purpose": "构造带来源标记的时间快照 user 消息，并复用消息来源合并类型"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:21 import SessionSeq + src/invariant.ts:4 import type Session/SessionEvent + src/index.ts:89 agent.session.eventAt(SessionSeq(seq))",
+        "purpose": "倒序读取会话历史以收集本回合已进入的用户消息并定位回合起点"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:22 type-only import + src/index.ts:53 inject ['agents','sessionProjections'] + src/index.ts:157 ctx.sessionProjections.register + src/index.ts:192 ctx.sessionProjections.stateOf",
+        "purpose": "注册并读取 timeContext 投影以驱动注入节流，且向 SessionProjectionStateMap 做类型合并"
+      },
+      {
+        "plugin_id": "dsh-invariants",
+        "mechanism": "E1+E2",
+        "evidence": "src/invariant.ts:5 import type InvariantFailure/InvariantInstaller + src/invariant.ts:25 inject ['invariants'] + src/invariant.ts:194 ctx.invariants.register",
+        "purpose": "注册包级不变量，校验时间读数格式、位置与时间戳在加载与派发时可重放一致"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/request-zone.ts:4 import assertNever",
+        "purpose": "浏览器时区上下文封闭联合的穷尽断言"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tmux-context",
+    "name": "@deepseek-ai/dsh-tmux-context",
+    "implementation": "可选的 tmux 位置上下文：在 turn 的首个请求(step===1)时经 ctx.shell 执行一次 tmux display-message，并通过比对 pane 的 pane_tty 与本进程控制终端来确认真正运行于该 pane（避免继承 $TMUX_PANE 的假阳），失败/不在 tmux/无 shell 时静默 no-op（src/index.ts:120-168、src/index.ts:246-274）。渲染出的读数含稳定的 location 状态块；注册 tmuxContext 投影记录上次注入状态，仅在状态变化且超过可选 refreshIntervalMs 时才重新注入（src/index.ts:175-186、src/index.ts:230-263）。",
+    "provides": [
+      "session projection 'tmuxContext' (持久化最近一次 tmux 位置读数，供变更抑制复用)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:24 import type PreStepDecision + src/index.ts:246 ctx.on('agent/pre-step', {prepend:true})",
+        "purpose": "在 agent 步前注入 tmux 位置上下文，并读取 turn/step 位置"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:25 type-only import + src/index.ts:44 inject ['agents','sessionProjections'] + src/index.ts:230 ctx.sessionProjections.register + src/index.ts:254 ctx.sessionProjections.stateOf",
+        "purpose": "注册并读取 tmuxContext 投影以判断位置是否变化、是否超过刷新间隔"
+      },
+      {
+        "plugin_id": "dsh-shell",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:26 import type ShellExecutor/ShellRunResult + src/index.ts:252 ctx.get('shell') + src/index.ts:137 bash.execute(bash.resolve({command, signal}))",
+        "purpose": "通过 shell 执行器 seam 运行只读 tmux/ps 命令获取 pane 与窗口布局信息（无 shell 时降级）"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:27 import createUserMessage + src/index.ts:28 import type ContextFormed",
+        "purpose": "构造带来源标记的 tmux 位置快照 user 消息，并复用消息来源合并类型"
+      }
+    ],
+    "dependents": []
+  }
+]

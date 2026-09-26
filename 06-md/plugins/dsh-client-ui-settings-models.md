@@ -1,33 +1,33 @@
 # dsh-client-ui-settings-models
 
 - 包名: `@deepseek-ai/dsh-client-ui-settings-models`
-- 分组: G28 设置输入UI
-- 拓扑层: Layer 11
+- 分组: G06 客户端 UI 包
+- 拓扑层: Layer 12
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-settings-models`
 
-## 为什么需要它（设计初衷）
-模型设置与共享产品引导对话框，叠在既有设置与凭据连接之上。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-settings-models/package.json
-
 ## 实现逻辑
-Models 设置页与产品 onboarding：注册 settings.section id=models order=10（ModelsSection，index.ts:118-124），settings.onboarding welcome-notice(order=-100) 与 deepseek-official(order=0) 两个对话框。ModelsSettingsStore/WelcomeNoticeStore 经 connection.api 读写 Host settings/credentials；订阅 settings/document-updated、credentials/updated、llm/adapters-updated 推送失效（:107-113）。
+浏览器半向 `settings.section` 注册 Models 页（id='models' order 10，声明 settings.models.provider-card 与 settings.models.footer 子槽，src/client/index.ts:136-146），并向 `settings.onboarding` 注册 welcome-notice（order -100）与 deepseek-official（order 0，声明 settings.models.sign-in 子槽）两个引导步骤（src/client/index.ts:147-159）。它经 `ctx.settingsSchema` 与 `ctx.configForms.describe()` 构造 ModelsSettingsStore/operations（src/client/index.ts:84-88），并订阅 settings/document-updated、credentials/record-updated、credentials/reference-updated、llm/adapters-updated 及 connection/reset 推送事件刷新（src/client/index.ts:121-134）。node half 监听 `webserver/index-inject` 把 credentialOnboarding 开关注入页面全局（src/index.ts:14-21）。
 
 ## Provides
-- settings.section 'models' 注册
-- settings.onboarding 'welcome-notice' / 'deepseek-official' 注册
-- settings.models 字典命名空间
-- ModelsSettingsStore / WelcomeNoticeStore (connection.api 上)
+- settings.section 条目 id='models' (order 10)：模型/供应商编辑页，声明 settings.models.provider-card（keyed）与 settings.models.footer（list）子槽
+- settings.onboarding 条目 id='welcome-notice' (order -100) 与 id='deepseek-official' (order 0，声明 settings.models.sign-in 子槽)
+- settings.models locale 命名空间字典（Models 页 + 产品引导文案）
+- Host 侧页面全局 ONBOARDING_CONFIG_GLOBAL（credentialOnboarding 开关）
 
 ## Depends On (上游依赖)
-- `dsh-api-remotes` [运行时依赖] - 订阅 settings/credentials/adapters 失效事件
-  - 证据: `packages/client/ui-settings-models/src/client/index.ts:107-113 (ctx.remote.$on 推送失效事件)`
-- `dsh-client-connection` [运行时依赖] - settings/credentials 远程调用载体
-  - 证据: `packages/client/ui-settings-models/src/client/index.ts:70-71 (connection.api 构造 store)`
-- `dsh-client-ui-settings` [编译依赖] - settings.section 槽声明与 settingsScope 契约
-  - 证据: `packages/client/ui-settings-models/src/client/index.ts:13 (type-only import), :118 (slots.inject('settings.section'))`
+- `dsh-api-remotes` [E1+E2] - 订阅 Host 推送的设置/凭据/适配器失效事件
+  - 证据: `src/client/index.ts:17 type-only import + src/client/index.ts:124-127 ctx.remote.$on(...)`
+- `dsh-client-locale` [E1+E2] - 注册并绑定 settings.models 字典
+  - 证据: `src/client/index.ts:13 type-only import + src/client/index.ts:91 ctx.locale.bind(NS)`
+- `dsh-client-ui-primitives` [编译依赖] - 复用共享 UI 原语渲染模型编辑器
+  - 证据: `src/client/ModelsSection.tsx:26 import`
+- `dsh-client-ui-renderer` [编译依赖] - 引入 ctx.slots 合并
+  - 证据: `src/client/index.ts:14 type-only import`
+- `dsh-client-ui-settings` [E1+E2] - 设置槽声明、settingsSchema/configForms 镜像由 ui-settings 提供
+  - 证据: `src/client/index.ts:11 type-only import + src/client/index.ts:88 ctx.configForms.describe()`
+- `dsh-host-webserver` [E1+E2] - Host 侧向浏览器页面注入引导配置全局
+  - 证据: `src/index.ts:4 type-only import + src/index.ts:15 ctx.on('webserver/index-inject')`
 
 ## Dependents (下游被依赖)
-- 无下游（叶子/被消费端）
+- `dsh-client-ui-settings-account` - 登录引导复用模型设置区类型

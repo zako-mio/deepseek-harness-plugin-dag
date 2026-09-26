@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dsh-client-ui-open-in-app · @deepseek-ai/dsh-client-ui-open-in-app · DeepSeek Harness 插件 DAG</title>
+<style>
+:root{--bg:#0f1117;--panel:#161a22;--border:#2a2f3a;--text:#e6e8ee;--dim:#9aa3b2;--accent:#4f8cff;--ext:#b48a3c;--ok:#2fb98a;--dis:#c0504d;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+header{background:var(--panel);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+header h1{font-size:17px;font-weight:600;}
+header .crumb{color:var(--dim);font-size:13px;}
+header .crumb a{color:var(--accent);text-decoration:none;}
+.badge{background:#20324f;color:#7fb0ff;padding:2px 10px;border-radius:20px;font-size:12px;}
+.badge.ext{background:#3a2f1a;color:#e0b25e;}
+.badge.layer{background:#1d2a24;color:#5fc9a0;}
+.badge.l2{background:#2f2440;color:#b48ae0;}
+.badge.l3{background:#1d3a30;color:#5fd0a8;}
+.badge.dis{background:#3a1d1d;color:#e08584;}
+main{padding:24px;max-width:1200px;margin:0 auto;}
+h2{font-size:18px;margin:26px 0 12px;color:#cfd6e4;border-bottom:1px solid var(--border);padding-bottom:8px;}
+h3{font-size:15px;margin:18px 0 8px;color:#b8c2d4;}
+p,li{font-size:14px;}
+ul{padding-left:22px;}
+.dep-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;margin:10px 0;}
+.dep-item{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 12px;}
+.dep-item .name{font-weight:600;color:var(--accent);}
+.dep-item .mech{display:inline-block;font-size:11px;background:#1d2a3f;color:#7fb0ff;border-radius:4px;padding:1px 6px;margin-left:6px;}
+.dep-item .evi{font-size:12px;color:var(--dim);margin-top:4px;font-family:Consolas,monospace;word-break:break-all;}
+.dep-item .purpose{font-size:13px;margin-top:4px;}
+.ext .name{color:var(--ext);}
+.dis .name{color:var(--dis);}
+.provides li{font-size:13px;margin:3px 0;}
+.evidence{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-family:Consolas,monospace;font-size:12px;color:#9fb0c3;margin:6px 0;word-break:break-all;}
+.dagnav{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:14px 0;}
+.dagnav .label{font-size:12px;color:var(--dim);margin-bottom:6px;}
+.dagnav .chips{display:flex;flex-wrap:wrap;gap:6px;}
+.chip{font-size:12px;background:#1d2a3f;border:1px solid #2b3d5f;border-radius:6px;padding:2px 8px;color:#7fb0ff;text-decoration:none;}
+.chip:hover{background:#2b3d5f;}
+.chip.ext{background:#3a2f1a;border-color:#5a4422;color:#e0b25e;}
+.chip.dis{background:#3a1d1d;border-color:#6a3231;color:#e08584;}
+.chip.l2{background:#2f2440;border-color:#4a3560;color:#b48ae0;}
+.chip.l3{background:#1d3a30;border-color:#2f5a4a;color:#5fd0a8;}
+.chip.self{background:#20324f;border-color:#4f8cff;color:#fff;cursor:default;}
+.treenav{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:14px 0;display:flex;flex-wrap:wrap;gap:4px 14px;}
+.treenav a{color:var(--dim);font-size:13px;text-decoration:none;}
+.treenav a:hover{color:var(--accent);}
+.treenav .sep{color:#3a3f4a;}
+.layernav{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}
+.layernav a{font-size:12px;background:#161d2c;border:1px solid var(--border);border-radius:6px;padding:2px 8px;color:var(--dim);text-decoration:none;}
+.layernav a.cur{background:#20324f;color:#7fb0ff;border-color:#4f8cff;}
+footer{margin-top:40px;padding:16px 24px;border-top:1px solid var(--border);color:var(--dim);font-size:12px;text-align:center;}
+table{border-collapse:collapse;width:100%;margin:10px 0;}
+th,td{border:1px solid var(--border);padding:6px 10px;font-size:13px;text-align:left;}
+th{background:var(--panel);color:#b8c2d4;}
+.whybox{background:#0d1a14;border:1px solid #2f5a4a;border-radius:8px;padding:14px 18px;margin:10px 0;}
+.whybox .tag{color:#5fc9a0;font-size:12px;font-weight:600;letter-spacing:1px;}
+.whybox p{font-size:14px;color:#cfe8dd;margin:6px 0;}
+.whybox .hist{font-size:13px;color:var(--dim);margin-top:8px;}
+.whybox .src{font-size:11px;color:var(--dim);margin-top:8px;}
+.whybox .src a{color:#7fb0ff;text-decoration:none;word-break:break-all;}
+.whybox .src a:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+<header>
+  <span class="crumb"><a href="../index.html">DAG总览</a> / <a href="../03-groups/index.html">组目录</a> / G06 客户端 UI 包</span>
+  <h1>dsh-client-ui-open-in-app · @deepseek-ai/dsh-client-ui-open-in-app</h1>
+  <span class="badge">Layer 18</span><span class="badge">G06</span><span class="badge l2">L2 web-app</span>
+</header>
+<main>
+<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">ACP 协议</a><a href="../03-groups/G02.html">API 网关与控制器</a><a href="../03-groups/G03.html">附件</a><a href="../03-groups/G04.html">启动与插件管理</a><a href="../03-groups/G05.html">客户端运行时</a><a href="../03-groups/G06.html">客户端 UI 包</a><a href="../03-groups/G07.html">上下文压缩</a><a href="../03-groups/G08.html">上下文注入</a><a href="../03-groups/G09.html">核心运行时</a><a href="../03-groups/G10.html">凭据与授权</a><a href="../03-groups/G11.html">交付物</a><a href="../03-groups/G12.html">文档处理</a><a href="../03-groups/G13.html">实验特性</a><a href="../03-groups/G14.html">宿主扩展</a><a href="../03-groups/G15.html">反馈通道</a><a href="../03-groups/G16.html">文件系统</a><a href="../03-groups/G17.html">目标与计划</a><a href="../03-groups/G18.html">工具守卫</a><a href="../03-groups/G19.html">Hooks 扩展</a><a href="../03-groups/G20.html">宿主服务</a><a href="../03-groups/G21.html">交互命令</a><a href="../03-groups/G22.html">作业调度</a><a href="../03-groups/G23.html">LLM 适配</a><a href="../03-groups/G24.html">LSP 集成</a><a href="../03-groups/G25.html">MCP 协议</a><a href="../03-groups/G26.html">规划模式</a><a href="../03-groups/G27.html">Agent 预设</a><a href="../03-groups/G28.html">代码执行运行时</a><a href="../03-groups/G29.html">运行时诊断</a><a href="../03-groups/G30.html">沙箱</a><a href="../03-groups/G31.html">定时调度</a><a href="../03-groups/G32.html">SDK 与协议</a><a href="../03-groups/G33.html">会话核心</a><a href="../03-groups/G34.html">会话检索</a><a href="../03-groups/G35.html">设置</a><a href="../03-groups/G36.html">Shell 执行</a><a href="../03-groups/G37.html">技能</a><a href="../03-groups/G38.html">溢出存储</a><a href="../03-groups/G39.html">SSH 远程执行</a><a href="../03-groups/G40.html">存储</a><a href="../03-groups/G41.html">子代理</a><a href="../03-groups/G42.html">子进程</a><a href="../03-groups/G43.html">终端</a><a href="../03-groups/G44.html">待办</a><a href="../03-groups/G45.html">类型契约</a><a href="../03-groups/G46.html">框架 vendor</a><a href="../03-groups/G47.html">Web 访问</a><a href="../03-groups/G48.html">Webhook</a><a href="../03-groups/G49.html">工作流</a><a href="../03-groups/G50.html">工作区</a></div><div class="dagnav"><div class="label">依赖链 · 上游（该插件依赖的前驱）：</div><div class="chips"><a class="chip" href="dsh-api-gateway.html">dsh-api-gateway</a><a class="chip" href="dsh-api-remotes.html">dsh-api-remotes</a><a class="chip" href="dsh-api-session-controller.html">dsh-api-session-controller</a><a class="chip" href="dsh-client-locale.html">dsh-client-locale</a><a class="chip" href="dsh-client-shortcuts.html">dsh-client-shortcuts</a><a class="chip" href="dsh-client-ui-conversation.html">dsh-client-ui-conversation</a><a class="chip" href="dsh-client-ui-deliverables.html">dsh-client-ui-deliverables</a><a class="chip" href="dsh-client-ui-layout.html">dsh-client-ui-layout</a><a class="chip" href="dsh-client-ui-primitives.html">dsh-client-ui-primitives</a><a class="chip" href="dsh-client-ui-renderer.html">dsh-client-ui-renderer</a><a class="chip" href="dsh-client-ui-session.html">dsh-client-ui-session</a><a class="chip" href="dsh-client-ui-sidebar-documentpreview.html">dsh-client-ui-sidebar-documentpreview</a><a class="chip" href="dsh-host-open-in-app.html">dsh-host-open-in-app</a></div><div class="label" style="margin-top:8px;">依赖链 · 下游（依赖该插件的节点）：</div><div class="chips"><span style="color:var(--dim);font-size:12px;">无下游（叶子/被消费端）</span></div><div class="label" style="margin-top:8px;">同一拓扑层（Layer 18，层次遍历层序）：</div><div class="chips"><a class="chip self" href="dsh-client-ui-open-in-app.html">dsh-client-ui-open-in-app</a></div></div><div class="layernav"><a href="dsh-client-ui-attachment.html">↑ Layer 17（6 插件）</a><span class="chip self">Layer 18</span></div><h2>插件信息</h2><table><tr><th>包名</th><td>@deepseek-ai/dsh-client-ui-open-in-app</td></tr><tr><th>分组</th><td>G06 · 客户端 UI 包</td></tr><tr><th>拓扑层</th><td>Layer 18（层次遍历：被依赖方先于依赖方）</td></tr><tr><th>源码路径</th><td><code>packages/client/ui-open-in-app</code></td></tr><tr><th>来源层</th><td>L2 web-app bundle（base 之上装配）</td></tr></table><h2>① 实现逻辑</h2><p>apply 构造 OpenInAppController（加载 Host 应用列表/持久化选择）与 OpenInAppPathController（经 Session Remote 判定桌面可用性、查关联应用、执行 open/reveal），并把二者分发到五处槽（src/client/index.ts:123-125）。会话头部 utilities 槽注册「Open In...」分体按钮，注入应用列表/选择/启动进度 hooks 与图标 URL（src/client/index.ts:80-99）；侧栏文档预览的两个槽与 deliverables 两个槽注册路径动作，失败经 Toast 播报（src/client/open-failure-toast.tsx:4）。另注册 workspace.openLocal 快捷键，busy/无目标时给出阻塞原因（src/client/index.ts:59-77）。</p>
+<style>
+#dyn-dag{width:100%;height:480px;background:var(--panel);border:1px solid var(--border);border-radius:8px;margin:12px 0;}
+#dyn-dag-label{font-size:12px;color:var(--dim);margin:10px 0 4px;}
+#dyn-dag-legend{display:flex;gap:16px;font-size:12px;color:var(--dim);margin:6px 0 2px;flex-wrap:wrap;}
+#dyn-dag-legend .item{display:flex;align-items:center;gap:5px;}
+#dyn-dag-legend .dot{width:10px;height:10px;border-radius:3px;display:inline-block;}
+.dyn-self{background:var(--accent);}
+.dyn-up{background:#e8933b;}
+.dyn-down{background:#2fb98a;}
+.dyn-seam{background:var(--ext);}
+</style>
+
+<div id="dyn-dag-label">内部结构动态 DAG（深色主题：橙色=上游依赖 · 绿色=下游依赖 · 棕色=外部seam · 蓝=本插件）</div>
+<div id="dyn-dag-legend">
+  <span class="item"><span class="dot dyn-self"></span>本插件</span>
+  <span class="item"><span class="dot dyn-up"></span>上游依赖</span>
+  <span class="item"><span class="dot dyn-down"></span>下游依赖</span>
+  <span class="item"><span class="dot dyn-seam"></span>外部 seam</span>
+</div>
+<div id="dyn-dag"></div>
+
+<script src="../04-interactive/vendor/cytoscape.min.js"></script>
+<script src="../04-interactive/vendor/cytoscape-dagre.min.js"></script>
+<script>
+(function(){
+  const raw = {"elements": [{"data": {"id": "dsh-client-ui-open-in-app", "label": "dsh-client-ui-open-in-app", "kind": "self", "cls": "#4f8cff", "url": "dsh-client-ui-open-in-app.html"}}, {"data": {"id": "dsh-api-gateway", "label": "dsh-api-gateway", "kind": "up", "cls": "#e8933b", "url": "dsh-api-gateway.html"}}, {"data": {"id": "dsh-api-remotes", "label": "dsh-api-remotes", "kind": "up", "cls": "#e8933b", "url": "dsh-api-remotes.html"}}, {"data": {"id": "dsh-api-session-controller", "label": "dsh-api-session-controller", "kind": "up", "cls": "#e8933b", "url": "dsh-api-session-controller.html"}}, {"data": {"id": "dsh-client-locale", "label": "dsh-client-locale", "kind": "up", "cls": "#e8933b", "url": "dsh-client-locale.html"}}, {"data": {"id": "dsh-client-shortcuts", "label": "dsh-client-shortcuts", "kind": "up", "cls": "#e8933b", "url": "dsh-client-shortcuts.html"}}, {"data": {"id": "dsh-client-ui-conversation", "label": "dsh-client-ui-conversation", "kind": "up", "cls": "#e8933b", "url": "dsh-client-ui-conversation.html"}}, {"data": {"id": "dsh-client-ui-deliverables", "label": "dsh-client-ui-deliverables", "kind": "up", "cls": "#e8933b", "url": "dsh-client-ui-deliverables.html"}}, {"data": {"id": "dsh-client-ui-layout", "label": "dsh-client-ui-layout", "kind": "up", "cls": "#e8933b", "url": "dsh-client-ui-layout.html"}}, {"data": {"id": "dsh-client-ui-primitives", "label": "dsh-client-ui-primitives", "kind": "up", "cls": "#e8933b", "url": "dsh-client-ui-primitives.html"}}, {"data": {"id": "dsh-client-ui-renderer", "label": "dsh-client-ui-renderer", "kind": "up", "cls": "#e8933b", "url": "dsh-client-ui-renderer.html"}}, {"data": {"id": "dsh-client-ui-session", "label": "dsh-client-ui-session", "kind": "up", "cls": "#e8933b", "url": "dsh-client-ui-session.html"}}, {"data": {"id": "dsh-client-ui-sidebar-documentpreview", "label": "dsh-client-ui-sidebar-documentpreview", "kind": "up", "cls": "#e8933b", "url": "dsh-client-ui-sidebar-documentpreview.html"}}, {"data": {"id": "dsh-host-open-in-app", "label": "dsh-host-open-in-app", "kind": "up", "cls": "#e8933b", "url": "dsh-host-open-in-app.html"}}, {"data": {"id": "dsh-api-gateway->dsh-client-ui-open-in-app", "source": "dsh-api-gateway", "target": "dsh-client-ui-open-in-app"}}, {"data": {"id": "dsh-api-remotes->dsh-client-ui-open-in-app", "source": "dsh-api-remotes", "target": "dsh-client-ui-open-in-app"}}, {"data": {"id": "dsh-api-session-controller->dsh-client-ui-open-in-app", "source": "dsh-api-session-controller", "target": "dsh-client-ui-open-in-app"}}, {"data": {"id": "dsh-client-locale->dsh-client-ui-open-in-app", "source": "dsh-client-locale", "target": "dsh-client-ui-open-in-app"}}, {"data": {"id": "dsh-client-shortcuts->dsh-client-ui-open-in-app", "source": "dsh-client-shortcuts", "target": "dsh-client-ui-open-in-app"}}, {"data": {"id": "dsh-client-ui-conversation->dsh-client-ui-open-in-app", "source": "dsh-client-ui-conversation", "target": "dsh-client-ui-open-in-app"}}, {"data": {"id": "dsh-client-ui-deliverables->dsh-client-ui-open-in-app", "source": "dsh-client-ui-deliverables", "target": "dsh-client-ui-open-in-app"}}, {"data": {"id": "dsh-client-ui-layout->dsh-client-ui-open-in-app", "source": "dsh-client-ui-layout", "target": "dsh-client-ui-open-in-app"}}, {"data": {"id": "dsh-client-ui-primitives->dsh-client-ui-open-in-app", "source": "dsh-client-ui-primitives", "target": "dsh-client-ui-open-in-app"}}, {"data": {"id": "dsh-client-ui-renderer->dsh-client-ui-open-in-app", "source": "dsh-client-ui-renderer", "target": "dsh-client-ui-open-in-app"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-open-in-app", "source": "dsh-client-ui-session", "target": "dsh-client-ui-open-in-app"}}, {"data": {"id": "dsh-client-ui-sidebar-documentpreview->dsh-client-ui-open-in-app", "source": "dsh-client-ui-sidebar-documentpreview", "target": "dsh-client-ui-open-in-app"}}, {"data": {"id": "dsh-host-open-in-app->dsh-client-ui-open-in-app", "source": "dsh-host-open-in-app", "target": "dsh-client-ui-open-in-app"}}]};
+  const cy = cytoscape({
+    container: document.getElementById('dyn-dag'),
+    elements: raw.elements,
+    style: [
+      {
+        selector: 'node',
+        style: {
+          'label': 'data(label)',
+          'background-color': 'data(cls)',
+          'color': '#e6e8ee',
+          'font-size': 11,
+          'text-valign': 'bottom',
+          'text-margin-y': 4,
+          'width': 46,
+          'height': 46,
+          'shape': 'round-rectangle',
+          'border-width': 2,
+          'border-color': '#2a2f3a'
+        }
+      },
+      {
+        selector: 'node[kind="self"]',
+        style: {
+          'border-width': 3,
+          'border-color': '#4f8cff',
+          'width': 60,
+          'height': 60,
+          'font-size': 12,
+          'font-weight': 700
+        }
+      },
+      {
+        selector: 'edge',
+        style: {
+          'width': 1.5,
+          'line-color': '#4a5263',
+          'target-arrow-color': '#4a5263',
+          'target-arrow-shape': 'triangle',
+          'curve-style': 'bezier'
+        }
+      }
+    ],
+    layout: {
+      name: 'dagre',
+      rankDir: 'LR',
+      nodeSep: 30,
+      rankSep: 60,
+      padding: 20
+    },
+    wheelSensitivity: 0.2,
+    minZoom: 0.2,
+    maxZoom: 2.5
+  });
+  cy.on('tap', 'node', (evt) => {
+    const url = evt.target.data('url');
+    if (url) window.location.href = url;
+  });
+  // 等渲染完自适应容器尺寸
+  setTimeout(() => cy.resize(), 100);
+})();
+</script>
+<h2>② 注册/提供（provides）</h2><ul class="provides"><li>conversation.session.header.utilities 条目 &#x27;open-in-app&#x27;（会话头部「在应用中打开」分体按钮）</li><li>sidebar.right.tab.document.actions / sidebar.right.tab.document.unpreviewable 条目（文档预览的打开/定位路径动作）</li><li>deliverables.file.actions / deliverables.review.file.actions 条目（交付与变更文件卡的路径动作）</li><li>ctx.shortcuts 命令 workspace.openLocal（在本地应用中打开当前工作区）</li></ul><h2>③ 依赖（depends_on · 上游前驱）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-api-gateway.html">dsh-api-gateway</a></span><span class="mech">E1</span><div class="purpose">引入 gateway 客户端的 ctx.remote 声明合并</div><div class="evi">src/client/index.ts:14 import type {}</div></div><div class="dep-item"><span class="name"><a href="dsh-api-remotes.html">dsh-api-remotes</a></span><span class="mech">E1+E2</span><div class="purpose">ctx.remote 与 Remote 结果类型</div><div class="evi">src/client/index.ts:15 import type + src/client/open-path.ts:6 import</div></div><div class="dep-item"><span class="name"><a href="dsh-api-session-controller.html">dsh-api-session-controller</a></span><span class="mech">E1+E2</span><div class="purpose">调用 session Remote 打开工作区路径/查询关联应用</div><div class="evi">src/client/index.ts:16 import remote + src/client/open-path.ts:7 import types</div></div><div class="dep-item"><span class="name"><a href="dsh-client-locale.html">dsh-client-locale</a></span><span class="mech">E2</span><div class="purpose">注册 open-in-app 文案</div><div class="evi">src/client/index.ts:9 import + src/client/index.ts:50 ctx.locale.register(NS)</div></div><div class="dep-item"><span class="name"><a href="dsh-client-shortcuts.html">dsh-client-shortcuts</a></span><span class="mech">E2</span><div class="purpose">注册 workspace.openLocal 快捷键命令</div><div class="evi">src/client/index.ts:7 import + src/client/index.ts:59 ctx.shortcuts.register</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-conversation.html">dsh-client-ui-conversation</a></span><span class="mech">E2</span><div class="purpose">使用 ui-conversation 声明的会话头部槽</div><div class="evi">src/client/OpenInAppAction.tsx:3 import + src/client/index.ts:80 slots.inject(&#x27;conversation.session.header.utilities&#x27;)</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-deliverables.html">dsh-client-ui-deliverables</a></span><span class="mech">E2</span><div class="purpose">使用 deliverables 声明的文件动作槽</div><div class="evi">src/client/FileRouteAction.tsx:3 import type + src/client/index.ts:116/index.ts:119 slots.inject</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-layout.html">dsh-client-ui-layout</a></span><span class="mech">E1+E2</span><div class="purpose">读主面板选择以判断当前无全局面板时才有打开目标</div><div class="evi">src/client/index.ts:11 import type + src/client/index.ts:53 ctx.layout.panelInfo</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-primitives.html">dsh-client-ui-primitives</a></span><span class="mech">E1</span><div class="purpose">复用 Toast/图标/按钮控件</div><div class="evi">src/client/open-failure-toast.tsx:4 import + src/client/OpenTargetButton.tsx:6</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-renderer.html">dsh-client-ui-renderer</a></span><span class="mech">E1+E2</span><div class="purpose">ctx.slots 槽注册表</div><div class="evi">src/client/index.ts:10 import type + src/client/index.ts:39 inject &#x27;slots&#x27;</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-session.html">dsh-client-ui-session</a></span><span class="mech">E1</span><div class="purpose">Session 标准来源类型面</div><div class="evi">src/client/index.ts:12 import type {}</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-sidebar-documentpreview.html">dsh-client-ui-sidebar-documentpreview</a></span><span class="mech">E2</span><div class="purpose">使用文档预览声明的路径动作槽</div><div class="evi">src/client/index.ts:13 import type + src/client/index.ts:104 slots.inject(&#x27;sidebar.right.tab.document.actions&#x27;)</div></div><div class="dep-item"><span class="name"><a href="dsh-host-open-in-app.html">dsh-host-open-in-app</a></span><span class="mech">E1</span><div class="purpose">复用 Host 侧共用的图标路由前缀常量</div><div class="evi">src/client/index.ts:17 import { OPEN_IN_APP_ICON_PREFIX_ROUTE }</div></div></div><h2>④ 被依赖（dependents · 下游消费者）</h2><p style="color:var(--dim);">无下游（叶子/被消费端）</p>
+</main>
+<footer>DeepSeek Harness 插件级 DAG 依赖链分析 · L1 核心集 + L2 web-app + L3 其余插件 · 源码三依据(E1编译/E2运行时/E3组合)逐条溯源</footer>
+</body>
+</html>

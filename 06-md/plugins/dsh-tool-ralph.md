@@ -1,36 +1,31 @@
 # dsh-tool-ralph
 
 - 包名: `@deepseek-ai/dsh-tool-ralph`
-- 分组: G20 工作流
-- 拓扑层: Layer 7
+- 分组: G49 工作流
+- 拓扑层: Layer 8
 - 来源层: L1 核心集
 - 源码路径: `packages/workflow/tool-ralph`
 
-## 为什么需要它（设计初衷）
-给模型提供 fresh-agent Ralph 循环工具，基于 workflow 与 subagent 双 seam 运行全新子 agent 做独立任务编排。
-
-来源：
-- https://registry.npmjs.org/@deepseek-ai/dsh-tool-ralph
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/workflow/tool-ralph/README.zh.md
-
 ## 实现逻辑
-模型可见 Ralph 循环工具：apply 注册 'ralph' 工具，execute 经 ctx.workflowEngine.start 执行固定 RALPH_SCRIPT。脚本每轮调 agent(prompt, {schema}) 启动 fresh structured-output 子代理，仅携带不可变 objective 与上轮受限结构化 handoff；requireFreshProvider 强制 provider 具备 outputSchema 且不继承父上下文。
+注册模型可见的 ralph 工具与专用 systemPrompt 章节 (src/index.ts:402-477)。execute 先校验调用方 agent，并要求子代理 provider 是「新鲜且支持结构化输出」的 (src/index.ts:218-230)，随后用固定的 RALPH_SCRIPT 通过 ctx.workflowEngine.start 启动工作流 (src/index.ts:445-453)。脚本每轮开一个无父上下文的新子代理，只传不可变目标与受 maxHandoffChars 限制的结构化 handoff，宿主侧再防御性解码每轮报告与终态 (src/index.ts:88-175, 244-331)。
 
 ## Provides
-- 模型工具 'ralph'
-- RALPH_SCRIPT/RALPH_META 固定编排
-- systemPrompt section tool:ralph
-- 子代理路由校验(fresh+outputSchema)
+- tools.ralph (模型可见的 fresh-agent Ralph 循环工具)
+- systemPrompt 章节 tool:ralph (仅显式请求时使用的使用策略)
 
 ## Depends On (上游依赖)
-- `dsh-subagent` [编译依赖] - getProvider 校验 fresh provider
-  - 证据: `packages/workflow/tool-ralph/src/index.ts:12,20,221`
-- `dsh-system-prompt` [编译依赖] - systemPrompt.section
-  - 证据: `packages/workflow/tool-ralph/src/index.ts:17,20,407`
-- `dsh-tools` [编译依赖] - defineTool + register
-  - 证据: `packages/workflow/tool-ralph/src/index.ts:13,20,412`
-- `dsh-workflow-worker-thread` [编译依赖] - ctx.workflowEngine 具体实现
-  - 证据: `packages/workflow/tool-ralph/package.json:61`
+- `dsh-agent` [编译依赖] - 声明式 peer 依赖（通过 exec.agent 取得调用方 Agent）
+  - 证据: `package.json:30 peerDep`
+- `dsh-llm` [编译依赖] - 工具结果呈现使用 dsh-llm 的内容块类型
+  - 证据: `package.json:31 peerDep + src/index.ts:10 import type { ContentBlock }`
+- `dsh-subagent` [E1+E2] - 校验并指定每轮新子代理所用的 provider（新鲜、支持结构化输出）
+  - 证据: `package.json:32 peerDep + src/index.ts:12 import type { SubagentProvider } + src/index.ts:18 inject 'subagents' + src/index.ts:219 ctx.subagents.getProvider`
+- `dsh-system-prompt` [E1+E2] - 注册 ralph 的显式请求使用策略提示章节
+  - 证据: `package.json:33 peerDep + src/index.ts:18 inject 'systemPrompt' + src/index.ts:405 ctx.systemPrompt.section`
+- `dsh-tools` [E1+E2] - 注册 ralph 工具定义与结果呈现
+  - 证据: `package.json:34 peerDep + src/index.ts:13 import { defineTool } + src/index.ts:18 static inject ['tools','workflowEngine','subagents','systemPrompt'] + src/index.ts:410 ctx.tools.register`
+- `dsh-workflow-ptc` [组合依赖] - base bundle 中 workflow-ptc 先行装配以提供 ctx.workflowEngine，tool-ralph 随后装配使用该服务
+  - 证据: `packages/bundle/base/cordis.patch.yml:392-397, 446-448`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

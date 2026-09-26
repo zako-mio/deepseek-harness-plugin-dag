@@ -1,34 +1,29 @@
 # dsh-client-ui-directory-picker-browse
 
 - 包名: `@deepseek-ai/dsh-client-ui-directory-picker-browse`
-- 分组: G29 UI底座
-- 拓扑层: Layer 16
-- 来源层: L2 web-app
+- 分组: G06 客户端 UI 包
+- 拓扑层: Layer 15
+- 来源层: L3 其余
 - 源码路径: `packages/client/ui-directory-picker-browse`
 
-## 为什么需要它（设计初衷）
-应用内 Miller 分栏目录浏览对话框的浏览器半边，经 host.listDirectory/createDirectory 工作，无需本地 OS 对话框，服务远程浏览器。
-
-来源：
-- https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-directory-picker-browse/README.zh.md
-- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/host/directory-picker-browse
-
 ## 实现逻辑
-目录选择 browse 前端（in-app 对话框）。BrowseDirectoryFlow 以嵌套 slots.inject 事务性注册进 conversation.hero.workspace.directoryFlow 与 sidebar.workspaces.directoryFlow 两个洞；对话框（Select Workspace Directory figma 家族）驱动 host 的 workspaces.listDirectory/createDirectory 原语；locale 字典（zh/en）在包内注册（LOCALE_NS 'directory-browser'）。
+浏览器半把应用内「选择工作区目录」对话框装进 ui-workspace 的两个 directory-flow 洞：apply 先事务式注册 zh/en 两份 directory-browser 字典（第二份失败则回滚第一份）(src/client/index.ts:32-76)，再用嵌套 slots.inject 加 generator 同时向 'conversation.hero.workspace.directoryFlow' 与 'sidebar.workspaces.directoryFlow' 注册同一个 BrowseDirectoryFlow (src/client/index.ts:86-94)。注入面把洞的 owner 会话适配到对话框：确认目录即 onPicked、关闭即 onCancel，listDirectory/createDirectory 转发 ctx.uiWorkspace (src/client/flow.ts:24-43, src/client/index.ts:78-82)。
 
 ## Provides
-- conversation.hero.workspace.directoryFlow 条目(BrowseDirectoryFlow)
-- sidebar.workspaces.directoryFlow 条目(BrowseDirectoryFlow)
+- slot: conversation.hero.workspace.directoryFlow (BrowseDirectoryFlow 应用内目录浏览对话框)
+- slot: sidebar.workspaces.directoryFlow (同一对话框在侧边栏工作区流的占位)
+- Locale 命名空间 directory-browser (zh/en 字典)
+- 组件 DirectoryBrowser (应用内目录浏览/新建文件夹对话框)
 
 ## Depends On (上游依赖)
-- `dsh-client-locale` [运行时依赖] - 对话框字典（zh/en）
-  - 证据: `index.ts:20 inject 'locale' + index.ts:67/78 ctx.locale.register/bind(LOCALE_NS)`
-- `dsh-client-runtime` [运行时依赖] - host 目录列示/创建原语（dsh-host-directory-picker-browse node 半）
-  - 证据: `index.ts:20 inject 'workspaces' + index.ts:76-77 ctx.workspaces.listDirectory/createDirectory + contract/workspaces.ts:48/55`
-- `dsh-client-ui-primitives` [编译依赖] - UI atoms
-  - 证据: `package.json:53 peerDependencies`
-- `dsh-client-ui-workspace` [编译依赖] - 消费 directoryFlow 洞声明（ui-workspace 声明）
-  - 证据: `index.ts:12 type-only ui-workspace/client + index.ts:83-91 注册两处 directoryFlow 洞 + package.json:36 dsh.client.inject`
+- `dsh-api-remotes` [编译依赖] - 目录列举结果类型
+  - 证据: `src/client/DirectoryBrowser.tsx:43 import DirectoryListing from @deepseek-ai/dsh-api-remotes/client + src/client/flow.ts:8`
+- `dsh-client-locale` [运行时依赖] - 注册并绑定对话框字典
+  - 证据: `src/client/DirectoryBrowser.tsx:44 Translate + src/client/index.ts:70 ctx.locale.register`
+- `dsh-client-ui-renderer` [运行时依赖] - 注册槽位占用
+  - 证据: `src/client/index.ts:15 merge + src/client/index.ts:86 ctx.slots.inject`
+- `dsh-client-ui-workspace` [E1+E2] - 占据目录流洞并驱动枚举/创建原语
+  - 证据: `src/client/flow.ts:11 DirectoryFlowOwnerProps + src/client/index.ts:79-80 ctx.uiWorkspace.listDirectory/createDirectory`
 
 ## Dependents (下游被依赖)
-- 无下游（叶子/被消费端）
+- `dsh-host-directory-picker-auto` - browse 交互的客户端界面条目

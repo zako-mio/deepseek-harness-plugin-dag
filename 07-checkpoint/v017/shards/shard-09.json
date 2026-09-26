@@ -1,0 +1,2257 @@
+{
+ "shard": "shard-09",
+ "group": "G10+G11+G12+G13",
+ "group_name": "凭据与授权 / 交付物 / 文档处理 / 实验特性",
+ "plugins": [
+  {
+   "id": "dsh-authorization",
+   "name": "@deepseek-ai/dsh-authorization",
+   "path": "packages/credentials/authorization",
+   "domain": "credentials",
+   "ts_count": 3,
+   "ts_files": [
+    "src/index.ts",
+    "src/invariant.ts",
+    "src/types.ts"
+   ],
+   "assembled_in": [
+    "base"
+   ],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-credentials",
+     "dsh-invariants",
+     "dsh-llm"
+    ],
+    "deps": []
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:29"
+    },
+    {
+     "dep": "dsh-credentials",
+     "spec": "@deepseek-ai/dsh-credentials",
+     "loc": "src/index.ts:30"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/index.ts:31"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/invariant.ts:6"
+    },
+    {
+     "dep": "dsh-invariants",
+     "spec": "@deepseek-ai/dsh-invariants",
+     "loc": "src/invariant.ts:7"
+    },
+    {
+     "dep": "dsh-credentials",
+     "spec": "@deepseek-ai/dsh-credentials/types",
+     "loc": "src/types.ts:8"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "credentials"
+     ],
+     "loc": "src/index.ts:191"
+    },
+    {
+     "services": [
+      "invariants"
+     ],
+     "loc": "src/invariant.ts:14"
+    }
+   ],
+   "ctx_services": {
+    "authorization": [
+     "src/index.ts:2",
+     "src/index.ts:15",
+     "src/index.ts:186"
+    ],
+    "credentials": [
+     "src/index.ts:119",
+     "src/index.ts:407",
+     "src/index.ts:447"
+    ],
+    "events": [
+     "src/index.ts:341"
+    ],
+    "invariants": [
+     "src/invariant.ts:45"
+    ]
+   },
+   "events_on": {
+    "credentials/record-updated": [
+     "src/index.ts:393"
+    ],
+    "authorization/settled": [
+     "src/invariant.ts:25"
+    ]
+   },
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-credentials-local",
+   "name": "@deepseek-ai/dsh-credentials-local",
+   "path": "packages/credentials/credentials-local",
+   "domain": "credentials",
+   "ts_count": 1,
+   "ts_files": [
+    "src/index.ts"
+   ],
+   "assembled_in": [
+    "base"
+   ],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-atomic-write",
+     "dsh-credentials",
+     "dsh-home-paths",
+     "dsh-launch-environment"
+    ],
+    "deps": [
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:38"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/index.ts:39"
+    },
+    {
+     "dep": "dsh-atomic-write",
+     "spec": "@deepseek-ai/dsh-atomic-write",
+     "loc": "src/index.ts:44"
+    },
+    {
+     "dep": "dsh-home-paths",
+     "spec": "@deepseek-ai/dsh-home-paths",
+     "loc": "src/index.ts:45"
+    },
+    {
+     "dep": "dsh-launch-environment",
+     "spec": "@deepseek-ai/dsh-launch-environment",
+     "loc": "src/index.ts:46"
+    },
+    {
+     "dep": "dsh-credentials",
+     "spec": "@deepseek-ai/dsh-credentials",
+     "loc": "src/index.ts:47"
+    },
+    {
+     "dep": "dsh-launch-environment",
+     "spec": "@deepseek-ai/dsh-launch-environment",
+     "loc": "src/index.ts:58"
+    }
+   ],
+   "injects": [],
+   "ctx_services": {},
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-deepseek-account-platform",
+   "name": "@deepseek-ai/dsh-deepseek-account-platform",
+   "path": "packages/credentials/deepseek-account-platform",
+   "domain": "credentials",
+   "ts_count": 5,
+   "ts_files": [
+    "src/details.ts",
+    "src/index.ts",
+    "src/logout.ts",
+    "src/protocol.ts",
+    "src/types.ts"
+   ],
+   "assembled_in": [
+    "base"
+   ],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-authorization",
+     "dsh-credentials",
+     "dsh-deepseek-account",
+     "dsh-host-webserver"
+    ],
+    "deps": [
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "dsh-deepseek-account",
+     "spec": "@deepseek-ai/dsh-deepseek-account/types",
+     "loc": "src/details.ts:3"
+    },
+    {
+     "dep": "dsh-host-webserver",
+     "spec": "@deepseek-ai/dsh-host-webserver",
+     "loc": "src/index.ts:4"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:7"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/index.ts:8"
+    },
+    {
+     "dep": "dsh-deepseek-account",
+     "spec": "@deepseek-ai/dsh-deepseek-account",
+     "loc": "src/index.ts:10"
+    },
+    {
+     "dep": "dsh-credentials",
+     "spec": "@deepseek-ai/dsh-credentials",
+     "loc": "src/index.ts:11"
+    },
+    {
+     "dep": "dsh-authorization",
+     "spec": "@deepseek-ai/dsh-authorization",
+     "loc": "src/index.ts:12"
+    },
+    {
+     "dep": "dsh-deepseek-account",
+     "spec": "@deepseek-ai/dsh-deepseek-account/types",
+     "loc": "src/protocol.ts:3"
+    },
+    {
+     "dep": "dsh-deepseek-account",
+     "spec": "@deepseek-ai/dsh-deepseek-account/types",
+     "loc": "src/types.ts:2"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "credentials",
+      "authorization"
+     ],
+     "loc": "src/index.ts:85"
+    }
+   ],
+   "ctx_services": {
+    "authorization": [
+     "src/index.ts:138",
+     "src/index.ts:413",
+     "src/index.ts:443"
+    ],
+    "credentials": [
+     "src/index.ts:168",
+     "src/index.ts:174",
+     "src/index.ts:179",
+     "src/index.ts:332",
+     "src/index.ts:336",
+     "src/index.ts:362"
+    ]
+   },
+   "events_on": {
+    "credentials/record-updated": [
+     "src/index.ts:147"
+    ]
+   },
+   "events_emit": {
+    "deepseek-account/session-expired": [
+     "src/index.ts:337"
+    ],
+    "deepseek-account/signed-out": [
+     "src/index.ts:339",
+     "src/index.ts:464"
+    ]
+   },
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-tool-present",
+   "name": "@deepseek-ai/dsh-tool-present",
+   "path": "packages/deliverables/tool-present",
+   "domain": "deliverables",
+   "ts_count": 2,
+   "ts_files": [
+    "src/index.ts",
+    "src/types.ts"
+   ],
+   "assembled_in": [],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-agent",
+     "dsh-fs",
+     "dsh-llm",
+     "dsh-session",
+     "dsh-session-projection",
+     "dsh-tools"
+    ],
+    "deps": [
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:2"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/index.ts:3"
+    },
+    {
+     "dep": "dsh-fs",
+     "spec": "@deepseek-ai/dsh-fs",
+     "loc": "src/index.ts:4"
+    },
+    {
+     "dep": "dsh-tools",
+     "spec": "@deepseek-ai/dsh-tools",
+     "loc": "src/index.ts:5"
+    },
+    {
+     "dep": "dsh-agent",
+     "spec": "@deepseek-ai/dsh-agent",
+     "loc": "src/index.ts:6"
+    },
+    {
+     "dep": "dsh-session-projection",
+     "spec": "@deepseek-ai/dsh-session-projection",
+     "loc": "src/index.ts:7"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/index.ts:8"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm/brand",
+     "loc": "src/types.ts:2"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "tools",
+      "fs",
+      "sessionProjections"
+     ],
+     "loc": "src/index.ts:26"
+    }
+   ],
+   "ctx_services": {
+    "tools": [
+     "src/index.ts:38"
+    ],
+    "sessionProjections": [
+     "src/index.ts:78"
+    ],
+    "fs": [
+     "src/index.ts:87",
+     "src/index.ts:89",
+     "src/index.ts:90"
+    ]
+   },
+   "events_on": {
+    "tools/result": [
+     "src/index.ts:100"
+    ]
+   },
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-workspace-changes",
+   "name": "@deepseek-ai/dsh-workspace-changes",
+   "path": "packages/deliverables/workspace-changes",
+   "domain": "deliverables",
+   "ts_count": 8,
+   "ts_files": [
+    "src/capture.ts",
+    "src/compare.ts",
+    "src/git.ts",
+    "src/index.ts",
+    "src/numstat.ts",
+    "src/paths.ts",
+    "src/recorder.ts",
+    "src/types.ts"
+   ],
+   "assembled_in": [
+    "web-app"
+   ],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-agent",
+     "dsh-session",
+     "dsh-subprocess",
+     "dsh-tools"
+    ],
+    "deps": [
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "dsh-subprocess",
+     "spec": "@deepseek-ai/dsh-subprocess",
+     "loc": "src/git.ts:4"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:12"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/index.ts:13"
+    },
+    {
+     "dep": "dsh-agent",
+     "spec": "@deepseek-ai/dsh-agent",
+     "loc": "src/index.ts:14"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/index.ts:15"
+    },
+    {
+     "dep": "dsh-subprocess",
+     "spec": "@deepseek-ai/dsh-subprocess",
+     "loc": "src/index.ts:16"
+    },
+    {
+     "dep": "dsh-tools",
+     "spec": "@deepseek-ai/dsh-tools",
+     "loc": "src/index.ts:17"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/recorder.ts:5"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session/types",
+     "loc": "src/types.ts:2"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "subprocess"
+     ],
+     "loc": "src/index.ts:30"
+    }
+   ],
+   "ctx_services": {
+    "subprocess": [
+     "src/index.ts:74",
+     "src/index.ts:79",
+     "src/index.ts:126"
+    ]
+   },
+   "events_on": {
+    "session/event": [
+     "src/index.ts:143"
+    ],
+    "session/disposed": [
+     "src/index.ts:152"
+    ],
+    "agent/turn-stopping": [
+     "src/index.ts:153"
+    ],
+    "tools/pre-execute": [
+     "src/index.ts:156"
+    ]
+   },
+   "events_emit": {},
+   "provides_hints": [
+    {
+     "name": "workspaceChanges",
+     "loc": "src/index.ts:118"
+    }
+   ]
+  },
+  {
+   "id": "dsh-office-to-pdf",
+   "name": "@deepseek-ai/dsh-office-to-pdf",
+   "path": "packages/document/office-to-pdf",
+   "domain": "document",
+   "ts_count": 6,
+   "ts_files": [
+    "src/errors.ts",
+    "src/identity.ts",
+    "src/index.ts",
+    "src/output.ts",
+    "src/queue.ts",
+    "src/types.ts"
+   ],
+   "assembled_in": [
+    "web-app"
+   ],
+   "declared": {
+    "peer": [
+     "cordis"
+    ],
+    "deps": [
+     "dsh-brand",
+     "dsh-typert-protocol",
+     "libreoffice-kit",
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "dsh-brand",
+     "spec": "@deepseek-ai/dsh-brand",
+     "loc": "src/identity.ts:2"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:6"
+    },
+    {
+     "dep": "libreoffice-kit",
+     "spec": "@deepseek-ai/libreoffice-kit",
+     "loc": "src/index.ts:7"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/index.ts:8"
+    },
+    {
+     "dep": "dsh-api-workspace-files",
+     "spec": "@deepseek-ai/dsh-api-workspace-files",
+     "loc": "src/index.ts:9"
+    },
+    {
+     "dep": "dsh-fs",
+     "spec": "@deepseek-ai/dsh-fs",
+     "loc": "src/index.ts:10"
+    },
+    {
+     "dep": "dsh-brand",
+     "spec": "@deepseek-ai/dsh-brand",
+     "loc": "src/index.ts:11"
+    },
+    {
+     "dep": "dsh-typert-protocol",
+     "spec": "@deepseek-ai/dsh-typert-protocol",
+     "loc": "src/index.ts:12"
+    },
+    {
+     "dep": "dsh-api-workspace-files",
+     "spec": "@deepseek-ai/dsh-api-workspace-files/types",
+     "loc": "src/types.ts:2"
+    },
+    {
+     "dep": "dsh-typert-protocol",
+     "spec": "@deepseek-ai/dsh-typert-protocol",
+     "loc": "src/types.ts:3"
+    }
+   ],
+   "injects": [],
+   "ctx_services": {},
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-experimental-api-speech-to-text",
+   "name": "@deepseek-ai/dsh-experimental-api-speech-to-text",
+   "path": "packages/experimental/api-speech-to-text",
+   "domain": "experimental",
+   "ts_count": 2,
+   "ts_files": [
+    "src/index.ts",
+    "src/types.ts"
+   ],
+   "assembled_in": [],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-experimental-speech-to-text",
+     "dsh-typert-protocol"
+    ],
+    "deps": [
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:2"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/index.ts:3"
+    },
+    {
+     "dep": "dsh-typert-protocol",
+     "spec": "@deepseek-ai/dsh-typert-protocol",
+     "loc": "src/index.ts:4"
+    },
+    {
+     "dep": "dsh-experimental-speech-to-text",
+     "spec": "@deepseek-ai/dsh-experimental-speech-to-text",
+     "loc": "src/index.ts:5"
+    },
+    {
+     "dep": "dsh-experimental-speech-to-text",
+     "spec": "@deepseek-ai/dsh-experimental-speech-to-text/types",
+     "loc": "src/index.ts:6"
+    },
+    {
+     "dep": "dsh-experimental-speech-to-text",
+     "spec": "@deepseek-ai/dsh-experimental-speech-to-text/wave",
+     "loc": "src/index.ts:8"
+    },
+    {
+     "dep": "dsh-experimental-speech-to-text",
+     "spec": "@deepseek-ai/dsh-experimental-speech-to-text/types",
+     "loc": "src/types.ts:2"
+    },
+    {
+     "dep": "dsh-typert-protocol",
+     "spec": "@deepseek-ai/dsh-typert-protocol",
+     "loc": "src/types.ts:3"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "speechToText",
+      "typert"
+     ],
+     "loc": "src/index.ts:29"
+    }
+   ],
+   "ctx_services": {
+    "speechToText": [
+     "src/index.ts:45",
+     "src/index.ts:55",
+     "src/index.ts:64",
+     "src/index.ts:72",
+     "src/index.ts:80",
+     "src/index.ts:100"
+    ]
+   },
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-experimental-auto-review",
+   "name": "@deepseek-ai/dsh-experimental-auto-review",
+   "path": "packages/experimental/auto-review",
+   "domain": "experimental",
+   "ts_count": 1,
+   "ts_files": [
+    "src/index.ts"
+   ],
+   "assembled_in": [],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-agent",
+     "dsh-agent-instructions",
+     "dsh-llm",
+     "dsh-permission-presets",
+     "dsh-session",
+     "dsh-tools"
+    ],
+    "deps": [
+     "dsh-util-values"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:11"
+    },
+    {
+     "dep": "dsh-agent",
+     "spec": "@deepseek-ai/dsh-agent",
+     "loc": "src/index.ts:12"
+    },
+    {
+     "dep": "dsh-agent-instructions",
+     "spec": "@deepseek-ai/dsh-agent-instructions",
+     "loc": "src/index.ts:13"
+    },
+    {
+     "dep": "dsh-util-values",
+     "spec": "@deepseek-ai/dsh-util-values",
+     "loc": "src/index.ts:23"
+    },
+    {
+     "dep": "dsh-permission-presets",
+     "spec": "@deepseek-ai/dsh-permission-presets",
+     "loc": "src/index.ts:24"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/index.ts:25"
+    },
+    {
+     "dep": "dsh-subagent",
+     "spec": "@deepseek-ai/dsh-subagent",
+     "loc": "src/index.ts:26"
+    },
+    {
+     "dep": "dsh-user-approval",
+     "spec": "@deepseek-ai/dsh-user-approval",
+     "loc": "src/index.ts:27"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "approval",
+      "llm",
+      "permissionPresets",
+      "sessions",
+      "tools"
+     ],
+     "loc": "src/index.ts:126"
+    }
+   ],
+   "ctx_services": {
+    "llm": [
+     "src/index.ts:625",
+     "src/index.ts:637"
+    ],
+    "permissionPresets": [
+     "src/index.ts:680"
+    ],
+    "approval": [
+     "src/index.ts:710"
+    ],
+    "sessions": [
+     "src/index.ts:730"
+    ]
+   },
+   "events_on": {
+    "tools/pre-execute": [
+     "src/index.ts:686"
+    ]
+   },
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-experimental-browser-use-chrome-devtools-mcp",
+   "name": "@deepseek-ai/dsh-experimental-browser-use-chrome-devtools-mcp",
+   "path": "packages/experimental/browser-use-chrome-devtools-mcp",
+   "domain": "experimental",
+   "ts_count": 1,
+   "ts_files": [
+    "src/index.ts"
+   ],
+   "assembled_in": [],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-agent",
+     "dsh-browser-use",
+     "dsh-system-prompt",
+     "dsh-tools"
+    ],
+    "deps": [
+     "dsh-experimental-browser-use-runtime"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:4"
+    },
+    {
+     "dep": "dsh-experimental-browser-use-runtime",
+     "spec": "@deepseek-ai/dsh-experimental-browser-use-runtime/mcp",
+     "loc": "src/index.ts:5"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "browserUse",
+      "agents",
+      "tools",
+      "systemPrompt"
+     ],
+     "loc": "src/index.ts:11"
+    }
+   ],
+   "ctx_services": {},
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-experimental-browser-use-playwright-mcp",
+   "name": "@deepseek-ai/dsh-experimental-browser-use-playwright-mcp",
+   "path": "packages/experimental/browser-use-playwright-mcp",
+   "domain": "experimental",
+   "ts_count": 1,
+   "ts_files": [
+    "src/index.ts"
+   ],
+   "assembled_in": [],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-agent",
+     "dsh-browser-use",
+     "dsh-system-prompt",
+     "dsh-tools"
+    ],
+    "deps": [
+     "dsh-experimental-browser-use-runtime"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:5"
+    },
+    {
+     "dep": "dsh-experimental-browser-use-runtime",
+     "spec": "@deepseek-ai/dsh-experimental-browser-use-runtime/mcp",
+     "loc": "src/index.ts:6"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "browserUse",
+      "agents",
+      "tools",
+      "systemPrompt"
+     ],
+     "loc": "src/index.ts:12"
+    }
+   ],
+   "ctx_services": {},
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-experimental-browser-use-stagehand-native",
+   "name": "@deepseek-ai/dsh-experimental-browser-use-stagehand-native",
+   "path": "packages/experimental/browser-use-stagehand-native",
+   "domain": "experimental",
+   "ts_count": 6,
+   "ts_files": [
+    "src/index.ts",
+    "src/launch.ts",
+    "src/native.ts",
+    "src/worker-client.ts",
+    "src/worker-rpc.ts",
+    "src/worker.ts"
+   ],
+   "assembled_in": [],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-agent",
+     "dsh-browser-use",
+     "dsh-system-prompt",
+     "dsh-tools"
+    ],
+    "deps": [
+     "dsh-experimental-browser-use-runtime",
+     "dsh-mcp-client",
+     "dsh-subprocess",
+     "dsh-util-values",
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:6"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/index.ts:7"
+    },
+    {
+     "dep": "dsh-browser-use",
+     "spec": "@deepseek-ai/dsh-browser-use/brand",
+     "loc": "src/index.ts:8"
+    },
+    {
+     "dep": "dsh-experimental-browser-use-runtime",
+     "spec": "@deepseek-ai/dsh-experimental-browser-use-runtime",
+     "loc": "src/index.ts:9"
+    },
+    {
+     "dep": "dsh-mcp-client",
+     "spec": "@deepseek-ai/dsh-mcp-client",
+     "loc": "src/index.ts:10"
+    },
+    {
+     "dep": "dsh-agent",
+     "spec": "@deepseek-ai/dsh-agent",
+     "loc": "src/index.ts:16"
+    },
+    {
+     "dep": "dsh-browser-use",
+     "spec": "@deepseek-ai/dsh-browser-use",
+     "loc": "src/index.ts:17"
+    },
+    {
+     "dep": "dsh-system-prompt",
+     "spec": "@deepseek-ai/dsh-system-prompt",
+     "loc": "src/index.ts:18"
+    },
+    {
+     "dep": "dsh-tools",
+     "spec": "@deepseek-ai/dsh-tools",
+     "loc": "src/index.ts:19"
+    },
+    {
+     "dep": "dsh-subprocess",
+     "spec": "@deepseek-ai/dsh-subprocess",
+     "loc": "src/launch.ts:7"
+    },
+    {
+     "dep": "dsh-util-values",
+     "spec": "@deepseek-ai/dsh-util-values",
+     "loc": "src/native.ts:5"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "browserUse",
+      "agents",
+      "tools",
+      "systemPrompt"
+     ],
+     "loc": "src/index.ts:25"
+    },
+    {
+     "services": [
+      "tools",
+      "systemPrompt"
+     ],
+     "loc": "src/index.ts:159"
+    }
+   ],
+   "ctx_services": {
+    "browserUse": [
+     "src/index.ts:99"
+    ],
+    "tools": [
+     "src/index.ts:179"
+    ],
+    "agents": [
+     "src/index.ts:185",
+     "src/index.ts:195",
+     "src/index.ts:203"
+    ],
+    "systemPrompt": [
+     "src/index.ts:191",
+     "src/index.ts:191"
+    ]
+   },
+   "events_on": {
+    "tools/execute": [
+     "src/index.ts:192"
+    ]
+   },
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-experimental-client-ui-agent-team",
+   "name": "@deepseek-ai/dsh-experimental-client-ui-agent-team",
+   "path": "packages/experimental/client-ui-agent-team",
+   "domain": "experimental",
+   "ts_count": 6,
+   "ts_files": [
+    "src/client/TeamAction.tsx",
+    "src/client/index.ts",
+    "src/client/locales.ts",
+    "src/client/mount.ts",
+    "src/css-modules.d.ts",
+    "src/index.ts"
+   ],
+   "assembled_in": [],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-api-session-controller",
+     "dsh-client-locale",
+     "dsh-client-ui-conversation",
+     "dsh-client-ui-primitives",
+     "dsh-client-ui-renderer",
+     "dsh-client-ui-session",
+     "dsh-client-ui-slots",
+     "dsh-client-ui-workspace",
+     "dsh-experimental-agent-team",
+     "dsh-session"
+    ],
+    "deps": []
+   },
+   "imports": [
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session/types",
+     "loc": "src/client/TeamAction.tsx:3"
+    },
+    {
+     "dep": "dsh-api-session-controller",
+     "spec": "@deepseek-ai/dsh-api-session-controller/client",
+     "loc": "src/client/TeamAction.tsx:8"
+    },
+    {
+     "dep": "dsh-client-ui-slots",
+     "spec": "@deepseek-ai/dsh-client-ui-slots",
+     "loc": "src/client/TeamAction.tsx:14"
+    },
+    {
+     "dep": "dsh-client-ui-slots",
+     "spec": "@deepseek-ai/dsh-client-ui-slots",
+     "loc": "src/client/TeamAction.tsx:15"
+    },
+    {
+     "dep": "dsh-client-ui-conversation",
+     "spec": "@deepseek-ai/dsh-client-ui-conversation/client",
+     "loc": "src/client/TeamAction.tsx:16"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/client/index.ts:3"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/client/mount.ts:3"
+    },
+    {
+     "dep": "dsh-api-session-controller",
+     "spec": "@deepseek-ai/dsh-api-session-controller/client",
+     "loc": "src/client/mount.ts:4"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session/types",
+     "loc": "src/client/mount.ts:5"
+    },
+    {
+     "dep": "dsh-client-ui-conversation",
+     "spec": "@deepseek-ai/dsh-client-ui-conversation/client",
+     "loc": "src/client/mount.ts:6"
+    },
+    {
+     "dep": "dsh-client-locale",
+     "spec": "@deepseek-ai/dsh-client-locale/client",
+     "loc": "src/client/mount.ts:7"
+    },
+    {
+     "dep": "dsh-client-ui-renderer",
+     "spec": "@deepseek-ai/dsh-client-ui-renderer/client",
+     "loc": "src/client/mount.ts:8"
+    },
+    {
+     "dep": "dsh-client-ui-workspace",
+     "spec": "@deepseek-ai/dsh-client-ui-workspace/client",
+     "loc": "src/client/mount.ts:9"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "sessions",
+      "uiWorkspace",
+      "slots",
+      "locale"
+     ],
+     "loc": "src/client/mount.ts:21"
+    }
+   ],
+   "ctx_services": {
+    "locale": [
+     "src/client/mount.ts:30"
+    ],
+    "sessions": [
+     "src/client/mount.ts:31"
+    ],
+    "uiWorkspace": [
+     "src/client/mount.ts:42",
+     "src/client/mount.ts:45"
+    ],
+    "slots": [
+     "src/client/mount.ts:53",
+     "src/client/mount.ts:55"
+    ]
+   },
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-experimental-client-ui-voice-input",
+   "name": "@deepseek-ai/dsh-experimental-client-ui-voice-input",
+   "path": "packages/experimental/client-ui-voice-input",
+   "domain": "experimental",
+   "ts_count": 12,
+   "ts_files": [
+    "src/client/PreparationCard.tsx",
+    "src/client/VoiceInput.tsx",
+    "src/client/VoiceSetupDialog.tsx",
+    "src/client/VoiceSetupPrompt.tsx",
+    "src/client/Waveform.tsx",
+    "src/client/audio.ts",
+    "src/client/index.ts",
+    "src/client/locales.ts",
+    "src/client/mount.ts",
+    "src/client/readiness.ts",
+    "src/css-modules.d.ts",
+    "src/index.ts"
+   ],
+   "assembled_in": [],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-api-gateway",
+     "dsh-api-remotes",
+     "dsh-api-session-controller",
+     "dsh-client-locale",
+     "dsh-client-store",
+     "dsh-client-ui-conversation",
+     "dsh-client-ui-plugin-manager",
+     "dsh-client-ui-primitives",
+     "dsh-client-ui-renderer",
+     "dsh-client-ui-session",
+     "dsh-client-ui-slots",
+     "dsh-experimental-api-speech-to-text",
+     "dsh-experimental-speech-to-text",
+     "dsh-session",
+     "dsh-typert-protocol"
+    ],
+    "deps": []
+   },
+   "imports": [
+    {
+     "dep": "dsh-client-ui-primitives",
+     "spec": "@deepseek-ai/dsh-client-ui-primitives",
+     "loc": "src/client/PreparationCard.tsx:3"
+    },
+    {
+     "dep": "dsh-client-ui-slots",
+     "spec": "@deepseek-ai/dsh-client-ui-slots",
+     "loc": "src/client/PreparationCard.tsx:4"
+    },
+    {
+     "dep": "dsh-experimental-speech-to-text",
+     "spec": "@deepseek-ai/dsh-experimental-speech-to-text/types",
+     "loc": "src/client/PreparationCard.tsx:5"
+    },
+    {
+     "dep": "dsh-client-ui-slots",
+     "spec": "@deepseek-ai/dsh-client-ui-slots",
+     "loc": "src/client/VoiceInput.tsx:3"
+    },
+    {
+     "dep": "dsh-client-ui-conversation",
+     "spec": "@deepseek-ai/dsh-client-ui-conversation/client",
+     "loc": "src/client/VoiceInput.tsx:4"
+    },
+    {
+     "dep": "dsh-experimental-api-speech-to-text",
+     "spec": "@deepseek-ai/dsh-experimental-api-speech-to-text/types",
+     "loc": "src/client/VoiceInput.tsx:5"
+    },
+    {
+     "dep": "dsh-experimental-speech-to-text",
+     "spec": "@deepseek-ai/dsh-experimental-speech-to-text/types",
+     "loc": "src/client/VoiceInput.tsx:6"
+    },
+    {
+     "dep": "dsh-typert-protocol",
+     "spec": "@deepseek-ai/dsh-typert-protocol",
+     "loc": "src/client/VoiceInput.tsx:7"
+    },
+    {
+     "dep": "dsh-client-ui-primitives",
+     "spec": "@deepseek-ai/dsh-client-ui-primitives",
+     "loc": "src/client/VoiceInput.tsx:13"
+    },
+    {
+     "dep": "dsh-client-ui-primitives",
+     "spec": "@deepseek-ai/dsh-client-ui-primitives",
+     "loc": "src/client/VoiceSetupDialog.tsx:2"
+    },
+    {
+     "dep": "dsh-client-ui-slots",
+     "spec": "@deepseek-ai/dsh-client-ui-slots",
+     "loc": "src/client/VoiceSetupDialog.tsx:3"
+    },
+    {
+     "dep": "dsh-client-ui-plugin-manager",
+     "spec": "@deepseek-ai/dsh-client-ui-plugin-manager/client",
+     "loc": "src/client/VoiceSetupDialog.tsx:4"
+    },
+    {
+     "dep": "dsh-client-ui-slots",
+     "spec": "@deepseek-ai/dsh-client-ui-slots",
+     "loc": "src/client/VoiceSetupPrompt.tsx:4"
+    },
+    {
+     "dep": "dsh-client-ui-plugin-manager",
+     "spec": "@deepseek-ai/dsh-client-ui-plugin-manager/client",
+     "loc": "src/client/VoiceSetupPrompt.tsx:5"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/client/index.ts:2"
+    },
+    {
+     "dep": "dsh-experimental-api-speech-to-text",
+     "spec": "@deepseek-ai/dsh-experimental-api-speech-to-text/remote",
+     "loc": "src/client/index.ts:3"
+    },
+    {
+     "dep": "dsh-client-ui-slots",
+     "spec": "@deepseek-ai/dsh-client-ui-slots",
+     "loc": "src/client/locales.ts:2"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/client/mount.ts:2"
+    },
+    {
+     "dep": "dsh-api-remotes",
+     "spec": "@deepseek-ai/dsh-api-remotes/client",
+     "loc": "src/client/mount.ts:3"
+    },
+    {
+     "dep": "dsh-experimental-api-speech-to-text",
+     "spec": "@deepseek-ai/dsh-experimental-api-speech-to-text/remote",
+     "loc": "src/client/mount.ts:4"
+    },
+    {
+     "dep": "dsh-client-locale",
+     "spec": "@deepseek-ai/dsh-client-locale/client",
+     "loc": "src/client/mount.ts:5"
+    },
+    {
+     "dep": "dsh-client-ui-renderer",
+     "spec": "@deepseek-ai/dsh-client-ui-renderer/client",
+     "loc": "src/client/mount.ts:6"
+    },
+    {
+     "dep": "dsh-client-ui-conversation",
+     "spec": "@deepseek-ai/dsh-client-ui-conversation/client",
+     "loc": "src/client/mount.ts:7"
+    },
+    {
+     "dep": "dsh-typert-protocol",
+     "spec": "@deepseek-ai/dsh-typert-protocol",
+     "loc": "src/client/mount.ts:8"
+    },
+    {
+     "dep": "dsh-client-ui-plugin-manager",
+     "spec": "@deepseek-ai/dsh-client-ui-plugin-manager/client",
+     "loc": "src/client/mount.ts:12"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/client/readiness.ts:2"
+    },
+    {
+     "dep": "dsh-api-gateway",
+     "spec": "@deepseek-ai/dsh-api-gateway/client",
+     "loc": "src/client/readiness.ts:3"
+    },
+    {
+     "dep": "dsh-client-store",
+     "spec": "@deepseek-ai/dsh-client-store",
+     "loc": "src/client/readiness.ts:4"
+    },
+    {
+     "dep": "dsh-experimental-api-speech-to-text",
+     "spec": "@deepseek-ai/dsh-experimental-api-speech-to-text/types",
+     "loc": "src/client/readiness.ts:5"
+    },
+    {
+     "dep": "dsh-experimental-api-speech-to-text",
+     "spec": "@deepseek-ai/dsh-experimental-api-speech-to-text/remote",
+     "loc": "src/client/readiness.ts:6"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "remote",
+      "slots",
+      "locale",
+      "pluginNavigation"
+     ],
+     "loc": "src/client/mount.ts:17"
+    }
+   ],
+   "ctx_services": {
+    "locale": [
+     "src/client/mount.ts:20"
+    ],
+    "pluginNavigation": [
+     "src/client/mount.ts:26"
+    ],
+    "remote": [
+     "src/client/mount.ts:33",
+     "src/client/mount.ts:34",
+     "src/client/mount.ts:36",
+     "src/client/mount.ts:39",
+     "src/client/mount.ts:61",
+     "src/client/readiness.ts:27"
+    ],
+    "slots": [
+     "src/client/mount.ts:42",
+     "src/client/mount.ts:42",
+     "src/client/mount.ts:45",
+     "src/client/mount.ts:45",
+     "src/client/mount.ts:48",
+     "src/client/mount.ts:48"
+    ]
+   },
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-experimental-computer-use-cua-driver-mcp",
+   "name": "@deepseek-ai/dsh-experimental-computer-use-cua-driver-mcp",
+   "path": "packages/experimental/computer-use-cua-driver-mcp",
+   "domain": "experimental",
+   "ts_count": 1,
+   "ts_files": [
+    "src/index.ts"
+   ],
+   "assembled_in": [],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-computer-use"
+    ],
+    "deps": [
+     "dsh-mcp-client",
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:7"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/index.ts:8"
+    },
+    {
+     "dep": "dsh-computer-use",
+     "spec": "@deepseek-ai/dsh-computer-use/brand",
+     "loc": "src/index.ts:9"
+    },
+    {
+     "dep": "dsh-mcp-client",
+     "spec": "@deepseek-ai/dsh-mcp-client",
+     "loc": "src/index.ts:10"
+    },
+    {
+     "dep": "dsh-computer-use",
+     "spec": "@deepseek-ai/dsh-computer-use",
+     "loc": "src/index.ts:11"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "computerUse",
+      "tools"
+     ],
+     "loc": "src/index.ts:17"
+    }
+   ],
+   "ctx_services": {
+    "computerUse": [
+     "src/index.ts:66"
+    ]
+   },
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-experimental-computer-use-cua-driver-native",
+   "name": "@deepseek-ai/dsh-experimental-computer-use-cua-driver-native",
+   "path": "packages/experimental/computer-use-cua-driver-native",
+   "domain": "experimental",
+   "ts_count": 1,
+   "ts_files": [
+    "src/index.ts"
+   ],
+   "assembled_in": [],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-computer-use",
+     "dsh-system-prompt",
+     "dsh-tools"
+    ],
+    "deps": [
+     "dsh-mcp-client",
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:6"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/index.ts:7"
+    },
+    {
+     "dep": "dsh-computer-use",
+     "spec": "@deepseek-ai/dsh-computer-use/brand",
+     "loc": "src/index.ts:8"
+    },
+    {
+     "dep": "dsh-mcp-client",
+     "spec": "@deepseek-ai/dsh-mcp-client",
+     "loc": "src/index.ts:9"
+    },
+    {
+     "dep": "dsh-computer-use",
+     "spec": "@deepseek-ai/dsh-computer-use",
+     "loc": "src/index.ts:12"
+    },
+    {
+     "dep": "dsh-system-prompt",
+     "spec": "@deepseek-ai/dsh-system-prompt",
+     "loc": "src/index.ts:13"
+    },
+    {
+     "dep": "dsh-tools",
+     "spec": "@deepseek-ai/dsh-tools",
+     "loc": "src/index.ts:14"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "computerUse",
+      "tools",
+      "systemPrompt"
+     ],
+     "loc": "src/index.ts:20"
+    },
+    {
+     "services": [
+      "tools",
+      "systemPrompt"
+     ],
+     "loc": "src/index.ts:73"
+    }
+   ],
+   "ctx_services": {
+    "fiber": [
+     "src/index.ts:56"
+    ],
+    "computerUse": [
+     "src/index.ts:60"
+    ]
+   },
+   "events_on": {
+    "internal/plugin": [
+     "src/index.ts:55"
+    ]
+   },
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-experimental-inspector",
+   "name": "@deepseek-ai/dsh-experimental-inspector",
+   "path": "packages/experimental/inspector",
+   "domain": "experimental",
+   "ts_count": 148,
+   "ts_files": [
+    "src/client/bridge/controller.ts",
+    "src/client/bridge/dispatcher.ts",
+    "src/client/bridge/lifecycle.ts",
+    "src/client/bridge/publisher.ts",
+    "src/client/bridge/rpc.ts",
+    "src/client/bridge/transport.ts",
+    "src/client/cdp/console.ts",
+    "src/client/cdp/debugger.ts",
+    "src/client/cdp/errors.ts",
+    "src/client/cdp/heap-profiler.ts",
+    "src/client/cdp/index.ts",
+    "src/client/cdp/objects.ts",
+    "src/client/cdp/profiler.ts",
+    "src/client/cdp/properties.ts",
+    "src/client/cdp/runtime.ts",
+    "src/client/cdp/sources.ts",
+    "src/client/cdp/stack.ts",
+    "src/client/index.ts",
+    "src/client/inspection/cordis.ts",
+    "src/client/inspection/network.ts",
+    "src/client/inspection/realm.ts",
+    "src/client/plugin.ts",
+    "src/host/bridge/controller.ts",
+    "src/host/bridge/dispatcher.ts",
+    "src/host/bridge/lifecycle.ts",
+    "src/host/bridge/publisher.ts",
+    "src/host/bridge/rpc.ts",
+    "src/host/bridge/transport.ts",
+    "src/host/cdp/console.ts",
+    "src/host/cdp/debugger.ts",
+    "src/host/cdp/errors.ts",
+    "src/host/cdp/heap-profiler.ts",
+    "src/host/cdp/index.ts",
+    "src/host/cdp/objects.ts",
+    "src/host/cdp/profiler.ts",
+    "src/host/cdp/properties.ts",
+    "src/host/cdp/runtime.ts",
+    "src/host/cdp/sources.ts",
+    "src/host/cdp/stack.ts",
+    "src/host/index.ts",
+    "src/host/inspection/cordis.ts",
+    "src/host/inspection/network.ts",
+    "src/host/inspection/realm.ts",
+    "src/host/plugin.ts",
+    "src/index.ts",
+    "src/shared/bridge/buffer.ts",
+    "src/shared/bridge/codec.ts",
+    "src/shared/bridge/control-codec.ts",
+    "src/shared/bridge/ids.ts",
+    "src/shared/bridge/messages/control.ts",
+    "src/shared/bridge/messages/cordis.ts",
+    "src/shared/bridge/messages/network.ts",
+    "src/shared/bridge/messages/observation.ts",
+    "src/shared/bridge/messages/query/codec.ts",
+    "src/shared/bridge/messages/query/commands.ts",
+    "src/shared/bridge/messages/query/frames.ts",
+    "src/shared/bridge/messages/query/index.ts",
+    "src/shared/bridge/messages/runtime/command-codec.ts",
+    "src/shared/bridge/messages/runtime/commands.ts",
+    "src/shared/bridge/messages/runtime/console-frames.ts",
+    "src/shared/bridge/messages/runtime/frames.ts",
+    "src/shared/bridge/messages/runtime/index.ts",
+    "src/shared/bridge/messages/runtime/value-codec.ts",
+    "src/shared/bridge/messages/sources/codec.ts",
+    "src/shared/bridge/messages/sources/commands.ts",
+    "src/shared/bridge/messages/sources/frames.ts",
+    "src/shared/bridge/messages/sources/index.ts",
+    "src/shared/bridge/publisher.ts",
+    "src/shared/bridge/query-reader.ts",
+    "src/shared/bridge/rpc.ts",
+    "src/shared/bridge/validation.ts",
+    "src/shared/bridge/version.ts",
+    "src/shared/cdp/capabilities.ts",
+    "src/shared/cdp/console.ts",
+    "src/shared/cdp/debugger.ts",
+    "src/shared/cdp/errors.ts",
+    "src/shared/cdp/ids.ts",
+    "src/shared/cdp/index.ts",
+    "src/shared/cdp/operations.ts",
+    "src/shared/cdp/property.ts",
+    "src/shared/cdp/realm.ts",
+    "src/shared/cdp/remote-object.ts",
+    "src/shared/cdp/sources.ts",
+    "src/shared/cordis/collector.ts",
+    "src/shared/cordis/ids.ts",
+    "src/shared/cordis/model.ts",
+    "src/shared/cordis/object-reference.ts",
+    "src/shared/cordis/object-registry.ts",
+    "src/shared/cordis/observer.ts",
+    "src/shared/cordis/projector.ts",
+    "src/shared/cordis/publisher.ts",
+    "src/shared/cordis/reader.ts",
+    "src/shared/cordis/snapshot.ts",
+    "src/shared/identity.ts",
+    "src/shared/index.ts",
+    "src/shared/json.ts",
+    "src/shared/network/event-source.ts",
+    "src/shared/network/observation.ts",
+    "src/shared/service.ts",
+    "src/shared/validation.ts",
+    "src/worker/bridge/endpoint.ts",
+    "src/worker/bridge/hub.ts",
+    "src/worker/bridge/runtime-rpc.ts",
+    "src/worker/bridge/session.ts",
+    "src/worker/bridge/source-rpc.ts",
+    "src/worker/cdp/domains/debugger/cdp-params.ts",
+    "src/worker/cdp/domains/debugger/index.ts",
+    "src/worker/cdp/domains/debugger/projector.ts",
+    "src/worker/cdp/domains/debugger/script-registry.ts",
+    "src/worker/cdp/domains/debugger/session.ts",
+    "src/worker/cdp/domains/dom/index.ts",
+    "src/worker/cdp/domains/dom/model.ts",
+    "src/worker/cdp/domains/dom/session.ts",
+    "src/worker/cdp/domains/native.ts",
+    "src/worker/cdp/domains/network/session.ts",
+    "src/worker/cdp/domains/runtime/cdp-params.ts",
+    "src/worker/cdp/domains/runtime/index.ts",
+    "src/worker/cdp/domains/runtime/object-table.ts",
+    "src/worker/cdp/domains/runtime/session.ts",
+    "src/worker/cdp/ids.ts",
+    "src/worker/cdp/protocol.ts",
+    "src/worker/cdp/realm-sessions.ts",
+    "src/worker/cdp/session.ts",
+    "src/worker/cdp/target.ts",
+    "src/worker/entry.ts",
+    "src/worker/inspection/cordis-query.ts",
+    "src/worker/inspection/cordis-store.ts",
+    "src/worker/inspection/network-store.ts",
+    "src/worker/inspection/query-router.ts",
+    "src/worker/inspection/realm-store.ts",
+    "src/worker/inspection/realm.ts",
+    "src/worker/realms/client/bridge.ts",
+    "src/worker/realms/client/console.ts",
+    "src/worker/realms/client/debugger.ts",
+    "src/worker/realms/client/index.ts",
+    "src/worker/realms/client/runtime.ts",
+    "src/worker/realms/client/scripts.ts",
+    "src/worker/realms/client/sources.ts",
+    "src/worker/realms/client/values.ts",
+    "src/worker/realms/host/bridge.ts",
+    "src/worker/realms/host/console.ts",
+    "src/worker/realms/host/debugger.ts",
+    "src/worker/realms/host/index.ts",
+    "src/worker/realms/host/runtime.ts",
+    "src/worker/realms/host/scripts.ts",
+    "src/worker/realms/host/sources.ts",
+    "src/worker/realms/host/values.ts",
+    "src/worker/server.ts"
+   ],
+   "assembled_in": [],
+   "declared": {
+    "peer": [
+     "cordis",
+     "cordis-plugin-loader",
+     "dsh-client-modules",
+     "dsh-host-webserver"
+    ],
+    "deps": [
+     "dsh-app-boot",
+     "dsh-brand",
+     "dsh-util-crypto",
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "dsh-util-crypto",
+     "spec": "@deepseek-ai/dsh-util-crypto",
+     "loc": "src/client/cdp/sources.ts:3"
+    },
+    {
+     "dep": "dsh-util-crypto",
+     "spec": "@deepseek-ai/dsh-util-crypto",
+     "loc": "src/client/inspection/realm.ts:3"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/client/plugin.ts:3"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/host/plugin.ts:3"
+    },
+    {
+     "dep": "dsh-host-webserver",
+     "spec": "@deepseek-ai/dsh-host-webserver",
+     "loc": "src/host/plugin.ts:4"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:3"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/index.ts:4"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/shared/cordis/collector.ts:3"
+    },
+    {
+     "dep": "dsh-util-crypto",
+     "spec": "@deepseek-ai/dsh-util-crypto",
+     "loc": "src/shared/cordis/object-registry.ts:3"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/shared/cordis/observer.ts:3"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/shared/cordis/publisher.ts:3"
+    },
+    {
+     "dep": "dsh-brand",
+     "spec": "@deepseek-ai/dsh-brand",
+     "loc": "src/shared/identity.ts:3"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "webServer"
+     ],
+     "loc": "src/index.ts:63"
+    }
+   ],
+   "ctx_services": {
+    "inspector": [
+     "src/client/plugin.ts:42",
+     "src/host/plugin.ts:37"
+    ]
+   },
+   "events_on": {
+    "webserver/index-inject": [
+     "src/host/plugin.ts:49"
+    ],
+    "internal/plugin": [
+     "src/shared/cordis/observer.ts:36"
+    ],
+    "internal/status": [
+     "src/shared/cordis/observer.ts:37"
+    ]
+   },
+   "events_emit": {},
+   "provides_hints": [
+    {
+     "name": "inspector",
+     "loc": "src/client/plugin.ts:59"
+    },
+    {
+     "name": "inspector",
+     "loc": "src/host/plugin.ts:48"
+    }
+   ]
+  },
+  {
+   "id": "dsh-experimental-ptc-runtime-python",
+   "name": "@deepseek-ai/dsh-experimental-ptc-runtime-python",
+   "path": "packages/experimental/ptc-runtime-python",
+   "domain": "experimental",
+   "ts_count": 2,
+   "ts_files": [
+    "src/index.ts",
+    "src/protocol.ts"
+   ],
+   "assembled_in": [],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-ptc-runtime",
+     "dsh-timeout",
+     "dsh-util-values"
+    ],
+    "deps": [
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:20"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/index.ts:21"
+    },
+    {
+     "dep": "dsh-ptc-runtime",
+     "spec": "@deepseek-ai/dsh-ptc-runtime",
+     "loc": "src/index.ts:22"
+    },
+    {
+     "dep": "dsh-ptc-runtime",
+     "spec": "@deepseek-ai/dsh-ptc-runtime",
+     "loc": "src/index.ts:23"
+    },
+    {
+     "dep": "dsh-util-values",
+     "spec": "@deepseek-ai/dsh-util-values",
+     "loc": "src/index.ts:24"
+    },
+    {
+     "dep": "dsh-timeout",
+     "spec": "@deepseek-ai/dsh-timeout",
+     "loc": "src/index.ts:25"
+    }
+   ],
+   "injects": [],
+   "ctx_services": {
+    "ptcRuntime": [
+     "src/index.ts:834"
+    ]
+   },
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-experimental-speech-to-text-sensevoice",
+   "name": "@deepseek-ai/dsh-experimental-speech-to-text-sensevoice",
+   "path": "packages/experimental/speech-to-text-sensevoice",
+   "domain": "experimental",
+   "ts_count": 10,
+   "ts_files": [
+    "src/config.ts",
+    "src/download-error.ts",
+    "src/index.ts",
+    "src/inference.ts",
+    "src/input.ts",
+    "src/model-sources.ts",
+    "src/process-server.ts",
+    "src/recognizer.ts",
+    "src/runtime.ts",
+    "src/worker.ts"
+   ],
+   "assembled_in": [],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-experimental-speech-to-text",
+     "dsh-subprocess"
+    ],
+    "deps": [
+     "dsh-timeout",
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/config.ts:2"
+    },
+    {
+     "dep": "dsh-timeout",
+     "spec": "@deepseek-ai/dsh-timeout",
+     "loc": "src/config.ts:3"
+    },
+    {
+     "dep": "dsh-experimental-speech-to-text",
+     "spec": "@deepseek-ai/dsh-experimental-speech-to-text/types",
+     "loc": "src/download-error.ts:2"
+    },
+    {
+     "dep": "dsh-timeout",
+     "spec": "@deepseek-ai/dsh-timeout",
+     "loc": "src/download-error.ts:3"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:3"
+    },
+    {
+     "dep": "dsh-experimental-speech-to-text",
+     "spec": "@deepseek-ai/dsh-experimental-speech-to-text",
+     "loc": "src/index.ts:4"
+    },
+    {
+     "dep": "dsh-subprocess",
+     "spec": "@deepseek-ai/dsh-subprocess",
+     "loc": "src/index.ts:5"
+    },
+    {
+     "dep": "dsh-experimental-speech-to-text",
+     "spec": "@deepseek-ai/dsh-experimental-speech-to-text/types",
+     "loc": "src/index.ts:6"
+    },
+    {
+     "dep": "dsh-experimental-speech-to-text",
+     "spec": "@deepseek-ai/dsh-experimental-speech-to-text/types",
+     "loc": "src/inference.ts:3"
+    },
+    {
+     "dep": "dsh-experimental-speech-to-text",
+     "spec": "@deepseek-ai/dsh-experimental-speech-to-text/wave",
+     "loc": "src/input.ts:2"
+    },
+    {
+     "dep": "dsh-timeout",
+     "spec": "@deepseek-ai/dsh-timeout",
+     "loc": "src/model-sources.ts:2"
+    },
+    {
+     "dep": "dsh-experimental-speech-to-text",
+     "spec": "@deepseek-ai/dsh-experimental-speech-to-text/types",
+     "loc": "src/process-server.ts:4"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/recognizer.ts:4"
+    },
+    {
+     "dep": "dsh-subprocess",
+     "spec": "@deepseek-ai/dsh-subprocess",
+     "loc": "src/recognizer.ts:5"
+    },
+    {
+     "dep": "dsh-experimental-speech-to-text",
+     "spec": "@deepseek-ai/dsh-experimental-speech-to-text/types",
+     "loc": "src/recognizer.ts:6"
+    },
+    {
+     "dep": "dsh-timeout",
+     "spec": "@deepseek-ai/dsh-timeout",
+     "loc": "src/recognizer.ts:7"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/runtime.ts:10"
+    },
+    {
+     "dep": "dsh-subprocess",
+     "spec": "@deepseek-ai/dsh-subprocess",
+     "loc": "src/runtime.ts:11"
+    },
+    {
+     "dep": "dsh-experimental-speech-to-text",
+     "spec": "@deepseek-ai/dsh-experimental-speech-to-text/types",
+     "loc": "src/runtime.ts:13"
+    },
+    {
+     "dep": "dsh-timeout",
+     "spec": "@deepseek-ai/dsh-timeout",
+     "loc": "src/runtime.ts:14"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "speechToText",
+      "subprocess"
+     ],
+     "loc": "src/index.ts:13"
+    }
+   ],
+   "ctx_services": {
+    "speechToText": [
+     "src/index.ts:28"
+    ],
+    "subprocess": [
+     "src/recognizer.ts:262"
+    ]
+   },
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-experimental-tool-agent-team",
+   "name": "@deepseek-ai/dsh-experimental-tool-agent-team",
+   "path": "packages/experimental/tool-agent-team",
+   "domain": "experimental",
+   "ts_count": 1,
+   "ts_files": [
+    "src/index.ts"
+   ],
+   "assembled_in": [],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-agent",
+     "dsh-experimental-agent-team",
+     "dsh-session",
+     "dsh-system-prompt",
+     "dsh-tools"
+    ],
+    "deps": [
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:3"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/index.ts:4"
+    },
+    {
+     "dep": "dsh-agent",
+     "spec": "@deepseek-ai/dsh-agent",
+     "loc": "src/index.ts:5"
+    },
+    {
+     "dep": "dsh-experimental-agent-team",
+     "spec": "@deepseek-ai/dsh-experimental-agent-team",
+     "loc": "src/index.ts:6"
+    },
+    {
+     "dep": "dsh-experimental-agent-team",
+     "spec": "@deepseek-ai/dsh-experimental-agent-team",
+     "loc": "src/index.ts:7"
+    },
+    {
+     "dep": "dsh-tools",
+     "spec": "@deepseek-ai/dsh-tools",
+     "loc": "src/index.ts:8"
+    },
+    {
+     "dep": "dsh-tools",
+     "spec": "@deepseek-ai/dsh-tools",
+     "loc": "src/index.ts:9"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "agents",
+      "agentTeams",
+      "tools",
+      "systemPrompt"
+     ],
+     "loc": "src/index.ts:14"
+    }
+   ],
+   "ctx_services": {
+    "agentTeams": [
+     "src/index.ts:192",
+     "src/index.ts:224",
+     "src/index.ts:238",
+     "src/index.ts:258",
+     "src/index.ts:262",
+     "src/index.ts:273"
+    ],
+    "agents": [
+     "src/index.ts:412"
+    ]
+   },
+   "events_on": {
+    "agent/created": [
+     "src/index.ts:413"
+    ],
+    "agent/disposed": [
+     "src/index.ts:414"
+    ]
+   },
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-experimental-webworker-runtime",
+   "name": "@deepseek-ai/dsh-experimental-webworker-runtime",
+   "path": "packages/experimental/webworker-runtime",
+   "domain": "experimental",
+   "ts_count": 82,
+   "ts_files": [
+    "src/client/apply-injections.ts",
+    "src/client/client.ts",
+    "src/client/index.ts",
+    "src/client/source-chooser.ts",
+    "src/compile/transform.ts",
+    "src/fixture-manifest.ts",
+    "src/image-layout.ts",
+    "src/index.ts",
+    "src/module-proxies.ts",
+    "src/module-system/module-loader.ts",
+    "src/module-system/posix-path.ts",
+    "src/node/builtin_modules/implemented/abort-error.ts",
+    "src/node/builtin_modules/implemented/async_hooks.ts",
+    "src/node/builtin_modules/implemented/buffer.ts",
+    "src/node/builtin_modules/implemented/child_process.ts",
+    "src/node/builtin_modules/implemented/crypto.ts",
+    "src/node/builtin_modules/implemented/events.ts",
+    "src/node/builtin_modules/implemented/fs-watch.ts",
+    "src/node/builtin_modules/implemented/fs.ts",
+    "src/node/builtin_modules/implemented/fs/promises.ts",
+    "src/node/builtin_modules/implemented/http.ts",
+    "src/node/builtin_modules/implemented/module.ts",
+    "src/node/builtin_modules/implemented/os.ts",
+    "src/node/builtin_modules/implemented/path.ts",
+    "src/node/builtin_modules/implemented/perf_hooks.ts",
+    "src/node/builtin_modules/implemented/stream.ts",
+    "src/node/builtin_modules/implemented/stream/promises.ts",
+    "src/node/builtin_modules/implemented/timers/promises.ts",
+    "src/node/builtin_modules/implemented/tty.ts",
+    "src/node/builtin_modules/implemented/url.ts",
+    "src/node/builtin_modules/implemented/util.ts",
+    "src/node/builtin_modules/implemented/util/types.ts",
+    "src/node/builtin_modules/implemented/zlib.ts",
+    "src/node/builtin_modules/mock/dns/promises.ts",
+    "src/node/builtin_modules/mock/net.ts",
+    "src/node/builtin_modules/mock/sqlite.ts",
+    "src/node/builtin_modules/mock/vm.ts",
+    "src/node/builtin_modules/mock/worker_threads.ts",
+    "src/node/builtins.ts",
+    "src/node/external_packages/execa.ts",
+    "src/node/external_packages/koffi.ts",
+    "src/node/external_packages/libreoffice-kit.ts",
+    "src/node/external_packages/node-addon-system-flock.ts",
+    "src/node/external_packages/node-pty.ts",
+    "src/node/external_packages/pi-ai.ts",
+    "src/node/external_packages/replaced-externals.ts",
+    "src/node/external_packages/ripgrep.ts",
+    "src/node/external_packages/sharp.ts",
+    "src/node/external_packages/ws.ts",
+    "src/node/globals/crypto.ts",
+    "src/node/globals/process.ts",
+    "src/node/globals/timers.ts",
+    "src/node/notImplementedFail.ts",
+    "src/node/process-table.ts",
+    "src/polyfill/async-context/als-runtime.ts",
+    "src/polyfill/async-context/async-context-hooks.ts",
+    "src/shell/ast.ts",
+    "src/shell/expand.ts",
+    "src/shell/fs-access.ts",
+    "src/shell/interpret.ts",
+    "src/shell/process/child.ts",
+    "src/shell/process/host.ts",
+    "src/shell/process/landlock.ts",
+    "src/shell/process/protocol.ts",
+    "src/shell/process/virtual-executables.ts",
+    "src/shell/programs/builtins.ts",
+    "src/shell/programs/files.ts",
+    "src/shell/programs/index.ts",
+    "src/shell/programs/options.ts",
+    "src/shell/programs/text.ts",
+    "src/shell/types.ts",
+    "src/storage/active.ts",
+    "src/storage/image-gzip.ts",
+    "src/storage/memory.ts",
+    "src/storage/paths.ts",
+    "src/storage/tar.ts",
+    "src/storage/types.ts",
+    "src/transport/frames.ts",
+    "src/transport/synthetic-http.ts",
+    "src/transport/tunnel.ts",
+    "src/worker-host.ts",
+    "src/worker.ts"
+   ],
+   "assembled_in": [],
+   "declared": {
+    "peer": [
+     "cordis",
+     "cordis-plugin-loader",
+     "dsh-client-connection",
+     "dsh-client-modules",
+     "dsh-host-webserver"
+    ],
+    "deps": [
+     "dsh-client-web",
+     "dsh-util-crypto"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "dsh-client-web",
+     "spec": "@deepseek-ai/dsh-client-web/injections",
+     "loc": "src/client/apply-injections.ts:2"
+    },
+    {
+     "dep": "dsh-host-webserver",
+     "spec": "@deepseek-ai/dsh-host-webserver",
+     "loc": "src/client/client.ts:8"
+    },
+    {
+     "dep": "dsh-client-file-upload",
+     "spec": "@deepseek-ai/dsh-client-file-upload/types",
+     "loc": "src/client/index.ts:12"
+    },
+    {
+     "dep": "dsh-util-crypto",
+     "spec": "@deepseek-ai/dsh-util-crypto",
+     "loc": "src/node/builtin_modules/implemented/crypto.ts:8"
+    },
+    {
+     "dep": "dsh-util-crypto",
+     "spec": "@deepseek-ai/dsh-util-crypto",
+     "loc": "src/node/globals/crypto.ts:8"
+    },
+    {
+     "dep": "dsh-app-boot",
+     "spec": "@deepseek-ai/dsh-app-boot",
+     "loc": "src/worker-host.ts:25"
+    },
+    {
+     "dep": "dsh-api-gateway",
+     "spec": "@deepseek-ai/dsh-api-gateway",
+     "loc": "src/worker-host.ts:26"
+    },
+    {
+     "dep": "dsh-client-connection",
+     "spec": "@deepseek-ai/dsh-client-connection",
+     "loc": "src/worker-host.ts:27"
+    }
+   ],
+   "injects": [],
+   "ctx_services": {},
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  }
+ ]
+}

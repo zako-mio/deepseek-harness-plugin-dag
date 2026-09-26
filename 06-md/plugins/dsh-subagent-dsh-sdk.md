@@ -1,35 +1,26 @@
 # dsh-subagent-dsh-sdk
 
 - 包名: `@deepseek-ai/dsh-subagent-dsh-sdk`
-- 分组: G33 子代理外部后端
-- 拓扑层: Layer 6
+- 分组: G41 子代理
+- 拓扑层: Layer 7
 - 来源层: L3 其余
 - 源码路径: `packages/subagent/subagent-dsh-sdk`
 
-## 为什么需要它（设计初衷）
-进程外完整 DSH runtime 子 Agent：经 stdio JSON-RPC 驱动一个完整 peer harness（自有 cordis.yml 组合/持久化/模型路由），子进程能力完全自治。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/subagent/subagent-dsh-sdk
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-07-27-typescript-sdk-and-sdk-subagent-backend.md
-
 ## 实现逻辑
-进程外 SDK 子代理后端：每个 child 是完整 DeepSeek Harness runtime（自有 cordis.yml 组合/session/model/tools），经 dsh-sdk-client 的 DeepSeekHarness 高层 API 通过 stdio JSON-RPC 驱动；不共享父 Cordis context、不声明父强制 start capabilities；唯一读取 request.parent 的是 session workspace cwd。inject=['subagents']，subprocess 仅经 scrubbedParentEnv 值导入使用。
+以 SdkSubagentProvider 注册 provider dsh-sdk，仅支持 agentOptions 能力（provider/model/reasoning/maxTokens）(src/index.ts:110-175)。start() 经 @deepseek-ai/dsh-sdk-client 的 DeepSeekHarness 以 stdio JSON-RPC 启动带独立 profile/patch/dshHome 的嵌套 DSH 运行时，并用 scrubbedParentEnv 清洗环境 (src/run.ts:233-254)。握手成功后驱动 session.run，按子运行时的 turn/end 理由映射 stopReason，dispose 通过 harness.close() 关闭并回收 (src/run.ts:147-182, 307-358)。
 
 ## Provides
-- ctx.subagents 命名 provider 'dsh-sdk'(one-shot)
-- startSdkRun(DeepSeekHarness 驱动)
-- 子 runtime provider/model/maxTokens 配置
+- ctx.subagents 注册的 provider `dsh-sdk` (嵌套 DSH 运行时进程外子代理)
 
 ## Depends On (上游依赖)
-- `dsh-llm` [编译依赖] - ContentBlock 类型
-  - 证据: `packages/subagent/subagent-dsh-sdk/src/run.ts:16`
-- `dsh-sdk-client` [编译依赖] - DeepSeekHarness/HarnessNotification 驱动子 runtime
-  - 证据: `packages/subagent/subagent-dsh-sdk/src/run.ts:15,118`
-- `dsh-session` [编译依赖] - SessionId/SessionEvent/TurnEndReason 类型
-  - 证据: `packages/subagent/subagent-dsh-sdk/src/run.ts:17`
-- `dsh-subagent` [运行时依赖] - inject ['subagents'] 注册 provider；SubagentProvider/SubagentResult/settleRunResult 类型与工具(E1)
-  - 证据: `packages/subagent/subagent-dsh-sdk/src/index.ts:15-16,26, packages/subagent/subagent-dsh-sdk/src/run.ts:18-19`
+- `dsh-agent` [编译依赖] - 解析并合并子代理 route 选项
+  - 证据: `src/index.ts:18 (import type AgentOptions)`
+- `dsh-llm` [编译依赖] - 内容块与推理强度类型
+  - 证据: `src/run.ts:23 (import type ContentBlock, ReasoningEffortId)`
+- `dsh-session` [编译依赖] - 读取子会话事件与终态理由
+  - 证据: `src/run.ts:24 (import type SessionEvent, SessionId, TurnEndReason)`
+- `dsh-subagent` [E1+E2] - 复用 seam 契约与共享辅助并注册 provider
+  - 证据: `src/index.ts:19-20 (import NO_START_CAPABILITIES, resolveChildCwd, validateConfiguredCwd, 类型) + src/index.ts:31 (inject ['subagents']) + src/index.ts:199 (ctx.subagents.registerProvider)`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

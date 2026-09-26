@@ -2,14 +2,16 @@
 
 - 包名: `@deepseek-ai/dsh-launch-environment`
 - 源码路径: `packages/util/launch-environment`
-- 被插件引用: 7 次
-- 描述: Immutable DeepSeek Harness launch environment that records which layer supplied each value
+- 被插件引用: 9 次
+- 描述: 
 
 ## 被集依赖 (下游)
 - `dsh-credentials-local`
-- `dsh-llm-deepseek`
+- `dsh-host-directory-picker-auto`
+- `dsh-host-open-in-app`
+- `dsh-llm-deepseek-account`
+- `dsh-llm-deepseek-api-key`
 - `dsh-llm-pi-ai`
-- `dsh-web-app`
 - `dsh-web-search-deepseek`
 - `dsh-web-search-exa`
 - `dsh-web-search-perplexity`

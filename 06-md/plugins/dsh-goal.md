@@ -1,43 +1,39 @@
 # dsh-goal
 
 - 包名: `@deepseek-ai/dsh-goal`
-- 分组: G17 目标计划
-- 拓扑层: Layer 3
+- 分组: G17 目标与计划
+- 拓扑层: Layer 5
 - 来源层: L1 核心集
 - 源码路径: `packages/goal/goal`
 
-## 为什么需要它（设计初衷）
-解决 agent 长任务执行缺乏「持久目标状态」的问题：在既有会话内维护一个事件溯源的当前目标（含 phase/revision/续行权限），提供 create/edit/pause/resume/complete/block/clear 等动词。其核心价值是让长期目标在会话恢复/fork 后仍保真，同时把目标与继续执行权限分离、绝不持久化续行状态，为 goal-round-driver 等策略层提供可靠状态底座。
-
-发展史：来自 packages/goal/goal，伴随 goal 领域（2026-07-19 同会话目标领域 Agent Note）从简单状态演进为事件溯源+严格回放校验的服务，与 tool-goal、goal-round-driver 构成目标子系统三件套。
-
-来源：
-- https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/goal/goal/README.zh.md
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-07-19-persisted-same-session-goal-domain.md
-
 ## 实现逻辑
-事件溯源 goal 域(ctx.goals GoalService，extends TypertRemoteService)。所有变更 append 'goal/change' 事件，per-session 缓存经 fold.ts 增量同步，compare-and-set ref 校验防 stale。create/edit/pause/resume/complete/block/clear 提交后经 agentEvents 发 'goal/changed'；'agent/session-start' 重置 activation=disarmed；注册 'goal' 投影单元；@Remote 导出。
+GoalService 以会话日志为唯一持久源：每次变更把完整快照写成一个 goal/change 会话事件（src/index.ts:609-626），并由 goalProjectionDefinition 严格重放派生当前目标（src/index.ts:146-169）。fold.ts 提供纯函数式解码/校验/折叠，逐操作校验相位转移与修订号恰好加一（src/fold.ts:199-332）。进程本地的 activation（armed/disarmed）单独保存，变更时 emit 'goal/activation-changed'（src/index.ts:496-515）。invariant.ts 以独立增量折叠校验全量目标流的合法性（src/invariant.ts:40-80）。
 
 ## Provides
-- ctx.goals(GoalService)
-- session 事件 goal/change
-- goal/changed agent-scoped emit
-- goal session projection
-- @Remote API
+- ctx.goals (目标域服务 seam：create/edit/pause/resume/complete/block/clear/get/disarm + 远程绑定)
+- goal 会话投影 ('goal' 投影键，含 seenGoalIds 与失败状态)
+- goal/change 会话事件类型 (持久化目标变更载荷)
+- goal/changed 与 goal/activation-changed 事件 (变更通知与进程本地激活边)
+- goal-invariant 不变量伴随件 (目标流严格重放校验)
 
 ## Depends On (上游依赖)
-- `dsh-agent` [编译依赖] - agent 身份与 goal/changed
-  - 证据: `packages/goal/goal/src/index.ts:12,198,415,557`
-- `dsh-session` [运行时依赖] - goal/change 持久化
-  - 证据: `packages/goal/goal/src/index.ts:546`
-- `dsh-session-projection` [组合依赖] - goal 投影单元
-  - 证据: `packages/goal/goal/src/index.ts:204`
+- `dsh-agent` [E1+E2] - 以 agent 为键持有运行时激活状态、校验 live 身份并订阅 agent/created
+  - 证据: `src/index.ts:12-13 import (agentEvents, Agent) + src/index.ts:241 inject ['agents','sessionProjections'] + src/index.ts:470 ctx.agents.get`
+- `dsh-invariants` [E1+E2] - 注册目标流不变量校验伴随件
+  - 证据: `src/invariant.ts:4 import InvariantInstaller + src/invariant.ts:14 inject ['invariants'] + src/invariant.ts:80 ctx.invariants.register`
+- `dsh-llm` [编译依赖] - 目标消息来源类型合并与 GoalError 的错误基类
+  - 证据: `src/fold.ts:3 import MessageSource + src/runtime.ts:3 import HarnessError`
+- `dsh-scope` [编译依赖] - goal/changed 事件按 agent 作用域分发的类型约束
+  - 证据: `src/domain.ts:114 import('@deepseek-ai/dsh-scope').Scoped + package.json peerDependencies`
+- `dsh-session` [E1+E2] - 以会话事件日志作为目标状态的唯一持久来源
+  - 证据: `src/fold.ts:4 import SessionEvent + src/index.ts:14-15 import SessionSeq/Session + src/index.ts:613 agent.session.append('goal/change', change)`
+- `dsh-session-projection` [E1+E2] - 注册并读取 'goal' 会话投影以派生当前目标
+  - 证据: `src/index.ts:17-18 import (ProjectionDefinition) + src/index.ts:258 ctx.sessionProjections.register(goalProjectionDefinition) + src/index.ts:477 ctx.sessionProjections.stateOf(session,'goal')`
 
 ## Dependents (下游被依赖)
-- `dsh-agent-spine-demo` - 可选 ctx.plugin(GoalService) 持久化目标域
-- `dsh-client-ui-conversation` - goal 投影 key 类型合并（hasGoal 开关）
-- `dsh-client-ui-goal` - goal 投影 key 类型与 GoalRef 契约
-- `dsh-command-goal` - goal 域状态读写
-- `dsh-goal-round-driver` - goal 状态读取与 block
-- `dsh-host-apiproxy` - GoalError/GoalRef（goals 域）
-- `dsh-tool-goal` - goal 域读写
+- `dsh-api-remotes` - 装配 goal 命名空间
+- `dsh-client-ui-conversation` - 目标模式输入提示
+- `dsh-client-ui-goal` - 目标投影与目标标识类型
+- `dsh-command-goal` - 通过目标域服务读写持久化目标并捕获 GoalError
+- `dsh-goal-round-driver` - 读取目标状态、disarm/block/pause 并在续轮消息上标注目标来源
+- `dsh-tool-goal` - 通过目标域服务执行工具操作并读取 CAS 引用

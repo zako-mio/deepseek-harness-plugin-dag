@@ -1,34 +1,24 @@
 # dsh-web-search-deepseek
 
 - 包名: `@deepseek-ai/dsh-web-search-deepseek`
-- 分组: G24 Web搜索
-- 拓扑层: Layer 3
+- 分组: G47 Web 访问
+- 拓扑层: Layer 5
 - 来源层: L1 核心集
 - 源码路径: `packages/web/web-search-deepseek`
 
-## 为什么需要它（设计初衷）
-DeepSeek 驱动的搜索提供方（经 Anthropic 兼容 API 的原生 web_search），web seam 的搜索实现。
-
-来源：
-- https://registry.npmjs.org/@deepseek-ai/dsh-web-search-deepseek
-- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/web/web-search-deepseek
-
 ## 实现逻辑
-DeepSeek 官方搜索 provider：apply 通过 ctx.web.registerSearchProvider 注册 id='deepseek-official'。search() 每次操作快照 options 后向 Anthropic 兼容 Messages API 发原生 web_search_20250305 工具请求，mapAnthropicResponse 合并引用为 WebSearchResult；apiKey 经 dsh-credentials resolveApiKey 解析，并把脱密请求体记入 session 事件 'web/deepseek-search-llm-request'。
+函数插件把 DeepSeekSearchProvider 注册进 ctx.web（id 'deepseek-official'，src/index.ts:127-131）。provider 调用 Anthropic 兼容 Messages API 并携带原生 web_search_20250305 服务端工具 (src/provider.ts:199-278)，把 web_search_tool_result 块与 text 引文按 URL 合并为规范化来源 (src/provider.ts:120-173)。凭证与端点由 resolveOptions 从 ctx.get('credentials')/launchEnvironmentOf 解析，并在派发前把无密请求写入调用方会话 (src/index.ts:93-124)。
 
 ## Provides
-- ctx.web 搜索 provider 'deepseek-official'
-- settings 段 web-search-deepseek
-- Session 事件 web/deepseek-search-llm-request
+- ctx.web 的 search provider 'deepseek-official' (DeepSeek 官方联网搜索)
 
 ## Depends On (上游依赖)
-- `dsh-agent` [组合依赖] - currentInitiator 归属
-  - 证据: `packages/web/web-search-deepseek/package.json:35`
-- `dsh-session` [编译依赖] - session.append 记录搜索请求
-  - 证据: `packages/web/web-search-deepseek/src/index.ts:14,117-122`
-- `dsh-web` [编译依赖] - registerSearchProvider + WebError
-  - 证据: `packages/web/web-search-deepseek/src/index.ts:41,137`
+- `dsh-agent` [E1+E2] - 通过 ctx.get('agents') 找到当前发起方 Agent，以记录辅助搜索请求
+  - 证据: `package.json:32 peerDep + src/index.ts:11 import type {} from dsh-agent (声明合并) + src/index.ts:118 ctx.get('agents')?.currentInitiator()`
+- `dsh-session` [E1+E2] - 向会话日志记录搜索请求（模型可见输入须可重建），并声明对应 SessionEventMap 事件
+  - 证据: `package.json:35 peerDep + src/index.ts:14 import type {} from dsh-session + src/provider.ts:79 declare module SessionEventMap + src/index.ts:118 session.append('web/deepseek-search-llm-request', ...)`
+- `dsh-web` [E1+E2+E3] - 实现并注册 WebSearchProvider 到 web seam，base bundle 中装配在 web 行之后
+  - 证据: `package.json:36 peerDep + src/provider.ts:9 import { WebError } + src/index.ts:41 static inject ['web'] + src/index.ts:128 ctx.web.registerSearchProvider + packages/bundle/base/cordis.patch.yml:471-478`
 
 ## Dependents (下游被依赖)
-- `dsh-web-search-exa` - 搜索 provider 参照实现：注册方式/归一化语义/装配路径同模式
-- `dsh-web-search-perplexity` - 搜索 provider 参照实现（同 dsh-web-search-exa 的变体）
+- 无下游（叶子/被消费端）

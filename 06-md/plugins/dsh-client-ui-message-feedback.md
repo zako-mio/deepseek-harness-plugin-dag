@@ -1,41 +1,43 @@
 # dsh-client-ui-message-feedback
 
 - 包名: `@deepseek-ai/dsh-client-ui-message-feedback`
-- 分组: G27 会话交互UI
-- 拓扑层: Layer 15
+- 分组: G06 客户端 UI 包
+- 拓扑层: Layer 16
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-message-feedback`
 
-## 为什么需要它（设计初衷）
-逐条消息点赞/点踩反馈的浏览器插件，经 CAS 写 Host 侧对比版本。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-message-feedback/README.md
-
 ## 实现逻辑
-Like/Dislike + 备注。每 Session 一个 MessageFeedbackController 作对象层（list 一次读取 seed 整份 transcript；mutation 经 messageFeedback Remote list/put/delete，host 持有 per-item CAS，version-conflict 由应答对账）；MessageFeedbackActions 注册进 conversation.chat.assistant-actions（id=feedback, order=10），inject 暴露 ensure/rate/toggle/clearNote/clear；connection/reset 时对非 cold 控制器 resync。
+每个 Session 惰性构造一个 FeedbackSurface，把消息级反馈对象层与对话框控制器绑在一起：消息目标走 remote.messageFeedback.rate，Session 目标走 remote.sessionFeedback.record（src/client/surface.ts:14-38）。apply 中向 conversation.chat.assistant-actions 注册 Like/Dislike 条目（src/client/index.ts:98）、向 conversation.input.overlay 注册反馈对话框（src/client/index.ts:115），并以 ctx.provide('feedbackUi') 暴露给其他插件打开草稿（src/client/index.ts:88）。connect/reset 时只重取已读过的非冷反馈（src/client/index.ts:91-95），并通过 commandUi.decorate 挂 /feedback 命令装饰（src/client/index.ts:136）。对话框状态机由 FeedbackDialogController 用快照 store 维护，成功关草稿并发确认 toast、失败保留草稿并发布错误码（src/client/dialog.ts:87-115）。
 
 ## Provides
-- conversation.chat.assistant-actions id=feedback(MessageFeedbackActions)
-- MessageFeedbackController（每 Session 对象层，status cold/loading/ready/error）
+- ctx.feedbackUi (打开指定 Session 反馈草稿的服务，不直接提交)
+- conversation.chat.assistant-actions 条目 'feedback'（MessageFeedbackActions 赞/踩控件）
+- conversation.input.overlay 条目 'feedback-dialog'（FeedbackDialog 对话框与确认/失败 toast）
+- commandUi 的 /feedback 命令装饰（裸调用打开对话框，带参仍走 Host 命令）
 
 ## Depends On (上游依赖)
-- `dsh-api-remotes` [运行时依赖] - host messageFeedback Remote（dsh-message-feedback 域的生成端点）
-  - 证据: `index.ts:12 type-only + index.ts:32 inject remote.messageFeedback + controller.ts:27-41 MessageFeedbackRemote(list/put/delete)`
-- `dsh-client-connection` [运行时依赖] - 消息 id 类型与连接重置重同步
-  - 证据: `controller.ts:12 MessageId,SessionId + index.ts:54-58 ctx.on('connection/reset') resync`
-- `dsh-client-locale` [编译依赖] - feedback 命名空间字典
-  - 证据: `index.ts:16 type-only + index.ts:40 locale.register`
-- `dsh-client-runtime` [编译依赖] - 会话上下文与对象层挂载
-  - 证据: `index.ts:10 ClientContext,SessionId`
-- `dsh-client-ui-conversation` [编译依赖] - 消费 assistant-actions 座位声明
-  - 证据: `index.ts:14 type-only + index.ts:60-77 注册 assistant-actions + package.json:38 dsh.client.inject`
-- `dsh-client-ui-primitives` [编译依赖] - UI atoms
-  - 证据: `package.json:54 peerDependencies（按钮/图标 atoms）`
-- `dsh-client-ui-slots` [编译依赖] - props 类型与 slot 注册
-  - 证据: `slots.ts: MessageFeedbackInjected + controller.ts:11 HostObservable`
-- `dsh-message-feedback` [编译依赖] - feedback 域 wire 类型（item/rating/结果）
-  - 证据: `controller.ts:13-19 dsh-message-feedback/types + package.json:57 peerDependencies`
+- `dsh-api-remotes` [E1+E2] - 调用 messageFeedback/sessionFeedback Remote 记录反馈
+  - 证据: `src/client/controller.ts:11 import + src/client/surface.ts:27 ctx.remote.messageFeedback`
+- `dsh-client-locale` [运行时依赖] - 注册 feedback 字典
+  - 证据: `src/client/index.ts:20 import type + src/client/index.ts:69 ctx.locale.register(NS)`
+- `dsh-client-ui-chat` [编译依赖] - 引入 ui-chat 的类型面（对话内容与标准来源）
+  - 证据: `src/client/index.ts:23 import type {}`
+- `dsh-client-ui-commands` [运行时依赖] - 挂 /feedback 命令装饰
+  - 证据: `src/client/index.ts:18 import type + src/client/index.ts:136 scope.commandUi.decorate`
+- `dsh-client-ui-conversation` [运行时依赖] - 使用 ui-conversation 声明的 assistant-actions 与 input.overlay 槽
+  - 证据: `src/client/index.ts:16 import type + src/client/index.ts:98/index.ts:115 slots.inject`
+- `dsh-client-ui-primitives` [编译依赖] - 复用 ui-primitives 的 Toast/Button 等控件
+  - 证据: `src/client/FeedbackDialog.tsx:13 import + src/client/MessageFeedbackActions.tsx:13`
+- `dsh-client-ui-renderer` [E1+E2] - ctx.slots 槽注册表由 ui-renderer 提供
+  - 证据: `src/client/index.ts:22 import type + src/client/index.ts:60 inject 'slots'`
+- `dsh-client-ui-session` [编译依赖] - 引入 ui-session 的 Session 标准来源类型面
+  - 证据: `src/client/index.ts:24 import type {}`
+- `dsh-command-feedback` [编译依赖] - 反馈记录与分类的协议类型
+  - 证据: `src/client/FeedbackDialog.tsx:14 import + src/client/surface.ts:15`
+- `dsh-message-feedback` [编译依赖] - 消息反馈评分/视图协议类型
+  - 证据: `src/client/MessageFeedbackActions.tsx:14 import + src/client/slots.ts:16`
+- `dsh-session` [编译依赖] - 会话身份类型
+  - 证据: `src/client/index.ts:12 import type { SessionId }`
 
 ## Dependents (下游被依赖)
-- 无下游（叶子/被消费端）
+- `dsh-session-log-export` - 探测 feedbackUi 可用性并在下拉菜单中提供反馈入口

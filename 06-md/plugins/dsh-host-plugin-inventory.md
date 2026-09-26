@@ -1,26 +1,21 @@
 # dsh-host-plugin-inventory
 
 - 包名: `@deepseek-ai/dsh-host-plugin-inventory`
-- 分组: G25 宿主服务
-- 拓扑层: Layer 0
+- 分组: G20 宿主服务
+- 拓扑层: Layer 6
 - 来源层: L2 web-app
 - 源码路径: `packages/host/plugin-inventory`
 
-## 为什么需要它（设计初衷）
-只读暴露当前 Cordis Loader 插件树的 host 端投影，供 UI 展示插件清单，无缓存/无变更/无 mutations。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/host/plugin-inventory/README.md
-- https://www.npmjs.com/package/@deepseek-ai/dsh-host-plugin-inventory
-
 ## 实现逻辑
-PluginInventoryGateway（TypertRemoteService）：@Remote('list') 直接遍历 ctx.loader.entries() 投影非 group 条目（entryId/moduleName/enabled/fiberPhase，FiberState→phase 映射），每次调用实时读 Loader，无二级缓存。
+以 TypertRemoteService 暴露只读 Remote 服务 ctx.pluginInventory，list() 每次直接读 Loader（src/index.ts:51-73）。readPluginInventory 遍历 ctx.loader.entries() 投影非 group 条目的 moduleName/enabled/fiberPhase 与可选本地化元数据，并可选拼入 agent preset 的 composition 行（src/index.ts:82-113）。Fiber 状态经运行时镜像表映射为稳定的 PluginFiberPhase（src/index.ts:30-48）。
 
 ## Provides
-- ctx.pluginInventory（pluginInventory Typert Remote：list）
+- ctx.pluginInventory (Remote list：当前 Loader 插件条目与 preset 组合快照，src/index.ts:51-73)
 
 ## Depends On (上游依赖)
-- 无依赖（基础插件）
+- `dsh-agent-preset-registry` [E1+E2] - 读取 agent preset 组合清单并投影其行
+  - 证据: `package.json:51 peerDep + src/index.ts:6 type import; src/index.ts:97 ctx.get('agentPresets')、:100 compositionInventory`
 
 ## Dependents (下游被依赖)
-- `dsh-client-ui-settings-plugin-inventory` - 只读 Loader 条目投影 Remote
+- `dsh-api-remotes` - 装配插件清单命名空间
+- `dsh-plugin-manager` - 读取运行时插件清单与 entryId 映射，供 listPlugins 对齐

@@ -1,33 +1,25 @@
 # dsh-experimental-tool-agent-team
 
 - 包名: `@deepseek-ai/dsh-experimental-tool-agent-team`
-- 分组: G38 多智能体协作
-- 拓扑层: Layer 7
+- 分组: G13 实验特性
+- 拓扑层: Layer 5
 - 来源层: L3 其余
 - 源码路径: `packages/experimental/tool-agent-team`
 
-## 为什么需要它（设计初衷）
-把agent-team的底层服务封装成模型可直接调用的协作工具，屏蔽服务细节，使Lead与teammate通过工具协议协作并遵守写作用域纪律。
-
-发展史：RC8 新增
-
 ## 实现逻辑
-面向模型的Agent Teams工具集(私有包)。src/index.ts:14 inject=['agents','agentTeams','tools','systemPrompt']。install 在每个exact Agent作用域注册：POLICY系统提示section、spawn_teammate(仅Lead可调)、send_message/followup_task(quiet/wakeup两种投递)、list_agents、wait_agent(含no-progress快速路径)、interrupt_agent、team_task_create/list/get/update等。所有工具经 ctx.agentTeams 服务转发，callingAgent 从exec.agent恢复调用者身份。Config含freshProvider/forkProvider指定teammate子代理提供者。
+为 Agent Teams 在 member 的 Agent scope 内注册整套模型可见工具：spawn_teammate/send_message/list_agents/wait_agent/interrupt_agent 与 team_task_create/list/get/update（src/index.ts:164-391），并注册 `team:policy` systemPrompt 段（src/index.ts:169-173）。`apply()` 对已存在与后续 `agent/created` 的 Agent 用 `ctx.agentTeams.tryMembership` 幂等安装、`agent/disposed` 时卸载（src/index.ts:402-421）。wait_agent 在无 active peer 时短路返回 noProgress 以免空等（src/index.ts:252-274）。
 
 ## Provides
-- 模型面向工具: spawn_teammate/send_message/followup_task/list_agents/wait_agent/interrupt_agent/team_task_*
-- Team协作POLICY系统提示注入
-- Agent-scoped工具注册
+- Agent Teams 模型可见工具集 (spawn/list/send/wait/interrupt + 共享任务 CRUD)
+- systemPrompt 段 team:policy
 
 ## Depends On (上游依赖)
-- `dsh-agent` [运行时依赖] - 恢复exact调用者agent身份
-  - 证据: `src/index.ts:152-156 callingAgent`
-- `dsh-experimental-agent-team` [运行时依赖] - 转发所有Team协作操作
-  - 证据: `src/index.ts:14 inject ['agentTeams']`
-- `dsh-system-prompt` [运行时依赖] - 注入Team协作策略提示
-  - 证据: `src/index.ts:164 scoped.systemPrompt.section`
-- `dsh-tools` [运行时依赖] - 工具定义与注册
-  - 证据: `src/index.ts:8 defineTool`
+- `dsh-agent` [E1+E2] - 枚举/跟踪 Agent 并在其 scope 内注册工具
+  - 证据: `src/index.ts:5 import type { Agent } + src/index.ts:14 inject 'agents' + src/index.ts:412 ctx.agents.list`
+- `dsh-system-prompt` [运行时依赖] - 注入 Team 协作策略段落
+  - 证据: `src/index.ts:14 inject ['agents','agentTeams','tools','systemPrompt'] + src/index.ts:169 systemPrompt.section`
+- `dsh-tools` [E1+E2] - 注册模型可见工具并声明输出 schema
+  - 证据: `src/index.ts:8-9 import defineTool/InferValue + src/index.ts:14 inject 'tools' + src/index.ts:175 tools.register`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

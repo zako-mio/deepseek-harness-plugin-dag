@@ -1,0 +1,315 @@
+[
+  {
+    "id": "dsh-authorization",
+    "name": "@deepseek-ai/dsh-authorization",
+    "implementation": "定义 `ctx.authorization` 能力 seam：`AuthorizationService` 继承 cordis `Service` 并 `static inject=['credentials']`（src/index.ts:189-198），以 `registerFlow()` 按 `CredentialKey` 注册「凭据获取流程」且一个 key 只允许一个 flow（src/index.ts:209-225）。`begin()` 用 `running` Map 保证同一 key 单飞、校验 method 合法性，并把流程屏蔽在一个中立会话（notify/commit/prompt）后执行（src/index.ts:283-323）。seam 只在流程于本次尝试内确实提交了凭据记录后才报 `authorized`（`observed.committed` + `describeRecord`，src/index.ts:392-453），并以容错扇出广播 `authorization/settled`（src/index.ts:338-358）。`invariant.ts` 独立校验 settled 后 key 不再 in-flight（src/invariant.ts:24-37），`types.ts` 给出不含 cordis/service 依赖的 wire 安全类型（src/types.ts:1-91）。",
+    "provides": [
+      "ctx.authorization (凭据授权 seam：注册/列出/取消/执行凭据获取流程，按 key 单飞)",
+      "事件 authorization/settled (一次授权尝试终态广播，含 failed)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-credentials", "mechanism": "E1+E2", "evidence": "src/index.ts:30 import CredentialKey/CredentialRecord + src/index.ts:191 static inject ['credentials'] + src/index.ts:407 modifyRecord", "purpose": "提交凭据记录并确认记录已写入凭据存储"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "src/index.ts:31 import HarnessError", "purpose": "AuthorizationError 复用 HarnessError 稳定错误分类"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E1+E2", "evidence": "src/invariant.ts:7 import InvariantInstaller + src/invariant.ts:14 inject ['invariants'] + src/invariant.ts:45 register", "purpose": "注册 single-flight 释放不变式，检测 settled 后 key 残留 in-flight"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-credentials-local",
+    "name": "@deepseek-ai/dsh-credentials-local",
+    "implementation": "实现文件型 `CredentialProvider`（`LocalCredentialProvider`，src/index.ts:513）：以 `$DSH_HOME/.credentials.yaml` 为可写的托管层，按可信度分层解析 ref（继承环境 > 托管文件 > 项目 .env > 用户 .env，src/index.ts:609-631、553-567）。文档解析严格拒绝未知版本/顶层键/记录字段而非跳过（src/index.ts:188-227、328-358），写入在跨进程文件锁下 read-modify-write、保留注释并以 0600 原子写（src/index.ts:666-699）；同时校验文件不得 group/other 可读（src/index.ts:127-146）。chokidar 监听外部编辑并在 `ready` 时补一次对账热发布（src/index.ts:569-607、869-891）。",
+    "provides": [
+      "CredentialProvider 实现 (文件型 refs/records 凭据存储，供 ctx.credentials seam 消费)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-atomic-write", "mechanism": "E1", "evidence": "src/index.ts:44 import withFileLock/writeFileAtomic", "purpose": "跨进程写锁与 0600 原子写入凭据文档"},
+      {"plugin_id": "dsh-home-paths", "mechanism": "E1", "evidence": "src/index.ts:45 import canonicalizeWatchPath/resolveDshHome", "purpose": "解析 harness home 与监听路径"},
+      {"plugin_id": "dsh-launch-environment", "mechanism": "E1+E2", "evidence": "src/index.ts:46 import launchEnvironmentOf + src/index.ts:555 与 src/index.ts:565 getFrom", "purpose": "读取继承环境与 .env 兜底层以决定解析优先级"},
+      {"plugin_id": "dsh-credentials", "mechanism": "E1", "evidence": "src/index.ts:47 import CredentialProvider/credentialRef/parseCredentialKey + src/index.ts:513 extends CredentialProvider", "purpose": "实现凭据 seam 的 provider 角色并复用其键语法"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-deepseek-account-platform",
+    "name": "@deepseek-ai/dsh-deepseek-account-platform",
+    "implementation": "`PlatformAccount` 继承 `DeepSeekAccount`（src/index.ts:84-85），以 PKCE 实现 DeepSeek Platform 网页登录：注册 authorization flow（src/index.ts:138-146），`run()` 生成 verifier/challenge+state、在 webServer 注册 `/oauth/callback` 时序安全校验回调、交换 token 后经 `session.commit` 写 grant 记录（src/index.ts:509-599）。grant 以 issuer 绑定 provider origin，失效或拒 token 即删除记录并广播 `deepseek-account/session-expired`/`signed-out`（src/index.ts:329-344、372-388）。profile/余额/未通知奖励经 `details.ts`/`protocol.ts` 的 zod 校验与 65KB 响应上限读取（src/details.ts:62-70、src/protocol.ts:166-234）。",
+    "provides": [
+      "ctx.credentials 记录 (deepseek-account-platform/default 与 /device 的 grant)",
+      "事件 deepseek-account/session-expired, deepseek-account/signed-out"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-deepseek-account", "mechanism": "E1", "evidence": "src/index.ts:10 import DeepSeekAccount 等 + src/index.ts:84 extends DeepSeekAccount", "purpose": "实现 account seam 的平台 provider 角色并复用其类型/客户端头"},
+      {"plugin_id": "dsh-credentials", "mechanism": "E1+E2", "evidence": "src/index.ts:11 import credentialKey + src/index.ts:85 static inject ['credentials','authorization'] + src/index.ts:168 readRecord", "purpose": "读写 grant 记录（含 device 记录）"},
+      {"plugin_id": "dsh-authorization", "mechanism": "E1+E2", "evidence": "src/index.ts:12 import AuthorizationSession + src/index.ts:85 inject + src/index.ts:138 registerFlow + src/index.ts:413 begin", "purpose": "把浏览器 PKCE 登录注册为授权流程并驱动一次尝试"},
+      {"plugin_id": "dsh-host-webserver", "mechanism": "E1+E2", "evidence": "src/index.ts:4 import type {} from '@deepseek-ai/dsh-host-webserver' + src/index.ts:510 ctx.get('webServer') + src/index.ts:526 webServer.register", "purpose": "注册 /oauth/callback 路由接收浏览器回调"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-present",
+    "name": "@deepseek-ai/dsh-tool-present",
+    "implementation": "函数插件在 agent scope 注册模型可见工具 `present`，让模型把已存在的文件声明为最终交付物（src/index.ts:38-99）。`execute` 先校验存在 open turn（经 sessionProjections 的 `turnBoundary`）、文件数 1..maxFiles，再用 `ctx.fs.lstat/resolve/stat` 确认每个路径都是常规文件，否则报错（src/index.ts:76-97）。成功结果经 `tools/result` 监听器把 `deliverables/presented` 事件追加进 Session，文件内容仍留在源路径不被复制（src/index.ts:100-108、src/types.ts:12-16）。",
+    "provides": [
+      "工具 present (声明已存在文件为最终交付物)",
+      "Session 事件 deliverables/presented"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "src/index.ts:5 import defineTool + src/index.ts:26 inject ['tools','fs','sessionProjections'] + src/index.ts:38 ctx.tools.register", "purpose": "注册工具并订阅 tools/result"},
+      {"plugin_id": "dsh-fs", "mechanism": "E1+E2", "evidence": "src/index.ts:4 import FsError + src/index.ts:26 inject + src/index.ts:87 ctx.fs.lstat", "purpose": "校验被声明的文件确实存在且为常规文件"},
+      {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "src/index.ts:6 import type {} from '@deepseek-ai/dsh-agent' + src/index.ts:77 exec.agent", "purpose": "取得调用 Agent 及其 Session"},
+      {"plugin_id": "dsh-session-projection", "mechanism": "E1+E2", "evidence": "src/index.ts:7 import type {} from '@deepseek-ai/dsh-session-projection' + src/index.ts:26 inject + src/index.ts:78 stateOf(..., 'turnBoundary')", "purpose": "读取当前 open turn 与 turn 号"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "src/index.ts:8 import type { Session } + src/index.ts:105 session.append", "purpose": "把交付声明持久化为 Session 事件"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "src/types.ts:2 import ToolCallId from '@deepseek-ai/dsh-llm/brand'", "purpose": "事件 payload 使用品牌化 ToolCallId"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-workspace-changes",
+    "name": "@deepseek-ai/dsh-workspace-changes",
+    "implementation": "汇总每个顶层 turn 改动的文件：以 git 工作树快照（turn 起止）为主，叠加文件工具编辑的整文件捕获，非 git 环境退化为仅文件工具编辑（src/index.ts:1-10、120-129）。`apply()` 通过 `session/event`、`agent/turn-stopping`、`tools/pre-execute` 驱动每 Session 的 `TurnRecorder`（src/index.ts:143-164），并把 `workspaceChanges` 服务 provide 到 ctx，按 SessionId+seq 提供 `summary()` 与按需计算的 `diff()`（src/index.ts:114-118、src/types.ts:78-97）。变更摘要由 `workspace/changes` Session 事件宣告，摘要本体留在 Host 侧（src/types.ts:99-108）。",
+    "provides": [
+      "ctx.workspaceChanges (按 Session/seq 提供每 turn 变更摘要与文件前后对比)",
+      "Session 事件 workspace/changes"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-subprocess", "mechanism": "E1+E2", "evidence": "src/git.ts:4 import + src/index.ts:30 inject ['subprocess'] + src/index.ts:74 ctx.subprocess.resolveExecutable", "purpose": "解析 git 可执行并运行 git 命令做快照/numstat"},
+      {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "src/index.ts:14 import type {} from '@deepseek-ai/dsh-agent' + src/index.ts:153 agent/turn-stopping", "purpose": "在 turn 停止时收口快照"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "src/index.ts:15 import type { Session, SessionId } + src/recorder.ts:5 import + src/index.ts:143 session/event", "purpose": "按 Session 生命周期观察事件与释放记录器"},
+      {"plugin_id": "dsh-tools", "mechanism": "E1", "evidence": "src/index.ts:17 import type {} from '@deepseek-ai/dsh-tools' + src/index.ts:156 tools/pre-execute", "purpose": "在工具执行前捕获文件编辑以覆盖 git 未跟踪路径"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-office-to-pdf",
+    "name": "@deepseek-ai/dsh-office-to-pdf",
+    "implementation": "`OfficeToPdf` 继承 `TypertRemoteService`（服务名 officeToPdf），用 LibreOffice kit 把 Office 文档转 PDF：私有临时目录写入输入、`createConverter` 渲染，并对输出做大小上限与 `%PDF`/`%%EOF` 结构校验（src/index.ts:233-277、src/output.ts:13-39）。`ConversionQueue` 做有界准入、按内容 sha256 去重与 LRU 缓存、foreground/background 优先级、reader 取消与源字节预留（src/queue.ts:51-232）。`@Remote render()` 经 `workspaceFiles` 授权读取源文件、以 version 校验源未变，并把失败映射为稳定的 RemoteError（src/index.ts:159-231）。",
+    "provides": [
+      "ctx.officeToPdf (Office→PDF 转换与授权工作区文件渲染服务)",
+      "Remote 域 officeToPdf (render/generation)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "src/index.ts:11 import brandString + src/identity.ts:2 import brandString/Branded", "purpose": "为源定位符与转换身份生成品牌化 id"},
+      {"plugin_id": "dsh-typert-protocol", "mechanism": "E1+E2", "evidence": "src/index.ts:12 import Remote/RemoteError/TypertRemoteService + src/index.ts:101 extends TypertRemoteService + src/index.ts:159 @Remote", "purpose": "实现跨端 Remote 服务与错误契约"},
+      {"plugin_id": "dsh-api-workspace-files", "mechanism": "E1+E2", "evidence": "src/types.ts:2 import WorkspaceFileBytes + src/index.ts:9 import + src/index.ts:187 ctx.get('workspaceFiles')", "purpose": "按 Session 授权读取/校验源文件元数据"},
+      {"plugin_id": "dsh-fs", "mechanism": "E1+E2", "evidence": "src/index.ts:10 import type {} from '@deepseek-ai/dsh-fs' + src/index.ts:188 ctx.get('fs') + src/index.ts:203 fs.resolve", "purpose": "解析路径并按上限读取源字节"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-api-speech-to-text",
+    "name": "@deepseek-ai/dsh-experimental-api-speech-to-text",
+    "implementation": "`SpeechController` 继承 `TypertRemoteService`（命名空间 speech）（src/index.ts:28-37），把 Host 的 `ctx.speechToText` 以 authenticated Remote 暴露给 Client：`catalog()`/`follow()` 读 provider 与就绪快照，`configure/prepare/cancelPreparation` 透传，`transcribe()` 先做 base64 规范性与字节上限校验、`validateWave` 校验录音，再委派识别并映射为稳定 RemoteError（src/index.ts:43-110）。",
+    "provides": [
+      "Remote 命名空间 speech (catalog/follow/configure/prepare/cancelPreparation/transcribe)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-experimental-speech-to-text", "mechanism": "E1+E2", "evidence": "src/index.ts:5 import type {} + src/index.ts:6 import types + src/index.ts:8 import validateWave + src/index.ts:29 inject ['speechToText','typert'] + src/index.ts:100 transcribe", "purpose": "消费语音识别 seam 并校验提交的 WAV"},
+      {"plugin_id": "dsh-typert-protocol", "mechanism": "E1+E2", "evidence": "src/index.ts:4 import Remote/RemoteError/TypertRemoteService + src/types.ts:3 import type {} + src/index.ts:29 inject 'typert'", "purpose": "实现 Remote 传输与错误详情契约"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-auto-review",
+    "name": "@deepseek-ai/dsh-experimental-auto-review",
+    "implementation": "为 current-session-only 的 Auto 权限预设提供 LLM 授权门：在 `tools/pre-execute` 上 prepend 监听器，仅当 session 处于 AUTO_PRESET 且非 `run_code` 外层传输时介入（src/index.ts:686-721）。它把 provider/model/cwd/项目指令/过滤历史/待执行动作冻结为五段快照（src/index.ts:361-523），经 `ctx.llm.stream` 用固定 REVIEW_POLICY 请求 reviewer，并对返回 JSON 做严格 risk/decision 协议解析（src/index.ts:562-638）。deny 时按 approval policy 决定 ask 还是终态 deny，并注册 Auto 预设、卸载时把受影响 session 降级为 danger-full-access（src/index.ts:709-738）。",
+    "provides": [
+      "Auto 权限预设的按调用 LLM 审查门 (tools/pre-execute prepend 决策)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-llm", "mechanism": "E1+E2", "evidence": "src/index.ts:22 import BlockAssembler/GenerateOptions 等 + src/index.ts:126 inject + src/index.ts:637 ctx.llm.stream", "purpose": "用当前请求路由调用 reviewer 模型并解析流式块"},
+      {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "src/index.ts:12 import type { Agent } + src/index.ts:361 agent", "purpose": "读取会话 surface、header 与 cwd 构造审查快照"},
+      {"plugin_id": "dsh-agent-instructions", "mechanism": "E1", "evidence": "src/index.ts:13 import type {} from '@deepseek-ai/dsh-agent-instructions'", "purpose": "识别项目指令来源并归入 constraint 角色"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/index.ts:23 import deepFreeze", "purpose": "冻结审查快照与生成选项"},
+      {"plugin_id": "dsh-permission-presets", "mechanism": "E1+E2", "evidence": "src/index.ts:24 import AUTO_PRESET + src/index.ts:126 inject + src/index.ts:680 permissionPresets + src/index.ts:723 registerAuto", "purpose": "注册 Auto 预设并读取/设置当前 session 预设"},
+      {"plugin_id": "dsh-session", "mechanism": "E1+E2", "evidence": "src/index.ts:25 import type { SessionEvent } + src/index.ts:126 inject 'sessions' + src/index.ts:730 ctx.sessions.list", "purpose": "读取会话事件日志并对受影响会话降级"},
+      {"plugin_id": "dsh-subagent", "mechanism": "E1", "evidence": "src/index.ts:26 import type {} from '@deepseek-ai/dsh-subagent'", "purpose": "解析子 Agent 的直接父指令初始提示边界"},
+      {"plugin_id": "dsh-user-approval", "mechanism": "E1+E2", "evidence": "src/index.ts:27 import type {} from '@deepseek-ai/dsh-user-approval' + src/index.ts:126 inject 'approval' + src/index.ts:710 overrideOf", "purpose": "按 approval policy 决定 reviewer deny 是 ask 还是终态 deny"},
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "src/index.ts:32 import RUN_CODE_NAME/PreToolDecision + src/index.ts:126 inject 'tools' + src/index.ts:686 tools/pre-execute", "purpose": "在工具执行前介入并返回 allow/deny/ask/cancel 决策"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-browser-use-chrome-devtools-mcp",
+    "name": "@deepseek-ai/dsh-experimental-browser-use-chrome-devtools-mcp",
+    "implementation": "函数插件（name/inject/Config/apply）复用 browser-use runtime 的 `mountSessionMcp`，把 pinned 的 Chrome DevTools MCP server 以「每个 live Session 一个进程」方式挂载（src/index.ts:25-41）。launch 模式追加 `--isolated`/`--headless`，attach 模式按 endpoint 形状追加 `--ws-endpoint` 或 `--browser-url`，并禁用 usage statistics；attach 时标记 exclusive（src/index.ts:29-41）。",
+    "provides": [],
+    "depends_on": [
+      {"plugin_id": "dsh-experimental-browser-use-runtime", "mechanism": "E1", "evidence": "src/index.ts:5 import BrowserMcpConfig/mountSessionMcp/validateBrowserMcpConfig + src/index.ts:35 mountSessionMcp", "purpose": "复用共享的 Session 级 MCP 挂载与配置校验"},
+      {"plugin_id": "dsh-browser-use", "mechanism": "E2", "evidence": "src/index.ts:11 inject ['browserUse','agents','tools','systemPrompt']", "purpose": "向 browserUse 注册表占用 provider 并等待 prompt 就绪"},
+      {"plugin_id": "dsh-agent", "mechanism": "E2", "evidence": "src/index.ts:11 inject ['browserUse','agents','tools','systemPrompt']", "purpose": "按 live Agent 建立 Session 作用域"},
+      {"plugin_id": "dsh-tools", "mechanism": "E2", "evidence": "src/index.ts:11 inject ['browserUse','agents','tools','systemPrompt']", "purpose": "把 MCP 工具注册进工具注册表"},
+      {"plugin_id": "dsh-system-prompt", "mechanism": "E2", "evidence": "src/index.ts:11 inject ['browserUse','agents','tools','systemPrompt']", "purpose": "在 system prompt 中声明浏览器能力"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-browser-use-playwright-mcp",
+    "name": "@deepseek-ai/dsh-experimental-browser-use-playwright-mcp",
+    "implementation": "函数插件复用 browser-use runtime 的 `mountSessionMcp`，把 pinned Playwright MCP server 以 `--browser chromium` 挂到每个 live Session（src/index.ts:26-49）。为避免上游 `PLAYWRIGHT_MCP_*` 环境变量覆盖配置，先把同名变量清空；attach 模式用 `--cdp-endpoint`，launch 模式用 `--isolated`/`--headless`/`--executable-path`（src/index.ts:31-49）。",
+    "provides": [],
+    "depends_on": [
+      {"plugin_id": "dsh-experimental-browser-use-runtime", "mechanism": "E1", "evidence": "src/index.ts:6 import BrowserMcpConfig/mountSessionMcp/validateBrowserMcpConfig + src/index.ts:42 mountSessionMcp", "purpose": "复用共享的 Session 级 MCP 挂载与配置校验"},
+      {"plugin_id": "dsh-browser-use", "mechanism": "E2", "evidence": "src/index.ts:12 inject ['browserUse','agents','tools','systemPrompt']", "purpose": "向 browserUse 注册表占用 provider"},
+      {"plugin_id": "dsh-agent", "mechanism": "E2", "evidence": "src/index.ts:12 inject ['browserUse','agents','tools','systemPrompt']", "purpose": "按 live Agent 建立 Session 作用域"},
+      {"plugin_id": "dsh-tools", "mechanism": "E2", "evidence": "src/index.ts:12 inject ['browserUse','agents','tools','systemPrompt']", "purpose": "把 MCP 工具注册进工具注册表"},
+      {"plugin_id": "dsh-system-prompt", "mechanism": "E2", "evidence": "src/index.ts:12 inject ['browserUse','agents','tools','systemPrompt']", "purpose": "在 system prompt 中声明浏览器能力"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-browser-use-stagehand-native",
+    "name": "@deepseek-ai/dsh-experimental-browser-use-stagehand-native",
+    "implementation": "以 `SessionResources` 为每个 live Session 惰性拥有一个原生 Stagehand 浏览器运行时（launch 模式先 `launchChromium` 再连 CDP，attach 模式独占已有端点），并注册 `stagehand_navigate/tabs/screenshot/act/observe/extract` 工具（src/index.ts:84-164、166-209）。工具执行经 `tools/execute` 绑定到确切 live Agent，把调用方 signal 与 operation signal 串接后再走下一层（src/index.ts:192-209）；原生操作在 worker 内以 SDK `localBrowser.connect`+`Stagehand.create` 实现，含截图/自然语言 action（src/native.ts:95-159）。",
+    "provides": [],
+    "depends_on": [
+      {"plugin_id": "dsh-experimental-browser-use-runtime", "mechanism": "E1", "evidence": "src/index.ts:9 import SessionResources + src/index.ts:100 new SessionResources", "purpose": "复用 Session 级资源拥有/独占与生命周期管理"},
+      {"plugin_id": "dsh-mcp-client", "mechanism": "E1", "evidence": "src/index.ts:10 import createMcpToolDefinition + src/index.ts:179 createMcpToolDefinition", "purpose": "把原生方法适配为 MCP 形状的工具定义"},
+      {"plugin_id": "dsh-subprocess", "mechanism": "E1", "evidence": "src/launch.ts:7 import scrubbedParentEnv", "purpose": "以净化后的父环境启动 Chromium 子进程"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/native.ts:5 import assertNever", "purpose": "闭合联合分派的穷尽性断言"},
+      {"plugin_id": "dsh-browser-use", "mechanism": "E1+E2", "evidence": "src/index.ts:8 import BrowserUseProviderName from '@deepseek-ai/dsh-browser-use/brand' + src/index.ts:17 import type {} + src/index.ts:25 inject + src/index.ts:99 register", "purpose": "注册 stagehand-native provider 并占用 browserUse 服务"},
+      {"plugin_id": "dsh-agent", "mechanism": "E1+E2", "evidence": "src/index.ts:16 import type {} from '@deepseek-ai/dsh-agent' + src/index.ts:25 inject + src/index.ts:185 requireInitiator", "purpose": "按 owner Agent 隔离浏览器运行时并注入 initiator"},
+      {"plugin_id": "dsh-system-prompt", "mechanism": "E1+E2", "evidence": "src/index.ts:18 import type {} + src/index.ts:25 inject + src/index.ts:191 systemPrompt.section", "purpose": "注入 Stagehand 使用与安全 guidance"},
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "src/index.ts:19 import type {} + src/index.ts:25 inject + src/index.ts:179 tools.register + src/index.ts:192 tools/execute", "purpose": "注册浏览器工具并接管其执行信号"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-client-ui-agent-team",
+    "name": "@deepseek-ai/dsh-experimental-client-ui-agent-team",
+    "implementation": "Host 半边为空 `apply()`，行为完全在浏览器侧（src/index.ts:4）。Client 侧 `registerAgentTeamUi()` 注册 agent-team locale 字典，并把 Team 动作注入 conversation header 的 `conversation.session.header.actions` 槽（src/client/mount.ts:29-62）。打开成员时先用会话的 subagent address 归一到 Lead Session，再经 `uiWorkspace.openSession` 打开父会话或 continuable 子会话（src/client/mount.ts:32-51）。",
+    "provides": [],
+    "depends_on": [
+      {"plugin_id": "dsh-api-session-controller", "mechanism": "E1+E2", "evidence": "src/client/TeamAction.tsx:8 import '@deepseek-ai/dsh-api-session-controller/client' + src/client/mount.ts:4 import + src/client/mount.ts:21 inject 'sessions'", "purpose": "读取会话绑定与保留信息定位 Lead/子会话"},
+      {"plugin_id": "dsh-client-ui-conversation", "mechanism": "E1", "evidence": "src/client/TeamAction.tsx:16 import '@deepseek-ai/dsh-client-ui-conversation/client' + src/client/mount.ts:6 import", "purpose": "在会话头部动作区渲染 Team 入口"},
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1+E2", "evidence": "src/client/TeamAction.tsx:14-15 import + src/client/mount.ts:21 inject 'slots' + src/client/mount.ts:53 slots.inject", "purpose": "注册并声明该 UI 槽位与 locale 命名空间"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E1+E2", "evidence": "src/client/mount.ts:7 import '@deepseek-ai/dsh-client-locale/client' + src/client/mount.ts:21 inject 'locale' + src/client/mount.ts:30 locale.register", "purpose": "注册中英文 Team 文案字典"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1", "evidence": "src/client/mount.ts:8 import '@deepseek-ai/dsh-client-ui-renderer/client'", "purpose": "让注册的组件被渲染管线识别"},
+      {"plugin_id": "dsh-client-ui-workspace", "mechanism": "E1+E2", "evidence": "src/client/mount.ts:9 import '@deepseek-ai/dsh-client-ui-workspace/client' + src/client/mount.ts:21 inject 'uiWorkspace' + src/client/mount.ts:42 openSession", "purpose": "切换/打开成员会话视图"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "src/client/TeamAction.tsx:3 import SessionId + src/client/mount.ts:5 import '@deepseek-ai/dsh-session/types'", "purpose": "使用会话 id 类型与快照字段"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-client-ui-voice-input",
+    "name": "@deepseek-ai/dsh-experimental-client-ui-voice-input",
+    "implementation": "Host 半边为空 `apply()`，行为在浏览器侧（src/index.ts:3）。Client 入口把生成的 speech Remote contribution 经 `ctx.remote.$mount` 挂载为实验命名空间，然后注册 UI（src/client/index.ts:13-14、src/client/mount.ts:60-65）：locale 字典、录音集合生命周期、readiness 观察、composer `conversation.input.activity` 的 VoiceInput 槽，以及 voice-input bundle 的配置/激活槽（src/client/mount.ts:19-51）。动作层把 transcribe/configure/prepare 委派给 `ctx.remote.speech`（src/client/mount.ts:33-40）。",
+    "provides": [],
+    "depends_on": [
+      {"plugin_id": "dsh-experimental-api-speech-to-text", "mechanism": "E1", "evidence": "src/client/index.ts:3 import '@deepseek-ai/dsh-experimental-api-speech-to-text/remote' + src/client/mount.ts:4 import", "purpose": "挂载并调用 speech Remote 命名空间"},
+      {"plugin_id": "dsh-api-remotes", "mechanism": "E1+E2", "evidence": "src/client/mount.ts:3 import '@deepseek-ai/dsh-api-remotes/client' + src/client/mount.ts:17 inject 'remote' + src/client/mount.ts:61 remote.$mount", "purpose": "在 Client 注册实验 Remote 贡献"},
+      {"plugin_id": "dsh-client-ui-conversation", "mechanism": "E1", "evidence": "src/client/VoiceInput.tsx:4 import '@deepseek-ai/dsh-client-ui-conversation/client' + src/client/mount.ts:7 import", "purpose": "在输入区渲染麦克风控件"},
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1+E2", "evidence": "src/client/PreparationCard.tsx:4 + src/client/VoiceInput.tsx:3 + src/client/mount.ts:17 inject 'slots' + src/client/mount.ts:42 slots.inject", "purpose": "注册输入区与插件 bundle 槽位"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E1+E2", "evidence": "src/client/mount.ts:5 import '@deepseek-ai/dsh-client-locale/client' + src/client/mount.ts:17 inject 'locale' + src/client/mount.ts:20 locale.register", "purpose": "注册语音相关中英文文案"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1", "evidence": "src/client/mount.ts:6 import '@deepseek-ai/dsh-client-ui-renderer/client'", "purpose": "让注册组件进入渲染管线"},
+      {"plugin_id": "dsh-client-ui-plugin-manager", "mechanism": "E1+E2", "evidence": "src/client/VoiceSetupDialog.tsx:4 import '@deepseek-ai/dsh-client-ui-plugin-manager/client' + src/client/mount.ts:17 inject 'pluginNavigation' + src/client/mount.ts:26 openBundle", "purpose": "跳转到 voice-input 插件 bundle 进行模型准备"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/readiness.ts:4 import '@deepseek-ai/dsh-client-store'", "purpose": "观察 provider 就绪状态"},
+      {"plugin_id": "dsh-api-gateway", "mechanism": "E1", "evidence": "src/client/readiness.ts:3 import '@deepseek-ai/dsh-api-gateway/client'", "purpose": "经网关检测语音后端可用性"},
+      {"plugin_id": "dsh-typert-protocol", "mechanism": "E1", "evidence": "src/client/VoiceInput.tsx:7 import + src/client/mount.ts:8 import TypertRemoteContribution", "purpose": "使用 Remote contribution 与结果类型"},
+      {"plugin_id": "dsh-experimental-speech-to-text", "mechanism": "E1", "evidence": "src/client/PreparationCard.tsx:5 import '@deepseek-ai/dsh-experimental-speech-to-text/types' + src/client/VoiceInput.tsx:6 import", "purpose": "使用 provider/快照等共享语音类型"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/PreparationCard.tsx:3 + src/client/VoiceInput.tsx:13 + src/client/VoiceSetupDialog.tsx:2 import '@deepseek-ai/dsh-client-ui-primitives'", "purpose": "复用基础 UI 组件"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-computer-use-cua-driver-mcp",
+    "name": "@deepseek-ai/dsh-experimental-computer-use-cua-driver-mcp",
+    "implementation": "函数插件以 `dsh-mcp-client` 的 Config 连接已安装的 `cua-driver` MCP 可执行文件（stdio、failOnStartupError:true）（src/index.ts:52-61）。在一个 effect 中先 `ctx.computerUse.register('cua-driver-mcp')` 再以子插件启动 MCP client，并按顺序等待子进程彻底退出后再释放保留（src/index.ts:62-70）；启动/发现失败即回滚激活。",
+    "provides": [],
+    "depends_on": [
+      {"plugin_id": "dsh-mcp-client", "mechanism": "E1", "evidence": "src/index.ts:10 import * as McpClient + src/index.ts:53 McpClient.Config", "purpose": "承载 MCP 连接（发现/执行/重连）并作为子插件生命周期"},
+      {"plugin_id": "dsh-computer-use", "mechanism": "E1+E2", "evidence": "src/index.ts:9 import ComputerUseProviderName from '@deepseek-ai/dsh-computer-use/brand' + src/index.ts:11 import type {} + src/index.ts:17 inject 'computerUse' + src/index.ts:66 computerUse.register", "purpose": "独占占用 computerUse 注册并声明 provider 名"},
+      {"plugin_id": "dsh-tools", "mechanism": "E2", "evidence": "src/index.ts:17 inject ['computerUse','tools']", "purpose": "MCP 工具注册进工具注册表的前提服务"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-computer-use-cua-driver-native",
+    "name": "@deepseek-ai/dsh-experimental-computer-use-cua-driver-native",
+    "implementation": "通过 in-process 原生 Cua Driver SDK 注册 `cua_driver_native__*` 工具：动态 `import('@trycua/cua-driver')`、`CuaDriver.create`、`listToolsJson` 解析工具目录并用 `createMcpToolDefinition` 适配（src/index.ts:88-118）。`tools/execute` 监听器把这些工具调用绑定到 lifetime signal 并跟踪 pending（src/index.ts:119-131），同时注册 computer-use systemPrompt guidance（src/index.ts:132-136）。卸载时 abort lifetime、等待 pending、`driver.shutdown()` 后 `uniffiDestroy()`（src/index.ts:59-78）。",
+    "provides": [],
+    "depends_on": [
+      {"plugin_id": "dsh-mcp-client", "mechanism": "E1", "evidence": "src/index.ts:9 import createMcpToolDefinition + src/index.ts:103 createMcpToolDefinition", "purpose": "把原生工具目录适配为 MCP 形状工具定义"},
+      {"plugin_id": "dsh-computer-use", "mechanism": "E1+E2", "evidence": "src/index.ts:8 import ComputerUseProviderName from '@deepseek-ai/dsh-computer-use/brand' + src/index.ts:12 import type {} + src/index.ts:20 inject 'computerUse' + src/index.ts:60 register", "purpose": "独占占用 computerUse 注册并声明 provider 名"},
+      {"plugin_id": "dsh-system-prompt", "mechanism": "E1+E2", "evidence": "src/index.ts:13 import type {} from '@deepseek-ai/dsh-system-prompt' + src/index.ts:20 inject 'systemPrompt' + src/index.ts:132 systemPrompt.section", "purpose": "注入桌面操作 guidance 段落"},
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "src/index.ts:14 import type {} from '@deepseek-ai/dsh-tools' + src/index.ts:20 inject 'tools' + src/index.ts:117 tools.register + src/index.ts:119 tools/execute", "purpose": "注册原生工具并接管其执行信号"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-inspector",
+    "name": "@deepseek-ai/dsh-experimental-inspector",
+    "implementation": "跨 realm 的运行时 Inspector：Host 面（src/host/plugin.ts:38-62）启动 Inspector Worker、以 `ctx.provide('inspector')` 暴露观察发布服务与只读 Cordis 拓扑查询（src/index.ts:39-50），并通过 `webserver/index-inject` 把 Client bootstrap 注入 index.html。Client 面（src/client/plugin.ts:45-70）读取全局 `__DSH_INSPECTOR__` bootstrap 连接 Worker 并发布浏览器侧观察。共享实现含 bridge(buffers/codec/rpc)、CDP 域代理、cordis 快照投影等（src/index.ts:1-37）。",
+    "provides": [
+      "ctx.inspector (发布 JSON 观察 + 只读 Cordis 运行时拓扑查询)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-host-webserver", "mechanism": "E1+E2", "evidence": "src/host/plugin.ts:4 import type { IndexInjection } + src/index.ts:63 inject ['webServer'] + src/host/plugin.ts:49 webserver/index-inject", "purpose": "向页面注入 Client bootstrap 并在 webserver 生命周期内启动"},
+      {"plugin_id": "dsh-util-crypto", "mechanism": "E1", "evidence": "src/shared/cordis/object-registry.ts:3 import '@deepseek-ai/dsh-util-crypto' + src/client/cdp/sources.ts:3 import", "purpose": "对象身份/内容哈希等加密工具"},
+      {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "src/shared/identity.ts:3 import '@deepseek-ai/dsh-brand'", "purpose": "生成品牌化的 source/identity 标识"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-ptc-runtime-python",
+    "name": "@deepseek-ai/dsh-experimental-ptc-runtime-python",
+    "implementation": "`PythonPtcRuntime` 继承 `PtcRuntime` 并注册为 `ctx.ptcRuntime`（language=python，src/index.ts:804-816），以 fresh `python3` 子进程执行模型程序：binding 调用走 fd-3 JSON-lines，stdout/stderr 留给程序自身输出，bootstrap 内提供 asyncio 顶层 await（src/index.ts:1-11）。containment 由 RLIMIT_CPU/RLIMIT_AS、墙钟超时、SIGTERM→grace→SIGKILL 进程组构成，所有上限在 load 时验证（src/index.ts:804-879）；包还拥有并导出 fd-3 wire 协议的编解码与敌意帧校验器，供所有消费方共享词表（src/index.ts:26-39）。",
+    "provides": [
+      "ctx.ptcRuntime (python 子进程隔离的 PTC 运行时后端)",
+      "fd-3 wire 协议编解码/校验器 (validateChildFrame 等)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-ptc-runtime", "mechanism": "E1+E2", "evidence": "src/index.ts:22-23 import PtcRuntime 及类型 + src/index.ts:804 extends PtcRuntime + src/index.ts:830 super(ctx)", "purpose": "实现 PTC runtime seam 的 python 后端角色"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/index.ts:24 import snapshotJsonValue", "purpose": "对往返值做无损 JSON 快照校验"},
+      {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "src/index.ts:25 import MAX_TIMER_DELAY_MS", "purpose": "约束墙钟定时器上限"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-speech-to-text-sensevoice",
+    "name": "@deepseek-ai/dsh-experimental-speech-to-text-sensevoice",
+    "implementation": "本地 SenseVoice 识别 provider：`apply()` 先校验 dataRoot/modelDirectory/vadModelPath 必须是绝对路径、model origin 合法，再创建 `SenseVoiceWorker` 并注册到 `ctx.speechToText.register`（info/preparation/transcribe），激活时只调用 `worker.inspect()` 检查磁盘缓存、不下载也不加载模型（src/index.ts:20-41）。识别工作进程经 `ctx.subprocess` 执行（src/recognizer.ts:262），卸载时反注册并 await worker.dispose（src/index.ts:36-40）。",
+    "provides": [
+      "SpeechProvider 注册 (host-local SenseVoiceSmall 识别器)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-experimental-speech-to-text", "mechanism": "E1+E2", "evidence": "src/index.ts:4 import type {} + src/index.ts:6 import types + src/index.ts:13 inject ['speechToText','subprocess'] + src/index.ts:28 register", "purpose": "向语音识别 seam 注册本地 provider"},
+      {"plugin_id": "dsh-subprocess", "mechanism": "E1+E2", "evidence": "src/index.ts:5 import type {} from '@deepseek-ai/dsh-subprocess' + src/index.ts:13 inject + src/recognizer.ts:262 subprocess", "purpose": "在子进程中运行识别工作进程"},
+      {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "src/config.ts:3 import '@deepseek-ai/dsh-timeout' + src/recognizer.ts:7 import + src/model-sources.ts:2 import", "purpose": "约束下载/推理的超时上限"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-tool-agent-team",
+    "name": "@deepseek-ai/dsh-experimental-tool-agent-team",
+    "implementation": "为 Agent Teams 在 member 的 Agent scope 内注册整套模型可见工具：spawn_teammate/send_message/list_agents/wait_agent/interrupt_agent 与 team_task_create/list/get/update（src/index.ts:164-391），并注册 `team:policy` systemPrompt 段（src/index.ts:169-173）。`apply()` 对已存在与后续 `agent/created` 的 Agent 用 `ctx.agentTeams.tryMembership` 幂等安装、`agent/disposed` 时卸载（src/index.ts:402-421）。wait_agent 在无 active peer 时短路返回 noProgress 以免空等（src/index.ts:252-274）。",
+    "provides": [
+      "Agent Teams 模型可见工具集 (spawn/list/send/wait/interrupt + 共享任务 CRUD)",
+      "systemPrompt 段 team:policy"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-experimental-agent-team", "mechanism": "E1+E2", "evidence": "src/index.ts:6-7 import TeamTaskId/TeamMemberView + src/index.ts:14 inject 'agentTeams' + src/index.ts:192 spawnTeammate", "purpose": "调用 Team 运行时完成成员与共享任务操作"},
+      {"plugin_id": "dsh-agent", "mechanism": "E1+E2", "evidence": "src/index.ts:5 import type { Agent } + src/index.ts:14 inject 'agents' + src/index.ts:412 ctx.agents.list", "purpose": "枚举/跟踪 Agent 并在其 scope 内注册工具"},
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "src/index.ts:8-9 import defineTool/InferValue + src/index.ts:14 inject 'tools' + src/index.ts:175 tools.register", "purpose": "注册模型可见工具并声明输出 schema"},
+      {"plugin_id": "dsh-system-prompt", "mechanism": "E2", "evidence": "src/index.ts:14 inject ['agents','agentTeams','tools','systemPrompt'] + src/index.ts:169 systemPrompt.section", "purpose": "注入 Team 协作策略段落"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-webworker-runtime",
+    "name": "@deepseek-ai/dsh-experimental-webworker-runtime",
+    "implementation": "浏览器专用 host runtime：在专用 Web Worker 内跑整套 harness Cordis 树。`createWorkerHost` 同步构造（先装消息处理器以便启动期排队），`start()` 挂载 VFS 镜像/overlay、安装 Worker 模块加载器与 process shim，再从镜像 require `boot()`/cmdline 启动 preview profile 并让 TunnelServer 开始服务（src/worker-host.ts:169-271）。包同时导出 ModuleLoader、node builtin/external 代理与 mock、shell 解释器、storage(VFS/tar/gzip)、transport(tunnel/synthetic-http)、async-context polyfill 等浏览器运行时基建（src/index.ts:5-52）。",
+    "provides": [
+      "createWorkerHost/startWorkerHost (在 Web Worker 内组装并启动完整 harness Cordis 树)",
+      "浏览器运行时基建 (WorkerModuleLoader / MemoryVfs / TunnelServer / shell / node builtin 代理)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-web", "mechanism": "E1", "evidence": "src/client/apply-injections.ts:2 import '@deepseek-ai/dsh-client-web/injections'", "purpose": "复用 Client web 侧的 index injection 定义"},
+      {"plugin_id": "dsh-host-webserver", "mechanism": "E1", "evidence": "src/client/client.ts:8 import '@deepseek-ai/dsh-host-webserver'", "purpose": "使用 webserver 采集 index injections 作为 boot payload"},
+      {"plugin_id": "dsh-client-file-upload", "mechanism": "E1", "evidence": "src/client/index.ts:12 import '@deepseek-ai/dsh-client-file-upload/types'", "purpose": "复用文件上传类型于 Worker 传输层"},
+      {"plugin_id": "dsh-util-crypto", "mechanism": "E1", "evidence": "src/node/builtin_modules/implemented/crypto.ts:8 import + src/node/globals/crypto.ts:8 import '@deepseek-ai/dsh-util-crypto'", "purpose": "在 Worker 内提供 node:crypto 能力的实现来源"},
+      {"plugin_id": "dsh-api-gateway", "mechanism": "E1", "evidence": "src/worker-host.ts:26 import type { TypertGateway }", "purpose": "把 typert 流经 tunnel 转发到页面"},
+      {"plugin_id": "dsh-client-connection", "mechanism": "E1", "evidence": "src/worker-host.ts:27 import type { HostConnectionHandle }", "purpose": "从树中取得共享 fetch handler 供 tunnel 直连"}
+    ],
+    "dependents": []
+  }
+]

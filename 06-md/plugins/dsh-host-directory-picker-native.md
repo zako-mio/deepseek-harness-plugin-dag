@@ -1,28 +1,19 @@
 # dsh-host-directory-picker-native
 
 - 包名: `@deepseek-ai/dsh-host-directory-picker-native`
-- 分组: G37 示例与框架
-- 拓扑层: Layer 1
+- 分组: G20 宿主服务
+- 拓扑层: Layer 0
 - 来源层: L3 其余
 - 源码路径: `packages/host/directory-picker-native`
 
-## 为什么需要它（设计初衷）
-directory-picker seam 的原生 OS 选择器后端（macOS osascript / Linux Zenity / Windows IFileOpenDialog）。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/host/directory-picker-native/README.md
-
 ## 实现逻辑
-NativeDirectoryPicker extends DirectoryPicker (src/index.ts:20)，native capability pick→pickNativeDirectory (:21-25)；打开系统级目录选择器：macOS osascript、Linux Zenity+KDialog 回退、Windows 经 koffi 驱动 IFileOpenDialog 于 spawn 子进程 COM 对话（头注释 :1-10）；native-picker.ts + win32-dialog-* 多文件实现 worker 隔离。
+实现 dsh-host-directory-picker 的 DirectoryPicker 服务，注册 kind:'native' 能力，pick 委托 pickNativeDirectory（src/index.ts:22-35）。native-picker.ts 按平台分派：darwin 调 osascript、linux 依次调 zenity/kdialog、win32 走 koffi 驱动的 IFileOpenDialog 子进程（src/native-picker.ts:48-107）。命令一律经 dsh-native-command 的 runNativeCommand 以 argv 执行，绝不经过 shell（src/native-picker.ts:3、53）。
 
 ## Provides
-- ctx.directoryPicker（native capability: pick）
+- ctx.directoryPicker (native 能力实现：调用宿主 OS 原生目录选择对话框，src/index.ts:23-27)
 
 ## Depends On (上游依赖)
-- `dsh-host-directory-picker` [E1+E2] - seam 基座
-  - 证据: `package.json:40 deps + src/index.ts:12-13 import { DirectoryPicker }；E2: :20 extends DirectoryPicker`
-- `dsh-native-command` [编译依赖] - osascript/zenity 原生命令执行
-  - 证据: `package.json:41 deps`
+- 无依赖（基础插件）
 
 ## Dependents (下游被依赖)
-- 无下游（叶子/被消费端）
+- `dsh-host-directory-picker-auto` - native 交互的宿主后端条目

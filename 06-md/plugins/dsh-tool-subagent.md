@@ -1,37 +1,37 @@
 # dsh-tool-subagent
 
 - 包名: `@deepseek-ai/dsh-tool-subagent`
-- 分组: G19 子代理
-- 拓扑层: Layer 6
+- 分组: G41 子代理
+- 拓扑层: Layer 7
 - 来源层: L1 核心集
 - 源码路径: `packages/subagent/tool-subagent`
 
-## 为什么需要它（设计初衷）
-给模型提供基于 ctx.subagents seam 的委派工具，解耦传输与执行约定：更换提供方（spawn/fork/acp 等）只改传输不改变执行约定。支持前台等待与后台运行（one-shot 经通用 Task 接口收集、continuable 返回持久化 subagentId），并发安全（同级委派可并行重叠执行、结果按模型顺序提交），并支持 persona、toolFilter、maxDepth 等每子 agent 独立配置。子 agent 在各自会话中工作，一次运行绝不变更父会话。RC7 修正 AggregateError 取消判定、更新后台作业文案。
-
-发展史：位于 packages/subagent/tool-subagent，随 DeepSeek Harness monorepo 于 2026-08-10 首版 0.0.1-rc.1，0.1.0-rc.6（2026-08-13）转 MIT 并公开发布。核心设计源自多个 Agent Note：后台子任务（2026-07-08）、可继续对话（2026-07-28）、后台优先委派（2026-08-11）。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/subagent/tool-subagent/README.zh.md
-- https://registry.npmjs.org/@deepseek-ai/dsh-tool-subagent
-
 ## 实现逻辑
-模型可见的 subagent 委派工具：apply 通过 ctx.tools.register 注册(config.toolName ?? 'subagent')。工具 mount 随 provider 生命周期动态挂载/卸载(监听 subagent/provider-added|removed)；execute 区分前台、one-shot 后台(jobs.start)与 continuable 后台(ctx.subagents.startContinuable)。RC7：后台取消判定修正——signal.aborted 且错误非 AggregateError(提供方聚合启动/回滚失败)才归为 killed，聚合错误保持 failed；后台作业文案改 started background subagent job <jobId>。
+注册 model 可见委派工具 subagent：按配置绑定一个 ctx.subagents provider，工具随 provider 出现/移除动态注册与注销，并据 inheritsParentContext 选择措辞 (src/index.ts:360-606)。execute() 解析子代理模型路由（可选 list_subagent_models 策略与 preflight），前台调用 await start() 并 settleForegroundRun，一次性后台走 ctx.jobs，可续后台走 startContinuable (src/index.ts:471-568)。model-selection*.ts 实现逐会话路由策略、持久化投影与发现工具，invariant 保证可选路由定义可重构 (src/model-selection.ts:99-196, src/model-selection-state.ts:37-81, src/invariant.ts:19-41)。
 
 ## Provides
-- 模型工具 'subagent'
-- systemPrompt section tool:subagent
-- 后台委派作业路由(dsh-jobs + continuable)
+- model 可见工具 `subagent` (经 provider 启动前/后台子代理)
+- model 可见工具 `list_subagent_models` (子代理 LLM 路由发现)
 
 ## Depends On (上游依赖)
-- `dsh-agent` [编译依赖] - exec.agent 委派 parent
-  - 证据: `packages/subagent/tool-subagent/src/index.ts:14,370`
-- `dsh-subagent` [编译依赖] - start/startContinuable/getProvider
-  - 证据: `packages/subagent/tool-subagent/src/index.ts:17,23,425`
-- `dsh-system-prompt` [编译依赖] - systemPrompt.section 注册指引
-  - 证据: `packages/subagent/tool-subagent/src/index.ts:20,459`
-- `dsh-tools` [编译依赖] - defineTool + register
-  - 证据: `packages/subagent/tool-subagent/src/index.ts:13,297`
+- `dsh-agent` [E1+E2] - 读取调用 Agent 与 reconciling 组合作用域
+  - 证据: `src/index.ts:15 (import type Agent, AgentOptions) + src/index.ts:658 (ctx.get('agents'))`
+- `dsh-invariants` [E1+E2] - 注册可选路由定义完整性不变量
+  - 证据: `src/invariant.ts:8 (import type InvariantFailure, InvariantInstaller) + src/invariant.ts:16 (inject ['invariants']) + src/invariant.ts:49 (ctx.invariants.register)`
+- `dsh-llm` [E1+E2] - 子代理路由发现与 preflight
+  - 证据: `src/index.ts:16 (import ReasoningEffortId) + src/list-models.ts:4-5 (import type LlmRuntime, LlmProviderInfo) + src/index.ts:498 (runtimeCtx.get('llm'))`
+- `dsh-scope` [E1+E2] - 识别 preset 组合作用域
+  - 证据: `src/index.ts:13 (import scopeChainOf, scopeOf) + src/index.ts:654 (scopeOf(ctx))`
+- `dsh-session` [编译依赖] - 会话身份与投影读取
+  - 证据: `src/index.ts:19-20 (import SessionSeq, type Session) + src/model-selection-state.ts:4 (import type Session)`
+- `dsh-session-projection` [E1+E2] - 注册逐会话模型选择策略投影
+  - 证据: `src/model-selection-state.ts:5-6 (import ProjectionDefinition, SessionProjectionRegistry) + src/index.ts:45 (inject ['sessionProjections']) + src/index.ts:326 (ctx.sessionProjections.register)`
+- `dsh-subagent` [E1+E2] - 启动子代理并复用 seam 辅助
+  - 证据: `src/index.ts:21-26 (import assertSubagentMaxDepth, parentAgentOptionsForDelegation, settleRun, 类型) + src/index.ts:45 (inject ['tools','subagents','systemPrompt','sessionProjections']) + src/index.ts:530 (ctx.subagents.startContinuable) + src/index.ts:563 (ctx.subagents.start)`
+- `dsh-system-prompt` [运行时依赖] - 为可续后台委派注册提示段
+  - 证据: `src/index.ts:45 (inject ['systemPrompt']) + src/index.ts:598 (runtimeCtx.systemPrompt.section)`
+- `dsh-tools` [E1+E2] - 注册委派工具定义
+  - 证据: `src/index.ts:14 (import defineTool) + src/index.ts:45 (inject ['tools']) + src/index.ts:379 (runtimeCtx.tools.register)`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

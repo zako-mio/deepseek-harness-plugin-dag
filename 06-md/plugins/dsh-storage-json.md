@@ -1,29 +1,20 @@
 # dsh-storage-json
 
 - 包名: `@deepseek-ai/dsh-storage-json`
-- 分组: G25 宿主服务
+- 分组: G40 存储
 - 拓扑层: Layer 1
-- 来源层: L2 web-app
+- 来源层: L1 核心集
 - 源码路径: `packages/storage/storage-json`
 
-## 为什么需要它（设计初衷）
-存储中心 JSON 后端：每个单元一个可读 `<unit>.json` 文件、整文件原子替换发布，可读性是存在理由，扩展交给 SQLite 后端。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/storage/storage-json
-- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/storage
-
 ## 实现逻辑
-JSON 文件后端：每 unit 一个 <root>/<unit>.json，原子整文件重写（atomic.ts），只提供 kv facet；apply 在 storage 中枢 ctx.storage.backend.register('json') 注册后端，并 ctx.provide(storageBackendServiceKey('json')) 供 domain 层注入等待激活；root 无默认值。
+注册存储后端 json：JsonStorageBackend 在配置 root 下按 descriptor.layout 打开 single（整单元单文件）或 per-record（记录级目录）单元 (src/index.ts:64-80)。single 单元以内存为权威，每次写整文件原子重写并在失败时回滚 (src/single-unit.ts:74-112)；per-record 单元不持有内存态、目录即状态，记录键映射为路径段并带版本戳读取 (src/per-record-unit.ts:195-254)。原子发布用同目录临时文件 fsync 后 rename，并对父目录 fsync (src/atomic.ts:24-40)。
 
 ## Provides
-- storage.backend.json 后端（kv facet）
-- storage.backend.json 服务键
+- storage 后端 `json` (storage.backend.json 生命周期服务与 kv facet)
 
 ## Depends On (上游依赖)
-- `dsh-storage` [编译依赖] - 注册到 hub 后端注册表并取 storageBackendServiceKey
-  - 证据: `packages/storage/storage-json/package.json:36; src/index.ts:12-13`
+- `dsh-storage` [E1+E2] - 向存储中枢注册 json 后端并提供 kv facet
+  - 证据: `src/index.ts:12-13 (import StorageError/UNIT_NAME_RE/storageBackendServiceKey 与类型) + src/index.ts:20 (inject ['storage']) + src/index.ts:112 (ctx.storage.backend.register('json'))`
 
 ## Dependents (下游被依赖)
-- `dsh-storage-domain` - config backend: json → 经 hub 解析 'json' 后端（E2 解析）
-- `dsh-storage-sqlite` - 后端注册模式参照：与 json 后端并列的 kv facet 后端实现
+- 无下游（叶子/被消费端）

@@ -1,36 +1,29 @@
 # dsh-tool-subagent-control
 
 - 包名: `@deepseek-ai/dsh-tool-subagent-control`
-- 分组: G19 子代理
-- 拓扑层: Layer 6
+- 分组: G41 子代理
+- 拓扑层: Layer 7
 - 来源层: L1 核心集
 - 源码路径: `packages/subagent/tool-subagent-control`
 
-## 为什么需要它（设计初衷）
-全局命名 send_message/interrupt_agent/list_agents 工具，经 ctx.subagents continuations 控制子 agent。
-
-来源：
-- https://registry.npmjs.org/@deepseek-ai/dsh-tool-subagent-control
-- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/subagent/tool-subagent-control
-
 ## 实现逻辑
-全局命名控制工具：apply 注册 send_message(ctx.subagents.followup 转发)与 interrupt_agent(ctx.subagents.interrupt 转发)；list-agents 子入口注册 list_agents(listChildren/listDescendants + agents 实时状态)。工具名全局唯一。
+注册 model 可见控制工具 send_message 与 interrupt_agent，二者是 ctx.subagents.sendMessage()/interrupt() 的薄适配层，不含自身的生命周期路由 (src/index.ts:27-111)。send_message 用 markAdjacentAgentSendMessageTool 标注标准工具身份并投递消息 (src/index.ts:28-72)；interrupt_agent 以 {kind:'ancestor',agent:caller} 授权中断 (src/index.ts:74-111)。list-agents.ts 另注册 list_agents，将 children/descendants 投影为模型可见行，省略一次性子项并保留诊断 (src/list-agents.ts:59-177)。
 
 ## Provides
-- 模型工具 send_message/interrupt_agent
-- 可独立加载的 list_agents
+- model 可见工具 `send_message` / `interrupt_agent` (子代理控制薄适配)
+- model 可见工具 `list_agents` (子代理发现，children/descendants)
 
 ## Depends On (上游依赖)
-- `dsh-agent` [编译依赖] - list_agents inject agents
-  - 证据: `packages/subagent/tool-subagent-control/src/list-agents.ts:18,60`
-- `dsh-llm` [编译依赖] - assertNever
-  - 证据: `packages/subagent/tool-subagent-control/src/list-agents.ts:14`
-- `dsh-session` [编译依赖] - SessionId 品牌化入参
-  - 证据: `packages/subagent/tool-subagent-control/src/index.ts:15,68`
-- `dsh-subagent` [编译依赖] - followup/interrupt
-  - 证据: `packages/subagent/tool-subagent-control/src/index.ts:19,66`
-- `dsh-tools` [编译依赖] - defineTool + register
-  - 证据: `packages/subagent/tool-subagent-control/src/index.ts:13,26`
+- `dsh-agent` [E1+E2] - 读取活跃 Agent 状态用于发现结果
+  - 证据: `src/list-agents.ts:12 (import type Agent) + src/list-agents.ts:20 (inject ['tools','subagents','agents']) + src/list-agents.ts:163 (ctx.agents)`
+- `dsh-llm` [编译依赖] - 构造模型可见消息内容块
+  - 证据: `src/index.ts:15 (import type ContentBlock)`
+- `dsh-session` [编译依赖] - 子代理会话 id 类型
+  - 证据: `src/index.ts:16 (import type SessionId) + src/list-agents.ts:13 (import type SessionId)`
+- `dsh-subagent` [E1+E2] - 转发消息/中断并复用相邻 Agent 工具标记
+  - 证据: `src/index.ts:17-18 (import 类型与 markAdjacentAgentSendMessageTool) + src/index.ts:21 (inject ['tools','subagents']) + src/index.ts:64 (ctx.subagents.sendMessage) + src/index.ts:108 (ctx.subagents.interrupt)`
+- `dsh-tools` [E1+E2] - 注册控制与发现工具
+  - 证据: `src/index.ts:14 (import defineTool) + src/index.ts:21 (inject ['tools','subagents']) + src/index.ts:28 (ctx.tools.register) + src/list-agents.ts:86 (ctx.tools.register)`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

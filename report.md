@@ -1,71 +1,105 @@
-# 任务完成报告：DeepSeek Harness 插件级 DAG 知识库 RC8 → RC2 升级
+# 任务完成报告：DeepSeek Harness 插件级 DAG 知识库 RC2 → 0.1.7-rc.2 全量重建
+
+> 留档日期：2026-09-27 ｜ 复杂度：17/20（Deep）｜ 轨道：plan + build ｜ 库：`0822-plugin-dag-v0.1.1-rc2`
 
 ## 一、当时情况
 
-DeepSeek Harness 上游于 2026-08-21 发布了 `dsh-v0.1.1-rc.2`（commit `b150a551`）。当前知识库目录 `0822-plugin-dag-v0.1.1-rc2` 基于 `v0.1.0-rc.8`（commit `141eb6f`）构建，包含 180 节点 / 578 边 / 39 组 / 49 外部 seam 的完整 DAG 数据、230 页插件页、交互总览、MD 镜像及质量门控脚本。本次任务要求按 `version-upgrade-cascade` 8 步工作流完成级联升级，生成差异分析报告与任务完成报告，并确保质量门控全部通过。
+**用户需求**：把 `0822-plugin-dag-v0.1.1-rc2` 的插件分析更新到**最新版 dsh**，并**同步更新到 GitHub 仓库**；建议先做架构审查。
+
+**探索后确认的环境事实**：
+
+- 目标目录 = GitHub `zako-mio/deepseek-harness-plugin-dag` 的本地仓（**public**，默认分支 `v0.1.1-rc.2`，`master` 停在 RC7→RC8），工作区干净。
+- 另有 `archive/dsh-architecture-map`（含 `09-custom` 自定义层 + changelogs 的**本地维护库**，无 remote，其 SKILL 明令禁止 push）。
+- 库现状（现场跑门控实测）：180 节点 / 578 边 / 39 组 / 17 层 / 50 seam / 230 页，`quality-gate-l3.py` ALL PASS。
+- **上游最新** = `dsh-v0.1.7-rc.2`（commit `477b4f42`，2026-09-24），基线为 `v0.1.1-rc.2`（2026-08-21）。
+- 本机部署的 dsh 为 `0.1.5-rc.2`（落后目标 2 个 minor）。
+
+**关键量化事实（本次任务的性质判定依据）**：
+
+| 项 | 值 |
+|---|---|
+| commits 跨度 | **6875** |
+| `packages/` | 227 → **312**（+102 / −17） |
+| 共有包源码变化 | **210 / 210 = 100%** |
+| 仅版本号变化包 | **0** |
+| `.ts` 源码量 | 1248 → 2026（+62%） |
+| 装配文件 | base 451→528 行、web-app 445→562 行（**E3 变了**，历史上一直是字节级一致） |
 
 ## 二、制定计划
 
-按 skill 方法论制定 7 步执行计划（Step 8 git push 由主 Agent 后续处理）：
+**架构审查**（产出级，按 `architecture-judgment` 的「评审与设计裁决」档；规模三问命中 Q2）：
 
-1. **前置准备**：下载 RC2 官方 tarball，计算并保存 SHA256；确认基线/目标 commit。
-2. **三层差异分析**：
-   - 结构 diff：对比 `packages/` 目录新增/删除/改名包。
-   - 源码 diff：写 `src-diff-rc8-rc2.py` 分类 43 源码变化 / 6 tests-only / 177 版本号-only。
-   - 深入分析：对实质变化包识别 E1/E2/E3 依赖变化；重点检查 `cordis.patch.yml` 与 seam `referred_by`。
-3. **依赖变化识别**：输出 `deps-diff-rc8-rc2.json`，确认 E1 新增依赖 4 条 seam 边。
-4. **数据层更新**：写 `update-dag-rc2.py` 更新 `webapp-dag.json` meta 与 `external-seams.json`（新增 `dsh-authorization`、更新 3 个 seam 的 referred_by）。
-5. **页面全量重生成**：复用 `gen-html-l3.py`、`gen-md-l3.py`、`gen-plugin-dyn.py`、`gen-overview.py`、`inject-data-l3.py`。
-6. **门控 + 验证**：运行 `quality-gate-l3.py` 确保 ALL PASS；使用 `/snap/bin/chromium` 运行 headless DOM 检查。
-7. **交付**：生成 `RC8-RC2-DIFF-REPORT.md`、更新 `README.md`、生成本报告 `report.md` + `report.html`。
+- 结论 = **有条件放行**。放行的前提是**放弃增量级联**——原方法的省力假设（「80% 包仅版本号变化」）在本轮**被实测证伪**（210/210 全变、0 个版本号-only），沿用会产出大面积过期内容。
+- 整改项：① 先修脚本基础设施的硬编码路径；② 分级基准必须从新 bundle patch **重新采集**；③ 每条依赖保留源码行引用；④ 公开库推送前做私有信息扫描。
+
+**用户拍板四项**：① **两个库都更新**；② 目标版本 `dsh-v0.1.7-rc.2`；③ **全量重推导 + 用好委派并行**；④ 新建 `v0.1.7-rc.2` 分支并切换为默认分支。
+（后续追加约束：**子 Agent 并行上限 3**。）
+
+**执行计划 P0–P7**：基线冻结 → 管线自建 → 分级重采集 → 21 分片并行分析 → 数据层重建 → 页面重生成 + 门控 → 文档收口 → GitHub 同步 → 维护图融合同步。
 
 ## 三、执行情况
 
-### 前置准备
-- 成功下载 `dsh-v0.1.1-rc.2.tar.gz`（14 MB）。
-- SHA256：`142e2f67db41425e8a96a265f77d94997d6e222c9817075b9f34dfc9653bbf75`，保存于 `05-source/dsh-v0.1.1-rc.2/dsh-v0.1.1-rc.2.tar.gz.sha256`。
-- 解压后 `package.json` 确认版本 `0.1.1-rc.2`。
+### P0 基线冻结
+- 官方 tarball 落 `05-source/dsh-v0.1.7-rc.2/`，SHA256 `761df167…`（32MB）。
+- **仓库卫生决策**：旧版把**解压树**也提交进 git（rc8 + rc.2 共 88MB / 15712 文件）。新版树 155MB，直接提交会把公开仓库从 46MB 推到 200MB+，故改为 **tarball + SHA256 入库、解压树 gitignore**，并留 `README.md` 说明解压与复现命令。
 
-### 三层差异分析
-- **结构 diff**：RC8 226 包 → RC2 227 包，仅新增 `credentials/authorization`，无删除。
-- **源码 diff**：43 包 src/ 实质变化、6 包仅 tests、177 包仅版本号变化（`src-diff-rc8-rc2.json`）。
-- **深入分析**：新增 `dsh-authorization` seam；`llm-pi-ai` 新增 E1 依赖 `dsh-authorization`；`llm-deepseek` 新增 E1 依赖 `dsh-atomic-write` / `dsh-brand` / `dsh-home-paths`；5 个 `cordis.patch.yml` 字节级一致。
+### P1 管线自建（不复活旧管线）
+旧脚本依赖跨任务的 Windows 路径 `D:\Opencode_Download\...\PACKAGE-MAP.json`、`stage-00-l2-inventory.json`、`stage-01-l3-r4.json` 等，且其输入在 0.1.7 下全部失效。故新建**自包含确定性管线**（`07-checkpoint/v017-*.py`）：
 
-### 数据层更新
-- `external-seams.json`：50 seams（+1）；`dsh-authorization` 新增并设置 referred_by=`["dsh-llm-pi-ai"]`；3 个 seam 增加 `dsh-llm-deepseek`。
-- `webapp-dag.json`：节点/边/组/层数不变，更新 `generated_at` 与 `source` 标注。
+`v017-inventory.py`（解 bundle patch + 枚举 321 包）→ `v017-facts.py`（逐包扫 src 提 E1 import 含行号 / E2 inject·ctx·事件 / 插件导出特征）→ `v017-classify.py`（分类 + 分组）→ `v017-make-shards.py`（21 片）。
 
-### 页面全量重生成
-- `02-plugin-pages/`：230 页（180 插件 + 50 seam）。
-- `03-groups/`：39 组页 + 索引。
-- `04-interactive/index.html`：动态 DATA 注入，图例改为动态统计。
-- `06-md/`：180 插件 + 50 seam + 3 索引。
-- `08-special-modules/`：4 页保留。
+**过程中修掉两个自身 bug**（均为「静默污染」型）：
+1. **id 规范化多剥一层 `dsh-` 前缀** → 全部 E1 边指向错误 id。复核时发现并修正。
+2. **type_only 判定把「类型导入 + 运行时 ctx 调用」误判为纯类型** → 56 条运行时边被排除出分层，图层被压平成 6 层。改为「机制含 E2/E3 一律不算纯类型」后恢复为 19 层。
 
-### 生成脚本调整
-- `gen-overview.py`：图例从硬编码改为基于 core-dag.json/external-seams.json 动态统计。
-- `headless-verify-l3.py`：Chrome 路径改为本机 `/snap/bin/chromium`。
+### P2 21 分片并行分析（子 Agent 上限 3）
+- 契约外置落盘（`v017/CONTRACT.md`），每片只读自己的分片输入、只写自己的输出文件（**同域隔离 + 文件域唯一写入方**）。
+- 共 21 片 / 239 插件，分 7 轮 × 3 并行完成。
+- **回盘复验**（不采信自述）：21/21 片存在、239/239 条目、0 缺失/多余 id、0 自环、0 指向装配框架的边、0 条无 `file:line` 证据。
+
+### P3 数据层重建
+- 239 节点 / 1077 节点间边 / **536 seam 边** / 73 seam / 50 组 / 19 层。
+- **环处理**：SCC 分析显示只有 **1 个 8 节点环**（client UI ↔ `dsh-api-remotes` 的注册回环）。策略选「DFS 反馈边标记 `soft`」——保留展示、不参与分层，**零信息损失**。
+- 不变量校验：每条运行时边 `level[from] > level[to]`，**0 违例**。
+
+### P4 页面重生成 + 门控
+- 按 schema 约定修正：`edges` 仅节点间边（纯 seam 边入 `edges` 会让 `gen-html` KeyError），seam 边改由 `external-seams.referred_by` 表达，并新增 `seam_edges` 顶层键保留证据。
+- 清理 46 个陈旧页面 → 全量重生成 312 插件页 + 50 组页 + 8 特殊模块页 + MD 镜像 + 交互图。
+- 门控 ALL PASS；同时**强化**门控（纳入 v017 全部 JSON、特殊模块全集、`seam_edges` 一致性、分层方向一致性）。
+
+### P4b headless 验证暴露并修复 3 个既有缺陷
+1. **交互图 URL 路由缺失**：三张下钻截图字节数完全相同 → 发现 `?drill=` 从未生效；而**旧脚本的断言 `zcount>0` 在无路由时也成立 ⇒ 历史上一直是假绿**。已补齐 `?drill=`/`#Gxx` 深链并把断言改为「下钻视图 ≠ 组级视图」。
+2. **图例统计取错数据源**：图例从 L1-only 的 `core-dag.json` 取数，显示「90 个 / 32 组」，而实际 DATA 是 239 / 50。已改为从 `webapp-dag.json` 取数并动态列组名。
+3. **门控判据对象不匹配**：原用全边做环检测，与「type-only 不参与拓扑」的分层策略冲突（TS 类型环合法）。已改为运行时边必须无环 + 类型环仅 WARN。
+
+### P5 文档收口
+README 全量重写、`index.html` 统计与说明更新、`RC2-0.1.7-DIFF-REPORT.md` 新建、`05-source/.../README.md` 新建（解压与复现）。
 
 ## 四、完成情况
 
-| 检查项 | 结果 |
-|--------|------|
-| RC2 官方源码下载 + SHA256 | ✅ 完成 |
-| 三层差异分析脚本/JSON | ✅ 完成 |
-| `webapp-dag.json` / `external-seams.json` 更新 | ✅ 完成 |
-| 页面全量重生成 | ✅ 完成 |
-| `quality-gate-l3.py` | ✅ ALL PASS（0 error / 0 warning） |
-| headless DOM 检查 | ✅ 组级 zcount=40，无 JS 错误，截图成功 |
-| `RC8-RC2-DIFF-REPORT.md` | ✅ 已生成 |
-| `README.md` 版本/统计更新 | ✅ 已更新 |
-| `report.md` + `report.html` | ✅ 已生成 |
+| 检查项 | 结果 | 证据 |
+|---|---|---|
+| 官方源码下载 + SHA256 | ✅ | `761df167eaccc337bcee864579fd578ecb0f3cb5dbc7b1d36761508faaec455a` |
+| 管线 8 个脚本 | ✅ | `07-checkpoint/v017-*.py`，可重放 |
+| 21 分片分析回盘复验 | ✅ | 239/239 条目，0 错误 |
+| DAG 数据 | ✅ | 239 节点 / 1077 边 + 536 seam 边 / 19 层 / 50 组 / 73 seam |
+| 分层不变量 | ✅ | 运行时边 0 违例 |
+| 页面全量重生成 | ✅ | 312 插件页 + 50 组页 + 8 特殊模块页 + MD 镜像 |
+| `quality-gate-l3.py` | ✅ **ALL PASS** | 0 error / 1 warning（类型环，仅上报） |
+| headless DOM（非空断言） | ✅ | 组级 51；下钻 G01 → 10 且 zmode 切换 |
+| 视觉确认 | ✅ | 图例 239/73/50、面包屑、seam 虚线边正常 |
+| 差异报告 / README / 报告 | ✅ | `RC2-0.1.7-DIFF-REPORT.md` / `README.md` / 本报告 |
+| GitHub 同步 | ✅ | 新分支 `v0.1.7-rc.2` + 切默认分支 |
+| 维护图（dsh-architecture-map）同步 | ✅ | 官方层 + 自定义层 + changelog（见该库 UPDATE-LOG） |
 
-最终数据：180 节点 / 578 边 / 17 层 / 39 组 / 50 外部 seam / 230 页。
+**最终数据**：239 节点（L1 90 / L2 82 / L3 67）/ 1077 节点间边 + 536 seam 边 / 19 层 / 50 组 / 73 seam / 8 特殊模块 / 312 插件页。
 
 ## 五、反思/分析/建议
 
-1. **RC2 是“小版本、单 seam”升级**：相比 RC7→RC8 的 536 commits/61 源码变化包，RC8→RC2 仅 207 commits/43 源码变化包，且唯一新增包是 seam。这说明三层差异分析能有效聚焦真正影响 DAG 的变更。
-2. **seam 新增不进入 DAG 节点集**：`dsh-authorization` 是纯外部基座，通过 `external-seams.json` 表达，因此 DAG 节点/边/组数保持不变。需确保生成脚本和门控脚本能正确识别 seam 数量变化。
-3. **硬编码统计是隐患**：`gen-overview.py` 原图例硬编码 `173/49/38`，在 RC8 时已经过时。本次改为动态统计，避免未来升级再次产生误导。
-4. **headless 环境需适配**：本机 WSL2 无预装 Chrome for Testing，下载超时；最终使用 `/snap/bin/chromium` 完成验证。建议在持久化环境中预装稳定 Chrome 或记录本机可用路径。
-5. **下一步（Step 8）**：主 Agent 可执行 `git add -A` + commit + push；提交信息建议包含 `v0.1.1-rc.2`、新增 `dsh-authorization`、质量门控 ALL PASS。
+1. **「增量升级」的地基是「多数包没变」，这个前提必须每轮重测**。本轮 210/210 全变 ⇒ 省力优化直接失效。**判据应由实测推导，不能由历史轮次外推**——这正是本轮先做架构审查、用逐包哈希先量化再决策的价值。
+2. **旧管线的「可复用」是假象**：脚本能跑 ≠ 输入有效。跨任务绝对路径（`D:\...`）与旧中间产物（`stage-00/01-*`）让旧管线在换版本后静默失效。自建管线时把**路径本地化 + 输入自产**作为硬约束，是这次能一次跑通的原因。
+3. **子 Agent 自述必须回盘复验，但复验要给对判据**：本次两次实质缺陷（id 前缀、type-only 误判）都是**主流程自己的脚本 bug**，子 Agent 无从发现；而「分片条目数 / 证据格式」这类契约项，子 Agent 自检与回盘结果完全一致。⇒ 复验的重点应放在**主流程的组装与判据**上，而非重复核对子 Agent 已自检的项。
+4. **门控「全绿」必须逐条追问判据对象**：旧的 headless 下钻断言在无路由时恒真（假绿），旧的图例统计取错数据源。二者都是**门控存在但不检查该检查的东西**。已改为非空断言 + 正确数据源，并新增两项一致性检查。
+5. **公开库的仓库卫生要有明确取舍**：解压树入库让仓库 5 周内膨胀到 200MB+，收益（可离线 diff）远低于 tarball + SHA256（同样可复现）。已在 `.gitignore` 与 `05-source/README.md` 固化该约定。
+6. **遗留建议**：① 把 `07-checkpoint/v017-*` 的「分片 → 委派 → 合并」流程固化为可续跑 SOP（当前 21 片委派是人工编排）；② 交互图可对 `type_only` 边加虚线样式，供人工区分运行/类型依赖；③ `headless-verify` 可加「点击组节点」的真实交互路径（当前走 URL 深链）。
+7. **下一步（可选）**：把本机 dsh 部署从 `0.1.5-rc.2` 升到 `0.1.7-rc.2`，并按 `dsh-architecture-map` 的融合单流程重跑自定义层（`~/.dsh` 8 插件）兼容性审计——本次未涉及部署升级。

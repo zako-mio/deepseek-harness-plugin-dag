@@ -1,0 +1,2028 @@
+{
+ "shard": "shard-18",
+ "group": "G39+G40+G41",
+ "group_name": "SSH 远程执行 / 存储 / 子代理",
+ "plugins": [
+  {
+   "id": "dsh-fs-ssh",
+   "name": "@deepseek-ai/dsh-fs-ssh",
+   "path": "packages/ssh/fs-ssh",
+   "domain": "ssh",
+   "ts_count": 1,
+   "ts_files": [
+    "src/index.ts"
+   ],
+   "assembled_in": [],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-fs",
+     "dsh-sandbox",
+     "dsh-sandbox-policy",
+     "dsh-ssh"
+    ],
+    "deps": [
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "dsh-fs",
+     "spec": "@deepseek-ai/dsh-fs",
+     "loc": "src/index.ts:4"
+    },
+    {
+     "dep": "dsh-fs",
+     "spec": "@deepseek-ai/dsh-fs",
+     "loc": "src/index.ts:5"
+    },
+    {
+     "dep": "dsh-sandbox",
+     "spec": "@deepseek-ai/dsh-sandbox",
+     "loc": "src/index.ts:6"
+    },
+    {
+     "dep": "dsh-sandbox-policy",
+     "spec": "@deepseek-ai/dsh-sandbox-policy",
+     "loc": "src/index.ts:7"
+    },
+    {
+     "dep": "dsh-ssh",
+     "spec": "@deepseek-ai/dsh-ssh",
+     "loc": "src/index.ts:8"
+    },
+    {
+     "dep": "dsh-ssh",
+     "spec": "@deepseek-ai/dsh-ssh/protocol",
+     "loc": "src/index.ts:9"
+    },
+    {
+     "dep": "dsh-ssh",
+     "spec": "@deepseek-ai/dsh-ssh/schemas",
+     "loc": "src/index.ts:10"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "ssh",
+      "sandboxPolicy"
+     ],
+     "loc": "src/index.ts:21"
+    }
+   ],
+   "ctx_services": {
+    "sandboxPolicy": [
+     "src/index.ts:23",
+     "src/index.ts:85",
+     "src/index.ts:93"
+    ],
+    "ssh": [
+     "src/index.ts:98"
+    ]
+   },
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-sandbox-ssh",
+   "name": "@deepseek-ai/dsh-sandbox-ssh",
+   "path": "packages/ssh/sandbox-ssh",
+   "domain": "ssh",
+   "ts_count": 1,
+   "ts_files": [
+    "src/index.ts"
+   ],
+   "assembled_in": [],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-sandbox",
+     "dsh-ssh"
+    ],
+    "deps": [
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "dsh-sandbox",
+     "spec": "@deepseek-ai/dsh-sandbox",
+     "loc": "src/index.ts:2"
+    },
+    {
+     "dep": "dsh-sandbox",
+     "spec": "@deepseek-ai/dsh-sandbox",
+     "loc": "src/index.ts:3"
+    },
+    {
+     "dep": "dsh-ssh",
+     "spec": "@deepseek-ai/dsh-ssh",
+     "loc": "src/index.ts:4"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "ssh"
+     ],
+     "loc": "src/index.ts:11"
+    }
+   ],
+   "ctx_services": {
+    "ssh": [
+     "src/index.ts:16"
+    ]
+   },
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-subprocess-ssh",
+   "name": "@deepseek-ai/dsh-subprocess-ssh",
+   "path": "packages/ssh/subprocess-ssh",
+   "domain": "ssh",
+   "ts_count": 1,
+   "ts_files": [
+    "src/index.ts"
+   ],
+   "assembled_in": [],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-ssh",
+     "dsh-subprocess",
+     "dsh-subprocess-local"
+    ],
+    "deps": [
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:4"
+    },
+    {
+     "dep": "dsh-subprocess",
+     "spec": "@deepseek-ai/dsh-subprocess",
+     "loc": "src/index.ts:5"
+    },
+    {
+     "dep": "dsh-subprocess",
+     "spec": "@deepseek-ai/dsh-subprocess",
+     "loc": "src/index.ts:6"
+    },
+    {
+     "dep": "dsh-subprocess-local",
+     "spec": "@deepseek-ai/dsh-subprocess-local/output",
+     "loc": "src/index.ts:7"
+    },
+    {
+     "dep": "dsh-ssh",
+     "spec": "@deepseek-ai/dsh-ssh",
+     "loc": "src/index.ts:8"
+    },
+    {
+     "dep": "dsh-ssh",
+     "spec": "@deepseek-ai/dsh-ssh/schemas",
+     "loc": "src/index.ts:9"
+    },
+    {
+     "dep": "dsh-ssh",
+     "spec": "@deepseek-ai/dsh-ssh/schemas",
+     "loc": "src/index.ts:10"
+    },
+    {
+     "dep": "dsh-ssh",
+     "spec": "@deepseek-ai/dsh-ssh/protocol",
+     "loc": "src/index.ts:11"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "ssh"
+     ],
+     "loc": "src/index.ts:230"
+    }
+   ],
+   "ctx_services": {
+    "ssh": [
+     "src/index.ts:257",
+     "src/index.ts:267",
+     "src/index.ts:277",
+     "src/index.ts:294"
+    ]
+   },
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-storage",
+   "name": "@deepseek-ai/dsh-storage",
+   "path": "packages/storage/storage",
+   "domain": "storage",
+   "ts_count": 4,
+   "ts_files": [
+    "src/backend.ts",
+    "src/error.ts",
+    "src/index.ts",
+    "src/registry.ts"
+   ],
+   "assembled_in": [
+    "base"
+   ],
+   "declared": {
+    "peer": [
+     "cordis"
+    ],
+    "deps": []
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:8"
+    }
+   ],
+   "injects": [],
+   "ctx_services": {
+    "storage": [
+     "src/index.ts:2",
+     "src/index.ts:45"
+    ]
+   },
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-storage-domain",
+   "name": "@deepseek-ai/dsh-storage-domain",
+   "path": "packages/storage/storage-domain",
+   "domain": "storage",
+   "ts_count": 6,
+   "ts_files": [
+    "src/domain.ts",
+    "src/error.ts",
+    "src/events.ts",
+    "src/index.ts",
+    "src/invariant.ts",
+    "src/spec.ts"
+   ],
+   "assembled_in": [
+    "base"
+   ],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-invariants",
+     "dsh-storage"
+    ],
+    "deps": [
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/domain.ts:12"
+    },
+    {
+     "dep": "dsh-storage",
+     "spec": "@deepseek-ai/dsh-storage",
+     "loc": "src/domain.ts:13"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:10"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/index.ts:11"
+    },
+    {
+     "dep": "dsh-storage",
+     "spec": "@deepseek-ai/dsh-storage",
+     "loc": "src/index.ts:12"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/invariant.ts:12"
+    },
+    {
+     "dep": "dsh-invariants",
+     "spec": "@deepseek-ai/dsh-invariants",
+     "loc": "src/invariant.ts:13"
+    },
+    {
+     "dep": "dsh-storage",
+     "spec": "@deepseek-ai/dsh-storage",
+     "loc": "src/spec.ts:12"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "storage"
+     ],
+     "loc": "src/index.ts:44"
+    },
+    {
+     "services": [
+      "invariants"
+     ],
+     "loc": "src/invariant.ts:21"
+    },
+    {
+     "services": [
+      "storage"
+     ],
+     "loc": "src/invariant.ts:59"
+    }
+   ],
+   "ctx_services": {
+    "storage": [
+     "src/index.ts:2",
+     "src/index.ts:110",
+     "src/invariant.ts:26"
+    ],
+    "invariants": [
+     "src/invariant.ts:67"
+    ]
+   },
+   "events_on": {
+    "domain/changed": [
+     "src/invariant.ts:25"
+    ]
+   },
+   "events_emit": {
+    "domain/changed": [
+     "src/domain.ts:253"
+    ]
+   },
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-storage-json",
+   "name": "@deepseek-ai/dsh-storage-json",
+   "path": "packages/storage/storage-json",
+   "domain": "storage",
+   "ts_count": 5,
+   "ts_files": [
+    "src/atomic.ts",
+    "src/format.ts",
+    "src/index.ts",
+    "src/per-record-unit.ts",
+    "src/single-unit.ts"
+   ],
+   "assembled_in": [
+    "base"
+   ],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-storage"
+    ],
+    "deps": [
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "dsh-storage",
+     "spec": "@deepseek-ai/dsh-storage",
+     "loc": "src/format.ts:12"
+    },
+    {
+     "dep": "dsh-storage",
+     "spec": "@deepseek-ai/dsh-storage",
+     "loc": "src/format.ts:13"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:10"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/index.ts:11"
+    },
+    {
+     "dep": "dsh-storage",
+     "spec": "@deepseek-ai/dsh-storage",
+     "loc": "src/index.ts:12"
+    },
+    {
+     "dep": "dsh-storage",
+     "spec": "@deepseek-ai/dsh-storage",
+     "loc": "src/index.ts:13"
+    },
+    {
+     "dep": "dsh-storage",
+     "spec": "@deepseek-ai/dsh-storage",
+     "loc": "src/per-record-unit.ts:32"
+    },
+    {
+     "dep": "dsh-storage",
+     "spec": "@deepseek-ai/dsh-storage",
+     "loc": "src/per-record-unit.ts:33"
+    },
+    {
+     "dep": "dsh-storage",
+     "spec": "@deepseek-ai/dsh-storage",
+     "loc": "src/single-unit.ts:14"
+    },
+    {
+     "dep": "dsh-storage",
+     "spec": "@deepseek-ai/dsh-storage",
+     "loc": "src/single-unit.ts:15"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "storage"
+     ],
+     "loc": "src/index.ts:20"
+    }
+   ],
+   "ctx_services": {
+    "storage": [
+     "src/index.ts:112"
+    ]
+   },
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-storage-sqlite",
+   "name": "@deepseek-ai/dsh-storage-sqlite",
+   "path": "packages/storage/storage-sqlite",
+   "domain": "storage",
+   "ts_count": 3,
+   "ts_files": [
+    "src/index.ts",
+    "src/schema.ts",
+    "src/unit.ts"
+   ],
+   "assembled_in": [],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-storage"
+    ],
+    "deps": [
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:8"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/index.ts:9"
+    },
+    {
+     "dep": "dsh-storage",
+     "spec": "@deepseek-ai/dsh-storage",
+     "loc": "src/index.ts:11"
+    },
+    {
+     "dep": "dsh-storage",
+     "spec": "@deepseek-ai/dsh-storage",
+     "loc": "src/index.ts:12"
+    },
+    {
+     "dep": "dsh-storage",
+     "spec": "@deepseek-ai/dsh-storage",
+     "loc": "src/schema.ts:12"
+    },
+    {
+     "dep": "dsh-storage",
+     "spec": "@deepseek-ai/dsh-storage",
+     "loc": "src/unit.ts:11"
+    },
+    {
+     "dep": "dsh-storage",
+     "spec": "@deepseek-ai/dsh-storage",
+     "loc": "src/unit.ts:12"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "storage"
+     ],
+     "loc": "src/index.ts:21"
+    }
+   ],
+   "ctx_services": {
+    "storage": [
+     "src/index.ts:161"
+    ]
+   },
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-subagent",
+   "name": "@deepseek-ai/dsh-subagent",
+   "path": "packages/subagent/subagent",
+   "domain": "subagent",
+   "ts_count": 24,
+   "ts_files": [
+    "src/archive-admission.ts",
+    "src/assistant-output.ts",
+    "src/catalog.ts",
+    "src/child-agent.ts",
+    "src/client.ts",
+    "src/continuation-activation.ts",
+    "src/continuation-messages.ts",
+    "src/continuation.ts",
+    "src/control-types.ts",
+    "src/control.ts",
+    "src/depth.ts",
+    "src/descriptor.ts",
+    "src/error.ts",
+    "src/inbox.ts",
+    "src/index.ts",
+    "src/internal.ts",
+    "src/invariant.ts",
+    "src/lifecycle.ts",
+    "src/list-children.ts",
+    "src/out-of-process.ts",
+    "src/projection-types.ts",
+    "src/projection.ts",
+    "src/run-settlement.ts",
+    "src/types.ts"
+   ],
+   "assembled_in": [
+    "base"
+   ],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-agent",
+     "dsh-agent-preset-registry",
+     "dsh-attachment",
+     "dsh-invariants",
+     "dsh-jobs",
+     "dsh-llm",
+     "dsh-permission-presets",
+     "dsh-sandbox",
+     "dsh-sandbox-policy",
+     "dsh-scope",
+     "dsh-session",
+     "dsh-session-persistence",
+     "dsh-session-projection",
+     "dsh-session-query",
+     "dsh-system-prompt",
+     "dsh-tools",
+     "dsh-typert-protocol",
+     "dsh-user-approval",
+     "dsh-util-time",
+     "dsh-workspace"
+    ],
+    "deps": [
+     "dsh-brand",
+     "dsh-chunked-list",
+     "dsh-util-values",
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/archive-admission.ts:9"
+    },
+    {
+     "dep": "dsh-agent",
+     "spec": "@deepseek-ai/dsh-agent",
+     "loc": "src/archive-admission.ts:10"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/archive-admission.ts:11"
+    },
+    {
+     "dep": "dsh-session-query",
+     "spec": "@deepseek-ai/dsh-session-query",
+     "loc": "src/archive-admission.ts:12"
+    },
+    {
+     "dep": "dsh-workspace",
+     "spec": "@deepseek-ai/dsh-workspace",
+     "loc": "src/archive-admission.ts:13"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/assistant-output.ts:13"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/assistant-output.ts:14"
+    },
+    {
+     "dep": "dsh-chunked-list",
+     "spec": "@deepseek-ai/dsh-chunked-list",
+     "loc": "src/catalog.ts:8"
+    },
+    {
+     "dep": "dsh-chunked-list",
+     "spec": "@deepseek-ai/dsh-chunked-list",
+     "loc": "src/catalog.ts:9"
+    },
+    {
+     "dep": "dsh-session-projection",
+     "spec": "@deepseek-ai/dsh-session-projection",
+     "loc": "src/catalog.ts:17"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/child-agent.ts:11"
+    },
+    {
+     "dep": "dsh-agent",
+     "spec": "@deepseek-ai/dsh-agent",
+     "loc": "src/child-agent.ts:12"
+    },
+    {
+     "dep": "dsh-sandbox",
+     "spec": "@deepseek-ai/dsh-sandbox",
+     "loc": "src/child-agent.ts:13"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/child-agent.ts:14"
+    },
+    {
+     "dep": "dsh-system-prompt",
+     "spec": "@deepseek-ai/dsh-system-prompt",
+     "loc": "src/child-agent.ts:15"
+    },
+    {
+     "dep": "dsh-tools",
+     "spec": "@deepseek-ai/dsh-tools",
+     "loc": "src/child-agent.ts:16"
+    },
+    {
+     "dep": "dsh-sandbox-policy",
+     "spec": "@deepseek-ai/dsh-sandbox-policy",
+     "loc": "src/child-agent.ts:21"
+    },
+    {
+     "dep": "dsh-user-approval",
+     "spec": "@deepseek-ai/dsh-user-approval",
+     "loc": "src/child-agent.ts:22"
+    },
+    {
+     "dep": "dsh-permission-presets",
+     "spec": "@deepseek-ai/dsh-permission-presets",
+     "loc": "src/child-agent.ts:23"
+    },
+    {
+     "dep": "dsh-agent-preset-registry",
+     "spec": "@deepseek-ai/dsh-agent-preset-registry",
+     "loc": "src/child-agent.ts:29"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/continuation-activation.ts:12"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/continuation-activation.ts:19"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/continuation-activation.ts:20"
+    },
+    {
+     "dep": "dsh-tools",
+     "spec": "@deepseek-ai/dsh-tools",
+     "loc": "src/continuation-activation.ts:27"
+    },
+    {
+     "dep": "dsh-agent",
+     "spec": "@deepseek-ai/dsh-agent",
+     "loc": "src/continuation-messages.ts:7"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/continuation-messages.ts:8"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/continuation-messages.ts:9"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/continuation-messages.ts:10"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/continuation.ts:17"
+    },
+    {
+     "dep": "dsh-agent",
+     "spec": "@deepseek-ai/dsh-agent",
+     "loc": "src/continuation.ts:18"
+    },
+    {
+     "dep": "dsh-brand",
+     "spec": "@deepseek-ai/dsh-brand",
+     "loc": "src/continuation.ts:19"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/continuation.ts:20"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/continuation.ts:21"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/continuation.ts:22"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/continuation.ts:23"
+    },
+    {
+     "dep": "dsh-session-persistence",
+     "spec": "@deepseek-ai/dsh-session-persistence",
+     "loc": "src/continuation.ts:24"
+    },
+    {
+     "dep": "dsh-session-query",
+     "spec": "@deepseek-ai/dsh-session-query",
+     "loc": "src/continuation.ts:25"
+    },
+    {
+     "dep": "dsh-attachment",
+     "spec": "@deepseek-ai/dsh-attachment/types",
+     "loc": "src/control-types.ts:8"
+    },
+    {
+     "dep": "dsh-brand",
+     "spec": "@deepseek-ai/dsh-brand",
+     "loc": "src/control-types.ts:9"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm/brand",
+     "loc": "src/control-types.ts:10"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session/types",
+     "loc": "src/control-types.ts:11"
+    },
+    {
+     "dep": "dsh-workspace",
+     "spec": "@deepseek-ai/dsh-workspace/types",
+     "loc": "src/control-types.ts:13"
+    },
+    {
+     "dep": "dsh-attachment",
+     "spec": "@deepseek-ai/dsh-attachment",
+     "loc": "src/control.ts:8"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/control.ts:9"
+    },
+    {
+     "dep": "dsh-typert-protocol",
+     "spec": "@deepseek-ai/dsh-typert-protocol",
+     "loc": "src/control.ts:10"
+    },
+    {
+     "dep": "dsh-agent",
+     "spec": "@deepseek-ai/dsh-agent",
+     "loc": "src/depth.ts:9"
+    },
+    {
+     "dep": "dsh-util-values",
+     "spec": "@deepseek-ai/dsh-util-values",
+     "loc": "src/descriptor.ts:24"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/descriptor.ts:25"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/descriptor.ts:26"
+    },
+    {
+     "dep": "dsh-tools",
+     "spec": "@deepseek-ai/dsh-tools",
+     "loc": "src/descriptor.ts:27"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/error.ts:7"
+    },
+    {
+     "dep": "dsh-agent",
+     "spec": "@deepseek-ai/dsh-agent",
+     "loc": "src/inbox.ts:7"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/inbox.ts:8"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:31"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:33"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/index.ts:34"
+    },
+    {
+     "dep": "dsh-attachment",
+     "spec": "@deepseek-ai/dsh-attachment",
+     "loc": "src/index.ts:35"
+    },
+    {
+     "dep": "dsh-scope",
+     "spec": "@deepseek-ai/dsh-scope",
+     "loc": "src/index.ts:36"
+    },
+    {
+     "dep": "dsh-scope",
+     "spec": "@deepseek-ai/dsh-scope",
+     "loc": "src/index.ts:37"
+    },
+    {
+     "dep": "dsh-tools",
+     "spec": "@deepseek-ai/dsh-tools",
+     "loc": "src/index.ts:38"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/index.ts:39"
+    },
+    {
+     "dep": "dsh-agent",
+     "spec": "@deepseek-ai/dsh-agent",
+     "loc": "src/index.ts:40"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/index.ts:41"
+    },
+    {
+     "dep": "dsh-util-time",
+     "spec": "@deepseek-ai/dsh-util-time",
+     "loc": "src/index.ts:42"
+    },
+    {
+     "dep": "dsh-typert-protocol",
+     "spec": "@deepseek-ai/dsh-typert-protocol",
+     "loc": "src/index.ts:43"
+    },
+    {
+     "dep": "dsh-agent",
+     "spec": "@deepseek-ai/dsh-agent",
+     "loc": "src/internal.ts:7"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/internal.ts:8"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/internal.ts:9"
+    },
+    {
+     "dep": "dsh-tools",
+     "spec": "@deepseek-ai/dsh-tools",
+     "loc": "src/internal.ts:10"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/invariant.ts:3"
+    },
+    {
+     "dep": "dsh-invariants",
+     "spec": "@deepseek-ai/dsh-invariants",
+     "loc": "src/invariant.ts:4"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/lifecycle.ts:18"
+    },
+    {
+     "dep": "dsh-agent",
+     "spec": "@deepseek-ai/dsh-agent",
+     "loc": "src/lifecycle.ts:19"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/lifecycle.ts:20"
+    },
+    {
+     "dep": "dsh-agent",
+     "spec": "@deepseek-ai/dsh-agent",
+     "loc": "src/lifecycle.ts:21"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/lifecycle.ts:22"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/lifecycle.ts:23"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/list-children.ts:7"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/list-children.ts:8"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/out-of-process.ts:16"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session/types",
+     "loc": "src/projection-types.ts:7"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/projection.ts:9"
+    },
+    {
+     "dep": "dsh-session-projection",
+     "spec": "@deepseek-ai/dsh-session-projection",
+     "loc": "src/projection.ts:10"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/projection.ts:11"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/run-settlement.ts:9"
+    },
+    {
+     "dep": "dsh-jobs",
+     "spec": "@deepseek-ai/dsh-jobs",
+     "loc": "src/run-settlement.ts:10"
+    },
+    {
+     "dep": "dsh-agent",
+     "spec": "@deepseek-ai/dsh-agent",
+     "loc": "src/types.ts:12"
+    },
+    {
+     "dep": "dsh-brand",
+     "spec": "@deepseek-ai/dsh-brand",
+     "loc": "src/types.ts:13"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/types.ts:14"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/types.ts:15"
+    },
+    {
+     "dep": "dsh-tools",
+     "spec": "@deepseek-ai/dsh-tools",
+     "loc": "src/types.ts:16"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "invariants"
+     ],
+     "loc": "src/invariant.ts:12"
+    },
+    {
+     "services": [
+      "subagents"
+     ],
+     "loc": "src/invariant.ts:84"
+    }
+   ],
+   "ctx_services": {
+    "agents": [
+     "src/archive-admission.ts:51",
+     "src/child-agent.ts:97",
+     "src/child-agent.ts:137",
+     "src/continuation-activation.ts:241",
+     "src/continuation-activation.ts:291",
+     "src/continuation-activation.ts:369"
+    ],
+    "sessions": [
+     "src/continuation-activation.ts:894"
+    ],
+    "subagents": [
+     "src/continuation.ts:2",
+     "src/continuation.ts:77",
+     "src/continuation.ts:79",
+     "src/descriptor.ts:56",
+     "src/descriptor.ts:97",
+     "src/index.ts:2"
+    ],
+    "invariants": [
+     "src/invariant.ts:92"
+    ],
+    "events": [
+     "src/lifecycle.ts:113"
+    ],
+    "jobs": [
+     "src/run-settlement.ts:35"
+    ]
+   },
+   "events_on": {
+    "workspace/session-activity": [
+     "src/archive-admission.ts:23"
+    ],
+    "workspace/session-stop": [
+     "src/archive-admission.ts:30"
+    ],
+    "agent/disposed": [
+     "src/continuation-activation.ts:218"
+    ],
+    "agent/inbox/claimed": [
+     "src/continuation-activation.ts:672"
+    ],
+    "agent/inbox/discarded": [
+     "src/continuation-activation.ts:673"
+    ],
+    "internal/dispatch": [
+     "src/invariant.ts:30"
+    ],
+    "subagent/provider-added": [
+     "src/invariant.ts:64"
+    ],
+    "subagent/provider-removed": [
+     "src/invariant.ts:69"
+    ],
+    "subagent/start": [
+     "src/invariant.ts:74"
+    ],
+    "subagent/end": [
+     "src/invariant.ts:79"
+    ]
+   },
+   "events_emit": {
+    "subagent/provider-added": [
+     "src/index.ts:526"
+    ]
+   },
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-subagent-acp",
+   "name": "@deepseek-ai/dsh-subagent-acp",
+   "path": "packages/subagent/subagent-acp",
+   "domain": "subagent",
+   "ts_count": 2,
+   "ts_files": [
+    "src/index.ts",
+    "src/run.ts"
+   ],
+   "assembled_in": [],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-agent",
+     "dsh-llm",
+     "dsh-session",
+     "dsh-subagent",
+     "dsh-subprocess",
+     "dsh-timeout"
+    ],
+    "deps": [
+     "dsh-brand",
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:12"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/index.ts:13"
+    },
+    {
+     "dep": "dsh-timeout",
+     "spec": "@deepseek-ai/dsh-timeout",
+     "loc": "src/index.ts:20"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/run.ts:19"
+    },
+    {
+     "dep": "dsh-brand",
+     "spec": "@deepseek-ai/dsh-brand",
+     "loc": "src/run.ts:20"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/run.ts:21"
+    },
+    {
+     "dep": "dsh-subagent",
+     "spec": "@deepseek-ai/dsh-subagent",
+     "loc": "src/run.ts:22"
+    },
+    {
+     "dep": "dsh-subagent",
+     "spec": "@deepseek-ai/dsh-subagent",
+     "loc": "src/run.ts:23"
+    },
+    {
+     "dep": "dsh-subprocess",
+     "spec": "@deepseek-ai/dsh-subprocess",
+     "loc": "src/run.ts:24"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "subagents",
+      "subprocess"
+     ],
+     "loc": "src/index.ts:24"
+    }
+   ],
+   "ctx_services": {
+    "subagents": [
+     "src/index.ts:28",
+     "src/index.ts:205"
+    ],
+    "subprocess": [
+     "src/index.ts:179",
+     "src/run.ts:69"
+    ]
+   },
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-subagent-claude-code",
+   "name": "@deepseek-ai/dsh-subagent-claude-code",
+   "path": "packages/subagent/subagent-claude-code",
+   "domain": "subagent",
+   "ts_count": 3,
+   "ts_files": [
+    "src/index.ts",
+    "src/process.ts",
+    "src/run.ts"
+   ],
+   "assembled_in": [],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-llm",
+     "dsh-session",
+     "dsh-subagent",
+     "dsh-subprocess",
+     "dsh-timeout"
+    ],
+    "deps": [
+     "dsh-brand",
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:9"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/index.ts:10"
+    },
+    {
+     "dep": "dsh-timeout",
+     "spec": "@deepseek-ai/dsh-timeout",
+     "loc": "src/index.ts:11"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/run.ts:18"
+    },
+    {
+     "dep": "dsh-brand",
+     "spec": "@deepseek-ai/dsh-brand",
+     "loc": "src/run.ts:19"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/run.ts:20"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "subagents",
+      "subprocess"
+     ],
+     "loc": "src/index.ts:31"
+    }
+   ],
+   "ctx_services": {
+    "subagents": [
+     "src/index.ts:39",
+     "src/index.ts:151"
+    ],
+    "subprocess": [
+     "src/index.ts:116"
+    ]
+   },
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-subagent-codex",
+   "name": "@deepseek-ai/dsh-subagent-codex",
+   "path": "packages/subagent/subagent-codex",
+   "domain": "subagent",
+   "ts_count": 3,
+   "ts_files": [
+    "src/index.ts",
+    "src/run.ts",
+    "src/wire.ts"
+   ],
+   "assembled_in": [],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-llm",
+     "dsh-session",
+     "dsh-subagent",
+     "dsh-subprocess",
+     "dsh-timeout"
+    ],
+    "deps": [
+     "dsh-brand",
+     "dsh-sdk-protocol",
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:9"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/index.ts:10"
+    },
+    {
+     "dep": "dsh-timeout",
+     "spec": "@deepseek-ai/dsh-timeout",
+     "loc": "src/index.ts:11"
+    },
+    {
+     "dep": "dsh-brand",
+     "spec": "@deepseek-ai/dsh-brand",
+     "loc": "src/run.ts:14"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/run.ts:15"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/run.ts:16"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/wire.ts:11"
+    },
+    {
+     "dep": "dsh-subagent",
+     "spec": "@deepseek-ai/dsh-subagent",
+     "loc": "src/wire.ts:12"
+    },
+    {
+     "dep": "dsh-sdk-protocol",
+     "spec": "@deepseek-ai/dsh-sdk-protocol",
+     "loc": "src/wire.ts:13"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "subagents",
+      "subprocess"
+     ],
+     "loc": "src/index.ts:31"
+    }
+   ],
+   "ctx_services": {
+    "subagents": [
+     "src/index.ts:37",
+     "src/index.ts:135"
+    ],
+    "subprocess": [
+     "src/index.ts:101"
+    ]
+   },
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-subagent-dsh-sdk",
+   "name": "@deepseek-ai/dsh-subagent-dsh-sdk",
+   "path": "packages/subagent/subagent-dsh-sdk",
+   "domain": "subagent",
+   "ts_count": 2,
+   "ts_files": [
+    "src/index.ts",
+    "src/run.ts"
+   ],
+   "assembled_in": [],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-agent",
+     "dsh-llm",
+     "dsh-sdk-client",
+     "dsh-session",
+     "dsh-subagent",
+     "dsh-subprocess"
+    ],
+    "deps": [
+     "dsh-brand",
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:14"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/index.ts:17"
+    },
+    {
+     "dep": "dsh-agent",
+     "spec": "@deepseek-ai/dsh-agent",
+     "loc": "src/index.ts:18"
+    },
+    {
+     "dep": "dsh-subagent",
+     "spec": "@deepseek-ai/dsh-subagent",
+     "loc": "src/index.ts:19"
+    },
+    {
+     "dep": "dsh-subagent",
+     "spec": "@deepseek-ai/dsh-subagent",
+     "loc": "src/index.ts:20"
+    },
+    {
+     "dep": "dsh-brand",
+     "spec": "@deepseek-ai/dsh-brand",
+     "loc": "src/run.ts:14"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/run.ts:23"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/run.ts:24"
+    },
+    {
+     "dep": "dsh-subagent",
+     "spec": "@deepseek-ai/dsh-subagent",
+     "loc": "src/run.ts:25"
+    },
+    {
+     "dep": "dsh-subagent",
+     "spec": "@deepseek-ai/dsh-subagent",
+     "loc": "src/run.ts:26"
+    },
+    {
+     "dep": "dsh-subprocess",
+     "spec": "@deepseek-ai/dsh-subprocess",
+     "loc": "src/run.ts:27"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "subagents"
+     ],
+     "loc": "src/index.ts:31"
+    }
+   ],
+   "ctx_services": {
+    "subagents": [
+     "src/index.ts:35",
+     "src/index.ts:199"
+    ],
+    "subprocess": [
+     "src/run.ts:7"
+    ]
+   },
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-subagent-fork-in-process",
+   "name": "@deepseek-ai/dsh-subagent-fork-in-process",
+   "path": "packages/subagent/subagent-fork-in-process",
+   "domain": "subagent",
+   "ts_count": 1,
+   "ts_files": [
+    "src/index.ts"
+   ],
+   "assembled_in": [
+    "base"
+   ],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-agent",
+     "dsh-session",
+     "dsh-subagent",
+     "dsh-subagent-in-process-driver"
+    ],
+    "deps": [
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:10"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/index.ts:11"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/index.ts:12"
+    },
+    {
+     "dep": "dsh-agent",
+     "spec": "@deepseek-ai/dsh-agent",
+     "loc": "src/index.ts:13"
+    },
+    {
+     "dep": "dsh-subagent-in-process-driver",
+     "spec": "@deepseek-ai/dsh-subagent-in-process-driver",
+     "loc": "src/index.ts:21"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "subagents"
+     ],
+     "loc": "src/index.ts:28"
+    }
+   ],
+   "ctx_services": {
+    "subagents": [
+     "src/index.ts:3",
+     "src/index.ts:32",
+     "src/index.ts:95"
+    ]
+   },
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-subagent-spawn-in-process",
+   "name": "@deepseek-ai/dsh-subagent-spawn-in-process",
+   "path": "packages/subagent/subagent-spawn-in-process",
+   "domain": "subagent",
+   "ts_count": 1,
+   "ts_files": [
+    "src/index.ts"
+   ],
+   "assembled_in": [
+    "base"
+   ],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-subagent",
+     "dsh-subagent-in-process-driver"
+    ],
+    "deps": [
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:9"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/index.ts:10"
+    },
+    {
+     "dep": "dsh-subagent-in-process-driver",
+     "spec": "@deepseek-ai/dsh-subagent-in-process-driver",
+     "loc": "src/index.ts:17"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "subagents"
+     ],
+     "loc": "src/index.ts:22"
+    }
+   ],
+   "ctx_services": {
+    "subagents": [
+     "src/index.ts:3",
+     "src/index.ts:26",
+     "src/index.ts:69"
+    ]
+   },
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-tool-subagent",
+   "name": "@deepseek-ai/dsh-tool-subagent",
+   "path": "packages/subagent/tool-subagent",
+   "domain": "subagent",
+   "ts_count": 6,
+   "ts_files": [
+    "src/index.ts",
+    "src/invariant.ts",
+    "src/list-models.ts",
+    "src/model-selection-settings.ts",
+    "src/model-selection-state.ts",
+    "src/model-selection.ts"
+   ],
+   "assembled_in": [
+    "base",
+    "web-app"
+   ],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-agent",
+     "dsh-invariants",
+     "dsh-jobs",
+     "dsh-llm",
+     "dsh-scope",
+     "dsh-session",
+     "dsh-session-projection",
+     "dsh-subagent",
+     "dsh-system-prompt",
+     "dsh-tools"
+    ],
+    "deps": [
+     "schemastery"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:11"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/index.ts:12"
+    },
+    {
+     "dep": "dsh-scope",
+     "spec": "@deepseek-ai/dsh-scope",
+     "loc": "src/index.ts:13"
+    },
+    {
+     "dep": "dsh-tools",
+     "spec": "@deepseek-ai/dsh-tools",
+     "loc": "src/index.ts:14"
+    },
+    {
+     "dep": "dsh-agent",
+     "spec": "@deepseek-ai/dsh-agent",
+     "loc": "src/index.ts:15"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/index.ts:16"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/index.ts:17"
+    },
+    {
+     "dep": "dsh-util-values",
+     "spec": "@deepseek-ai/dsh-util-values",
+     "loc": "src/index.ts:18"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/index.ts:19"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/index.ts:20"
+    },
+    {
+     "dep": "dsh-subagent",
+     "spec": "@deepseek-ai/dsh-subagent",
+     "loc": "src/index.ts:26"
+    },
+    {
+     "dep": "dsh-jobs",
+     "spec": "@deepseek-ai/dsh-jobs",
+     "loc": "src/index.ts:27"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/invariant.ts:7"
+    },
+    {
+     "dep": "dsh-invariants",
+     "spec": "@deepseek-ai/dsh-invariants",
+     "loc": "src/invariant.ts:8"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/list-models.ts:3"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/list-models.ts:4"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/list-models.ts:5"
+    },
+    {
+     "dep": "dsh-tools",
+     "spec": "@deepseek-ai/dsh-tools",
+     "loc": "src/list-models.ts:6"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/model-selection-settings.ts:2"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/model-selection-settings.ts:4"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/model-selection-settings.ts:5"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/model-selection-state.ts:4"
+    },
+    {
+     "dep": "dsh-session-projection",
+     "spec": "@deepseek-ai/dsh-session-projection",
+     "loc": "src/model-selection-state.ts:5"
+    },
+    {
+     "dep": "dsh-session-projection",
+     "spec": "@deepseek-ai/dsh-session-projection",
+     "loc": "src/model-selection-state.ts:6"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/model-selection.ts:3"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/model-selection.ts:4"
+    },
+    {
+     "dep": "dsh-agent",
+     "spec": "@deepseek-ai/dsh-agent",
+     "loc": "src/model-selection.ts:5"
+    },
+    {
+     "dep": "schemastery",
+     "spec": "@deepseek-ai/schemastery",
+     "loc": "src/model-selection.ts:6"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "tools",
+      "subagents",
+      "systemPrompt",
+      "sessionProjections"
+     ],
+     "loc": "src/index.ts:45"
+    },
+    {
+     "services": [
+      "invariants"
+     ],
+     "loc": "src/invariant.ts:16"
+    },
+    {
+     "services": [
+      "tools",
+      "sessionProjections"
+     ],
+     "loc": "src/invariant.ts:41"
+    }
+   ],
+   "ctx_services": {
+    "subagents": [
+     "src/index.ts:2",
+     "src/index.ts:7",
+     "src/index.ts:49",
+     "src/index.ts:329",
+     "src/index.ts:357"
+    ],
+    "sessionProjections": [
+     "src/index.ts:326",
+     "src/index.ts:624",
+     "src/index.ts:637",
+     "src/index.ts:644",
+     "src/invariant.ts:32"
+    ],
+    "tools": [
+     "src/invariant.ts:21",
+     "src/list-models.ts:87"
+    ],
+    "invariants": [
+     "src/invariant.ts:49"
+    ]
+   },
+   "events_on": {
+    "subagent/provider-added": [
+     "src/index.ts:354"
+    ],
+    "agent/created": [
+     "src/index.ts:702"
+    ],
+    "agent/disposed": [
+     "src/index.ts:705"
+    ],
+    "tools/change": [
+     "src/index.ts:709"
+    ],
+    "agent/pre-step": [
+     "src/invariant.ts:20"
+    ]
+   },
+   "events_emit": {},
+   "provides_hints": []
+  },
+  {
+   "id": "dsh-tool-subagent-control",
+   "name": "@deepseek-ai/dsh-tool-subagent-control",
+   "path": "packages/subagent/tool-subagent-control",
+   "domain": "subagent",
+   "ts_count": 2,
+   "ts_files": [
+    "src/index.ts",
+    "src/list-agents.ts"
+   ],
+   "assembled_in": [
+    "base"
+   ],
+   "declared": {
+    "peer": [
+     "cordis",
+     "dsh-llm",
+     "dsh-session",
+     "dsh-subagent",
+     "dsh-tools"
+    ],
+    "deps": [
+     "dsh-brand",
+     "dsh-util-values"
+    ]
+   },
+   "imports": [
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/index.ts:12"
+    },
+    {
+     "dep": "dsh-brand",
+     "spec": "@deepseek-ai/dsh-brand",
+     "loc": "src/index.ts:13"
+    },
+    {
+     "dep": "dsh-tools",
+     "spec": "@deepseek-ai/dsh-tools",
+     "loc": "src/index.ts:14"
+    },
+    {
+     "dep": "dsh-llm",
+     "spec": "@deepseek-ai/dsh-llm",
+     "loc": "src/index.ts:15"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/index.ts:16"
+    },
+    {
+     "dep": "dsh-subagent",
+     "spec": "@deepseek-ai/dsh-subagent",
+     "loc": "src/index.ts:17"
+    },
+    {
+     "dep": "dsh-subagent",
+     "spec": "@deepseek-ai/dsh-subagent/internal",
+     "loc": "src/index.ts:18"
+    },
+    {
+     "dep": "cordis",
+     "spec": "@deepseek-ai/cordis",
+     "loc": "src/list-agents.ts:10"
+    },
+    {
+     "dep": "dsh-tools",
+     "spec": "@deepseek-ai/dsh-tools",
+     "loc": "src/list-agents.ts:11"
+    },
+    {
+     "dep": "dsh-agent",
+     "spec": "@deepseek-ai/dsh-agent",
+     "loc": "src/list-agents.ts:12"
+    },
+    {
+     "dep": "dsh-session",
+     "spec": "@deepseek-ai/dsh-session",
+     "loc": "src/list-agents.ts:13"
+    },
+    {
+     "dep": "dsh-util-values",
+     "spec": "@deepseek-ai/dsh-util-values",
+     "loc": "src/list-agents.ts:17"
+    }
+   ],
+   "injects": [
+    {
+     "services": [
+      "tools",
+      "subagents"
+     ],
+     "loc": "src/index.ts:21"
+    },
+    {
+     "services": [
+      "tools",
+      "subagents",
+      "agents"
+     ],
+     "loc": "src/list-agents.ts:20"
+    }
+   ],
+   "ctx_services": {
+    "subagents": [
+     "src/index.ts:3",
+     "src/index.ts:4",
+     "src/index.ts:64",
+     "src/index.ts:108",
+     "src/list-agents.ts:3",
+     "src/list-agents.ts:4"
+    ],
+    "tools": [
+     "src/index.ts:28",
+     "src/index.ts:74",
+     "src/list-agents.ts:86"
+    ],
+    "agents": [
+     "src/list-agents.ts:163",
+     "src/list-agents.ts:169"
+    ]
+   },
+   "events_on": {},
+   "events_emit": {},
+   "provides_hints": []
+  }
+ ]
+}

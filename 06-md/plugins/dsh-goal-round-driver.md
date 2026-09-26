@@ -1,35 +1,29 @@
 # dsh-goal-round-driver
 
 - 包名: `@deepseek-ai/dsh-goal-round-driver`
-- 分组: G17 目标计划
-- 拓扑层: Layer 4
+- 分组: G17 目标与计划
+- 拓扑层: Layer 6
 - 来源层: L1 核心集
 - 源码路径: `packages/goal/goal-round-driver`
 
-## 为什么需要它（设计初衷）
-ctx.goals 的同会话续行驱动器：把 active 且启用续行的目标转为连续 Goal Round，排队 <goal_round> 提示词并计轮数。
-
-来源：
-- https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/goal/goal-round-driver/README.zh.md
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-07-19-same-session-goal-round-driver.md
-
 ## 实现逻辑
-apply() 安装 per-agent 竞态防护的自动续跑调度：监听 agent/created|disposed|session-start|status|error、goal/changed、agent/inbox/inserted|claimed|discarded、session/event。drive() 在 agent idle+armed+未达 maxGoalRounds 时渲染 round prompt 并经 agent.followup 排队；agent/pre-step 校验 reservation，失败则 block('prompt-rejected') 或 restore。
+在 agent 生命周期内自动驱动同一会话的目标续轮：readyToDrive 要求精确 live agent、状态 idle 且无竞争提示（src/index.ts:103-114），drive 在轮次预算内用 renderGoalRoundPrompt 生成模型可见续轮消息并 agent.followup 投递（src/index.ts:164-204）。pre-step 瀑布监听器用 validReservation 校验排队提示仍属于当前 live 修订，否则 reject 并 restoreOtherClaimed 恢复他人已认领消息（src/index.ts:344-425）。目标变更/暂停会取消 live turn 或 disarm 并进入持久化检查点（src/index.ts:282-293, 117-124）。
 
 ## Provides
-- goal round 自动续跑调度
-- agent/pre-step 续跑校验(reject)
-- goal-round 消息源
+- goal 自动续轮驱动 (按目标 activation/轮次上限投递 followup 并在 pre-step 拒绝过期续轮)
+- goal-round-driver-invariant 不变量伴随件 (校验续轮提示词与目标流一致)
 
 ## Depends On (上游依赖)
-- `dsh-agent` [运行时依赖] - agent 事件与 followup
-  - 证据: `packages/goal/goal-round-driver/src/index.ts:9,106-107,192,215,435`
-- `dsh-goal` [运行时依赖] - goal 状态读取与 block
-  - 证据: `packages/goal/goal-round-driver/src/index.ts:10,99,167,269`
-- `dsh-llm` [编译依赖] - createUserMessage
-  - 证据: `packages/goal/goal-round-driver/src/index.ts:11,176`
-- `dsh-session` [运行时依赖] - checkpoint 冲刷与 turn 边界
-  - 证据: `packages/goal/goal-round-driver/src/index.ts:13,145,307`
+- `dsh-agent` [E1+E2] - 经 agent 生命周期/收件箱投递续轮消息并参与 pre-step 决策
+  - 证据: `src/index.ts:9 import (Agent, PreStepDecision) + src/index.ts:98 ctx.agents.get + src/index.ts:192 agent.followup`
+- `dsh-goal` [E1+E2] - 读取目标状态、disarm/block/pause 并在续轮消息上标注目标来源
+  - 证据: `src/index.ts:10 import (GoalMessageSource/GoalRef/GoalView) + src/index.ts:19 inject ['agents','goals','sessions'] + src/index.ts:99 ctx.goals.get`
+- `dsh-invariants` [E1+E2] - 注册续轮提示词不变量伴随件
+  - 证据: `src/invariant.ts:6 import InvariantInstaller + src/invariant.ts:15 inject ['invariants'] + src/invariant.ts:85 ctx.invariants.register`
+- `dsh-llm` [编译依赖] - 构造模型可见的续轮用户消息与提示块
+  - 证据: `src/index.ts:11-12 import (createUserMessage, ContentBlock) + src/prompt.ts:3 import ContentBlock`
+- `dsh-session` [E1+E2] - 会话持久化检查点与基于事件流的轮次状态跟踪
+  - 证据: `src/index.ts:13 import (Session, SessionEvent) + src/index.ts:145 ctx.sessions.flush(agent.session) + src/index.ts:318 ctx.on('session/event')`
 
 ## Dependents (下游被依赖)
-- `dsh-agent-spine-demo` - 可选 ctx.plugin(goalSession) 同会话目标驱动
+- 无下游（叶子/被消费端）

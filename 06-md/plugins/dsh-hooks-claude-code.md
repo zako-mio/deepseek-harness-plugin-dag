@@ -1,37 +1,32 @@
 # dsh-hooks-claude-code
 
 - 包名: `@deepseek-ai/dsh-hooks-claude-code`
-- 分组: G36 Hooks工具扩展
-- 拓扑层: Layer 6
+- 分组: G19 Hooks 扩展
+- 拓扑层: Layer 7
 - 来源层: L3 其余
 - 源码路径: `packages/hooks/hooks-claude-code`
 
-## 为什么需要它（设计初衷）
-Claude Code hook 桥：把用户既有 hooks.json（或 settings hooks 键）映射到 harness 拦截点，只实现 shell command 钩子子集。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/hooks/hooks-claude-code
-
 ## 实现逻辑
-Bridge 插件：在 harness 拦截 seam 上运行未修改的 Claude Code hooks.json/settings hook 配置。name='hooks-claude-code', inject=['shell']（src/index.ts:39-42）。apply 时一次性读入并解析 hooks.json（readFileSync + parseClaudeCodeConfig，:101-116），注册 7 个扩展点：agent/session-start(SessionStart, detached, :206)、agent/pre-step(UserPromptSubmit→PreStepDecision, :219)、tools/pre-execute(PreToolUse→PreToolDecision, :238)、tools/post-execute(PostToolUse→PostToolDecision, :247)、agent/turn-stopping(Stop, deny 时 agent.steer 强制续跑, :270)、subagent/start(:281)、subagent/end(:291)。共享执行/解析在 dsh-hook-protocol（runHook/matchesMatcher/mergeHookOutputs/createDetachedRuns/appendHookInvoked/appendHookResult）。写 hook/invoked+hook/result session 事件对；支持 CLAUDE_PLUGIN_ROOT/CLAUDE_PROJECT_DIR 替换；updatedInput/systemMessage 仅告警不生效；hook 在 session workspace 内运行。
+把未改动的 Claude Code command hooks 桥接到 harness 拦截点：SessionStart、UserPromptSubmit、PreToolUse/PostToolUse、Stop、SubagentStart/Stop（src/index.ts:209-301）。config.ts 解析 CC 的 event→matcher-group 格式，仅保留 command 类型并对命令做 ${CLAUDE_PLUGIN_ROOT}/${CLAUDE_PROJECT_DIR} 替换（src/config.ts:78-122）。runPoint 对每个匹配 hook 记录 invoked/result 事件并调用 runHook，最后把合并结果映射为 PreStepDecision/PreToolDecision/PostToolDecision（src/index.ts:143-192, 225-271）。
 
 ## Provides
-- 7 个拦截扩展点处理（SessionStart/UserPromptSubmit/PreToolUse/PostToolUse/Stop/SubagentStart/SubagentStop）
-- Claude Code 方言 payload 编解码（stdin JSON + exit-code 决策映射）
-- hook/invoked + hook/result session 事件对
-- inject ['shell']
+- Claude Code hooks 桥 (SessionStart/UserPromptSubmit/Pre+PostToolUse/Stop/SubagentStart+Stop 到 harness 拦截点的决策映射)
 
 ## Depends On (上游依赖)
-- `dsh-agent` [编译依赖] - agent 类型与 pre-step 决策契约
-  - 证据: `packages/hooks/hooks-claude-code/src/index.ts:15 (Agent/PreStepDecision 类型); package.json:38 (peerDep)`
-- `dsh-llm` [编译依赖] - hook 输出构造 UserMessage 上下文
-  - 证据: `packages/hooks/hooks-claude-code/src/index.ts:16-17 (createUserMessage/ContentBlock/MessageSource); package.json:41 (peerDep)`
-- `dsh-session` [编译依赖] - session 消息类型
-  - 证据: `packages/hooks/hooks-claude-code/src/index.ts:18 (UserMessage 类型); package.json:42 (peerDep)`
-- `dsh-subagent` [编译依赖] - subagent start/end 配对 identity
-  - 证据: `packages/hooks/hooks-claude-code/src/index.ts:36 (SubagentRunId); package.json:44 (peerDep)`
-- `dsh-tools` [编译依赖] - tool 前后决策类型
-  - 证据: `packages/hooks/hooks-claude-code/src/index.ts:20 (PostToolDecision/PreToolDecision/ToolExecution); package.json:45 (peerDep)`
+- `dsh-agent` [E1+E2] - 在 agent 生命周期与步进点注入上下文并映射 hook 决策
+  - 证据: `src/index.ts:14 import (Agent, PreStepDecision, TurnBoundaryProjection) + src/index.ts:209 ctx.on('agent/created') + src/index.ts:214 agent.inject`
+- `dsh-hook-protocol` [E1+E2] - 复用共享的 hook 执行/解析/合并/持久事件与 matcher 校验
+  - 证据: `src/index.ts:27-39 import (runHook, mergeHookOutputs, appendHookInvoked, ...) + src/index.ts:169 runHook(...) + src/config.ts:9 import matcherDiagnostic`
+- `dsh-llm` [编译依赖] - 构造注入模型的上下文消息及其来源标签
+  - 证据: `src/index.ts:16-17 import (createUserMessage, ContextFormed) + src/index.ts:24 import (ContentBlock, MessageSource)`
+- `dsh-session` [编译依赖] - hook 上下文消息使用的会话消息类型
+  - 证据: `src/index.ts:25 import UserMessage`
+- `dsh-session-projection` [E1+E2] - 读取 turnBoundary 投影获取 open turn 号以记录 hook 事件
+  - 证据: `src/index.ts:15 import type {} + src/index.ts:318 ctx.sessionProjections.stateOf(agent.session,'turnBoundary')`
+- `dsh-subagent` [E1+E2] - 把子代理 start/end 映射到 SubagentStart/SubagentStop hook
+  - 证据: `src/index.ts:42 import SubagentRunId + src/index.ts:287 ctx.on('subagent/start') + src/index.ts:297 ctx.on('subagent/end')`
+- `dsh-tools` [E1+E2] - 在工具执行前后拦截点运行 hook 并映射为工具决策
+  - 证据: `src/index.ts:26 import (PostToolDecision, PreToolDecision, ToolExecution, ToolExecutionResult) + src/index.ts:244 ctx.on('tools/pre-execute') + src/index.ts:253 ctx.on('tools/post-execute')`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

@@ -2,15 +2,13 @@
 
 - 包名: `@deepseek-ai/dsh-home-paths`
 - 源码路径: `packages/util/home-paths`
-- 被插件引用: 7 次
-- 描述: Shared filesystem path helpers for the DeepSeek Harness
+- 被插件引用: 5 次
+- 描述: 
 
 ## 被集依赖 (下游)
-- `dsh-agent-spine-demo`
+- `dsh-agent-instructions`
 - `dsh-attachment-local`
 - `dsh-credentials-local`
-- `dsh-llm-deepseek`
-- `dsh-settings-file`
 - `dsh-shell-env`
 - `dsh-skill-filesystem`
 

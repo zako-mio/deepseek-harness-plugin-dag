@@ -1,0 +1,233 @@
+[
+  {
+    "id": "dsh-attachment-local",
+    "name": "@deepseek-ai/dsh-attachment-local",
+    "implementation": "以 `LocalAttachmentStore extends AttachmentStore` 实现本地持久化附件后端：构造时把存储根定为 `DSH_HOME/attachments/v1`，并从 Config 解析图像字节/像素/张数限额与归一化策略，建立 `CompressionLimiter` 并发闸 (src/index.ts:147-201)。图像经 `prepareImageFile` → `commitPreparedImageFile` 落盘，读取分别走 `readImageFile`、`readRequestImageFile`，并用 `SharedRequest` 对同一 variantId 做 in-flight 去重与取消传播 (src/index.ts:207-287)。文件类附件走 verbatim 流式写入/读取 (src/index.ts:232-246)，底层实现分散在 store.ts/file-store.ts/request-image.ts/normalization.ts/sharp.ts。",
+    "provides": [
+      "本地附件存储后端 (AttachmentStore 服务实现，内容寻址持久化到 $DSH_HOME/attachments/v1)",
+      "图像限额与归一化能力 (imageLimits、normalizationPolicy，供上层做请求体容量校验)",
+      "图像归一化与请求级变体工具 (normalizeImage、prepareImageFile、readRequestImageFile、requestImageVariantId)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-attachment", "mechanism": "E1", "evidence": "src/index.ts:6 + src/file-store.ts:6 + src/image.ts:4 + src/normalization.ts:4", "purpose": "继承 AttachmentStore 服务定义与其附件类型，作为 seam 的本地 Provider 实现"},
+      {"plugin_id": "dsh-home-paths", "mechanism": "E1", "evidence": "src/index.ts:18", "purpose": "用 resolveDshHome/dshCachePath 解析存储根与缓存根，保证多用户/自定义 home 正确落盘"},
+      {"plugin_id": "dsh-lazy-require", "mechanism": "E1", "evidence": "src/sharp.ts:4", "purpose": "惰性 require sharp 原生图像库，避免无原生依赖环境启动即崩"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-config-editor",
+    "name": "@deepseek-ai/dsh-config-editor",
+    "implementation": "`ConfigEditor extends Service` 提供对当前 profile patch 文件的持久化配置编辑能力 (src/index.ts:26-31)。`entries()` 筛出由 `include` 父树拥有且 id 唯一的可寻址行 (src/index.ts:39-44)，`configuration()` 用 `loadProfileDirectory`+`composeEntries` 同时给出继承层值与显式覆盖值 (src/index.ts:49-68)。`edit()` 在文件锁下校验目标行仍在册、经 `waterfall('internal/config')`+`resolveConfig` 预演新配置、用 yaml AST 精确改写对应行，写盘后调用 `reconcileProfilePatches` 触发 Loader 重载，失败则回滚文件与 patch (src/index.ts:75-142)。",
+    "provides": [
+      "ctx.configEditor (对活动 profile 插件配置的持久化编辑服务：entries/configuration/edit)",
+      "基于 YAML AST 的配置行改写与写盘回滚 (保留 __jsExpr 等自定义标签)"
+    ],
+    "depends_on": [
+      {"plugin_id": "cordis-plugin-include", "mechanism": "E1", "evidence": "src/index.ts:6", "purpose": "复用 entryListSchema 与 PatchOptions 类型解析 profile patch 的 entry 列表"},
+      {"plugin_id": "cordis-plugin-loader", "mechanism": "E1+E2", "evidence": "src/index.ts:8 + src/index.ts:27 static inject 'loader'", "purpose": "读取 loader.entries() 定位可编辑行，并在写盘后走正常 Loader 重载路径"},
+      {"plugin_id": "dsh-hmr", "mechanism": "E2", "evidence": "src/index.ts:9 (type merge) + src/index.ts:140-141 ctx.get('hmr').runExclusive", "purpose": "配置写入与 HMR 模块/配置重载串行化，避免编辑过程与热重载竞态"},
+      {"plugin_id": "dsh-atomic-write", "mechanism": "E1", "evidence": "src/index.ts:11 + src/index.ts:130 writeFileAtomic", "purpose": "以文件锁与原子写保证 profile 配置在崩溃/并发下不损坏"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-hmr",
+    "name": "@deepseek-ai/dsh-hmr",
+    "implementation": "HMR 服务以 Chokidar 监听模块根，把文件变更经 debounce 后串行投入 `runExclusive` 队列处理 (src/index.ts:139-153, 260-305)。它对变更做 externals/accepted/declined 分类与依赖图闭包分析 (src/index.ts:66-77, 351-404)，据此清 ESM loadCache 与 CJS require.cache 并重导入插件、重建 fiber，失败时回滚缓存与旧插件 (src/index.ts:471-575)。同一队列也承载 profile 配置文件监视 (`watchConfig` 委托 watch-config.ts，处理尚不存在的路径) (src/index.ts:160-176)，完成后发 `hmr/reload` 事件 (src/index.ts:578)。",
+    "provides": [
+      "ctx.hmr (串行化的模块与配置热重载服务：runExclusive/watchConfig/getLinked/getOuterStack)",
+      "hmr/change 与 hmr/reload 事件，供其它插件感知文件变更与重载批次"
+    ],
+    "depends_on": [
+      {"plugin_id": "cordis-plugin-loader", "mechanism": "E1+E2", "evidence": "src/index.ts:5 + src/index.ts:86-87 @Inject('loader')", "purpose": "经 loader.internal 访问 Node ModuleLoader(loadCache)并重建插件 fiber"},
+      {"plugin_id": "cordis-plugin-include", "mechanism": "E1+E2", "evidence": "src/index.ts:6 + src/index.ts:288-298 include.refresh()", "purpose": "识别 include 配置树并触发其增量刷新，区分配置文件与模块变更"},
+      {"plugin_id": "cordis-plugin-timer", "mechanism": "E1+E2", "evidence": "src/index.ts:13 + src/index.ts:87 @Inject('timer') + src/index.ts:268 ctx.debounce", "purpose": "提供 ctx.debounce，把同一批文件变更合并成一次重载事务"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-plugin-manager",
+    "name": "@deepseek-ai/dsh-plugin-manager",
+    "implementation": "`PluginManager extends TypertRemoteService` 以 `@Remote` 方法向前端暴露当前 profile 的插件/包管理 (src/index.ts:176-178)。它把 profile patch 与 manifest 组合成可寻址行，判定 protected/unaddressable/management-required 只读原因 (src/index.ts:256-272)，并以 `withFileLock`+`writeFileAtomic` 串行化 set/install/remove，失败或取消时回滚 `package.json`/`pnpm-lock.yaml` (src/index.ts:767-791, 697-713)。安装走 `runProfilePnpm` 并逐 registry 重试、做 GitHub 连通性预检与产物 bundle 校验 (src/index.ts:461-567)；`tools.ts` 另注册 `plugin_manager` 工具，经沙箱提权审批后调用同一服务 (src/tools.ts:18-91)。",
+    "provides": [
+      "ctx.pluginManager (当前 profile 的插件/包管理服务：listPlugins/listBundles/inspect/installBundle/removeBundle/setPluginEnabled/setBundleEnabled)",
+      "plugin_manager 工具 (Agent 侧管理入口，含沙箱提权与审批)",
+      "版本豁免管理 (listVersionExemptions/setVersionExemption)",
+      "plugin-manager/install-log、plugin-manager/install-state、plugin-manager/changed 事件"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-atomic-write", "mechanism": "E1", "evidence": "src/index.ts:7 + src/patch.ts:5 + src/operations.ts:8", "purpose": "以文件锁与原子写安全改写 profile 的 package.json/patch 文件"},
+      {"plugin_id": "dsh-subprocess", "mechanism": "E1", "evidence": "src/github-connection.ts:5 + src/operations.ts:14", "purpose": "统一受管子进程执行 pnpm 与 GitHub 连通性检查（含超时/输出截断）"},
+      {"plugin_id": "cordis-plugin-loader", "mechanism": "E1+E2", "evidence": "src/index.ts:9 + src/index.ts:177 static inject 'loader'", "purpose": "读取活动 Loader 行以判定可寻址性与 bundle 贡献是否在用"},
+      {"plugin_id": "cordis-plugin-include", "mechanism": "E1", "evidence": "src/index.ts:10 + src/operations.ts:7", "purpose": "解析/生成 profile patch 的 PatchOptions 行结构"},
+      {"plugin_id": "dsh-typert-protocol", "mechanism": "E1", "evidence": "src/index.ts:12 TypertRemoteService/Remote", "purpose": "把管理服务暴露为可远程调用的 Typert 服务"},
+      {"plugin_id": "dsh-host-plugin-inventory", "mechanism": "E1", "evidence": "src/index.ts:13 + src/types.ts:4-6", "purpose": "读取运行时插件清单与 entryId 映射，供 listPlugins 对齐"},
+      {"plugin_id": "dsh-hmr", "mechanism": "E2", "evidence": "src/index.ts:20 (type merge) + src/index.ts:757-759 ctx.get('hmr').runExclusive", "purpose": "配置写入与热重载串行化，并在无 HMR 时降级为 restart-required"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/tools.ts:2", "purpose": "使用 assertNever 保证工具 action 联合类型穷尽"},
+      {"plugin_id": "dsh-sandbox-policy", "mechanism": "E2", "evidence": "src/tools.ts:5 + src/tools.ts:13 inject + src/tools.ts:38 ctx.sandboxPolicy.resolve", "purpose": "解析会话沙箱模式，决定管理操作是否需要 danger-full-access 提权"},
+      {"plugin_id": "dsh-user-approval", "mechanism": "E2", "evidence": "src/tools.ts:6 + src/tools.ts:42 ctx.get('approval')", "purpose": "对提权的管理动作要求用户审批"},
+      {"plugin_id": "dsh-sandbox", "mechanism": "E1", "evidence": "src/tools.ts:7 approveEscalation", "purpose": "执行沙箱提权审批流程"},
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "src/tools.ts:9 + src/tools.ts:13 inject 'tools' + src/tools.ts:19 ctx.tools.register", "purpose": "注册面向模型的 plugin_manager 工具"},
+      {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "src/types.ts:2", "purpose": "使用品牌化 id 类型约束跨边界标识"},
+      {"plugin_id": "dsh-package-manifest", "mechanism": "E1", "evidence": "src/types.ts:3", "purpose": "复用包 manifest 元数据类型"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-connection",
+    "name": "@deepseek-ai/dsh-client-connection",
+    "implementation": "Host 侧 `HostConnectionService` 提供载体中立的 RPC 与 Fetch 注册表，并在有 `webServer` 时把 `/api` 路由挂到 Web 服务器，经 Host/Origin 信任栅栏与持久浏览器认证后才放行 (src/index.ts:124-162, src/rpc-host.ts:63-113)。浏览器侧 `installConnection` 装配 `ctx.connection`，把 `ConnectionController` 的连接/重连循环、generation 状态与通用 RPC 通道以 getSnapshot/subscribe 观察面暴露，并在 online/offline 时更新可用性 (src/client/index.ts:205-311)。两侧通过 `__DSH_CONNECTION_RECOVERY__` 全局与 `connection/request` waterfall 协同。",
+    "provides": [
+      "ctx.connection (Host 侧 Connection 传输与 RPC/Fetch 注册表；浏览器侧连接 generation 与恢复循环句柄)",
+      "connection/request waterfall 事件 (允许对已认证 /api 请求做准入/包装)",
+      "OperatorPeer 与 rpc/schema 导出 (RpcId、transportError、rpcMessageSchema 等)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-credentials", "mechanism": "E1+E2", "evidence": "src/index.ts:6 + src/index.ts:137 BrowserAuth.create(ctx.root, ctx.credentials, ...) + src/index.ts:89 static inject 'credentials'", "purpose": "提供持久浏览器会话令牌与 cookie 认证，作为 /api 鉴权基础"},
+      {"plugin_id": "dsh-attachment", "mechanism": "E2", "evidence": "src/index.ts:5 + src/index.ts:74-86 ctx.get('attachments').imageLimits", "purpose": "按附件图像聚合上限推导所需请求体容量，校验 maxRequestBodyBytes 足够"},
+      {"plugin_id": "dsh-host-webserver", "mechanism": "E1+E2", "evidence": "src/index.ts:8 + src/index.ts:139 ctx.inject(['webServer']) + src/index.ts:158 webCtx.webServer.register", "purpose": "把 /api 路由和 recovery 注入表挂到 Web carrier 上"},
+      {"plugin_id": "dsh-typert-protocol", "mechanism": "E1", "evidence": "src/index.ts:39 + src/rpc-host.ts:5 + src/operator-peer.ts:11", "purpose": "复用 PeerScope/RemoteInvocation 等类型定义 RPC 边界"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "src/client/api.ts:12", "purpose": "共享客户端 SessionId/SessionEvent/StreamChunk 等协议类型"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "src/client/api.ts:13-14", "purpose": "共享 LLM 相关品牌与类型，用于客户端 API 类型面"},
+      {"plugin_id": "dsh-scope", "mechanism": "E1", "evidence": "src/operator-peer.ts:10", "purpose": "构造 OperatorPeer 的作用域语义"},
+      {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "src/rpc.ts:3", "purpose": "使用品牌化 id 类型标注 RPC 标识"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-file-upload",
+    "name": "@deepseek-ai/dsh-client-file-upload",
+    "implementation": "Host 侧 `FileUploads extends TypertRemoteService` 承接待上传文件：`upload` 走 base64 编码路径、`uploadStream` 走原始字节流，均委托 `ctx.attachments` 落盘 (src/index.ts:105-131)，并在 Agent 会话作用域下以 receiptId 暂存，`bindPrompt`/`retirePrompt` 随 prompt 生命周期提交或回滚绑定 (src/index.ts:139-181)。它向 Connection 注册 `POST` 流式路由 `handleFileUploadHttp`，校验 content-type 与 sessionId 后把请求体转成 AsyncIterable (src/index.ts:72-80, src/http-route.ts:22-81)，并通过 `session/event` 观察 user/message 来退役已消费 receipt (src/index.ts:241-254)。",
+    "provides": [
+      "ctx.fileUploads (Host 侧文件上传存储与 Agent 级暂存 receipt 服务)",
+      "上传 HTTP 流式路由 (FILE_UPLOAD_PATH，application/octet-stream)",
+      "CommandFileReceiptResolver 注册 (让命令层解析上传 receipt)",
+      "ctx.fileUpload (浏览器侧后台上传服务 FileUploadRuntime)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-agent", "mechanism": "E1+E2", "evidence": "src/index.ts:5 + src/index.ts:58 static inject 'agents' + src/index.ts:199 ctx.agents.get", "purpose": "以接收 Agent 及其 session 作为上传暂存的作用域与生命周期主体"},
+      {"plugin_id": "dsh-attachment", "mechanism": "E2", "evidence": "src/index.ts:6 + src/index.ts:58 inject 'attachments' + src/index.ts:108 ctx.attachments.admitEncodedFile", "purpose": "把上传字节交给附件服务持久化并生成 FileAttachmentRef"},
+      {"plugin_id": "dsh-client-connection", "mechanism": "E1+E2", "evidence": "src/index.ts:7 + src/index.ts:58 inject 'connection' + src/index.ts:73 ctx.connection.fetch.register", "purpose": "在 Connection 的 fetch 注册表上挂原始字节上传路由"},
+      {"plugin_id": "dsh-commands", "mechanism": "E2", "evidence": "src/index.ts:8 + src/index.ts:58 inject 'commands' + src/index.ts:69 ctx.commands.registerFileReceiptResolver", "purpose": "让命令 prompt 能解析上传 receipt 为文件引用"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "src/index.ts:10 + src/client/contract.ts:1 + src/http-route.ts:4", "purpose": "以 SessionId 寻址会话并观察 session/event 退役 receipt"},
+      {"plugin_id": "dsh-scope", "mechanism": "E1", "evidence": "src/index.ts:9", "purpose": "用 scopeOf 校验操作发生在目标 Agent 自身作用域内"},
+      {"plugin_id": "dsh-typert-protocol", "mechanism": "E1", "evidence": "src/index.ts:11 + src/client/runtime.ts:5-6", "purpose": "以 Remote/TypertRemoteService/RemoteError 定义远程上传接口与错误码"},
+      {"plugin_id": "dsh-util-crypto", "mechanism": "E1", "evidence": "src/client/runtime.ts:4", "purpose": "浏览器侧上传需要的加密/哈希原语"},
+      {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "src/http-route.ts:3 + src/types.ts:4", "purpose": "把 query 参数品牌化为 SessionId 等跨边界 id"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-hmr",
+    "name": "@deepseek-ai/dsh-client-hmr",
+    "implementation": "Host 侧以单一定时器 stat-poll 每个 graph 行的客户端 bundle（设计上用轮询，因网络挂载无 inotify），元数据变化即调 `clientModules.rebuilt(id)` 发布新 generation (src/index.ts:68-156)。同时注册 `/plugins/events` SSE 路由，把 graph 变化与 rebuilt 帧广播给浏览器 (src/index.ts:158-207)。另发布 invariant 伴生插件，以 StatWatcher 计数基线校验 bundle 轮询器随 fiber 销毁而终止 (src/invariant.ts:31-59)。",
+    "provides": [
+      "客户端 bundle 变更的 stat 轮询监测与 clientModules.rebuilt 触发",
+      "/plugins/events SSE 频道 (graph 与 rebuilt 帧广播)",
+      "client-hmr-invariant 伴生不变量 (StatWatcher 泄漏检测)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-modules", "mechanism": "E1+E2", "evidence": "src/index.ts:15 + src/index.ts:27 inject 'clientModules' + src/index.ts:148 ctx.clientModules.onGraphChanged", "purpose": "读取客户端模块图与 artifact 基线，并把重建事件反馈回图"},
+      {"plugin_id": "dsh-host-webserver", "mechanism": "E1+E2", "evidence": "src/index.ts:16 + src/index.ts:27 inject 'webServer' + src/index.ts:181 ctx.webServer.register", "purpose": "挂载 /plugins/events SSE 路由"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "src/invariant.ts:7 + src/invariant.ts:14 inject 'invariants' + src/invariant.ts:59 ctx.invariants.register", "purpose": "注册包级不变量，检查 bundle 监视器不被泄漏"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-locale",
+    "name": "@deepseek-ai/dsh-client-locale",
+    "implementation": "Host 半仅把 locale 偏好接到 settings 配置投影 (src/index.ts:30-31)。浏览器半 `LocaleRuntime` 维护语言目录、按 fallback 链解析词典并按 revision 发布不可变快照，`translate` 先查 entry 命名空间再查 common 命名空间，缺失回退到 key 本身 (src/client/index.ts:165-513)。激活时从 `__DSH_LOCALE__` 桥读取原生语言、注册内置 zh/en 词典、provide `locale` 服务并经 `installLocale` 合成渲染层 `t` 座位，最后把 Language 行注册进 settings General 槽 (src/client/index.ts:563-622)。",
+    "provides": [
+      "ctx.locale (LocaleRuntime：字典注册 register、绑定 bind、快照 getSnapshot/subscribe、setLocale/addLanguage)",
+      "locale/change 事件与 LocaleFace (供渲染层合成 t 座位)",
+      "Language 设置行 (settings.general.item 槽贡献)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1", "evidence": "src/client/index.ts:39 + src/client/LanguageRow.tsx:8", "purpose": "复用 Translate/LocaleNamespaceMap/RootStandardSourceContribution 等槽与翻译类型"},
+      {"plugin_id": "dsh-client-ui-settings", "mechanism": "E1+E2", "evidence": "src/client/index.ts:15 + src/client/index.ts:554 inject 'configForms' + src/client/index.ts:577 ctx.configForms.get", "purpose": "经 configForms 读取持久语言偏好并把 Language 行注册进设置区"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/settings-store.ts:6", "purpose": "Language 行状态用快照 store 承载并驱动渲染"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1+E2", "evidence": "src/client/index.ts:18 + src/client/index.ts:554 inject 'slots' + src/client/index.ts:588 ctx.slots.installLocale", "purpose": "提供 ctx.slots 服务并安装 LocaleFace 供渲染机器合成 t 座位"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/LanguageRow.tsx:9", "purpose": "Language 行复用共享 UI 原语"},
+      {"plugin_id": "dsh-package-manifest", "mechanism": "E1", "evidence": "src/client/index.ts:8", "purpose": "用 LocalizedText 类型解析包清单中的多语言文本"},
+      {"plugin_id": "dsh-settings", "mechanism": "E1+E2", "evidence": "src/index.ts:2 + src/index.ts:31 ctx.inject(['settings']).settings.configure", "purpose": "声明 locale 命名空间的 settings 配置面（auto:false）"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-modules",
+    "name": "@deepseek-ai/dsh-client-modules",
+    "implementation": "Node 半增量扫描 Loader 中声明 `dsh.client` 的包（`internal/plugin` 事件触发 microtask flush，激活期同步 flush 同一实现），按模块图拓扑排序组合 `window.__DSH_BOOT__` 条目图 (src/index.ts:596-657, 501-533)。它按行读取并缓存客户端 bundle、生成 revision 化的 combo 脚本与 source map、注册 `/plugins` 路由并惰性生成响应体 (src/index.ts:434-459, 1128-1156)，同时提供 `clientModules` 服务（rebuilt/onRebuilt/onGraphChanged）作为 HMR Node 半的注册与通知面 (src/index.ts:706-756)。",
+    "provides": [
+      "ctx.clientModules (ClientModuleRegistry：graph/artifactBaseline/rebuilt/onRebuilt/onGraphChanged/clientPath/fetchBundle)",
+      "/plugins 路由 (revision 化 combo 脚本与 source map 及包本地 chunk)",
+      "window.__DSH_BOOT__ 条目图与 index 注入行 (bootInjections)",
+      "客户端模块 HTTP 路由与模块表身份 (供 web 壳消费)"
+    ],
+    "depends_on": [
+      {"plugin_id": "cordis-plugin-loader", "mechanism": "E1+E2", "evidence": "src/index.ts:34 + src/index.ts:597 static inject 'loader' + src/index.ts:639 ctx.loader.entries()", "purpose": "以 Loader 行为输入扫描 dsh.client 声明并解析包真实位置"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/entries.ts:4", "purpose": "浏览器模块系统用客户端快照 store 管理 entry 生命周期状态"},
+      {"plugin_id": "dsh-package-manifest", "mechanism": "E1", "evidence": "src/client/manifest.ts:33", "purpose": "解析/校验 dsh.client 清单声明与精确包标识"},
+      {"plugin_id": "dsh-host-webserver", "mechanism": "E1+E2", "evidence": "src/index.ts:35 + src/index.ts:653 ctx.inject(['webServer']) + src/index.ts:649 webCtx.webServer.register", "purpose": "注册 /plugins bundle 路由并向 index 注入启动脚本与全局图"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E2", "evidence": "src/invariant.ts:8 + src/invariant.ts:15 inject 'invariants' + src/invariant.ts:44 ctx.invariants.register", "purpose": "注册包级不变量，校验模块注册表随 fiber 释放而清理"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-resources",
+    "name": "@deepseek-ai/dsh-client-resources",
+    "implementation": "Host 半为空实现，资源模型全在浏览器半 (src/index.ts:1-4)。浏览器半 `apply` 构建 `ResourceRegistry` 并 provide `ctx.resources`，再经 `slots.provideRoot` 贡献 `resource` keyed hook，使任意槽组件获得 `useResource` (src/client/index.ts:30-41)。`resources.ts` 按 `dsh-resource://` 地址维护 per-address 记录，以 holders 引用计数启停 provider 流，并把流帧折叠为 live/failed 快照，记录永不销毁以保证 source() 引用稳定 (src/client/resources.ts:75-211)。",
+    "provides": [
+      "ctx.resources (资源提供者注册表、pin、按地址的 ObservableSnapshot)",
+      "useResource 全局标准 hook (经 slots.provideRoot 贡献给所有槽组件)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1+E2", "evidence": "src/client/index.ts:8 + src/client/index.ts:23 inject 'slots' + src/client/index.ts:38 ctx.slots.provideRoot", "purpose": "把 resource keyed hook 与协议类型注册进槽渲染机器"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1", "evidence": "src/client/index.ts:7", "purpose": "类型面激活 ctx.slots 服务合并，参与渲染机器组装"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/resources.ts:13 + src/client/contract.ts:18", "purpose": "用 createSnapshotStore 承载每个资源地址的可观察快照"},
+      {"plugin_id": "dsh-typert-protocol", "mechanism": "E1", "evidence": "src/client/resources.ts:12 + src/client/contract.ts:17", "purpose": "以 RemoteResult 表示 provider 流帧的成功/失败"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-shortcuts",
+    "name": "@deepseek-ai/dsh-client-shortcuts",
+    "implementation": "Host 半把经过校验的键盘配置注入页面全局 `__DSH_SHORTCUTS_CONFIG__` (src/index.ts:15-19)。浏览器半 `ShortcutsService extends Service` 按环境（web/desktop）选择存储适配器与键盘适配器，建立 `ShortcutRegistry`，并暴露 register/registerFixed/observeFixedInput/describeBinding/edit 等命令面 (src/client/index.ts:27-75)。它订阅 locale 变化刷新按键标签，经固定输入监听器链带 consume 语义分发，Desktop 走原生键盘桥 (src/client/index.ts:74, 94-106, 62-63)。",
+    "provides": [
+      "ctx.shortcuts (窗口级应用命令注册表、生效键帽目录、编辑与描述绑定能力)",
+      "固定快捷键输入观察通道 (observeFixedInput，带 consume 链)",
+      "windows/desktop/web 多运行时的存储与键盘适配"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-locale", "mechanism": "E1+E2", "evidence": "src/client/index.ts:4 + src/client/index.ts:28 static inject 'locale' + src/client/index.ts:74 ctx.locale.subscribe", "purpose": "本地化键帽标签并在语言切换时刷新目录"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/registry.ts:2 + src/client/types.ts:2", "purpose": "用快照 store 承载快捷键配置与目录状态"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/dom.ts:2 + src/client/native.ts:2", "purpose": "复用 UI 原语渲染/呈现键帽"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/configuration.ts:2", "purpose": "配置归一化/合并工具"},
+      {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "src/binding.ts:2 + src/persistence.ts:3", "purpose": "品牌化快捷键绑定标识"},
+      {"plugin_id": "dsh-host-webserver", "mechanism": "E2", "evidence": "src/index.ts:5 + src/index.ts:16 ctx.on('webserver/index-inject')", "purpose": "把键盘配置注入到服务的页面 index"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-web",
+    "name": "@deepseek-ai/dsh-client-web",
+    "implementation": "Web 壳库入口导出 `AppWebEntry`、静态模块表与 index 注入应用器 (src/index.ts:9-12)。`AppWebEntry.run` 等待 boot-ready、从 `__ModuleLoader__` 创建模块系统与 manifest、预取 immediate 层，再以 `bootClient` 组装 Cordis Loader 激活全部客户端条目，最后用 `mountClient` 交接渲染器 (src/boot.ts:49-103)。`bootClient` 把 Loader 挂到模块系统并逐行 create、await，随后 `assertEntriesActive` 审计失败/待服务条目并抛聚合错误 (src/boot-client.ts:36-89)；`mountClient` 以 `uiRenderer` 依赖 fiber 挂载应用 (src/mount.ts:19-24)。",
+    "provides": [
+      "AppWebEntry (Web 壳启动入口：模块系统+HMR 交接+应用挂载)",
+      "客户端静态模块表与平台模块词表 (PLATFORM_MODULES/PRELOADED_CLIENT_EXTERNALS)",
+      "bootClient/assertEntriesActive/mountClient 组装与激活审计",
+      "applyIndexInjections (消费 webserver index 注入表)"
+    ],
+    "depends_on": [
+      {"plugin_id": "cordis-plugin-loader", "mechanism": "E1+E2", "evidence": "src/boot-client.ts:8 + src/boot-client.ts:38 ctx.plugin(Loader) + src/boot-client.ts:40 loader.internal", "purpose": "在浏览器端挂载 Loader 并逐行激活客户端插件"},
+      {"plugin_id": "dsh-client-modules", "mechanism": "E1", "evidence": "src/boot.ts:11 + src/boot-client.ts:9", "purpose": "以客户端模块系统作为 loader.internal 并消费其 manifest/图"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1+E2", "evidence": "src/mount.ts:7 + src/mount.ts:20 ctx.inject(['uiRenderer'])", "purpose": "交接挂载点给 UI 渲染器，随其替换重挂"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/seed.ts:14", "purpose": "种子静态模块表内联客户端 store"},
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1", "evidence": "src/seed.ts:15", "purpose": "种子静态模块表内联槽注册表"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/seed.ts:16", "purpose": "种子静态模块表内联 UI 原语库"},
+      {"plugin_id": "dsh-client-ui-dockkit", "mechanism": "E1", "evidence": "src/seed.ts:17", "purpose": "种子静态模块表内联 dockkit 布局库"},
+      {"plugin_id": "dsh-host-webserver", "mechanism": "E1", "evidence": "src/apply-injections.ts:7", "purpose": "消费 webserver index 注入表以应用脚本/全局注入"}
+    ],
+    "dependents": []
+  }
+]

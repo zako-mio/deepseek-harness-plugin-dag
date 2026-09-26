@@ -89,13 +89,18 @@ payload = {
     "extColor": "#b48a3c"
 }
 
-# 动态图例统计
-l1_count = sum(1 for n in nodes.values() if n.get("source_layer") == "L1")
-l2_count = sum(1 for n in nodes.values() if n.get("source_layer") == "L2")
-l3_count = sum(1 for n in nodes.values() if n.get("source_layer") == "L3")
-plugin_count = len(nodes)
+# 动态图例统计（取自 webapp-dag.json = 交互图实际注入的全量数据；core-dag 仅 L1 子集）
+_wd = os.path.join(BASE, "01-dag-data", "webapp-dag.json")
+with open(_wd, "r", encoding="utf-8") as f:
+    _full = json.load(f)
+_full_nodes = {n["id"]: n for n in _full["nodes"]}
+l1_count = sum(1 for n in _full_nodes.values() if n.get("source_layer") == "L1")
+l2_count = sum(1 for n in _full_nodes.values() if n.get("source_layer") == "L2")
+l3_count = sum(1 for n in _full_nodes.values() if n.get("source_layer") == "L3")
+plugin_count = len(_full_nodes)
 seam_count = len(ext_map)
-group_count = len(groups)
+group_count = len(_full["groups"])
+group_names_txt = " / ".join(g["name"] for g in _full["groups"])
 
 html_page = """<!DOCTYPE html>
 <html lang="zh-CN">
@@ -140,7 +145,7 @@ html_page = """<!DOCTYPE html>
     <b>外部 seam 节点</b>（{seam_count} 个基座包）<br>
     <b>依赖边</b>：A → B 表示 A 依赖 B<br>
     <b>视图</b>：组级（{group_count} 组）→ 点击组进入组内插件 DAG<br><br>
-    组：运行时框架/类型契约/核心服务/LLM域/文件系统/Shell/沙箱/审批/命令/凭据/附件/作业/目标/技能/子代理/工作流/上下文治理/Web 等 {group_count} 组
+    组：{group_names_txt}
   </div>
   <h2 style="margin-top:14px;">组配色</h2>
   <div id="glegend"></div>
@@ -155,6 +160,22 @@ const DATA = __DATA__;
 
 // ===== 状态 =====
 let currentGroup = null;   // null = 组级视图; 'G01'..  = 该组内视图
+
+// ---- URL 路由: ?drill=Gxx 或 #Gxx ----
+function groupFromUrl(){
+  const u = new URL(window.location.href);
+  let g = u.searchParams.get('drill');
+  if (!g && u.hash) g = decodeURIComponent(u.hash.replace(/^#/, ''));
+  if (!g) return null;
+  if (g === 'EXT') return 'EXT';
+  return (DATA.groups && DATA.groups[g]) ? g : null;
+}
+function syncUrl(){
+  const u = new URL(window.location.href);
+  if (currentGroup === null){ u.searchParams.delete('drill'); u.hash = ''; }
+  else { u.searchParams.set('drill', currentGroup); u.hash = currentGroup; }
+  history.replaceState(null, '', u.pathname + (u.search || '') + (u.hash || ''));
+}
 const zoomInfo = document.getElementById('zoominfo');
 
 // ---- 组级视图元素: 37 组 + EXT ----
@@ -278,6 +299,7 @@ function goBack(){
   if (currentGroup !== null){
     currentGroup = null;
     render();
+    syncUrl();
   }
 }
 document.getElementById('backbtn').addEventListener('click', goBack);
@@ -291,6 +313,7 @@ cy.on('tap', 'node', (evt) => {
     if (g && n.data('kind') === 'group'){
       currentGroup = g === 'EXT' ? 'EXT' : g;
       render();
+      syncUrl();
     }
   } else {
     // 组内: 点击插件跳转, 点击 stub 跳转对应页
@@ -311,8 +334,11 @@ Object.keys(DATA.groups).forEach(g => {
   gl.appendChild(d);
 });
 
-// 初始渲染: 组级视图
+// 初始渲染: 支持 ?drill=Gxx / #Gxx 深链
+currentGroup = groupFromUrl();
 render();
+syncUrl();
+window.addEventListener('hashchange', () => { currentGroup = groupFromUrl(); render(); });
 </script>
 </body>
 </html>
@@ -327,7 +353,8 @@ html_page = (html_page
     .replace("{l2_count}", str(l2_count))
     .replace("{l3_count}", str(l3_count))
     .replace("{seam_count}", str(seam_count))
-    .replace("{group_count}", str(group_count)))
+    .replace("{group_count}", str(group_count))
+    .replace("{group_names_txt}", group_names_txt))
 
 with open(OUT, "w", encoding="utf-8") as f:
     f.write(html_page)

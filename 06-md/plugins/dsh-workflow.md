@@ -2,13 +2,14 @@
 
 - 包名: `@deepseek-ai/dsh-workflow`
 - 源码路径: `packages/workflow/workflow`
-- 被插件引用: 3 次
-- 描述: Workflow capability seam: ctx.workflowEngine service, run vocabulary, and workflow/* events
+- 被插件引用: 4 次
+- 描述: 
 
 ## 被集依赖 (下游)
+- `dsh-client-ui-workflow-run`
 - `dsh-tool-ralph`
 - `dsh-tool-workflow`
-- `dsh-workflow-worker-thread`
+- `dsh-workflow-ptc`
 
 ## 依赖机制
-编译依赖
+编译依赖、运行时依赖

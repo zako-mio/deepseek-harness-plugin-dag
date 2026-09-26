@@ -1,0 +1,151 @@
+{
+ "disabled_base_rows": [
+  {
+   "row_id": "tool-plugin-manager",
+   "node": "dsh-plugin-manager",
+   "bundle": "base",
+   "note": "base bundle 中 disabled: True",
+   "in_nodes": true
+  },
+  {
+   "row_id": "plugin-manager",
+   "node": "dsh-plugin-manager",
+   "bundle": "base",
+   "note": "base bundle 中 disabled: <>!ctx.get('profileContext')",
+   "in_nodes": true
+  },
+  {
+   "row_id": "hmr",
+   "node": "dsh-hmr",
+   "bundle": "base",
+   "note": "base bundle 中 disabled: <>!ctx.get('profileContext')",
+   "in_nodes": true
+  },
+  {
+   "row_id": "config-editor",
+   "node": "dsh-config-editor",
+   "bundle": "base",
+   "note": "base bundle 中 disabled: <>!ctx.get('profileContext')",
+   "in_nodes": true
+  },
+  {
+   "row_id": "settings",
+   "node": "dsh-settings",
+   "bundle": "base",
+   "note": "base bundle 中 disabled: <>!ctx.get('profileContext')",
+   "in_nodes": true
+  },
+  {
+   "row_id": "bash-sandbox",
+   "node": "dsh-bash-sandbox",
+   "bundle": "base",
+   "note": "base bundle 中 disabled: <>process.platform === 'win32'",
+   "in_nodes": true
+  },
+  {
+   "row_id": "pwsh-sandbox",
+   "node": "dsh-pwsh-sandbox",
+   "bundle": "base",
+   "note": "base bundle 中 disabled: <>process.platform !== 'win32'",
+   "in_nodes": true
+  },
+  {
+   "row_id": "tool-bash",
+   "node": "dsh-tool-bash",
+   "bundle": "base",
+   "note": "base bundle 中 disabled: <>process.platform === 'win32'",
+   "in_nodes": true
+  },
+  {
+   "row_id": "tool-pwsh",
+   "node": "dsh-tool-pwsh",
+   "bundle": "base",
+   "note": "base bundle 中 disabled: <>process.platform !== 'win32'",
+   "in_nodes": true
+  },
+  {
+   "row_id": "skill-badge",
+   "node": "dsh-skill-badge",
+   "bundle": "base",
+   "note": "base bundle 中 disabled: True",
+   "in_nodes": true
+  },
+  {
+   "row_id": "tool-ralph",
+   "node": "dsh-tool-ralph",
+   "bundle": "base",
+   "note": "base bundle 中 disabled: True",
+   "in_nodes": true
+  },
+  {
+   "row_id": "time-context",
+   "node": "dsh-time-context",
+   "bundle": "web-app",
+   "note": "web-app bundle 中 disabled: True",
+   "in_nodes": true
+  },
+  {
+   "row_id": "schedule",
+   "node": "dsh-schedule",
+   "bundle": "web-app",
+   "note": "web-app bundle 中 disabled: True",
+   "in_nodes": true
+  },
+  {
+   "row_id": "ui-sidebar-browser",
+   "node": "dsh-client-ui-sidebar-browser",
+   "bundle": "web-app",
+   "note": "web-app bundle 中 disabled: <>ctx.get('profileContext')?.name !== 'desktop'",
+   "in_nodes": true
+  },
+  {
+   "row_id": "ui-schedule",
+   "node": "dsh-client-ui-schedule",
+   "bundle": "web-app",
+   "note": "web-app bundle 中 disabled: True",
+   "in_nodes": true
+  },
+  {
+   "row_id": "workspace-dependencies",
+   "node": "dsh-tool-workspace-dependencies",
+   "bundle": "sdk-app",
+   "note": "sdk-app bundle 中 disabled: <>!(process.env.DSH_PRIMARY_RUNTIME ?? process.env.DSH_BUNDLED_PRIMARY_RUNTIME)",
+   "in_nodes": true
+  },
+  {
+   "row_id": "skill-office",
+   "node": "dsh-skill-office",
+   "bundle": "sdk-app",
+   "note": "sdk-app bundle 中 disabled: <>!(process.env.DSH_PRIMARY_RUNTIME ?? process.env.DSH_BUNDLED_PRIMARY_RUNTIME)",
+   "in_nodes": true
+  },
+  {
+   "row_id": "terminal-bash",
+   "node": "dsh-terminal-bash",
+   "bundle": "sdk-minimal",
+   "note": "sdk-minimal bundle 中 disabled: <>process.platform === 'win32'",
+   "in_nodes": true
+  },
+  {
+   "row_id": "terminal-pwsh",
+   "node": "dsh-terminal-bash",
+   "bundle": "sdk-minimal",
+   "note": "sdk-minimal bundle 中 disabled: <>process.platform !== 'win32'",
+   "in_nodes": true
+  },
+  {
+   "row_id": "persistent-bash",
+   "node": "dsh-tool-bash-persistent",
+   "bundle": "sdk-minimal",
+   "note": "sdk-minimal bundle 中 disabled: <>process.platform === 'win32'",
+   "in_nodes": true
+  },
+  {
+   "row_id": "persistent-pwsh",
+   "node": "dsh-tool-pwsh-persistent",
+   "bundle": "sdk-minimal",
+   "note": "sdk-minimal bundle 中 disabled: <>process.platform !== 'win32'",
+   "in_nodes": true
+  }
+ ]
+}

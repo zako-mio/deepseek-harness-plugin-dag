@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dsh-client-ui-session · @deepseek-ai/dsh-client-ui-session · DeepSeek Harness 插件 DAG</title>
+<style>
+:root{--bg:#0f1117;--panel:#161a22;--border:#2a2f3a;--text:#e6e8ee;--dim:#9aa3b2;--accent:#4f8cff;--ext:#b48a3c;--ok:#2fb98a;--dis:#c0504d;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+header{background:var(--panel);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+header h1{font-size:17px;font-weight:600;}
+header .crumb{color:var(--dim);font-size:13px;}
+header .crumb a{color:var(--accent);text-decoration:none;}
+.badge{background:#20324f;color:#7fb0ff;padding:2px 10px;border-radius:20px;font-size:12px;}
+.badge.ext{background:#3a2f1a;color:#e0b25e;}
+.badge.layer{background:#1d2a24;color:#5fc9a0;}
+.badge.l2{background:#2f2440;color:#b48ae0;}
+.badge.l3{background:#1d3a30;color:#5fd0a8;}
+.badge.dis{background:#3a1d1d;color:#e08584;}
+main{padding:24px;max-width:1200px;margin:0 auto;}
+h2{font-size:18px;margin:26px 0 12px;color:#cfd6e4;border-bottom:1px solid var(--border);padding-bottom:8px;}
+h3{font-size:15px;margin:18px 0 8px;color:#b8c2d4;}
+p,li{font-size:14px;}
+ul{padding-left:22px;}
+.dep-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;margin:10px 0;}
+.dep-item{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 12px;}
+.dep-item .name{font-weight:600;color:var(--accent);}
+.dep-item .mech{display:inline-block;font-size:11px;background:#1d2a3f;color:#7fb0ff;border-radius:4px;padding:1px 6px;margin-left:6px;}
+.dep-item .evi{font-size:12px;color:var(--dim);margin-top:4px;font-family:Consolas,monospace;word-break:break-all;}
+.dep-item .purpose{font-size:13px;margin-top:4px;}
+.ext .name{color:var(--ext);}
+.dis .name{color:var(--dis);}
+.provides li{font-size:13px;margin:3px 0;}
+.evidence{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-family:Consolas,monospace;font-size:12px;color:#9fb0c3;margin:6px 0;word-break:break-all;}
+.dagnav{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:14px 0;}
+.dagnav .label{font-size:12px;color:var(--dim);margin-bottom:6px;}
+.dagnav .chips{display:flex;flex-wrap:wrap;gap:6px;}
+.chip{font-size:12px;background:#1d2a3f;border:1px solid #2b3d5f;border-radius:6px;padding:2px 8px;color:#7fb0ff;text-decoration:none;}
+.chip:hover{background:#2b3d5f;}
+.chip.ext{background:#3a2f1a;border-color:#5a4422;color:#e0b25e;}
+.chip.dis{background:#3a1d1d;border-color:#6a3231;color:#e08584;}
+.chip.l2{background:#2f2440;border-color:#4a3560;color:#b48ae0;}
+.chip.l3{background:#1d3a30;border-color:#2f5a4a;color:#5fd0a8;}
+.chip.self{background:#20324f;border-color:#4f8cff;color:#fff;cursor:default;}
+.treenav{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:14px 0;display:flex;flex-wrap:wrap;gap:4px 14px;}
+.treenav a{color:var(--dim);font-size:13px;text-decoration:none;}
+.treenav a:hover{color:var(--accent);}
+.treenav .sep{color:#3a3f4a;}
+.layernav{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}
+.layernav a{font-size:12px;background:#161d2c;border:1px solid var(--border);border-radius:6px;padding:2px 8px;color:var(--dim);text-decoration:none;}
+.layernav a.cur{background:#20324f;color:#7fb0ff;border-color:#4f8cff;}
+footer{margin-top:40px;padding:16px 24px;border-top:1px solid var(--border);color:var(--dim);font-size:12px;text-align:center;}
+table{border-collapse:collapse;width:100%;margin:10px 0;}
+th,td{border:1px solid var(--border);padding:6px 10px;font-size:13px;text-align:left;}
+th{background:var(--panel);color:#b8c2d4;}
+.whybox{background:#0d1a14;border:1px solid #2f5a4a;border-radius:8px;padding:14px 18px;margin:10px 0;}
+.whybox .tag{color:#5fc9a0;font-size:12px;font-weight:600;letter-spacing:1px;}
+.whybox p{font-size:14px;color:#cfe8dd;margin:6px 0;}
+.whybox .hist{font-size:13px;color:var(--dim);margin-top:8px;}
+.whybox .src{font-size:11px;color:var(--dim);margin-top:8px;}
+.whybox .src a{color:#7fb0ff;text-decoration:none;word-break:break-all;}
+.whybox .src a:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+<header>
+  <span class="crumb"><a href="../index.html">DAG总览</a> / <a href="../03-groups/index.html">组目录</a> / G06 客户端 UI 包</span>
+  <h1>dsh-client-ui-session · @deepseek-ai/dsh-client-ui-session</h1>
+  <span class="badge">Layer 8</span><span class="badge">G06</span><span class="badge l2">L2 web-app</span>
+</header>
+<main>
+<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">ACP 协议</a><a href="../03-groups/G02.html">API 网关与控制器</a><a href="../03-groups/G03.html">附件</a><a href="../03-groups/G04.html">启动与插件管理</a><a href="../03-groups/G05.html">客户端运行时</a><a href="../03-groups/G06.html">客户端 UI 包</a><a href="../03-groups/G07.html">上下文压缩</a><a href="../03-groups/G08.html">上下文注入</a><a href="../03-groups/G09.html">核心运行时</a><a href="../03-groups/G10.html">凭据与授权</a><a href="../03-groups/G11.html">交付物</a><a href="../03-groups/G12.html">文档处理</a><a href="../03-groups/G13.html">实验特性</a><a href="../03-groups/G14.html">宿主扩展</a><a href="../03-groups/G15.html">反馈通道</a><a href="../03-groups/G16.html">文件系统</a><a href="../03-groups/G17.html">目标与计划</a><a href="../03-groups/G18.html">工具守卫</a><a href="../03-groups/G19.html">Hooks 扩展</a><a href="../03-groups/G20.html">宿主服务</a><a href="../03-groups/G21.html">交互命令</a><a href="../03-groups/G22.html">作业调度</a><a href="../03-groups/G23.html">LLM 适配</a><a href="../03-groups/G24.html">LSP 集成</a><a href="../03-groups/G25.html">MCP 协议</a><a href="../03-groups/G26.html">规划模式</a><a href="../03-groups/G27.html">Agent 预设</a><a href="../03-groups/G28.html">代码执行运行时</a><a href="../03-groups/G29.html">运行时诊断</a><a href="../03-groups/G30.html">沙箱</a><a href="../03-groups/G31.html">定时调度</a><a href="../03-groups/G32.html">SDK 与协议</a><a href="../03-groups/G33.html">会话核心</a><a href="../03-groups/G34.html">会话检索</a><a href="../03-groups/G35.html">设置</a><a href="../03-groups/G36.html">Shell 执行</a><a href="../03-groups/G37.html">技能</a><a href="../03-groups/G38.html">溢出存储</a><a href="../03-groups/G39.html">SSH 远程执行</a><a href="../03-groups/G40.html">存储</a><a href="../03-groups/G41.html">子代理</a><a href="../03-groups/G42.html">子进程</a><a href="../03-groups/G43.html">终端</a><a href="../03-groups/G44.html">待办</a><a href="../03-groups/G45.html">类型契约</a><a href="../03-groups/G46.html">框架 vendor</a><a href="../03-groups/G47.html">Web 访问</a><a href="../03-groups/G48.html">Webhook</a><a href="../03-groups/G49.html">工作流</a><a href="../03-groups/G50.html">工作区</a></div><div class="dagnav"><div class="label">依赖链 · 上游（该插件依赖的前驱）：</div><div class="chips"><a class="chip" href="dsh-api-remotes.html">dsh-api-remotes</a><a class="chip" href="dsh-api-session-controller.html">dsh-api-session-controller</a><a class="chip" href="dsh-client-ui-renderer.html">dsh-client-ui-renderer</a><a class="chip" href="dsh-session.html">dsh-session</a></div><div class="label" style="margin-top:8px;">依赖链 · 下游（依赖该插件的节点）：</div><div class="chips"><a class="chip l2" href="dsh-client-ui-approval.html">dsh-client-ui-approval</a><a class="chip l2" href="dsh-client-ui-chat.html">dsh-client-ui-chat</a><a class="chip l2" href="dsh-client-ui-commands.html">dsh-client-ui-commands</a><a class="chip l2" href="dsh-client-ui-conversation.html">dsh-client-ui-conversation</a><a class="chip l2" href="dsh-client-ui-cordis.html">dsh-client-ui-cordis</a><a class="chip l2" href="dsh-client-ui-goal.html">dsh-client-ui-goal</a><a class="chip l2" href="dsh-client-ui-input-trigger.html">dsh-client-ui-input-trigger</a><a class="chip l2" href="dsh-client-ui-jobs.html">dsh-client-ui-jobs</a><a class="chip l2" href="dsh-client-ui-layout.html">dsh-client-ui-layout</a><a class="chip l2" href="dsh-client-ui-message-feedback.html">dsh-client-ui-message-feedback</a><a class="chip l2" href="dsh-client-ui-model-selection.html">dsh-client-ui-model-selection</a><a class="chip l2" href="dsh-client-ui-open-in-app.html">dsh-client-ui-open-in-app</a><a class="chip l2" href="dsh-client-ui-permission-presets.html">dsh-client-ui-permission-presets</a><a class="chip l2" href="dsh-client-ui-plan.html">dsh-client-ui-plan</a><a class="chip l2" href="dsh-client-ui-schedule.html">dsh-client-ui-schedule</a><a class="chip l2" href="dsh-client-ui-settings-general.html">dsh-client-ui-settings-general</a><a class="chip l2" href="dsh-client-ui-sidebar.html">dsh-client-ui-sidebar</a><a class="chip l2" href="dsh-client-ui-sidebar-browser.html">dsh-client-ui-sidebar-browser</a><a class="chip l2" href="dsh-client-ui-sidebar-documentpreview.html">dsh-client-ui-sidebar-documentpreview</a><a class="chip l2" href="dsh-client-ui-sidebar-files.html">dsh-client-ui-sidebar-files</a><a class="chip l2" href="dsh-client-ui-sidebar-right.html">dsh-client-ui-sidebar-right</a><a class="chip l2" href="dsh-client-ui-sidebar-terminal.html">dsh-client-ui-sidebar-terminal</a><a class="chip l2" href="dsh-client-ui-subagent.html">dsh-client-ui-subagent</a><a class="chip l2" href="dsh-client-ui-tool.html">dsh-client-ui-tool</a><a class="chip l2" href="dsh-client-ui-trajectory.html">dsh-client-ui-trajectory</a><a class="chip l2" href="dsh-client-ui-user-questions.html">dsh-client-ui-user-questions</a><a class="chip l2" href="dsh-client-ui-workflow-run.html">dsh-client-ui-workflow-run</a><a class="chip l2" href="dsh-client-ui-workspace.html">dsh-client-ui-workspace</a><a class="chip l2" href="dsh-session-log-export.html">dsh-session-log-export</a></div><div class="label" style="margin-top:8px;">同一拓扑层（Layer 8，层次遍历层序）：</div><div class="chips"><a class="chip self" href="dsh-client-ui-session.html">dsh-client-ui-session</a><a class="chip" href="dsh-schedule.html">dsh-schedule</a><a class="chip" href="dsh-tool-ralph.html">dsh-tool-ralph</a><a class="chip" href="dsh-tool-workflow.html">dsh-tool-workflow</a></div></div><div class="layernav"><a href="dsh-acp.html">↑ Layer 7（16 插件）</a><span class="chip self">Layer 8</span><a href="dsh-api-remotes.html">↓ Layer 9（1 插件）</a></div><h2>插件信息</h2><table><tr><th>包名</th><td>@deepseek-ai/dsh-client-ui-session</td></tr><tr><th>分组</th><td>G06 · 客户端 UI 包</td></tr><tr><th>拓扑层</th><td>Layer 8（层次遍历：被依赖方先于依赖方）</td></tr><tr><th>源码路径</th><td><code>packages/client/ui-session</code></td></tr><tr><th>来源层</th><td>L2 web-app bundle（base 之上装配）</td></tr></table><h2>① 实现逻辑</h2><p>作为 Session Controller 与 React 选择器/槽作用域之间的适配层：apply 构造 UiSession，经 ctx.slots.provideRoot 发布根级标准来源 hooks（sessions、sessionStatus）与 keyedHooks.sessionRetainInfo，再 ctx.slots.installScope(&#x27;session&#x27;, adapter) 安装会话作用域适配器（src/client/index.ts:670-684）。UiSession 内部实现 useSession/useSessions/useSessionStatus/useSessionRetainInfo 的取值与相等性比较（index.ts:361-380、695-717），并把会话渲染区域绑定到 session-provider.tsx 的 renderSessionArea（index.ts:316）。</p>
+<style>
+#dyn-dag{width:100%;height:480px;background:var(--panel);border:1px solid var(--border);border-radius:8px;margin:12px 0;}
+#dyn-dag-label{font-size:12px;color:var(--dim);margin:10px 0 4px;}
+#dyn-dag-legend{display:flex;gap:16px;font-size:12px;color:var(--dim);margin:6px 0 2px;flex-wrap:wrap;}
+#dyn-dag-legend .item{display:flex;align-items:center;gap:5px;}
+#dyn-dag-legend .dot{width:10px;height:10px;border-radius:3px;display:inline-block;}
+.dyn-self{background:var(--accent);}
+.dyn-up{background:#e8933b;}
+.dyn-down{background:#2fb98a;}
+.dyn-seam{background:var(--ext);}
+</style>
+
+<div id="dyn-dag-label">内部结构动态 DAG（深色主题：橙色=上游依赖 · 绿色=下游依赖 · 棕色=外部seam · 蓝=本插件）</div>
+<div id="dyn-dag-legend">
+  <span class="item"><span class="dot dyn-self"></span>本插件</span>
+  <span class="item"><span class="dot dyn-up"></span>上游依赖</span>
+  <span class="item"><span class="dot dyn-down"></span>下游依赖</span>
+  <span class="item"><span class="dot dyn-seam"></span>外部 seam</span>
+</div>
+<div id="dyn-dag"></div>
+
+<script src="../04-interactive/vendor/cytoscape.min.js"></script>
+<script src="../04-interactive/vendor/cytoscape-dagre.min.js"></script>
+<script>
+(function(){
+  const raw = {"elements": [{"data": {"id": "dsh-client-ui-session", "label": "dsh-client-ui-session", "kind": "self", "cls": "#4f8cff", "url": "dsh-client-ui-session.html"}}, {"data": {"id": "dsh-api-remotes", "label": "dsh-api-remotes", "kind": "up", "cls": "#e8933b", "url": "dsh-api-remotes.html"}}, {"data": {"id": "dsh-api-session-controller", "label": "dsh-api-session-controller", "kind": "up", "cls": "#e8933b", "url": "dsh-api-session-controller.html"}}, {"data": {"id": "dsh-client-ui-renderer", "label": "dsh-client-ui-renderer", "kind": "up", "cls": "#e8933b", "url": "dsh-client-ui-renderer.html"}}, {"data": {"id": "dsh-session", "label": "dsh-session", "kind": "up", "cls": "#e8933b", "url": "dsh-session.html"}}, {"data": {"id": "dsh-client-ui-approval", "label": "dsh-client-ui-approval", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-approval.html"}}, {"data": {"id": "dsh-client-ui-chat", "label": "dsh-client-ui-chat", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-chat.html"}}, {"data": {"id": "dsh-client-ui-commands", "label": "dsh-client-ui-commands", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-commands.html"}}, {"data": {"id": "dsh-client-ui-conversation", "label": "dsh-client-ui-conversation", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-conversation.html"}}, {"data": {"id": "dsh-client-ui-cordis", "label": "dsh-client-ui-cordis", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-cordis.html"}}, {"data": {"id": "dsh-client-ui-goal", "label": "dsh-client-ui-goal", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-goal.html"}}, {"data": {"id": "dsh-client-ui-input-trigger", "label": "dsh-client-ui-input-trigger", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-input-trigger.html"}}, {"data": {"id": "dsh-client-ui-jobs", "label": "dsh-client-ui-jobs", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-jobs.html"}}, {"data": {"id": "dsh-client-ui-layout", "label": "dsh-client-ui-layout", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-layout.html"}}, {"data": {"id": "dsh-client-ui-message-feedback", "label": "dsh-client-ui-message-feedback", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-message-feedback.html"}}, {"data": {"id": "dsh-client-ui-model-selection", "label": "dsh-client-ui-model-selection", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-model-selection.html"}}, {"data": {"id": "dsh-client-ui-open-in-app", "label": "dsh-client-ui-open-in-app", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-open-in-app.html"}}, {"data": {"id": "dsh-client-ui-permission-presets", "label": "dsh-client-ui-permission-presets", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-permission-presets.html"}}, {"data": {"id": "dsh-client-ui-plan", "label": "dsh-client-ui-plan", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-plan.html"}}, {"data": {"id": "dsh-client-ui-schedule", "label": "dsh-client-ui-schedule", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-schedule.html"}}, {"data": {"id": "dsh-client-ui-settings-general", "label": "dsh-client-ui-settings-general", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-settings-general.html"}}, {"data": {"id": "dsh-client-ui-sidebar", "label": "dsh-client-ui-sidebar", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-sidebar.html"}}, {"data": {"id": "dsh-client-ui-sidebar-browser", "label": "dsh-client-ui-sidebar-browser", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-sidebar-browser.html"}}, {"data": {"id": "dsh-client-ui-sidebar-documentpreview", "label": "dsh-client-ui-sidebar-documentpreview", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-sidebar-documentpreview.html"}}, {"data": {"id": "dsh-client-ui-sidebar-files", "label": "dsh-client-ui-sidebar-files", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-sidebar-files.html"}}, {"data": {"id": "dsh-client-ui-sidebar-right", "label": "dsh-client-ui-sidebar-right", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-sidebar-right.html"}}, {"data": {"id": "dsh-client-ui-sidebar-terminal", "label": "dsh-client-ui-sidebar-terminal", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-sidebar-terminal.html"}}, {"data": {"id": "dsh-client-ui-subagent", "label": "dsh-client-ui-subagent", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-subagent.html"}}, {"data": {"id": "dsh-client-ui-tool", "label": "dsh-client-ui-tool", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-tool.html"}}, {"data": {"id": "dsh-client-ui-trajectory", "label": "dsh-client-ui-trajectory", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-trajectory.html"}}, {"data": {"id": "dsh-client-ui-user-questions", "label": "dsh-client-ui-user-questions", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-user-questions.html"}}, {"data": {"id": "dsh-client-ui-workflow-run", "label": "dsh-client-ui-workflow-run", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-workflow-run.html"}}, {"data": {"id": "dsh-client-ui-workspace", "label": "dsh-client-ui-workspace", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-workspace.html"}}, {"data": {"id": "dsh-session-log-export", "label": "dsh-session-log-export", "kind": "down", "cls": "#2fb98a", "url": "dsh-session-log-export.html"}}, {"data": {"id": "dsh-api-remotes->dsh-client-ui-session", "source": "dsh-api-remotes", "target": "dsh-client-ui-session"}}, {"data": {"id": "dsh-api-session-controller->dsh-client-ui-session", "source": "dsh-api-session-controller", "target": "dsh-client-ui-session"}}, {"data": {"id": "dsh-client-ui-renderer->dsh-client-ui-session", "source": "dsh-client-ui-renderer", "target": "dsh-client-ui-session"}}, {"data": {"id": "dsh-session->dsh-client-ui-session", "source": "dsh-session", "target": "dsh-client-ui-session"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-approval", "source": "dsh-client-ui-session", "target": "dsh-client-ui-approval"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-chat", "source": "dsh-client-ui-session", "target": "dsh-client-ui-chat"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-commands", "source": "dsh-client-ui-session", "target": "dsh-client-ui-commands"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-conversation", "source": "dsh-client-ui-session", "target": "dsh-client-ui-conversation"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-cordis", "source": "dsh-client-ui-session", "target": "dsh-client-ui-cordis"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-goal", "source": "dsh-client-ui-session", "target": "dsh-client-ui-goal"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-input-trigger", "source": "dsh-client-ui-session", "target": "dsh-client-ui-input-trigger"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-jobs", "source": "dsh-client-ui-session", "target": "dsh-client-ui-jobs"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-layout", "source": "dsh-client-ui-session", "target": "dsh-client-ui-layout"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-message-feedback", "source": "dsh-client-ui-session", "target": "dsh-client-ui-message-feedback"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-model-selection", "source": "dsh-client-ui-session", "target": "dsh-client-ui-model-selection"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-open-in-app", "source": "dsh-client-ui-session", "target": "dsh-client-ui-open-in-app"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-permission-presets", "source": "dsh-client-ui-session", "target": "dsh-client-ui-permission-presets"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-plan", "source": "dsh-client-ui-session", "target": "dsh-client-ui-plan"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-schedule", "source": "dsh-client-ui-session", "target": "dsh-client-ui-schedule"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-settings-general", "source": "dsh-client-ui-session", "target": "dsh-client-ui-settings-general"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-sidebar", "source": "dsh-client-ui-session", "target": "dsh-client-ui-sidebar"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-sidebar-browser", "source": "dsh-client-ui-session", "target": "dsh-client-ui-sidebar-browser"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-sidebar-documentpreview", "source": "dsh-client-ui-session", "target": "dsh-client-ui-sidebar-documentpreview"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-sidebar-files", "source": "dsh-client-ui-session", "target": "dsh-client-ui-sidebar-files"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-sidebar-right", "source": "dsh-client-ui-session", "target": "dsh-client-ui-sidebar-right"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-sidebar-terminal", "source": "dsh-client-ui-session", "target": "dsh-client-ui-sidebar-terminal"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-subagent", "source": "dsh-client-ui-session", "target": "dsh-client-ui-subagent"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-tool", "source": "dsh-client-ui-session", "target": "dsh-client-ui-tool"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-trajectory", "source": "dsh-client-ui-session", "target": "dsh-client-ui-trajectory"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-user-questions", "source": "dsh-client-ui-session", "target": "dsh-client-ui-user-questions"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-workflow-run", "source": "dsh-client-ui-session", "target": "dsh-client-ui-workflow-run"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-workspace", "source": "dsh-client-ui-session", "target": "dsh-client-ui-workspace"}}, {"data": {"id": "dsh-client-ui-session->dsh-session-log-export", "source": "dsh-client-ui-session", "target": "dsh-session-log-export"}}]};
+  const cy = cytoscape({
+    container: document.getElementById('dyn-dag'),
+    elements: raw.elements,
+    style: [
+      {
+        selector: 'node',
+        style: {
+          'label': 'data(label)',
+          'background-color': 'data(cls)',
+          'color': '#e6e8ee',
+          'font-size': 11,
+          'text-valign': 'bottom',
+          'text-margin-y': 4,
+          'width': 46,
+          'height': 46,
+          'shape': 'round-rectangle',
+          'border-width': 2,
+          'border-color': '#2a2f3a'
+        }
+      },
+      {
+        selector: 'node[kind="self"]',
+        style: {
+          'border-width': 3,
+          'border-color': '#4f8cff',
+          'width': 60,
+          'height': 60,
+          'font-size': 12,
+          'font-weight': 700
+        }
+      },
+      {
+        selector: 'edge',
+        style: {
+          'width': 1.5,
+          'line-color': '#4a5263',
+          'target-arrow-color': '#4a5263',
+          'target-arrow-shape': 'triangle',
+          'curve-style': 'bezier'
+        }
+      }
+    ],
+    layout: {
+      name: 'dagre',
+      rankDir: 'LR',
+      nodeSep: 30,
+      rankSep: 60,
+      padding: 20
+    },
+    wheelSensitivity: 0.2,
+    minZoom: 0.2,
+    maxZoom: 2.5
+  });
+  cy.on('tap', 'node', (evt) => {
+    const url = evt.target.data('url');
+    if (url) window.location.href = url;
+  });
+  // 等渲染完自适应容器尺寸
+  setTimeout(() => cy.resize(), 100);
+})();
+</script>
+<h2>② 注册/提供（provides）</h2><ul class="provides"><li>根级标准来源 hooks：useSessions / useSessionStatus / useSessionRetainInfo（含 sessionRetainInfo keyed hook）</li><li>&#x27;session&#x27; 槽作用域适配器（ctx.slots.installScope，会话级槽的作用域与标准数据来源）</li><li>会话渲染区域 renderArea（session-provider.tsx 的 renderSessionArea）</li><li>uiSession.provide()（供域插件发布其会话级 pending-interaction 与状态）</li></ul><h2>③ 依赖（depends_on · 上游前驱）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-api-remotes.html">dsh-api-remotes</a></span><span class="mech">E1</span><div class="purpose">ctx.remote 声明合并</div><div class="evi">src/client/index.ts:14 import type {}</div></div><div class="dep-item"><span class="name"><a href="dsh-api-session-controller.html">dsh-api-session-controller</a></span><span class="mech">E1+E2</span><div class="purpose">消费 Session Controller 的列表/绑定/快照与投影接口</div><div class="evi">src/client/index.ts:12 import { ISessions, ... } + src/client/index.ts:2-11 import</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-renderer.html">dsh-client-ui-renderer</a></span><span class="mech">E1</span><div class="purpose">引入 ctx.slots 服务声明合并</div><div class="evi">src/client/index.ts:29 import type {}</div></div><div class="dep-item"><span class="name"><a href="dsh-session.html">dsh-session</a></span><span class="mech">E1</span><div class="purpose">会话身份类型</div><div class="evi">src/client/index.ts:13 import type { SessionId }</div></div></div><h2>④ 被依赖（dependents · 下游消费者）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-client-ui-approval.html">dsh-client-ui-approval</a></span><div class="purpose">发布待决交互供会话 UI 呈现</div><div class="evi">src/client/index.ts:7 PendingInteractionPublisher + src/client/index.ts:88 ctx.uiSession.registerPendingInteraction</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-chat.html">dsh-client-ui-chat</a></span><div class="purpose">向会话 UI 提供 chat hooks 标准位</div><div class="evi">src/client/apply.ts:20 merge + src/client/apply.ts:111 ctx.uiSession.provide</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-commands.html">dsh-client-ui-commands</a></span><div class="purpose">会话 UI 声明合并</div><div class="evi">src/client/index.ts:17 merge</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-conversation.html">dsh-client-ui-conversation</a></span><div class="purpose">向会话 UI provide 会话/输入 hooks</div><div class="evi">src/client/apply.ts:12 merge + src/client/apply.ts:283 ctx.uiSession.provide</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-cordis.html">dsh-client-ui-cordis</a></span><div class="purpose">接入会话 UI 集成面</div><div class="evi">src/client/index.ts:10 import</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-goal.html">dsh-client-ui-goal</a></span><div class="purpose">声明 Session 标准 useProjection 座位</div><div class="evi">src/client/index.ts:27 merge (useProjection 标准位)</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-input-trigger.html">dsh-client-ui-input-trigger</a></span><div class="purpose">会话 UI 声明合并</div><div class="evi">src/client/index.ts:12 merge</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-jobs.html">dsh-client-ui-jobs</a></span><div class="purpose">会话 UI 声明合并</div><div class="evi">src/client/index.ts:14 merge</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-layout.html">dsh-client-ui-layout</a></span><div class="purpose">引入 ui-session 的声明合并（Session 标准来源类型面）</div><div class="evi">src/client/index.ts:13 import type {}</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-message-feedback.html">dsh-client-ui-message-feedback</a></span><div class="purpose">引入 ui-session 的 Session 标准来源类型面</div><div class="evi">src/client/index.ts:24 import type {}</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-model-selection.html">dsh-client-ui-model-selection</a></span><div class="purpose">Session 标准来源类型面</div><div class="evi">src/client/index.ts:23 import type {}</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-open-in-app.html">dsh-client-ui-open-in-app</a></span><div class="purpose">Session 标准来源类型面</div><div class="evi">src/client/index.ts:12 import type {}</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-permission-presets.html">dsh-client-ui-permission-presets</a></span><div class="purpose">Session 标准来源类型面</div><div class="evi">src/client/index.ts:30 import type {}</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-plan.html">dsh-client-ui-plan</a></span><div class="purpose">Session 绑定解析与标准来源</div><div class="evi">src/client/index.ts:12 import type + src/client/index.ts:80 ctx.sessions.binding</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-schedule.html">dsh-client-ui-schedule</a></span><div class="purpose">Session 标准来源类型面</div><div class="evi">src/client/index.ts:35 import type {}</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-settings-general.html">dsh-client-ui-settings-general</a></span><div class="purpose">引入会话标准 props 合并（设置外壳在会话上下文渲染）</div><div class="evi">src/client/index.ts:23 type-only import</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-sidebar.html">dsh-client-ui-sidebar</a></span><div class="purpose">引入会话标准 props 合并</div><div class="evi">src/client/index.ts:11 type-only import</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-sidebar-browser.html">dsh-client-ui-sidebar-browser</a></span><div class="purpose">引入会话标准 props 合并</div><div class="evi">src/client/index.ts:6 type-only import</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-sidebar-documentpreview.html">dsh-client-ui-sidebar-documentpreview</a></span><div class="purpose">引入会话标准 props 合并</div><div class="evi">src/client/index.ts:18 type-only import</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-sidebar-files.html">dsh-client-ui-sidebar-files</a></span><div class="purpose">引入会话标准 props 合并</div><div class="evi">src/client/index.ts:17 type-only import</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-sidebar-right.html">dsh-client-ui-sidebar-right</a></span><div class="purpose">引入会话标准 props 合并</div><div class="evi">src/client/index.ts:29 type-only import</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-sidebar-terminal.html">dsh-client-ui-sidebar-terminal</a></span><div class="purpose">拉入会话 UI 服务的类型合并</div><div class="evi">src/client/index.ts:11 import type</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-subagent.html">dsh-client-ui-subagent</a></span><div class="purpose">拉入会话 UI 服务类型合并</div><div class="evi">src/client/index.ts:14 import type</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-tool.html">dsh-client-ui-tool</a></span><div class="purpose">拉入会话 UI 服务类型合并</div><div class="evi">src/client/apply.ts:8 import type</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-trajectory.html">dsh-client-ui-trajectory</a></span><div class="purpose">向会话 UI 提供 trajectory hook</div><div class="evi">src/client/index.ts:16 import type + src/client/index.ts:75 ctx.uiSession.provide</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-user-questions.html">dsh-client-ui-user-questions</a></span><div class="purpose">发布待处理问题交互并供 Session UI 消费</div><div class="evi">src/client/index.ts:20 import type + src/client/index.ts:91 ctx.uiSession.registerPendingInteraction</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-workflow-run.html">dsh-client-ui-workflow-run</a></span><div class="purpose">引入会话状态快照与 UI 服务类型</div><div class="evi">src/client/WorkflowRunPanel.tsx:13 + src/client/index.ts:9</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-workspace.html">dsh-client-ui-workspace</a></span><div class="purpose">拉入会话根标准 hook 类型合并</div><div class="evi">src/client/index.ts:36 import type</div></div><div class="dep-item"><span class="name"><a href="dsh-session-log-export.html">dsh-session-log-export</a></span><div class="purpose">沿用会话视图的类型环境</div><div class="evi">src/client/index.ts:9 import</div></div></div>
+</main>
+<footer>DeepSeek Harness 插件级 DAG 依赖链分析 · L1 核心集 + L2 web-app + L3 其余插件 · 源码三依据(E1编译/E2运行时/E3组合)逐条溯源</footer>
+</body>
+</html>

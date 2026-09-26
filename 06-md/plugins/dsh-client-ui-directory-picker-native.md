@@ -1,30 +1,24 @@
 # dsh-client-ui-directory-picker-native
 
 - 包名: `@deepseek-ai/dsh-client-ui-directory-picker-native`
-- 分组: G29 UI底座
-- 拓扑层: Layer 16
-- 来源层: L2 web-app
+- 分组: G06 客户端 UI 包
+- 拓扑层: Layer 15
+- 来源层: L3 其余
 - 源码路径: `packages/client/ui-directory-picker-native`
 
-## 为什么需要它（设计初衷）
-原生系统目录选择对话框的浏览器半边，经 ui-workspace 的 directoryFlow 洞驱动 host.pickDirectory，回报选中路径/取消/失败。
-
-来源：
-- https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-directory-picker-native/README.zh.md
-- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/host/directory-picker-native
-
 ## 实现逻辑
-目录选择 native 前端（renderless）。NativeDirectoryFlow 以嵌套 slots.inject 事务性注册进 conversation.hero.workspace.directoryFlow 与 sidebar.workspaces.directoryFlow 两个洞；无渲染，每次 open 驱动 host 的 workspaces.pickDirectory（OS 选择器）并把唯一结果（picked path/取消/失败）回报 owner conversation。
+无渲染的原生目录流占位：apply 先读全局 globalThis.__DSH_DIRECTORY_PICKER__（Desktop preload 桥），存在则用 desktop.pick()，否则退回 ctx.uiWorkspace.pickDirectory() (src/client/index.ts:21-25)，再以 generator 事务式把 NativeDirectoryFlow 同时注册进 ui-workspace 的两个 directory-flow 洞 (src/client/index.ts:29-37)。组件本身返回 null，用 useRef 的 armed/alive 保证每次 open 上升沿只发起一次选取、只报告一次结果，卸载即整体丢弃结果 (src/client/flow.ts:25-64)。
 
 ## Provides
-- conversation.hero.workspace.directoryFlow 条目(NativeDirectoryFlow, renderless)
-- sidebar.workspaces.directoryFlow 条目(NativeDirectoryFlow, renderless)
+- slot: conversation.hero.workspace.directoryFlow (NativeDirectoryFlow 无渲染原生选择器占用)
+- slot: sidebar.workspaces.directoryFlow (同上的侧边栏占位)
+- 组件 NativeDirectoryFlow (每次 open 恰发起一次原生/Host 目录选取)
 
 ## Depends On (上游依赖)
-- `dsh-client-runtime` [运行时依赖] - host 原生目录选择原语（dsh-host-directory-picker-native node 半）
-  - 证据: `index.ts:18 inject 'workspaces' + index.ts:27 ctx.workspaces.pickDirectory() + contract/workspaces.ts:41`
-- `dsh-client-ui-workspace` [编译依赖] - 消费 directoryFlow 洞声明
-  - 证据: `index.ts:12 type-only ui-workspace/client + index.ts:31-39 注册两处洞 + package.json:35 dsh.client.inject`
+- `dsh-client-ui-renderer` [运行时依赖] - 注册槽位占用
+  - 证据: `src/client/index.ts:6 merge + src/client/index.ts:29 ctx.slots.inject`
+- `dsh-client-ui-workspace` [E1+E2] - 占据目录流洞并驱动 Host OS 选择器
+  - 证据: `src/client/flow.ts:9 DirectoryFlowOwnerProps + src/client/index.ts:24 ctx.uiWorkspace.pickDirectory`
 
 ## Dependents (下游被依赖)
-- 无下游（叶子/被消费端）
+- `dsh-host-directory-picker-auto` - native 交互的客户端界面条目

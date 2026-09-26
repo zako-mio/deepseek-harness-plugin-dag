@@ -1,35 +1,25 @@
 # dsh-repeat-tool-reminder
 
 - 包名: `@deepseek-ai/dsh-repeat-tool-reminder`
-- 分组: G23 工具守卫
+- 分组: G18 工具守卫
 - 拓扑层: Layer 5
 - 来源层: L1 核心集
 - 源码路径: `packages/guard/repeat-tool-reminder`
 
-## 为什么需要它（设计初衷）
-仅建议的循环中断器：监控相同规范化参数连续调用同一工具的次数，达阈值注入逐级提醒，绝不否决调用。
-
-来源：
-- https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/guard/repeat-tool-reminder/README.zh.md
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/archived/feature/2026-07-08-repeat-tool-guard.md
-
 ## 实现逻辑
-重复工具调用提醒 guard：apply 维护 WeakMap<Agent, Chain> 连续重复链。在 'tools/post-execute' 上 observe，参数深排序 canonicalize 后按 [name, canonical] 计数，命中 thresholds 则注入提醒 UserMessage 到 additionalContexts(只 enrich 不 veto)；'agent/pre-step' 在用户消息出现时重置链。
+以 agent 为键维护「同一工具 + 规范化参数」的连续重复链，在 tools/post-execute 瀑布点观察并追加提醒，而从不否决或改写调用（src/index.ts:196-231）。参数先做深键排序再序列化以形成链键（src/index.ts:96-112），命中 thresholds 时首档发柔性提醒、后续档位带截断的参数预览（src/index.ts:206-213, 125-128）。agent/pre-step 检测到真实用户消息即重置该 agent 的链（src/index.ts:236-239）。
 
 ## Provides
-- tools/post-execute 观察者(重复提醒注入)
-- agent/pre-step 重置钩子
-- 配置 thresholds/include/exclude
 
 ## Depends On (上游依赖)
-- `dsh-agent` [运行时依赖] - 监听 agent/pre-step
-  - 证据: `packages/guard/repeat-tool-reminder/src/index.ts:11,229`
-- `dsh-llm` [编译依赖] - createUserMessage
-  - 证据: `packages/guard/repeat-tool-reminder/src/index.ts:12,203`
-- `dsh-session` [编译依赖] - UserMessage 类型
-  - 证据: `packages/guard/repeat-tool-reminder/src/index.ts:14,203`
-- `dsh-tools` [运行时依赖] - 监听 tools/post-execute
-  - 证据: `packages/guard/repeat-tool-reminder/src/index.ts:15,213`
+- `dsh-agent` [E1+E2] - 以 agent 为键维护重复链并在用户插话时重置
+  - 证据: `src/index.ts:11 import (Agent, PreStepDecision) + src/index.ts:236-237 ctx.on('agent/pre-step') + chains.delete(agent)`
+- `dsh-llm` [编译依赖] - 构造模型可见的提醒消息及其生产者来源标签
+  - 证据: `src/index.ts:12-13 import createUserMessage + src/index.ts:20 import MessageSource`
+- `dsh-session` [编译依赖] - 提醒消息所使用的会话消息类型
+  - 证据: `src/index.ts:21 import UserMessage`
+- `dsh-tools` [E1+E2] - 订阅工具执行后瀑布点以观察重复调用并附加提醒
+  - 证据: `src/index.ts:22 import (PostToolDecision, ToolExecution) + src/index.ts:220 ctx.on('tools/post-execute')`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

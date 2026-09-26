@@ -1,7 +1,7 @@
 # DeepSeek Harness 插件级 DAG 依赖链分析
 
-> **版本**：`v0.1.1-rc.2`（基于官方源码 dsh-v0.1.1-rc.2，2026-08-21 发布）
-> **升级记录**：RC5 → RC7（2026-08-19）→ RC8（2026-08-20）→ **RC2（2026-08-21）**。本次 RC2 升级新增 1 包（`dsh-authorization` seam）、0 删除，源码实质变化 43 包。详见 `RC7-RC8-DIFF-REPORT.md`、`RC8-RC2-DIFF-REPORT.md`。
+> **版本**：`v0.1.7-rc.2`（基于官方源码 dsh-v0.1.7-rc.2，2026-09-24 发布，commit `477b4f42`）
+> **升级记录**：RC5 → RC7（08-19）→ RC8（08-20）→ RC2（08-21）→ **0.1.7-rc.2（09-27 全量重建）**。本次跨度 **6875 commits / 6 个 minor**，包树 227 → **312**（+102 / −17），**210/210 共有包源码全部变化**（0 个「仅版本号变化包」），故放弃增量级联、改走**全量重推导**。详见 `RC2-0.1.7-DIFF-REPORT.md`。
 
 ## 简介
 
@@ -15,93 +15,101 @@
 - **E2 运行时依赖**：ctx 服务注入 / ctx.get / 事件订阅
 - **E3 组合依赖**：cordis.patch.yml 装配位置
 
-## 范围分层（三个上下文窗口）
+## 核心数据（v0.1.7-rc.2）
 
-| 层 | 范围 | 插件数 | 状态 |
-|----|------|-------|------|
-| **L1 核心集** | `bundle/base/cordis.patch.yml` 装配的全部插件 | 76 核心 + 36 外部 seam | ✅ **完成** |
-| **L2 web-app bundle** | base 之上 web-app 装配的宿主层 + 前端 runtime + 30+ ui-* 包 | 58（含 6 import 底座） | ✅ **完成** |
-| **L3 其余** | examples/demo、hooks、web 搜索变体、e2b、lsp、sdk、子代理外部后端等 | 46 插件 + 13 seam + 4 特殊模块 | ✅ **本轮完成** |
+| 指标 | 数值 |
+|---|---|
+| 插件节点 | **239**（L1 核心 90 + L2 web-app 82 + L3 其余 67） |
+| 节点间依赖边 | **1077**（另 **536** 条指向 seam 的边，经 `external-seams.referred_by` 表达） |
+| 外部 seam 基座 | **73**（抽象基座 / 工具库 / 测试支撑） |
+| 拓扑层 | **19**（最长路径分层：被依赖方先于依赖方） |
+| 分组 | **50**（按 `packages/<域>` 划分，客户端 UI 独立成组） |
+| HTML 插件页 | **312**（239 插件 + 73 seam）+ 50 组页 + 8 特殊模块页 |
+| 装配行 disabled 标注 | **19** |
+
+> 判据统计口径：`edges` 仅含**节点间**边（schema 约定，避免页面生成器 KeyError）；指向纯 seam 的边不重复计入 `edges`，改由 `external-seams.json` 的 `referred_by` 表达。
+> 拓扑只由**运行时边**决定（排除 type-only 类型导入边 281 条 + 1 条 soft 反馈边）；TS 类型层 import 环合法，门控仅作 WARN 上报。
+
+## 范围分层（装配来源）
+
+| 层 | 范围 | 插件数 |
+|----|------|-------|
+| **L1 核心集** | `bundle/base/cordis.patch.yml`（93 条 insert 行） | 90 核心 |
+| **L2 web-app** | `bundle/web-app/cordis.patch.yml`（85 条 insert 行，含全部客户端 UI 包） | 82 |
+| **L3 其余** | SDK/ACP bundle 之外的可挂载插件：hooks、web 搜索变体、SSH、Browser-Use、Computer-Use、实验特性、会话格式、deliverables、webhook 等 | 67 |
+| **特殊模块** | base/headless/web-app/sdk-app/sdk-minimal/acp-app（bundle）+ app-boot/cmdline（boot 胶水） | 8（独立成页，不进 DAG） |
 
 ## 快速开始
 
 | 想做什么 | 去哪 |
 |---------|------|
-| **交互 DAG 总览**（组级视图 + 点击下钻） | `04-interactive/index.html` |
+| **交互 DAG 总览**（组级视图 + 点击下钻 + `?drill=Gxx` 深链） | `04-interactive/index.html` |
 | 分组目录 | `03-groups/index.html` |
-| 每插件一页（含**模块内部结构动态 DAG**） | `02-plugin-pages/`（229 页：180 插件 + 49 seam - 1 双身份） |
-| 特殊模块结构（base/headless/boot） | `08-special-modules/` |
-| AI 检索 MD 镜像 | `06-md/00-index.md`（180 插件 + 49 seam 全量） |
-| DAG 数据（JSON） | `01-dag-data/webapp-dag.json`（L1+L2+L3 合并） |
-| 模块级 import 数据 | `07-checkpoint/plugin-internal-all.json`（215 插件 1130 模块） |
+| 每插件一页（含**模块内部结构动态 DAG**） | `02-plugin-pages/`（312 页） |
+| 特殊模块结构（base/web-app/sdk/boot…） | `08-special-modules/`（8 页） |
+| AI 检索 MD 镜像 | `06-md/00-index.md`（239 插件 + 73 seam 全量） |
+| DAG 数据（JSON） | `01-dag-data/webapp-dag.json`（239 节点 + 1077 边 + 536 seam_edges） |
+| 模块级 import 数据 | `07-checkpoint/plugin-internal-all.json` |
 
 ## 目录结构
 
 ```
-0816-plugin-dag/
-├── 01-dag-data/          # DAG 数据: webapp-dag.json(180节点+578边+17层+39组) / core-dag.json(L1) / external-seams.json(49 seam)
-├── 02-plugin-pages/      # 每插件一页 HTML（180 核心/Web/L3 + 50 外部 seam = 230 页，1 双身份共享）
-├── 03-groups/            # 39 组索引页 + 组目录
-├── 04-interactive/       # cytoscape 交互总览 (index.html, 组级+下钻) + vendor/(cytoscape+dagre)
+0822-plugin-dag-v0.1.1-rc2/
+├── 01-dag-data/          # webapp-dag.json（239节点/1077边/19层/50组/536 seam_edges）/ core-dag.json（L1 90节点）/ external-seams.json（73 seam）
+├── 02-plugin-pages/      # 每插件一页 HTML（239 插件 + 73 seam = 312 页）
+├── 03-groups/            # 50 组索引页 + 组目录
+├── 04-interactive/       # cytoscape 交互总览（组级 + 下钻 + URL 深链）+ vendor/
+├── 05-source/            # 官方源码：dsh-rc8 / dsh-v0.1.1-rc.2 / dsh-v0.1.7-rc.2（tarball+SHA256；解压树 gitignore）
 ├── 06-md/                # AI 友好 MD 镜像
-├── 07-checkpoint/        # 中间产物: stage-00/01 采集 / build-dag-l3.py / gen-html-l3.py / inject-data-l3.py / quality-gate-l3.py
-├── 08-special-modules/   # 特殊模块 4 页 (dsh-base/headless/app-boot/cmdline)
+├── 07-checkpoint/        # 生成管线（含 v017/ 本轮全量重建中间产物）
+├── 08-special-modules/   # 特殊模块 8 页
 └── index.html            # 根入口
 ```
 
-## 核心数据（L1+L2+L3 合并 webapp-dag.json）
+## 生成管线（07-checkpoint，可重放）
 
-- **180 节点**：76 L1 核心 + 58 L2 web-app + 46 L3 其余插件
-- **50 外部 seam 基座**（新增 dsh-authorization；dsh-invariants/dsh-scope/dsh-timeout 等抽象包 + L3 追加 13：7 抽象基座 + 6 test-support）
-- **578 依赖边**（含 22 个 web 变体 disabled 标注）
-- **17 拓扑层**（层次遍历：被依赖方先于依赖方）
-- **39 分组**（L1 24 组 + L2 5 组 + L3 8 组 + 新增 G38 多智能体协作 / G39 代码执行运行时：G30 外部执行后端 / G31 协议与SDK / G32 LSP集成 / G33 子代理外部后端 / G34 Web上下文扩展 / G35 会话存储变体 / G36 Hooks工具扩展 / G37 示例与框架）
+本轮为 v0.1.7-rc.2 建立了**自包含、确定性、可复现**的管线（不依赖跨任务 PACKAGE-MAP，不依赖 Windows 路径）：
 
-## 交互图（组级 + 点击下钻）
+| 脚本 | 作用 |
+|------|------|
+| `v017-inventory.py` | 解析 6 个 bundle `cordis.patch.yml` + 枚举 `packages/*/*` 与 `vendor/*` → `v017/inventory.json` |
+| `v017-facts.py` | 逐包扫 `src/**/*.ts` 提取 E1 import（含 file:line）/ E2 inject·ctx·事件 / 插件导出特征 → `v017/facts.json` |
+| `v017-classify.py` | 分类 nodes / seams / special / uncovered + 分组 → `v017/classification.json` |
+| `v017-make-shards.py` | 按组打包为 21 个委派分片 → `v017/shards/*.json` |
+| （委派）21 个 general 子 Agent | 逐插件实读源码 → `v017/stage-01-shard-*.json`（含 implementation / provides / depends_on / evidence） |
+| `v017-validate.py` | 分片回盘复验（条目数 / ids / 证据格式） |
+| `v017-build-dag.py` | 合并 → DAG（最长路径分层 + 反馈边 soft + type-only 标注）→ `01-dag-data/*.json` |
+| `v017-prep-inputs.py` | 生成 `special-modules.json`（8 模块）/ `disabled-rows.json`（19 行） |
+| `v017-clean-pages.py` | 删除不在新节点集内的陈旧页面 |
+| `gen-html-l3.py` / `gen-md-l3.py` / `gen-plugin-dyn.py` / `gen-overview.py` / `inject-data-l3.py` | 全量页面重生成（复用既有生成器） |
+| `quality-gate-l3.py` | 8 项门控（已强化：纳入 v017 全部 JSON / 8 特殊模块全集 / seam_edges↔referred_by 一致性 / 分层方向一致性） |
+| `headless-verify-l3.py` | chromium headless DOM 断言（**非空断言**：下钻视图 ≠ 组级视图）+ 截图 |
 
-- **组级视图**：40 节点（39 组 + EXT），每组不同配色，点击组节点下钻组内插件 DAG
-- **下钻视图**：组内插件 + 跨组 stub 灰显节点（可跳转），插件按组配色
-- **disabled 标注**：22 个 web 变体禁用插件以灰色红边样式呈现（`node[kind="disabled"]` 数据属性选择器）
-- hash 路由 `#G03` / query `?drill=G03` / 面包屑返回
+## 关键发现（v0.1.7-rc.2）
 
-## 拓扑分层速览（L1+L2+L3 合并）
-
-- **Layer 0**（19）：cordis-plugin-timer, dsh-llm, dsh-storage, dsh-host-webserver, dsh-fs-e2b, dsh-host-directory-picker, dsh-native-command, dsh-subprocess-e2b, dsh-typert-generator...
-- **Layer 4**（15，含 L3）：dsh-session-title-all-prompts-llm, dsh-terminal-bash, dsh-web-search-exa, dsh-web-search-perplexity...
-- **Layer 5**（26，L3 最多层）：dsh-agent-tool-presentation, dsh-hooks-codex, dsh-schedule, dsh-tool-ask-user, dsh-tool-bash-persistent, dsh-tool-lsp, dsh-tool-session-query, dsh-tool-terminal...
-- **Layer 6**（19）：dsh-hooks-claude-code, dsh-sdk-jsonrpc-server, dsh-subagent-acp, dsh-subagent-claude-code, dsh-subagent-codex, dsh-subagent-dsh-sdk, dsh-tool-cordis...
-- **Layer 8**（3，最末）：dsh-acp-demo
-
-## L2 关键发现
-
-- **Web 传输链**：dsh-host-webserver（node:http 宿主）→ dsh-client-modules（bundle 扫描/__DSH_BOOT__）→ dsh-client-connection（/api + WebSocket downlink）→ dsh-client-runtime（SlotRegistry+SessionRuntime）→ 各 UI 包
-- **UI 包依赖方向**：UI 依赖 host 的服务与事件契约（import + ctx 远程调用），slot 注册是协商网络而非严格 DAG（conversation 声明 11 个 slot，子 UI 包注册进槽位）
-- **base 覆盖**：dsh-host-apiproxy 覆盖 base 行 api-gateway（web 变体网关）；22 个 base 插件在 web 下 disabled（模型侧工具移到 agent presets）
-
-## L3 关键发现
-
-- **抽象基座 seam 聚合**：7 个 L3 抽象基座（lsp/sdk-protocol/e2b/terminal/hook-protocol/acp/mcp-client）被实现包依赖，形成"实现包 → 抽象包"方向（如 dsh-lsp-stdio → dsh-lsp）
-- **子代理后端 4 变体**：acp/claude-code/codex/dsh-sdk 均以 `inject['subagents']` 依赖宿主 dsh-subagent；subagent-acp 走外部 @agentclientprotocol/sdk 而非 dsh-acp seam
-- **Web 搜索变体**：exa/perplexity 是 dsh-web-search-deepseek（L1）的 seam 注册变体，以 E1 依赖 dsh-web seam
-- **特殊模块独立**：dsh-base/dsh-headless（bundle）+ dsh-app-boot/dsh-cmdline（boot 胶水）不进主 DAG，单独 08-special-modules/ 分析
-- **原生命令库**：dsh-native-command 是纯库（非插件），供 directory-picker-native 与 apiproxy 复用
-
-## 模块内部结构（源码 DAG）动态图
-
-每个插件专属页面（`02-plugin-pages/{id}.html`）内置**模块级内部结构动态 DAG**（cytoscape 渲染）：
-- **节点** = 插件 `src/` 下各文件（模块），共解析 215 插件 + 1130 模块
-- **边** = 文件间 `import` / `export from` 依赖关系（共 1073 条）
-- **染色**：蓝=入口/核心（index 或被高频引用）、深蓝=普通模块、灰=叶子
-- **排版**：LR 横排（节点多时自动横排防狭长）+ 布局后 fit 适配容器 + 窗口 resize 自动重排
-- **交互**：可拖拽/缩放/点击节点（点击显示完整模块路径）
-- **数据源**：`07-checkpoint/plugin-internal-all.json`（由源码 `src/*.ts` 解析生成）
-- **框架插件**（cordis-plugin-hmr/timer）：无源码包，显示占位说明
-
-生成脚本：`07-checkpoint/parse-all-internal.py`（解析）+ `apply-all-internal.py`（插入页面）。
+- **装配分层重构**：新增 3 个 bundle（`acp-app` / `sdk-app` / `sdk-minimal`），base 装配 93 行、web-app 85 行、sdk-minimal 32 行；`dsh-sdk-minimal` 不叠 base、自身即完整 Cordis 树。
+- **客户端层大扩张**：client 域 61 包（含 41 个 `ui-*`），web-app 单 bundle 装配 85 行；客户端 UI 与 `dsh-api-remotes` 存在 1 处运行时注册回环（已标 soft）。
+- **抽象基座 seam 化**：`dsh-fs` / `dsh-sandbox` / `dsh-spill` / `dsh-jobs` / `dsh-shell` / `dsh-subprocess` / `dsh-attachment` / `dsh-compaction` / `dsh-credentials` / `dsh-session-persistence` / `dsh-session-query` / `dsh-lsp` / `dsh-workflow` 等为**非装配的抽象基座**，由 `*-local` / `*-jsonl` 等实现包注入；形成「实现包 → 抽象包」方向。
+- **新域**：`browser-use`（5 包）/ `computer-use`（5 包）/ `ssh`（4 包，替代已删除的 e2b 三件套）/ `ptc-runtime`（3 包）/ `webhook`（2 包）/ `document` / `deliverables` / `util`（17 包）。
+- **已删除**：`code-runtime/*`（4 包）、`e2b/*`（3 包）、`host/apiproxy`、`session/session-persistence-sqlite`、`settings/settings-file`、`workflow/workflow-worker-thread` 等 17 包。
+- **类型导入占比高**：cordis 插件普遍使用 `import type {} from '@deepseek-ai/dsh-x'` 做 Context 声明合并，故 1077 条节点间边中 **281 条为纯类型边**（26%）——已显式标注，不参与分层。
 
 ## 质量门控
 
-`07-checkpoint/quality-gate-l3.py` 全部通过：JSON 合法 / DAG 无环（180/180）/ HTML 断链 0 / vendor 完整 / 插件页覆盖 180+50+4 特殊模块 / 交互图 DATA 校验（180 插件 + 50 seam + 39 组）/**MD 镜像覆盖 180+50**。
-headless + VLM 验证：组级视图 40 节点、L3 组下钻正常（G30 下钻 23 节点 / G37 下钻 36 节点）、中文渲染完整、模块 DAG 染色/排版正确。
+`07-checkpoint/quality-gate-l3.py` **ALL PASS**（0 error / 1 warning）：
+1. JSON 合法（**84 个文件**，含 v017 全部中间产物）
+2. DAG 无环（运行时边 795 条 → 239/239 可达）+ layers 全覆盖 + **分层方向一致性**（每条运行时边 level[from] > level[to]）
+3. HTML：UTF-8 无替换字符 / div 开闭平衡 / 内链断链 **0**（373 页）
+4. vendor 完整（cytoscape + dagre）
+5. 插件页覆盖 **239/239 + 73/73 + 特殊 8/8**；`seam_edges` ↔ `referred_by` 一致性
+6. 交互图 DATA：plugins=239 / seams=73 / groups=50 + disabled 样式选择器存在
+7. MD 镜像覆盖 239/239 + 73/73
+8. （唯一 WARN）含 type-only 边时存在 57 节点类型层环 —— TS 合法，仅上报
 
-> ℹ️ **关于"红框"插件**：交互图中灰色红边的节点（22 个，如 dsh-skill-filesystem / dsh-tool-skill）是 **web 变体禁用 base 插件**的刻意标注（`node[kind="disabled"]` 样式），并非缺页面——它们的 HTML 页面与 MD 镜像均存在，点击可正常跳转。
+`headless-verify-l3.py`（`/snap/bin/chromium --headless=new`）：组级视图 `zmode=组级 / zcount=51`；下钻 `G01` → `zmode=G01 · ACP 协议 / zcount=10`（**断言下钻视图 ≠ 组级视图，防假绿**）；三张截图字节数各异，目视确认中文完整、图例 239/73/50、面包屑与 seam 虚线边正常。
+
+## 已知保留项
+
+- 页面中 `0.1.0-rc.8` / `0.1.1-rc.2` 等为各包**历史版本演进记录**，按设计保留。
+- `type_only` 边在交互图中与运行时边同色显示（未做虚线区分），下游消费者可按 `edges[].type_only` 字段自行过滤。
+- `05-source/dsh-v0.1.7-rc.2/` 的**解压树不入库**（155MB），仅 tarball + SHA256 入库；解压命令见该目录说明。

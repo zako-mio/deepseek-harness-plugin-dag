@@ -15,7 +15,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2"
 DAG = os.path.join(BASE, "01-dag-data", "webapp-dag.json")
 EXT = os.path.join(BASE, "01-dag-data", "external-seams.json")
-SPECIAL = os.path.join(CHK := os.path.join(BASE, "07-checkpoint"), "stage-01-l3-r4.json")
+SPECIAL = os.path.join(CHK := os.path.join(BASE, "07-checkpoint"), "v017", "special-modules.json")
 PAGES = os.path.join(BASE, "02-plugin-pages")
 GROUPS = os.path.join(BASE, "03-groups")
 SPECIAL_OUT = os.path.join(BASE, "08-special-modules")

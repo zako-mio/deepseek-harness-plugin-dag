@@ -17,3 +17,6 @@ __pycache__/
 
 # 临时脚本
 D:\Temp\opencode\
+
+# 新版源码解压树（体积大；仅 tarball + SHA256 入库，树可由 tarball 复现）
+05-source/dsh-v0.1.7-rc.2/deepseek-harness-dsh-v0.1.7-rc.2/

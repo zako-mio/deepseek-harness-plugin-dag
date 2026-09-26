@@ -1,34 +1,25 @@
 # dsh-llm-pi-ai
 
 - 包名: `@deepseek-ai/dsh-llm-pi-ai`
-- 分组: G05 LLM适配
-- 拓扑层: Layer 1
+- 分组: G23 LLM 适配
+- 拓扑层: Layer 3
 - 来源层: L1 核心集
 - 源码路径: `packages/llm/llm-pi-ai`
 
-## 为什么需要它（设计初衷）
-pi-ai 支持的 DeepSeek 适配器，作为 dsh-llm-deepseek 的设计验证孪生实现，挂在 LLM seam 上。RC7 以 ReplayEnvelope 双层回放(完整/图片)与 onReplayDegrade 降级增强回放保真。
-
-发展史：RC8 修复图片载荷过高 + 自定义OpenAI兼容网关请求格式/推理回传
-
-来源：
-- https://registry.npmjs.org/@deepseek-ai/dsh-llm-pi-ai
-- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/llm/llm-pi-ai
-
 ## 实现逻辑
-config.ts:45-55 新增 DEFAULT_MAX_REQUEST_IMAGE_BYTES(20MiB); context.ts:151-175 toPiContext 增加 maxRequestImageBytes 参数并调用 offloadRequestImages 脱载最旧图片。catalog.ts:221-352 + config.ts:217-253 大幅扩展 OpenAI 兼容网关 compat 面(chat-template/qwen-chat-template thinking格式、maxTokensField、cacheControlFormat、supportsReasoningEffort、requiresReasoningContentOnAssistantMessages等)，修复自定义网关请求格式差异与推理回传缺失。stream.ts:43-45 将413/请求体超限判定为 INVALID_REQUEST。
+以 @earendil-works/pi-ai 为后端实现通用多 provider LLM 适配器：PiAiAdapter 每次操作捕获一个不可变 snapshot（profiles 与其 Models 集合），保证一次调用的 provider/模型/凭据在 await 期间冻结 (src/adapter.ts:232-241, 330-348)。config.ts 按 provider 路由解析 profile、物化模型目录与注册时捕获的 retryPolicy (src/config.ts:410-509)，context.ts 把 harness 消息历史（含持久图像解析与 offload 占位）转成 pi-ai 的 Context (src/context.ts:262-338)。index.ts 以设置驱动注册/原子替换适配器路由与可配置目录，并注册按命名空间的模型发现 (src/index.ts:285-316, 275-278)；auth.ts 与 login.ts 把 harness 的 credentials/authorization seam 桥接到 pi-ai 的凭据存储与登录流 (src/auth.ts:141-231, src/login.ts:120-160)。
 
 ## Provides
-- llm 适配器: 多 provider 路由(openai/anthropic/自定义)
-- 可配置 provider 目录(llm-pi-ai 设置段)
-- 模型发现(registerModelDiscovery)
-- llm-pi-ai 设置段 schema
-- PiAiAdapter 类导出
-- ReplayEnvelope 双层回放 + onReplayDegrade 降级回调
+- pi-ai 多 provider LLM 适配器 (向 ctx.llm 注册一组 provider 路由，实现 LlmAdapter 并声明各路由 retry policy)
+- pi-ai 凭据/登录桥接 (把 credentials 记录与 authorization 流程映射为 pi-ai 的 CredentialStore/AuthContext 与登录事件)
 
 ## Depends On (上游依赖)
-- `dsh-llm` [运行时依赖] - inject ['llm']：registerAdapter 等
-  - 证据: `packages/llm/llm-pi-ai/src/index.ts:85, 220, 246, 270`
+- `dsh-authorization` [E1+E2] - 把 pi-ai 的登录会话翻译成 harness 中立的通知/提问流程
+  - 证据: `src/login.ts:12 import type AuthorizationMethod + src/login.ts:138 ctx.authorization.registerFlow`
+- `dsh-llm` [E1+E2] - 实现并注册 llm seam 适配器，复用其错误类型、图像投影与目录 API
+  - 证据: `src/adapter.ts:41 import LlmAdapter/attributionHeaders + src/index.ts:94 inject llm + src/index.ts:302 ctx.llm.registerAdapter`
+- `dsh-settings` [编译依赖] - 激活 settings 服务声明，使插件可按设置命名空间配置 provider 路由
+  - 证据: `src/index.ts:57 import type {} from '@deepseek-ai/dsh-settings'`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

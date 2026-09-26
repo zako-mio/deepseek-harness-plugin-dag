@@ -65,12 +65,100 @@ th{background:var(--panel);color:#b8c2d4;}
 </head>
 <body>
 <header>
-  <span class="crumb"><a href="../index.html">DAG总览</a> / <a href="../03-groups/index.html">组目录</a> / 外部基座 seam</span>
+  <span class="crumb"><a href="../index.html">DAG总览</a> / <a href="../03-groups/index.html">组目录</a> / G25 MCP 协议</span>
   <h1>dsh-mcp-client · @deepseek-ai/dsh-mcp-client</h1>
-  <span class="badge ext">外部 seam</span>
+  <span class="badge">Layer 6</span><span class="badge">G25</span><span class="badge l3">L3 其余</span>
 </header>
 <main>
-<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">运行时框架</a><a href="../03-groups/G02.html">类型契约</a><a href="../03-groups/G03.html">核心服务</a><a href="../03-groups/G04.html">LLM核心</a><a href="../03-groups/G05.html">LLM适配</a><a href="../03-groups/G06.html">LLM治理</a><a href="../03-groups/G07.html">会话持久化</a><a href="../03-groups/G08.html">会话展示</a><a href="../03-groups/G09.html">审批权限</a><a href="../03-groups/G10.html">命令交互</a><a href="../03-groups/G11.html">凭据设置</a><a href="../03-groups/G12.html">附件</a><a href="../03-groups/G13.html">文件系统</a><a href="../03-groups/G14.html">Shell工具</a><a href="../03-groups/G15.html">沙箱执行</a><a href="../03-groups/G16.html">作业</a><a href="../03-groups/G17.html">目标计划</a><a href="../03-groups/G18.html">技能</a><a href="../03-groups/G19.html">子代理</a><a href="../03-groups/G20.html">工作流</a><a href="../03-groups/G21.html">上下文治理</a><a href="../03-groups/G22.html">上下文注入</a><a href="../03-groups/G23.html">工具守卫</a><a href="../03-groups/G24.html">Web搜索</a><a href="../03-groups/G25.html">宿主服务</a><a href="../03-groups/G26.html">客户端runtime</a><a href="../03-groups/G27.html">会话交互UI</a><a href="../03-groups/G28.html">设置输入UI</a><a href="../03-groups/G29.html">UI底座</a><a href="../03-groups/G30.html">外部执行后端</a><a href="../03-groups/G31.html">协议与SDK</a><a href="../03-groups/G32.html">LSP集成</a><a href="../03-groups/G33.html">子代理外部后端</a><a href="../03-groups/G34.html">Web上下文扩展</a><a href="../03-groups/G35.html">会话存储变体</a><a href="../03-groups/G36.html">Hooks工具扩展</a><a href="../03-groups/G37.html">示例与框架</a><a href="../03-groups/G38.html">多智能体协作</a><a href="../03-groups/G39.html">代码执行运行时</a></div><div class="dagnav"><div class="label">被核心/Web/L3 集插件依赖（下游消费者）：</div><div class="chips"><span style="color:var(--dim);font-size:12px;">无消费者</span></div></div><h2>基座 seam 说明</h2><p>MCP client bridge: connects to MCP servers and registers their tools on ctx.tools</p><table><tr><th>包名</th><td>@deepseek-ai/dsh-mcp-client</td></tr><tr><th>源码路径</th><td><code>packages/mcp/mcp-client</code></td></tr><tr><th>被插件引用</th><td>0 次</td></tr></table><h2>被依赖（下游）</h2><p style="color:var(--dim);">无消费者</p><h2>依赖机制分布</h2><p></p>
+<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">ACP 协议</a><a href="../03-groups/G02.html">API 网关与控制器</a><a href="../03-groups/G03.html">附件</a><a href="../03-groups/G04.html">启动与插件管理</a><a href="../03-groups/G05.html">客户端运行时</a><a href="../03-groups/G06.html">客户端 UI 包</a><a href="../03-groups/G07.html">上下文压缩</a><a href="../03-groups/G08.html">上下文注入</a><a href="../03-groups/G09.html">核心运行时</a><a href="../03-groups/G10.html">凭据与授权</a><a href="../03-groups/G11.html">交付物</a><a href="../03-groups/G12.html">文档处理</a><a href="../03-groups/G13.html">实验特性</a><a href="../03-groups/G14.html">宿主扩展</a><a href="../03-groups/G15.html">反馈通道</a><a href="../03-groups/G16.html">文件系统</a><a href="../03-groups/G17.html">目标与计划</a><a href="../03-groups/G18.html">工具守卫</a><a href="../03-groups/G19.html">Hooks 扩展</a><a href="../03-groups/G20.html">宿主服务</a><a href="../03-groups/G21.html">交互命令</a><a href="../03-groups/G22.html">作业调度</a><a href="../03-groups/G23.html">LLM 适配</a><a href="../03-groups/G24.html">LSP 集成</a><a href="../03-groups/G25.html">MCP 协议</a><a href="../03-groups/G26.html">规划模式</a><a href="../03-groups/G27.html">Agent 预设</a><a href="../03-groups/G28.html">代码执行运行时</a><a href="../03-groups/G29.html">运行时诊断</a><a href="../03-groups/G30.html">沙箱</a><a href="../03-groups/G31.html">定时调度</a><a href="../03-groups/G32.html">SDK 与协议</a><a href="../03-groups/G33.html">会话核心</a><a href="../03-groups/G34.html">会话检索</a><a href="../03-groups/G35.html">设置</a><a href="../03-groups/G36.html">Shell 执行</a><a href="../03-groups/G37.html">技能</a><a href="../03-groups/G38.html">溢出存储</a><a href="../03-groups/G39.html">SSH 远程执行</a><a href="../03-groups/G40.html">存储</a><a href="../03-groups/G41.html">子代理</a><a href="../03-groups/G42.html">子进程</a><a href="../03-groups/G43.html">终端</a><a href="../03-groups/G44.html">待办</a><a href="../03-groups/G45.html">类型契约</a><a href="../03-groups/G46.html">框架 vendor</a><a href="../03-groups/G47.html">Web 访问</a><a href="../03-groups/G48.html">Webhook</a><a href="../03-groups/G49.html">工作流</a><a href="../03-groups/G50.html">工作区</a></div><div class="dagnav"><div class="label">依赖链 · 上游（该插件依赖的前驱）：</div><div class="chips"><a class="chip" href="dsh-llm.html">dsh-llm</a><a class="chip" href="dsh-mcp-resources.html">dsh-mcp-resources</a><a class="chip" href="dsh-scope.html">dsh-scope</a><a class="chip" href="dsh-system-prompt.html">dsh-system-prompt</a><a class="chip" href="dsh-tools.html">dsh-tools</a></div><div class="label" style="margin-top:8px;">依赖链 · 下游（依赖该插件的节点）：</div><div class="chips"><a class="chip l3" href="dsh-acp.html">dsh-acp</a><a class="chip l3" href="dsh-experimental-browser-use-stagehand-native.html">dsh-experimental-browser-use-stagehand-native</a><a class="chip l3" href="dsh-experimental-computer-use-cua-driver-mcp.html">dsh-experimental-computer-use-cua-driver-mcp</a><a class="chip l3" href="dsh-experimental-computer-use-cua-driver-native.html">dsh-experimental-computer-use-cua-driver-native</a></div><div class="label" style="margin-top:8px;">同一拓扑层（Layer 6，层次遍历层序）：</div><div class="chips"><a class="chip" href="dsh-agent-preset.html">dsh-agent-preset</a><a class="chip" href="dsh-command-goal.html">dsh-command-goal</a><a class="chip" href="dsh-compaction-basic.html">dsh-compaction-basic</a><a class="chip" href="dsh-experimental-auto-review.html">dsh-experimental-auto-review</a><a class="chip" href="dsh-goal-round-driver.html">dsh-goal-round-driver</a><a class="chip" href="dsh-host-plugin-inventory.html">dsh-host-plugin-inventory</a><a class="chip self" href="dsh-mcp-client.html">dsh-mcp-client</a><a class="chip" href="dsh-office-to-pdf.html">dsh-office-to-pdf</a><a class="chip" href="dsh-plan-mode.html">dsh-plan-mode</a><a class="chip" href="dsh-plugin-package-inventory-deepseek.html">dsh-plugin-package-inventory-deepseek</a><a class="chip" href="dsh-subagent.html">dsh-subagent</a><a class="chip" href="dsh-terminal-bash.html">dsh-terminal-bash</a><a class="chip" href="dsh-tool-ask-user.html">dsh-tool-ask-user</a><a class="chip" href="dsh-tool-bash-persistent.html">dsh-tool-bash-persistent</a><a class="chip" href="dsh-tool-cordis.html">dsh-tool-cordis</a><a class="chip" href="dsh-tool-goal.html">dsh-tool-goal</a><a class="chip" href="dsh-tool-pwsh-persistent.html">dsh-tool-pwsh-persistent</a><a class="chip" href="dsh-tool-terminal.html">dsh-tool-terminal</a></div></div><div class="layernav"><a href="dsh-agent-default-model.html">↑ Layer 5（55 插件）</a><span class="chip self">Layer 6</span><a href="dsh-acp.html">↓ Layer 7（16 插件）</a></div><h2>插件信息</h2><table><tr><th>包名</th><td>@deepseek-ai/dsh-mcp-client</td></tr><tr><th>分组</th><td>G25 · MCP 协议</td></tr><tr><th>拓扑层</th><td>Layer 6（层次遍历：被依赖方先于依赖方）</td></tr><tr><th>源码路径</th><td><code>packages/mcp/mcp-client</code></td></tr><tr><th>来源层</th><td>L3 其余插件（独立于 bundle 装配的扩展/变体/示例）</td></tr></table><h2>① 实现逻辑</h2><p>外部 MCP 服务器桥接：apply() 先解析重连策略、以 WeakMap 按注册作用域预留 serverName 命名空间，再由 startConnection 建立受监督连接并 registerServerContext 发布资源与指令，最后 await ready 以在激活前完成首连与工具同步（src/index.ts:154-203、src/connection.ts:127-409）。syncTools 拉取 tools/list，并以 mcp__&lt;serverName&gt;__&lt;rawName&gt; 公开名注册到 ctx.tools；注册冲突整代回滚（全有或全无）（src/tools.ts:113-162）。transport.ts 按 config 构造 stdio（经 dsh-subprocess 擦洗父环境）或 Streamable HTTP 传输（src/transport.ts:21-46）。连接断开时按有界指数退避重启，超预算则注销工具（src/connection.ts:211-245）。</p>
+<style>
+#dyn-dag{width:100%;height:480px;background:var(--panel);border:1px solid var(--border);border-radius:8px;margin:12px 0;}
+#dyn-dag-label{font-size:12px;color:var(--dim);margin:10px 0 4px;}
+#dyn-dag-legend{display:flex;gap:16px;font-size:12px;color:var(--dim);margin:6px 0 2px;flex-wrap:wrap;}
+#dyn-dag-legend .item{display:flex;align-items:center;gap:5px;}
+#dyn-dag-legend .dot{width:10px;height:10px;border-radius:3px;display:inline-block;}
+.dyn-self{background:var(--accent);}
+.dyn-up{background:#e8933b;}
+.dyn-down{background:#2fb98a;}
+.dyn-seam{background:var(--ext);}
+</style>
+
+<div id="dyn-dag-label">内部结构动态 DAG（深色主题：橙色=上游依赖 · 绿色=下游依赖 · 棕色=外部seam · 蓝=本插件）</div>
+<div id="dyn-dag-legend">
+  <span class="item"><span class="dot dyn-self"></span>本插件</span>
+  <span class="item"><span class="dot dyn-up"></span>上游依赖</span>
+  <span class="item"><span class="dot dyn-down"></span>下游依赖</span>
+  <span class="item"><span class="dot dyn-seam"></span>外部 seam</span>
+</div>
+<div id="dyn-dag"></div>
+
+<script src="../04-interactive/vendor/cytoscape.min.js"></script>
+<script src="../04-interactive/vendor/cytoscape-dagre.min.js"></script>
+<script>
+(function(){
+  const raw = {"elements": [{"data": {"id": "dsh-mcp-client", "label": "dsh-mcp-client", "kind": "self", "cls": "#4f8cff", "url": "dsh-mcp-client.html"}}, {"data": {"id": "dsh-llm", "label": "dsh-llm", "kind": "up", "cls": "#e8933b", "url": "dsh-llm.html"}}, {"data": {"id": "dsh-mcp-resources", "label": "dsh-mcp-resources", "kind": "up", "cls": "#e8933b", "url": "dsh-mcp-resources.html"}}, {"data": {"id": "dsh-scope", "label": "dsh-scope", "kind": "up", "cls": "#e8933b", "url": "dsh-scope.html"}}, {"data": {"id": "dsh-system-prompt", "label": "dsh-system-prompt", "kind": "up", "cls": "#e8933b", "url": "dsh-system-prompt.html"}}, {"data": {"id": "dsh-tools", "label": "dsh-tools", "kind": "up", "cls": "#e8933b", "url": "dsh-tools.html"}}, {"data": {"id": "dsh-acp", "label": "dsh-acp", "kind": "down", "cls": "#2fb98a", "url": "dsh-acp.html"}}, {"data": {"id": "dsh-experimental-browser-use-stagehand-native", "label": "dsh-experimental-browser-use-stagehand-native", "kind": "down", "cls": "#2fb98a", "url": "dsh-experimental-browser-use-stagehand-native.html"}}, {"data": {"id": "dsh-experimental-computer-use-cua-driver-mcp", "label": "dsh-experimental-computer-use-cua-driver-mcp", "kind": "down", "cls": "#2fb98a", "url": "dsh-experimental-computer-use-cua-driver-mcp.html"}}, {"data": {"id": "dsh-experimental-computer-use-cua-driver-native", "label": "dsh-experimental-computer-use-cua-driver-native", "kind": "down", "cls": "#2fb98a", "url": "dsh-experimental-computer-use-cua-driver-native.html"}}, {"data": {"id": "dsh-llm->dsh-mcp-client", "source": "dsh-llm", "target": "dsh-mcp-client"}}, {"data": {"id": "dsh-mcp-resources->dsh-mcp-client", "source": "dsh-mcp-resources", "target": "dsh-mcp-client"}}, {"data": {"id": "dsh-scope->dsh-mcp-client", "source": "dsh-scope", "target": "dsh-mcp-client"}}, {"data": {"id": "dsh-system-prompt->dsh-mcp-client", "source": "dsh-system-prompt", "target": "dsh-mcp-client"}}, {"data": {"id": "dsh-tools->dsh-mcp-client", "source": "dsh-tools", "target": "dsh-mcp-client"}}, {"data": {"id": "dsh-mcp-client->dsh-acp", "source": "dsh-mcp-client", "target": "dsh-acp"}}, {"data": {"id": "dsh-mcp-client->dsh-experimental-browser-use-stagehand-native", "source": "dsh-mcp-client", "target": "dsh-experimental-browser-use-stagehand-native"}}, {"data": {"id": "dsh-mcp-client->dsh-experimental-computer-use-cua-driver-mcp", "source": "dsh-mcp-client", "target": "dsh-experimental-computer-use-cua-driver-mcp"}}, {"data": {"id": "dsh-mcp-client->dsh-experimental-computer-use-cua-driver-native", "source": "dsh-mcp-client", "target": "dsh-experimental-computer-use-cua-driver-native"}}]};
+  const cy = cytoscape({
+    container: document.getElementById('dyn-dag'),
+    elements: raw.elements,
+    style: [
+      {
+        selector: 'node',
+        style: {
+          'label': 'data(label)',
+          'background-color': 'data(cls)',
+          'color': '#e6e8ee',
+          'font-size': 11,
+          'text-valign': 'bottom',
+          'text-margin-y': 4,
+          'width': 46,
+          'height': 46,
+          'shape': 'round-rectangle',
+          'border-width': 2,
+          'border-color': '#2a2f3a'
+        }
+      },
+      {
+        selector: 'node[kind="self"]',
+        style: {
+          'border-width': 3,
+          'border-color': '#4f8cff',
+          'width': 60,
+          'height': 60,
+          'font-size': 12,
+          'font-weight': 700
+        }
+      },
+      {
+        selector: 'edge',
+        style: {
+          'width': 1.5,
+          'line-color': '#4a5263',
+          'target-arrow-color': '#4a5263',
+          'target-arrow-shape': 'triangle',
+          'curve-style': 'bezier'
+        }
+      }
+    ],
+    layout: {
+      name: 'dagre',
+      rankDir: 'LR',
+      nodeSep: 30,
+      rankSep: 60,
+      padding: 20
+    },
+    wheelSensitivity: 0.2,
+    minZoom: 0.2,
+    maxZoom: 2.5
+  });
+  cy.on('tap', 'node', (evt) => {
+    const url = evt.target.data('url');
+    if (url) window.location.href = url;
+  });
+  // 等渲染完自适应容器尺寸
+  setTimeout(() => cy.resize(), 100);
+})();
+</script>
+<h2>② 注册/提供（provides）</h2><ul class="provides"><li>ctx.tools 的 mcp__&lt;serverName&gt;__&lt;rawName&gt; 工具集（外部 MCP 工具桥接，src/tools.ts:149-151）</li><li>ctx.mcpResources 注册（把连接代次的资源访问暴露给资源工具，src/server-context.ts:28-31）</li><li>systemPrompt `mcp:&lt;server&gt;` 段（服务端指令原文，src/server-context.ts:32-38）</li></ul><h2>③ 依赖（depends_on · 上游前驱）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-llm.html">dsh-llm</a></span><span class="mech">E1+E2</span><div class="purpose">校验当前模型路由声明了图像输入能力</div><div class="evi">src/tools.ts:21 type ContentBlock + src/tools.ts:358 ctx.get(&#x27;llm&#x27;)、src/tools.ts:364 llm.resolveModelInfo</div></div><div class="dep-item"><span class="name"><a href="dsh-mcp-resources.html">dsh-mcp-resources</a></span><span class="mech">E1+E2</span><div class="purpose">向资源运行时发布本连接的资源请求能力</div><div class="evi">src/server-context.ts:8 type McpResourceProvider + src/server-context.ts:29 ctx.inject([&#x27;mcpResources&#x27;])</div></div><div class="dep-item"><span class="name"><a href="dsh-scope.html">dsh-scope</a></span><span class="mech">E1</span><div class="purpose">按注册作用域隔离 serverName 与 Agent 级命名空间复用</div><div class="evi">src/index.ts:18 scopeOf</div></div><div class="dep-item"><span class="name"><a href="dsh-system-prompt.html">dsh-system-prompt</a></span><span class="mech">E1+E2</span><div class="purpose">把服务端 attributed instructions 写入系统提示段</div><div class="evi">src/server-context.ts:9 type import + src/server-context.ts:32 inner.systemPrompt.section</div></div><div class="dep-item"><span class="name"><a href="dsh-tools.html">dsh-tools</a></span><span class="mech">E1+E2</span><div class="purpose">把发现的 MCP 工具注册进 harness 工具运行时</div><div class="evi">src/index.ts:24 type import + src/index.ts:34 inject &#x27;tools&#x27; + src/tools.ts:150 ctx.tools.register</div></div></div><h2>④ 被依赖（dependents · 下游消费者）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-acp.html">dsh-acp</a></span><div class="purpose">把 ACP 声明的 MCP 服务器挂成 Agent 作用域 MCP 客户端</div><div class="evi">src/mcp.ts:8 import + src/mcp.ts:32 agentCtx.plugin(McpClient, config)</div></div><div class="dep-item"><span class="name"><a href="dsh-experimental-browser-use-stagehand-native.html">dsh-experimental-browser-use-stagehand-native</a></span><div class="purpose">把原生方法适配为 MCP 形状的工具定义</div><div class="evi">src/index.ts:10 import createMcpToolDefinition + src/index.ts:179 createMcpToolDefinition</div></div><div class="dep-item"><span class="name"><a href="dsh-experimental-computer-use-cua-driver-mcp.html">dsh-experimental-computer-use-cua-driver-mcp</a></span><div class="purpose">承载 MCP 连接（发现/执行/重连）并作为子插件生命周期</div><div class="evi">src/index.ts:10 import * as McpClient + src/index.ts:53 McpClient.Config</div></div><div class="dep-item"><span class="name"><a href="dsh-experimental-computer-use-cua-driver-native.html">dsh-experimental-computer-use-cua-driver-native</a></span><div class="purpose">把原生工具目录适配为 MCP 形状工具定义</div><div class="evi">src/index.ts:9 import createMcpToolDefinition + src/index.ts:103 createMcpToolDefinition</div></div></div>
 </main>
 <footer>DeepSeek Harness 插件级 DAG 依赖链分析 · L1 核心集 + L2 web-app + L3 其余插件 · 源码三依据(E1编译/E2运行时/E3组合)逐条溯源</footer>
 </body>

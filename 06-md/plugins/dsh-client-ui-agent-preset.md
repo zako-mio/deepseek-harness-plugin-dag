@@ -1,39 +1,42 @@
 # dsh-client-ui-agent-preset
 
 - 包名: `@deepseek-ai/dsh-client-ui-agent-preset`
-- 分组: G28 设置输入UI
+- 分组: G06 客户端 UI 包
 - 拓扑层: Layer 15
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-agent-preset`
 
-## 为什么需要它（设计初衷）
-Agent 预设 UI：新会话默认预设、当前会话席位与组合编辑器，管理每个会话的能力集。RC7 将 Code mode 呈现名统一为 PTC mode。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-agent-preset/package.json
-
 ## 实现逻辑
-Agent preset 四面体：settings.general.item AgentPresetRow 默认值（index.ts:207-213）、conversation.hero.agentPreset 新会话 chip（:165-169）、header 只读 label（:170-177）、settings.section 'agent-presets' 名录管理/复制/删除/默认 + composition 编辑器（:216-223）。控制器 AgentPresetSettingsController/SectionController/SeatController 经 connection.api 读写 host agent-presets 设置命名空间（settings-store.ts:14 AGENT_PRESET_SETTINGS_NS='agent-presets', :43 writeDefaultPreset）；订阅 settings/document-updated 与 agent-preset/selected 事件。RC7：Code mode 呈现名更名 PTC mode(locales.ts: presetCodeName='PTC mode'/'PTC 模式'，描述为经 Code Mode SDK 暴露全部 Standard 能力供模型以单 TypeScript 程序组合多步操作)。
+浏览器半用 AgentPresetSettingsController/AgentPresetSectionController/AgentPresetSeatController 三个控制器驱动同一份 preset 名册：apply 先把 ctx.configForms.developerTools 作为唯一门控（关闭时清空暂存并重算所有 seat）(src/client/index.ts:104-111)，再经 ctx.inject(['slots','conversation','sessions','uiWorkspace']) 向 'conversation.hero.agentPreset' 注册新会话 chip、向 'conversation.session.header.actions' 以 order -10 注册会话头只读标签 (src/client/index.ts:153-196)，最后以 order 20 向 'settings.section' 注册名册设置段 (src/client/index.ts:223-230)。名册与默认值经 ctx.remote 读取 settings、并在 settings/document-updated 与 connection/reset 时统一 refresh (src/client/index.ts:127-145)。宿主半为空 apply，仅让插件出现在 Loader (src/index.ts:9)。
 
 ## Provides
-- settings.general.item 'agent-preset' 行
-- conversation.hero.agentPreset chip (AgentPresetSeat)
-- conversation.session.header.actions 'agent-preset' label
-- settings.section 'agent-presets' (AgentPresetSection 名录/编辑器)
+- slot: conversation.hero.agentPreset (新会话界面的 preset 选择 chip，注入 agentPresetSeat/developerTools hooks)
+- slot: conversation.session.header.actions#agent-preset (order -10 的会话头只读 preset 标签)
+- slot: settings.section#agent-presets (General settings 中的 preset 名册段：选择、设为默认、组合只读视图、进入 Creator)
+- Locale 命名空间 settings.agentPreset (zh/en 字典，经 LocaleNamespaceMap 合并声明)
+- 导出类型 AgentPresetSeatState/AgentPresetSectionState/AgentPresetSettingsState 与 writeDefaultPreset
 
 ## Depends On (上游依赖)
-- `dsh-agent-presets` [运行时依赖] - host 名录 roster 与默认 preset 持久化
-  - 证据: `packages/client/ui-agent-preset/src/client/settings-store.ts:43 (api.settings.update AGENT_PRESET_SETTINGS_NS), cordis.patch.yml:420-424 (agent-presets host 行 default: standard)`
-- `dsh-client-connection` [运行时依赖] - 设置/名录远程调用载体
-  - 证据: `packages/client/ui-agent-preset/src/client/index.ts:56-57,103 (connection.api 构造控制器)`
-- `dsh-client-ui-conversation` [编译依赖] - 新会话 chip、header label 槽与 session flow
-  - 证据: `packages/client/ui-agent-preset/src/client/index.ts:102,165-177 (inject conversation/sessions/workspaces + hero/header 槽)`
-- `dsh-client-ui-settings` [编译依赖] - Settings 槽声明与命名空间 scope
-  - 证据: `packages/client/ui-agent-preset/src/client/index.ts:21,49,207-223 (type-only import + settings.general.item/settings.section 注册)`
-- `dsh-session` [运行时依赖] - 会话行 preset 折入与选中回写
-  - 证据: `packages/client/ui-agent-preset/src/client/index.ts:105-115 (sessions.list 快照 + noteAgentPreset)`
-- `dsh-workspace` [运行时依赖] - 创作后落新会话
-  - 证据: `packages/client/ui-agent-preset/src/client/index.ts:102,163 (inject workspaces + workspaces.startSession)`
+- `dsh-agent-preset-registry` [编译依赖] - 消费 preset 组合类型与 display 文案
+  - 证据: `src/client/AgentPresetLabel.tsx:17 import @deepseek-ai/dsh-agent-preset-registry/types + src/client/locales.ts:114-115`
+- `dsh-api-remotes` [E1+E2] - 读取 preset 名册并订阅设置文档变更
+  - 证据: `src/client/index.ts:26-28 ctx.remote merge + src/client/index.ts:136 ctx.remote.$on('settings/document-updated')`
+- `dsh-api-session-controller` [E1+E2] - 按会话解析 binding 与保留态以决定 seat 归属
+  - 证据: `src/client/index.ts:20-21 SessionBinding 类型 + src/client/index.ts:83-86 ctx.sessions.binding/retainInfo`
+- `dsh-client-locale` [E1+E2] - 注册并绑定 settings.agentPreset 字典
+  - 证据: `src/client/index.ts:24-25 ctx.locale merge + src/client/index.ts:122 ctx.locale.register('settings.agentPreset')`
+- `dsh-client-ui-conversation` [E1+E2] - 获取 conversation.hero.*/session.header.actions 槽声明与 conversation 作用域
+  - 证据: `src/client/AgentPresetLabel.tsx:16 import @deepseek-ai/dsh-client-ui-conversation/client + src/client/index.ts:153 ctx.inject(['slots','conversation',...])`
+- `dsh-client-ui-primitives` [编译依赖] - 复用基础 UI 组件渲染 chip 与设置行
+  - 证据: `src/client/AgentPresetLabel.tsx:14 import @deepseek-ai/dsh-client-ui-primitives`
+- `dsh-client-ui-renderer` [编译依赖] - 引入 ctx.slots 服务声明
+  - 证据: `src/client/index.ts:31 import @deepseek-ai/dsh-client-ui-renderer/client`
+- `dsh-client-ui-settings` [E1+E2] - 向设置壳注册 agent-presets 段
+  - 证据: `src/client/index.ts:30 SlotMap merge + src/client/index.ts:223 ctx.slots.inject('settings.section')`
+- `dsh-client-ui-workspace` [E1+E2] - Creator 模式起草后落到新会话
+  - 证据: `src/client/index.ts:32-33 ctx.uiWorkspace merge + src/client/index.ts:174 scope.uiWorkspace.startSession()`
+- `dsh-session` [编译依赖] - 会话标识类型
+  - 证据: `src/client/index.ts:22 import SessionId from @deepseek-ai/dsh-session/types`
 
 ## Dependents (下游被依赖)
-- 无下游（叶子/被消费端）
+- `dsh-client-ui-settings-plugin-inventory` - 借用预设字典解析内置 agent 预设显示名

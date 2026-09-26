@@ -3,7 +3,7 @@
 - 包名: `@deepseek-ai/dsh-lsp`
 - 源码路径: `packages/lsp/lsp`
 - 被插件引用: 2 次
-- 描述: Abstract LSP capability seam (ctx.lsp) for the DeepSeek Harness — language-server provider registry keyed by branded id and extension mapping, order-independent per-query selection, normalized definition/references/implementation/hover requests and results, and the LspError taxonomy
+- 描述: 
 
 ## 被集依赖 (下游)
 - `dsh-lsp-stdio`

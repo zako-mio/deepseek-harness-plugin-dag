@@ -1,0 +1,355 @@
+[
+  {
+    "id": "dsh-client-ui-layout",
+    "name": "@deepseek-ai/dsh-client-ui-layout",
+    "implementation": "客户端 shell 插件：apply 里用一次 ctx.slots.register 把 AppFrame 装进内建 'root' 槽，并同时声明 sidebar/main/rightbar/shell.overlay/shell.leading 五个子槽与布局 store（src/client/index.ts:171-182），同时把 store 实例绑到 LayoutController 暴露 ctx.layout（src/client/index.ts:167-170）。LayoutController 只写 store 声明的动作集，提供主面板选择、右栏轨道/全屏上报与侧栏开关（src/client/service.ts:57-105）；AppFrame 用 ResizeObserver + rAF 测量 frame 宽度并解算三栏几何（src/client/AppFrame.tsx:139-163）。另一条 effect 把 ThemePresenter 挂上，用纯 DOM 写入把 ctx.theme 快照投到 document（src/client/index.ts:210-218、src/client/theme-presenter.ts:49-75）。",
+    "provides": [
+      "ctx.layout (面板布局/导航服务 ILayout：selectPanel / beginNavigation / toggleSidebar / openRightbar / closeRightbar)",
+      "'root' 槽的 AppFrame 三栏框架（并声明 sidebar/main/rightbar/shell.overlay/shell.leading 子槽作为唯一渲染权威）",
+      "hooks.usePanelInfo (根作用域主面板选择的可订阅源，随 provideRoot 发布)",
+      "ctx.shortcuts 命令 sidebar.left.toggle（含桌面/Web 平台默认键位）",
+      "主题 DOM 呈现（ThemePresenter：html color-scheme、body 暗色属性、alias token 变量、theme-color meta）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1+E2", "evidence": "src/client/index.ts:15 import type + src/client/index.ts:171 ctx.slots.register / index.ts:160 ctx.slots.entries", "purpose": "注册 root 框架与五个子槽，读取 main 槽条目并发布 panelInfo hooks"},
+      {"plugin_id": "dsh-client-ui-theme", "mechanism": "E1+E2", "evidence": "src/client/index.ts:14 import type + src/client/index.ts:212 ctx.theme.getTheme / index.ts:213 ctx.on('theme/change')", "purpose": "读取主题快照并订阅主题变化以投影到 DOM"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E2", "evidence": "src/client/index.ts:11 import type + src/client/index.ts:152 ctx.locale.register / index.ts:153 ctx.locale.bind", "purpose": "注册并绑定 shortcuts.layout 文案命名空间"},
+      {"plugin_id": "dsh-client-shortcuts", "mechanism": "E2", "evidence": "src/client/index.ts:20 import type + src/client/index.ts:183 ctx.shortcuts.register", "purpose": "注册侧栏切换快捷键命令"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1+E2", "evidence": "src/client/index.ts:12 import type + src/client/index.ts:168 ctx.slots.entries('main')", "purpose": "ctx.slots 渲染组合注册表由 ui-renderer 提供，layout 借此注册/查询槽"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/stores.ts:5 import { defineStore }", "purpose": "用 defineStore 定义布局面板 store 句柄"},
+      {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "src/client/service.ts:12 import type { Branded }", "purpose": "MainPanelId 用 Branded 品牌化不透明 id"},
+      {"plugin_id": "dsh-client-ui-session", "mechanism": "E1", "evidence": "src/client/index.ts:13 import type {}", "purpose": "引入 ui-session 的声明合并（Session 标准来源类型面）"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-message-feedback",
+    "name": "@deepseek-ai/dsh-client-ui-message-feedback",
+    "implementation": "每个 Session 惰性构造一个 FeedbackSurface，把消息级反馈对象层与对话框控制器绑在一起：消息目标走 remote.messageFeedback.rate，Session 目标走 remote.sessionFeedback.record（src/client/surface.ts:14-38）。apply 中向 conversation.chat.assistant-actions 注册 Like/Dislike 条目（src/client/index.ts:98）、向 conversation.input.overlay 注册反馈对话框（src/client/index.ts:115），并以 ctx.provide('feedbackUi') 暴露给其他插件打开草稿（src/client/index.ts:88）。connect/reset 时只重取已读过的非冷反馈（src/client/index.ts:91-95），并通过 commandUi.decorate 挂 /feedback 命令装饰（src/client/index.ts:136）。对话框状态机由 FeedbackDialogController 用快照 store 维护，成功关草稿并发确认 toast、失败保留草稿并发布错误码（src/client/dialog.ts:87-115）。",
+    "provides": [
+      "ctx.feedbackUi (打开指定 Session 反馈草稿的服务，不直接提交)",
+      "conversation.chat.assistant-actions 条目 'feedback'（MessageFeedbackActions 赞/踩控件）",
+      "conversation.input.overlay 条目 'feedback-dialog'（FeedbackDialog 对话框与确认/失败 toast）",
+      "commandUi 的 /feedback 命令装饰（裸调用打开对话框，带参仍走 Host 命令）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E2", "evidence": "src/client/index.ts:21 import type + src/client/index.ts:98 ctx.slots.inject('conversation.chat.assistant-actions')", "purpose": "向会话 UI 槽注册反馈条目与对话框"},
+      {"plugin_id": "dsh-api-remotes", "mechanism": "E1+E2", "evidence": "src/client/controller.ts:11 import + src/client/surface.ts:27 ctx.remote.messageFeedback", "purpose": "调用 messageFeedback/sessionFeedback Remote 记录反馈"},
+      {"plugin_id": "dsh-client-ui-conversation", "mechanism": "E2", "evidence": "src/client/index.ts:16 import type + src/client/index.ts:98/index.ts:115 slots.inject", "purpose": "使用 ui-conversation 声明的 assistant-actions 与 input.overlay 槽"},
+      {"plugin_id": "dsh-client-ui-commands", "mechanism": "E2", "evidence": "src/client/index.ts:18 import type + src/client/index.ts:136 scope.commandUi.decorate", "purpose": "挂 /feedback 命令装饰"},
+      {"plugin_id": "dsh-message-feedback", "mechanism": "E1", "evidence": "src/client/MessageFeedbackActions.tsx:14 import + src/client/slots.ts:16", "purpose": "消息反馈评分/视图协议类型"},
+      {"plugin_id": "dsh-command-feedback", "mechanism": "E1", "evidence": "src/client/FeedbackDialog.tsx:14 import + src/client/surface.ts:15", "purpose": "反馈记录与分类的协议类型"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/dialog.ts:9 import { createSnapshotStore }", "purpose": "对话框状态用快照 store 承载"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E2", "evidence": "src/client/index.ts:20 import type + src/client/index.ts:69 ctx.locale.register(NS)", "purpose": "注册 feedback 字典"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1+E2", "evidence": "src/client/index.ts:22 import type + src/client/index.ts:60 inject 'slots'", "purpose": "ctx.slots 槽注册表由 ui-renderer 提供"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/FeedbackDialog.tsx:13 import + src/client/MessageFeedbackActions.tsx:13", "purpose": "复用 ui-primitives 的 Toast/Button 等控件"},
+      {"plugin_id": "dsh-client-ui-chat", "mechanism": "E1", "evidence": "src/client/index.ts:23 import type {}", "purpose": "引入 ui-chat 的类型面（对话内容与标准来源）"},
+      {"plugin_id": "dsh-client-ui-session", "mechanism": "E1", "evidence": "src/client/index.ts:24 import type {}", "purpose": "引入 ui-session 的 Session 标准来源类型面"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "src/client/index.ts:12 import type { SessionId }", "purpose": "会话身份类型"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-model-selection",
+    "name": "@deepseek-ai/dsh-client-ui-model-selection",
+    "implementation": "先 ctx.plugin(ModelDirectoryResolver) 挂上 ctx.modelDirectories（src/client/index.ts:138），该服务用 WeakMap-with-values 为每个 Session 惰性建一个 ModelDirectory，并订阅 connection/reset 与 llm/adapters-updated 等事件刷新进程级目录（src/client/service.ts:46-73）。apply 再用同一目录注册两个入口：/model 的 commandUi popupSelect 装饰（src/client/index.ts:145）与 composer 的 conversation.input.model 座位（src/client/index.ts:182）。popup 选项由 optionsOf 拍平目录（失败组列出但不可选，src/client/index.ts:75-101），选择经 selectionOf 反解并按 session/selectModel 提交（src/client/index.ts:116-131）。",
+    "provides": [
+      "ctx.modelDirectories (ModelDirectoryResolver：每 Session 共享的模型目录解析服务)",
+      "commandUi 的 /model popupSelect 装饰（列出 provider/model 行、当前项高亮、失败组只读）",
+      "conversation.input.model 座位（composer 侧栏同名模型选择菜单，与 popup 共用同一 Session 目录状态）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-commands", "mechanism": "E2", "evidence": "src/client/index.ts:17 import type + src/client/index.ts:145 command.register", "purpose": "注册 /model 命令的 popupSelect 交互"},
+      {"plugin_id": "dsh-api-session-controller", "mechanism": "E1+E2", "evidence": "src/client/index.ts:14-15 import + src/client/service.ts:17-18 import", "purpose": "Session 绑定/投影与 session Remote 控制器面"},
+      {"plugin_id": "dsh-client-ui-conversation", "mechanism": "E2", "evidence": "src/client/index.ts:19 import type + src/client/index.ts:182 scope.slots.inject('conversation.input.model')", "purpose": "使用 ui-conversation 声明的 input.model 座位"},
+      {"plugin_id": "dsh-api-remotes", "mechanism": "E1+E2", "evidence": "src/client/catalog.ts:4 import + src/client/service.ts:53 ctx.remote.$on", "purpose": "读模型目录 Remote 与转发事件"},
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E2", "evidence": "src/client/index.ts:24 import + src/client/index.ts:182 scope.slots.register", "purpose": "槽注册与译文命名空间类型"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/catalog.ts:5 import + src/client/directory.ts:12 import", "purpose": "目录状态用快照 store"},
+      {"plugin_id": "dsh-typert-protocol", "mechanism": "E1", "evidence": "src/client/directory.ts:11 import + src/client/slots.ts:7 import", "purpose": "Remote 调用协议类型"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/client/service.ts:19 import { WeakMapWithValues }", "purpose": "以 WeakMap 值容器持有每 Session 目录"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E2", "evidence": "src/client/index.ts:21 import type + src/client/index.ts:132 ctx.locale.register(NS)", "purpose": "注册 model 文案命名空间"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1+E2", "evidence": "src/client/index.ts:22 import type + src/client/index.ts:123 inject 'slots'", "purpose": "ctx.slots 槽注册表"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/index.ts:25 import { IconDataOutlineRegular } + src/client/ModelSelect.tsx:22", "purpose": "复用图标与 MenuSurface 控件"},
+      {"plugin_id": "dsh-client-ui-session", "mechanism": "E1", "evidence": "src/client/index.ts:23 import type {}", "purpose": "Session 标准来源类型面"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "src/client/service.ts:18 import type { SessionId }", "purpose": "会话身份类型"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-open-in-app",
+    "name": "@deepseek-ai/dsh-client-ui-open-in-app",
+    "implementation": "apply 构造 OpenInAppController（加载 Host 应用列表/持久化选择）与 OpenInAppPathController（经 Session Remote 判定桌面可用性、查关联应用、执行 open/reveal），并把二者分发到五处槽（src/client/index.ts:123-125）。会话头部 utilities 槽注册「Open In...」分体按钮，注入应用列表/选择/启动进度 hooks 与图标 URL（src/client/index.ts:80-99）；侧栏文档预览的两个槽与 deliverables 两个槽注册路径动作，失败经 Toast 播报（src/client/open-failure-toast.tsx:4）。另注册 workspace.openLocal 快捷键，busy/无目标时给出阻塞原因（src/client/index.ts:59-77）。",
+    "provides": [
+      "conversation.session.header.utilities 条目 'open-in-app'（会话头部「在应用中打开」分体按钮）",
+      "sidebar.right.tab.document.actions / sidebar.right.tab.document.unpreviewable 条目（文档预览的打开/定位路径动作）",
+      "deliverables.file.actions / deliverables.review.file.actions 条目（交付与变更文件卡的路径动作）",
+      "ctx.shortcuts 命令 workspace.openLocal（在本地应用中打开当前工作区）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E2", "evidence": "src/client/FileRouteAction.tsx:2 import + src/client/index.ts:80 ctx.slots.inject", "purpose": "向各既有槽注册路径动作"},
+      {"plugin_id": "dsh-api-session-controller", "mechanism": "E1+E2", "evidence": "src/client/index.ts:16 import remote + src/client/open-path.ts:7 import types", "purpose": "调用 session Remote 打开工作区路径/查询关联应用"},
+      {"plugin_id": "dsh-client-ui-conversation", "mechanism": "E2", "evidence": "src/client/OpenInAppAction.tsx:3 import + src/client/index.ts:80 slots.inject('conversation.session.header.utilities')", "purpose": "使用 ui-conversation 声明的会话头部槽"},
+      {"plugin_id": "dsh-client-ui-layout", "mechanism": "E1+E2", "evidence": "src/client/index.ts:11 import type + src/client/index.ts:53 ctx.layout.panelInfo", "purpose": "读主面板选择以判断当前无全局面板时才有打开目标"},
+      {"plugin_id": "dsh-client-shortcuts", "mechanism": "E2", "evidence": "src/client/index.ts:7 import + src/client/index.ts:59 ctx.shortcuts.register", "purpose": "注册 workspace.openLocal 快捷键命令"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/controller.ts:3 import + src/client/open-path.ts:5 import", "purpose": "控制器状态用快照 store"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1+E2", "evidence": "src/client/index.ts:10 import type + src/client/index.ts:39 inject 'slots'", "purpose": "ctx.slots 槽注册表"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E2", "evidence": "src/client/index.ts:9 import + src/client/index.ts:50 ctx.locale.register(NS)", "purpose": "注册 open-in-app 文案"},
+      {"plugin_id": "dsh-client-ui-sidebar-documentpreview", "mechanism": "E2", "evidence": "src/client/index.ts:13 import type + src/client/index.ts:104 slots.inject('sidebar.right.tab.document.actions')", "purpose": "使用文档预览声明的路径动作槽"},
+      {"plugin_id": "dsh-client-ui-deliverables", "mechanism": "E2", "evidence": "src/client/FileRouteAction.tsx:3 import type + src/client/index.ts:116/index.ts:119 slots.inject", "purpose": "使用 deliverables 声明的文件动作槽"},
+      {"plugin_id": "dsh-api-remotes", "mechanism": "E1+E2", "evidence": "src/client/index.ts:15 import type + src/client/open-path.ts:6 import", "purpose": "ctx.remote 与 Remote 结果类型"},
+      {"plugin_id": "dsh-host-open-in-app", "mechanism": "E1", "evidence": "src/client/index.ts:17 import { OPEN_IN_APP_ICON_PREFIX_ROUTE }", "purpose": "复用 Host 侧共用的图标路由前缀常量"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/open-failure-toast.tsx:4 import + src/client/OpenTargetButton.tsx:6", "purpose": "复用 Toast/图标/按钮控件"},
+      {"plugin_id": "dsh-native-command", "mechanism": "E1", "evidence": "src/client/FileRouteAction.tsx:4 import { parseNativeFileApplications }", "purpose": "解析 Host native 命令返回的文件关联数据"},
+      {"plugin_id": "dsh-api-gateway", "mechanism": "E1", "evidence": "src/client/index.ts:14 import type {}", "purpose": "引入 gateway 客户端的 ctx.remote 声明合并"},
+      {"plugin_id": "dsh-client-ui-session", "mechanism": "E1", "evidence": "src/client/index.ts:12 import type {}", "purpose": "Session 标准来源类型面"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-permission-presets",
+    "name": "@deepseek-ai/dsh-client-ui-permission-presets",
+    "implementation": "apply 在 Host 的 /permission 命令上挂 popupSelect 装饰：选项读进程级权限目录 PermissionCatalogDirectory，当前值读 Session 的 permissions 投影（src/client/index.ts:176-195）；选择统一经本地 submit 提交 `/permission <preset>` 命令行，从而与 argued 路径写同一条链路（src/client/index.ts:122-131）。同目录也被 composer 的 conversation.input.permission 座位复用（src/client/index.ts:167），并由 PermissionPresetSettingsController 在 General 设置行写入 defaultPreset（含 revision 校验与 mirror 折叠，src/client/settings-store.ts:88-131）。Full access / Auto review 行带显式风险确认（src/client/index.ts:80-105）。",
+    "provides": [
+      "commandUi 的 /permission popupSelect 装饰（当前会话权限档位选择、Full access/Auto 风险确认）",
+      "conversation.input.permission 座位（composer 权限档位菜单，与 popup 共用进程目录）",
+      "settings.general.item 条目 'permission'（新会话默认权限档位的设置行）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-commands", "mechanism": "E2", "evidence": "src/client/index.ts:35 import type + src/client/index.ts:176 command.decorate", "purpose": "装饰 /permission 命令为 popup 选择器"},
+      {"plugin_id": "dsh-permission-presets", "mechanism": "E1+E2", "evidence": "src/client/catalog.ts:6 import + src/client/PermissionSelect.tsx:12 import", "purpose": "权限目录/选项与预设协议（Host client 面）"},
+      {"plugin_id": "dsh-client-ui-settings", "mechanism": "E1+E2", "evidence": "src/client/index.ts:28 import + src/client/index.ts:148 ctx.configForms.describe()", "purpose": "设置行使用 ui-settings 的 configForms/describe 面"},
+      {"plugin_id": "dsh-client-ui-conversation", "mechanism": "E2", "evidence": "src/client/index.ts:31 import type + src/client/index.ts:167 slots.inject('conversation.input.permission')", "purpose": "使用 ui-conversation 声明的权限座位"},
+      {"plugin_id": "dsh-api-remotes", "mechanism": "E1+E2", "evidence": "src/client/index.ts:20 import + src/client/settings-store.ts:124 ctx.remote.settings", "purpose": "写 defaultPreset 与读 Session 投影"},
+      {"plugin_id": "dsh-api-session-controller", "mechanism": "E1", "evidence": "src/client/index.ts:19 import type { SessionFace }", "purpose": "Session 外观与命令执行类型"},
+      {"plugin_id": "dsh-client-connection", "mechanism": "E1", "evidence": "src/client/index.ts:24 import type {} + src/client/catalog.ts:4 import type { ConnectionHandle }", "purpose": "目录结算以连接世代为围栏"},
+      {"plugin_id": "dsh-client-ui-input-trigger", "mechanism": "E1", "evidence": "src/client/index.ts:36 import type { ClientSessionContext }", "purpose": "命令/座位回调的会话上下文类型"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/PermissionRow.tsx:8 import + src/client/settings-store.ts import", "purpose": "设置行状态用快照 store"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E2", "evidence": "src/client/index.ts:26 import + src/client/index.ts:117 ctx.locale.register", "purpose": "注册 permission.access 与设置行文案"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1+E2", "evidence": "src/client/index.ts:29 import type + src/client/index.ts:158 slots.inject", "purpose": "ctx.slots 槽注册表"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/PermissionSelect.tsx:8 import + src/client/PermissionRow.tsx:12", "purpose": "复用 Menu/Select/图标控件"},
+      {"plugin_id": "dsh-client-ui-session", "mechanism": "E1", "evidence": "src/client/index.ts:30 import type {}", "purpose": "Session 标准来源类型面"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-plan",
+    "name": "@deepseek-ai/dsh-client-ui-plan",
+    "implementation": "apply 先注册 planDefinition 为会话节点定义、注册 plan 资源 provider、再向 ctx.sidebarRightTabs 注册 plan/preview 页型（src/client/index.ts:63-71），使提交的计划可从日志重建为右侧预览。随后注册五个界面面：Turn 末尾的 PlanCards（src/client/index.ts:79）、review 动作（index.ts:97）、侧栏 pane.tab/title（index.ts:109/112）与 composer 的 PlanChip（index.ts:116）。计划身份由 submittedPlan 从 tool/call 或 PTC 事件解析出 callId 与首行标题（src/client/plan.ts:33-58），再用 dsh-resource://plan/... 地址编解码做持久化（src/client/plan.ts:65-107）；退出计划模式走 remote.commands.execute('/plan off')（src/client/index.ts:116-124）。",
+    "provides": [
+      "conversation.chat.turnTail 条目 PlanCards（Turn 末尾持久计划卡，读 'submitted-plan' Turn 数据源）",
+      "conversation.plan-review.actions 条目 PlanReviewOpen（计划评审打开动作 + 评审窗口 store）",
+      "conversation.input.plan 座位 PlanChip（composer 计划模式指示与退出）",
+      "sidebar.right.pane.tab / sidebar.right.pane.tab.title 的 plan 预览页与标题",
+      "ctx.uiConversation 的 plan 会话节点定义 + ctx.resources 的 plan 资源 provider + ctx.sidebarRightTabs 的 plan 页型"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-conversation", "mechanism": "E2", "evidence": "src/client/index.ts:6 import type + src/client/index.ts:79 slots.inject('conversation.chat.turnTail')", "purpose": "使用会话 UI 的 Turn 末尾槽与 uiConversation 事件注册面"},
+      {"plugin_id": "dsh-client-ui-sidebar-right", "mechanism": "E1+E2", "evidence": "src/client/index.ts:16 import type + src/client/index.ts:74 ctx.sidebarRight.openResource", "purpose": "打开计划资源与注册预览页型"},
+      {"plugin_id": "dsh-client-resources", "mechanism": "E1+E2", "evidence": "src/client/index.ts:17 import type + src/client/index.ts:64 ctx.resources.register", "purpose": "注册计划资源 provider"},
+      {"plugin_id": "dsh-api-remotes", "mechanism": "E1+E2", "evidence": "src/client/index.ts:2 import + src/client/index.ts:64 ctx.remote.session", "purpose": "ctx.remote 与 Remote 转发事件面"},
+      {"plugin_id": "dsh-client-ui-chat", "mechanism": "E1+E2", "evidence": "src/client/index.ts:14 import type {} + src/client/plan-definition.ts:3 import type { ChatNode }", "purpose": "Chat 节点类型与标准来源面"},
+      {"plugin_id": "dsh-client-ui-user-questions", "mechanism": "E1+E2", "evidence": "src/client/index.ts:15 import type + src/client/PlanCard.tsx:10 import type {}", "purpose": "计划卡复用 user-questions 的类型面/交互"},
+      {"plugin_id": "dsh-api-session-controller", "mechanism": "E1+E2", "evidence": "src/client/index.ts:13 import remote + src/client/plan-resource.ts:3 import types", "purpose": "Session 地址与投影类型"},
+      {"plugin_id": "dsh-client-ui-session", "mechanism": "E1+E2", "evidence": "src/client/index.ts:12 import type + src/client/index.ts:80 ctx.sessions.binding", "purpose": "Session 绑定解析与标准来源"},
+      {"plugin_id": "dsh-plan-mode", "mechanism": "E1", "evidence": "src/client/index.ts:10 import type {}", "purpose": "引入 plan SessionProjectionMap 声明以使用投影"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/review-store.ts:2 import + src/client/PlanCard.tsx:4", "purpose": "评审窗口 store"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/index.ts:18 import { extractMarkdownPlainText } + src/client/PlanCard.tsx:3", "purpose": "复用 Markdown/图标/纯文本提取"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E2", "evidence": "src/client/index.ts:8 import type + src/client/index.ts:59 ctx.locale.register(NS)", "purpose": "注册 plan 文案"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1+E2", "evidence": "src/client/index.ts:11 import type + src/client/index.ts:52 inject 'slots'", "purpose": "ctx.slots 槽注册表"},
+      {"plugin_id": "dsh-util-crypto", "mechanism": "E1", "evidence": "src/client/index.ts:19 import { randomUUID }", "purpose": "生成评审窗口标识"},
+      {"plugin_id": "dsh-typert-protocol", "mechanism": "E1", "evidence": "src/client/plan-resource.ts:5 import", "purpose": "Remote 协议类型"},
+      {"plugin_id": "dsh-tools", "mechanism": "E1", "evidence": "src/client/plan-definition.ts:2 import type", "purpose": "工具结果类型"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "src/client/plan.ts:3 import type { SessionId }", "purpose": "会话身份类型"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-plugin-manager",
+    "name": "@deepseek-ai/dsh-client-ui-plugin-manager",
+    "implementation": "客户端半在 apply 中创建 PluginManagerController，订阅 Host 的 plugin-manager/changed、install-log、install-state 与 connection/reset 事件，仅在有快照时刷新（src/client/index.ts:85-92）。随后用 slots.inject('main') 注册 main 面板 'plugins'，并声明 plugins.item / bundle.activation / bundle.config / row.config / detail.* 等子槽作为页面配置扩展点（src/client/index.ts:100-120）；同时把 ctx.pluginNavigation 以 reflect.provide 暴露供跨插件打开某 bundle（src/client/index.ts:122-128），并把 Plugins 入口注册进 sidebar.panellist（index.ts:130）。Host 半 src/index.ts 默认导出 PluginRegistryProbe，用并行 HTTPS ping 探测 npm/npmmirror 注册表并缓存结果（src/index.ts:31-84）。",
+    "provides": [
+      "main 面板 'plugins'（PluginManagerPage，并声明 plugins.item / plugins.bundle.activation / plugins.bundle.config / plugins.row.config / plugins.detail.actions / plugins.detail.badge / plugins.detail.section 子槽）",
+      "ctx.pluginNavigation.openBundle (跨插件导航并打开指定 bundle 详情视图)",
+      "sidebar.panellist 条目 'plugins'（PluginsPanelIcon 侧栏入口）",
+      "ctx.pluginRegistryProbe (Host 侧 PluginRegistryProbe Remote 服务：探测最快 npm 注册表)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-layout", "mechanism": "E1+E2", "evidence": "src/client/index.ts:15 import type { MainPanelId } + src/client/index.ts:119 ctx.layout.panelInfo", "purpose": "注册 main 面板并订阅主面板切换重置视图"},
+      {"plugin_id": "dsh-client-ui-sidebar", "mechanism": "E2", "evidence": "src/client/index.ts:16 import type + src/client/index.ts:130 slots.inject('sidebar.panellist')", "purpose": "使用 ui-sidebar 声明的面板列表槽"},
+      {"plugin_id": "dsh-plugin-manager", "mechanism": "E1+E2", "evidence": "src/client/index.ts:22 import types + src/client/manager-store.ts:28 import '/registry'", "purpose": "插件管理 Remote 与 registry 协议类型"},
+      {"plugin_id": "dsh-api-remotes", "mechanism": "E1+E2", "evidence": "src/client/index.ts:19 import + src/client/manager-store.ts:607 ctx.remote", "purpose": "调用 pluginManager 等 Remote 并订阅 Host 事件"},
+      {"plugin_id": "dsh-client-ui-settings", "mechanism": "E1+E2", "evidence": "src/client/manager-store.ts:32 import + src/client/manager-store.ts:543 ctx.configForms", "purpose": "插件配置页复用 ui-settings 的 configForms"},
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E2", "evidence": "src/client/index.ts:10 import type + src/client/index.ts:100 ctx.slots.inject('main')", "purpose": "槽注册与子槽声明"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/manager-store.ts:29 import + src/client/navigation-store.ts:2", "purpose": "管理器与导航状态 store"},
+      {"plugin_id": "dsh-package-manifest", "mechanism": "E1", "evidence": "src/client/manager-store.ts:31 import", "purpose": "包清单类型"},
+      {"plugin_id": "dsh-util-crypto", "mechanism": "E1", "evidence": "src/client/manager-store.ts:9 import", "purpose": "哈希/标识工具"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E2", "evidence": "src/client/index.ts:10 import + src/client/index.ts:75 ctx.locale.register(NS)", "purpose": "注册 pluginManager 文案"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1+E2", "evidence": "src/client/index.ts:17 import type + src/client/index.ts:67 inject 'slots'", "purpose": "ctx.slots 槽注册表"},
+      {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "src/index.ts:5 import { MAX_TIMER_DELAY_MS }", "purpose": "注册表探测超时上界"},
+      {"plugin_id": "dsh-typert-protocol", "mechanism": "E1", "evidence": "src/index.ts:6 import { Remote, TypertRemoteService }", "purpose": "Host 侧 Remote 服务基类与装饰器"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-primitives",
+    "name": "@deepseek-ai/dsh-client-ui-primitives",
+    "implementation": "无 cordis 服务与槽注册的纯 React 组件/工具库：入口 src/index.ts 汇总导出约 80 个组件与工具，覆盖基础控件（Button/Input/Switch/Checkbox/Menu/MenuSurface/SegmentedControl/Modal/Tooltip/Toast 等）、工具输出展示块（ReadBlock/DiffBlock/SearchBlock/WebBlock/TerminalBlock/JsonTree）、Markdown 渲染与高亮（markdown/*、code-highlighting.ts）、设置表单（settings-form/*）以及一批图标与平台/时间工具。组件仅依赖 --dsw-* 设计 token，跨包复用代码集中在少数浏览器安全工具依赖上：PathLabel 用 dsh-util-workspace-path（src/PathLabel.tsx:4）、代码高亮用 dsh-util-code-language（src/code-highlighting.ts:10）、设置表单模型用 dsh-client-store（src/settings-form/form-model.ts:16）。",
+    "provides": [
+      "React 基础控件库（Button/Input/Switch/Checkbox/Menu/MenuSurface/SegmentedControl/Tabs/Modal/HoverCard/Tooltip/Toast/Pill/Tag/DisclosureRow/TextShimmer/StateDot/ConnectionIndicator/RiskConfirmation 等）",
+      "工具结果展示块（ReadBlock / DiffBlock / SearchBlock / WebBlock / TerminalBlock / JsonTree / CodeBlock / JsonBlock）",
+      "Markdown 渲染与文件/图片链接、数学公式、增量高亮与纯文本提取（MarkdownText / MarkdownDelegateProvider / extractMarkdownPlainText）",
+      "设置表单组件与模型（SettingsForm / SettingsSecretField / SettingsValueField / SettingsFormModel / settingsTextField / settingsNumberField）",
+      "图标与品牌图形集合（icons/*、FileTypeIcon、LinkIcon、ReferenceIcon、PermissionIcon、FishLogo、BrandWordmark、plugin-artwork、guide-artwork）",
+      "通用钩子与工具（useAnchoredPosition/useAnchoredMaxHeight/useDismissOnOutsidePointer/useModalLayer/useCodeHighlighter/relativeTime/rankByName/fileSizeText/writeClipboard/observeComposition）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/settings-form/form-model.ts:16 import", "purpose": "设置表单模型基于快照 store 引擎"},
+      {"plugin_id": "dsh-util-workspace-path", "mechanism": "E1", "evidence": "src/PathLabel.tsx:4 import", "purpose": "路径缩写与展示"},
+      {"plugin_id": "dsh-util-code-language", "mechanism": "E1", "evidence": "src/code-highlighting.ts:10 import", "purpose": "按扩展名解析代码语言以高亮"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-reference",
+    "name": "@deepseek-ai/dsh-client-ui-reference",
+    "implementation": "注册一个 '@' 输入触发源：候选阶段先确保目标 Session 已 retain 且历史 open，再并行发起 fileReferences.list 与 sessionReferenceResolver.candidates（src/client/index.ts:60-76），失败通道降级为空集；随后分别映射文件候选（含目录 drill 语义与父目录描述，index.ts:212-242）与会话候选（区分子会话/普通会话并附工作区与相对时间，index.ts:244-260）。onPick 把候选 value 反解为 file/session：文件返回可插入引用文本，目录在 drill 动作下保留继续下钻（index.ts:96-135）；openReference 则经 sidebarRight.openResource 打开文件地址（index.ts:143-151）。最后经 inputTriggers.registerSource 挂载（index.ts:158）。",
+    "provides": [
+      "ctx.inputTriggers 的 '@' 参考源（@文件 / @会话统一候选、分组、相对时间与工作区标签）",
+      "目录下钻的面包屑 header 与 drill 继续语义",
+      "参考插入/剪贴板序列化 codec 与文件引用在右侧栏打开（openReference）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-input-trigger", "mechanism": "E1+E2", "evidence": "src/client/index.ts:26 import type + src/client/index.ts:158 inputTriggers.registerSource", "purpose": "注册 '@' 触发源并消费其 Source/Crumb 契约"},
+      {"plugin_id": "dsh-api-remotes", "mechanism": "E1+E2", "evidence": "src/client/index.ts:17 import type + src/client/index.ts:71 ctx.remote.fileReferences.list", "purpose": "文件与会话候选的 Remote 查询"},
+      {"plugin_id": "dsh-client-ui-sidebar-right", "mechanism": "E1+E2", "evidence": "src/client/index.ts:20 import type + src/client/index.ts:149 ctx.sidebarRight.openResource", "purpose": "在右侧栏打开被引用的文件"},
+      {"plugin_id": "dsh-api-session-controller", "mechanism": "E1+E2", "evidence": "src/client/index.ts:11 import type { ISessions } + src/client/index.ts:53 ctx.get('sessions')", "purpose": "retain 会话并用 using() 挂参考候选数据源"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/index.ts:23 import { relativeTime }", "purpose": "会话候选相对时间展示"},
+      {"plugin_id": "dsh-file-reference", "mechanism": "E1", "evidence": "src/client/index.ts:27 import grammar + src/client/index.ts:28 import types", "purpose": "文件引用 mention 语法与候选类型"},
+      {"plugin_id": "dsh-session-reference", "mechanism": "E1", "evidence": "src/client/index.ts:29 import type", "purpose": "会话引用候选类型"},
+      {"plugin_id": "dsh-util-workspace-path", "mechanism": "E1", "evidence": "src/client/index.ts:30 import { abbreviateHomePath, fileAddressFor }", "purpose": "路径缩写与生成文件打开地址"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E2", "evidence": "src/client/index.ts:19 import type + src/client/index.ts:51 ctx.locale.register(NS)", "purpose": "注册 reference 文案"},
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1", "evidence": "src/client/locales.ts:3 import type", "purpose": "译文命名空间类型面"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-renderer",
+    "name": "@deepseek-ai/dsh-client-ui-renderer",
+    "implementation": "apply 构造 renderer-owned 的 SlotRegistry（在 ui-slots 的纯 SlotCore 语义之上补上活应用所需部分：'slots/changed' 事件桥、按 caller ctx.effect 收集注册/声明、install()/renderSlot('root')、以及 store 实例轴），并 install(createSlotRenderer())（src/client/index.ts:91-95）。随后经 ctx.reflect.provide('uiRenderer') 暴露 mount(container)：mountApp 优先 hydrate 引导期 DOM，否则 createRoot 渲染（src/client/index.ts:70-85），渲染树由 buildRenderApp 从内建 'root' 槽展开（src/client/app.tsx:17-23）。invariant.ts 另订阅 internal/dispatch 并注入 'invariants'，对槽关系做运行时不变式检查（src/invariant.ts:19-46）。",
+    "provides": [
+      "ctx.slots (SlotRegistry：槽注册/声明、'slots/changed' 事件、renderSlot('root')、store 实例轴与 HMR 卸载级联)",
+      "ctx.uiRenderer.mount (把组装好的应用挂载到给定容器的入口)",
+      "内建 'root' 槽（唯一由 shell 渲染的根洞，其余槽皆其子）",
+      "'slots/changed' 事件（槽声明或条目集变化时发布）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1+E2", "evidence": "src/client/registry.ts:19 import { SlotCore } + src/client/app.tsx:21 ctx.slots.renderSlot('root')", "purpose": "在 ui-slots 的 SlotCore 语义上构建活应用注册表"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E1+E2", "evidence": "src/invariant.ts:12 import + src/invariant.ts:19 inject ['invariants']", "purpose": "注册渲染器拥有的运行时不变式检查"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-schedule",
+    "name": "@deepseek-ai/dsh-client-ui-schedule",
+    "implementation": "以一份 Host 任务目录 CatalogSource 为中心：manager 读 remote.schedule.catalog / delete 并订阅 schedule/changed 与 connection/reset（src/client/index.ts:96-104），删除结果经 shell.overlay 的全局 toast 播报（index.ts:112）。apply 注册日程任务 tab 页型与侧栏 detail 页（index.ts:155-166）、main 面板 'schedules' 与侧栏入口（index.ts:168/178），并注册 scheduleTurnDefinition 让 schedule_create 的产物在 Turn 末尾以卡片呈现（index.ts:188-205）。会话头部 utilities 用每 Session 的独立 source 列活跃提醒（index.ts:208-229），sidebar.session.row.leading/hover 则投影共享目录给工作区行标记与悬浮列表（index.ts:231-241）。任务创建卡另经 schedule_create 结果与右栏 detail 绑定（schedule-turn.ts / task-tab-bindings.ts）。",
+    "provides": [
+      "main 面板 'schedules'（TaskManagerPage 任务管理页）+ sidebar.panellist 条目 TaskManagerIcon",
+      "ctx.sidebarRightTabs 的日程任务页型 + sidebar.right.pane.tab / pane.tab.title 的任务详情页与标题",
+      "conversation.session.header.utilities 条目 'schedule-catalog'（会话头部提醒目录与删除）",
+      "conversation.chat.turnTail 条目 'schedule-created'（schedule_create 结果卡）",
+      "sidebar.session.row.leading 条目 'schedule-mark' 与 sidebar.session.row.hover 条目 'schedule-tasks'（会话行任务标记与悬浮列表）",
+      "shell.overlay 条目 'schedule.delete-toast'（全局删除结果提示）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E2", "evidence": "src/client/index.ts:112 ctx.slots.inject('shell.overlay') + index.ts:168/178/189/231/238", "purpose": "向多处既有槽注册任务相关界面"},
+      {"plugin_id": "dsh-schedule", "mechanism": "E1+E2", "evidence": "src/client/index.ts:44 import + src/client/index.ts:97 ctx.remote.schedule.catalog()", "purpose": "读/写/删 Host 日程任务与投递历史"},
+      {"plugin_id": "dsh-client-ui-conversation", "mechanism": "E2", "evidence": "src/client/index.ts:33 import type + src/client/index.ts:188 ctx.uiConversation.events.register", "purpose": "注册 Turn 级日程定义并渲染 Turn 末尾卡"},
+      {"plugin_id": "dsh-client-ui-sidebar-right", "mechanism": "E2", "evidence": "src/client/index.ts:37 import type + src/client/index.ts:153 ctx.sidebarRight.tabsIn", "purpose": "注册任务详情页型并打开详情 tab"},
+      {"plugin_id": "dsh-client-ui-sidebar", "mechanism": "E2", "evidence": "src/client/index.ts:36 import type + src/client/index.ts:178 slots.inject('sidebar.panellist')", "purpose": "向侧栏面板列表注册任务入口"},
+      {"plugin_id": "dsh-client-ui-workspace", "mechanism": "E2", "evidence": "src/client/index.ts:39 import type + src/client/index.ts:137 ctx.uiWorkspace.openSession", "purpose": "从任务卡跳转到原始会话"},
+      {"plugin_id": "dsh-client-ui-layout", "mechanism": "E1+E2", "evidence": "src/client/index.ts:40 import type + src/client/DeleteToast.tsx:13", "purpose": "读主面板选择并复用布局类型"},
+      {"plugin_id": "dsh-client-ui-tool", "mechanism": "E1", "evidence": "src/client/index.ts:38 import type + src/client/ScheduleCreateCard.tsx:3", "purpose": "复用工具视图类型/卡片"},
+      {"plugin_id": "dsh-api-remotes", "mechanism": "E1+E2", "evidence": "src/client/index.ts:41 import + src/client/index.ts:93 ctx.remote", "purpose": "ctx.remote 与 Remote 事件面"},
+      {"plugin_id": "dsh-api-session-controller", "mechanism": "E1+E2", "evidence": "src/client/session-link.ts:2 import + src/client/index.ts:136 ctx.sessions", "purpose": "会话定位与打开状态判定"},
+      {"plugin_id": "dsh-api-workspace-controller", "mechanism": "E1", "evidence": "src/client/session-link.ts:3 import", "purpose": "工作区状态以判定会话是否可跳转"},
+      {"plugin_id": "dsh-client-connection", "mechanism": "E1", "evidence": "src/client/index.ts:42 import type {}", "purpose": "连接世代相关类型面"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/CatalogFeedback.tsx:3 import + src/client/DeleteToast.tsx:11", "purpose": "复用按钮/图标/toast 等控件"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1+E2", "evidence": "src/client/index.ts:34 import type + src/client/index.ts:87 inject 'slots'", "purpose": "ctx.slots 槽注册表"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E2", "evidence": "src/client/index.ts:32 import + src/client/index.ts:89-90 ctx.locale.register", "purpose": "注册 schedule.catalog 与 schedule.manager 文案"},
+      {"plugin_id": "dsh-client-ui-session", "mechanism": "E1", "evidence": "src/client/index.ts:35 import type {}", "purpose": "Session 标准来源类型面"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/client/TaskDetail.tsx:2 import + src/client/schedule-format.ts:4", "purpose": "值工具与类型"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "src/client/index.ts:43 import type + src/client/schedule-turn.ts:12 import surface", "purpose": "会话身份与 surface 类型"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-session",
+    "name": "@deepseek-ai/dsh-client-ui-session",
+    "implementation": "作为 Session Controller 与 React 选择器/槽作用域之间的适配层：apply 构造 UiSession，经 ctx.slots.provideRoot 发布根级标准来源 hooks（sessions、sessionStatus）与 keyedHooks.sessionRetainInfo，再 ctx.slots.installScope('session', adapter) 安装会话作用域适配器（src/client/index.ts:670-684）。UiSession 内部实现 useSession/useSessions/useSessionStatus/useSessionRetainInfo 的取值与相等性比较（index.ts:361-380、695-717），并把会话渲染区域绑定到 session-provider.tsx 的 renderSessionArea（index.ts:316）。",
+    "provides": [
+      "根级标准来源 hooks：useSessions / useSessionStatus / useSessionRetainInfo（含 sessionRetainInfo keyed hook）",
+      "'session' 槽作用域适配器（ctx.slots.installScope，会话级槽的作用域与标准数据来源）",
+      "会话渲染区域 renderArea（session-provider.tsx 的 renderSessionArea）",
+      "uiSession.provide()（供域插件发布其会话级 pending-interaction 与状态）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1+E2", "evidence": "src/client/index.ts:17 import + src/client/index.ts:672 ctx.slots.provideRoot / index.ts:684 installScope", "purpose": "发布根标准来源并安装会话作用域适配器"},
+      {"plugin_id": "dsh-api-session-controller", "mechanism": "E1+E2", "evidence": "src/client/index.ts:12 import { ISessions, ... } + src/client/index.ts:2-11 import", "purpose": "消费 Session Controller 的列表/绑定/快照与投影接口"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/index.ts:15 import { notifySubscribers }", "purpose": "发布订阅通知"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/client/index.ts:16 import { WeakMapWithValues }", "purpose": "按会话持有作用域数据"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1", "evidence": "src/client/index.ts:29 import type {}", "purpose": "引入 ctx.slots 服务声明合并"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "src/client/index.ts:13 import type { SessionId }", "purpose": "会话身份类型"},
+      {"plugin_id": "dsh-api-remotes", "mechanism": "E1", "evidence": "src/client/index.ts:14 import type {}", "purpose": "ctx.remote 声明合并"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-settings",
+    "name": "@deepseek-ai/dsh-client-ui-settings",
+    "implementation": "提供共享的配置表单与 Host describe 镜像：apply 构造 SettingsSchemaService（ctx.settingsSchema，同步 schema 内省/校验）与 SettingsDescribeMirror（按 remote.$host.isLoopback 决定 host/memory 持久化模式），并在 settings/document-updated 与 connection/reset 时重新 load 镜像（src/client/index.ts:37-52）。随后 new ConfigForms(ctx, { mirror, schema, persistence }) 注册 ctx.configForms（src/client/index.ts:53、config-form.ts:266），为各域表单提供按命名空间的派生视图与串行写入（config-form.ts:50-90）。",
+    "provides": [
+      "ctx.configForms (ConfigForms 服务：按命名空间的配置表单派生视图、describe 镜像与串行写入)",
+      "ctx.settingsSchema (SettingsSchemaService：schemastery schema 反序列化、校验与草稿编辑)",
+      "SettingsDescribeMirror (Host 配置 describe 的共享镜像与失效订阅面)",
+      "设置页各槽位契约类型（settings.launcher / settings.section / settings.general.item / settings.models.sign-in 等 OwnerProps）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-api-remotes", "mechanism": "E1+E2", "evidence": "src/client/index.ts:5 import + src/client/index.ts:43 ctx.remote.$on('settings/document-updated')", "purpose": "读配置 describe 与写 settings 命名空间"},
+      {"plugin_id": "dsh-settings", "mechanism": "E1", "evidence": "src/index.ts:2 import + src/client/config-form.ts:27 import type", "purpose": "设置命名空间与 wire 类型"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/config-form.ts:10 import { createSnapshotStore }", "purpose": "表单快照 store"},
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1", "evidence": "src/client/contract/slots.ts:12 import type", "purpose": "设置槽位契约类型"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/client/config-form.ts:11 import type { JsonValue }", "purpose": "JSON 值类型"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-settings-account",
+    "name": "@deepseek-ai/dsh-client-ui-settings-account",
+    "implementation": "仅在桌面渲染器下生效（apply 开头检测 globalThis.dshDesktop，src/client/index.ts:42）。桌面半 src/index.ts 注册 webserver/index-inject 以注入联系方式配置（src/index.ts:50）。客户端核心是 account 状态流：订阅 ctx.remote.$stream({name:'account'})，逐帧 publish 账户视图并在首次登录成功时初始化默认模型（src/client/index.ts:150-176）；refresh 并行读 profile/balance，notices 控制器读/确认未通知奖励（index.ts:64-93）。UI 面注册 settings.launcher（AccountMenu）、settings.section（登录后才有 AccountSection，index.ts:265-282）、settings.models.sign-in 的 AccountOnboarding、shell.quota-notice 的 AccountQuotaNotice，以及桌面引导与原生平台 overlay（index.ts:230-260）。",
+    "provides": [
+      "settings.launcher 条目 AccountMenu（账户头像/菜单）",
+      "settings.section 条目 'account'（仅凭据已存储时注册的账户设置区）",
+      "settings.models.sign-in 条目 AccountOnboarding（登录/引导面板）",
+      "shell.quota-notice 条目 AccountQuotaNotice（额度耗尽提示）",
+      "shell.overlay 条目 'desktop-onboarding' 与 'account.platform-page'（桌面引导与原生平台页宿主）",
+      "Host 侧账户联系信息配置注入（src/index.ts 的 webserver/index-inject）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-api-remotes", "mechanism": "E1+E2", "evidence": "src/client/index.ts:10 import + src/client/index.ts:107 ctx.remote.account.getProfile", "purpose": "调用 account/session Remote 与订阅转发事件"},
+      {"plugin_id": "dsh-deepseek-account", "mechanism": "E1+E2", "evidence": "src/client/AccountSection.tsx:5 import types + src/client/index.ts:61 ctx.remote.account.getUnnotifiedBonuses", "purpose": "账户视图/明细协议类型与 Remote"},
+      {"plugin_id": "dsh-client-ui-settings", "mechanism": "E1+E2", "evidence": "src/client/index.ts:5 import + src/client/index.ts:213 ctx.configForms.get", "purpose": "读/写 onboarding 等设置命名空间"},
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E2", "evidence": "src/client/index.ts:40 inject 'slots' + src/client/index.ts:230 ctx.slots.inject('shell.overlay')", "purpose": "向设置/壳层各槽注册账户界面"},
+      {"plugin_id": "dsh-client-ui-theme", "mechanism": "E1+E2", "evidence": "src/client/AccountSection.tsx:7 import + src/client/index.ts:180 ctx.theme.getTheme", "purpose": "主题区分账户界面外观"},
+      {"plugin_id": "dsh-client-ui-chat", "mechanism": "E1+E2", "evidence": "src/client/AccountQuotaNotice.tsx:5 import + src/client/index.ts:2 import type { TranscriptViewMode }", "purpose": "复用 chat 的类型面并写 ui-chat 设置（transcriptView/performanceUsage）"},
+      {"plugin_id": "dsh-client-ui-layout", "mechanism": "E1", "evidence": "src/client/index.ts:9 import type + src/client/AccountPlatformHost.tsx:2 import", "purpose": "壳层布局类型面"},
+      {"plugin_id": "dsh-client-ui-settings-models", "mechanism": "E1", "evidence": "src/client/AccountOnboarding.tsx:4 import", "purpose": "登录引导复用模型设置区类型"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E2", "evidence": "src/client/index.ts:4 import + src/client/index.ts:44 ctx.locale.register('settings.account')", "purpose": "注册账户文案"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/AccountAvatar.tsx:3 import + src/client/AccountMenu.tsx:5", "purpose": "复用按钮/图标等控件"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/onboarding-state.ts:3 import + src/client/platform-pages.ts:8", "purpose": "引导与平台页状态 store"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1+E2", "evidence": "src/client/index.ts:6 import type + src/client/index.ts:40 inject 'slots'", "purpose": "ctx.slots 槽注册表"},
+      {"plugin_id": "dsh-settings", "mechanism": "E1", "evidence": "src/index.ts:4 import", "purpose": "Host 侧设置命名空间类型/接口"},
+      {"plugin_id": "dsh-host-webserver", "mechanism": "E1+E2", "evidence": "src/index.ts:3 import + src/index.ts:50 ctx.on('webserver/index-inject')", "purpose": "向 webserver 注入账户联系方式配置"}
+    ],
+    "dependents": []
+  }
+]

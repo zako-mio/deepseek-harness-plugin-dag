@@ -1,114 +1,127 @@
 # dsh-session
 
 - 包名: `@deepseek-ai/dsh-session`
-- 分组: G03 核心服务
-- 拓扑层: Layer 1
+- 分组: G09 核心运行时
+- 拓扑层: Layer 2
 - 来源层: L1 核心集
 - 源码路径: `packages/core/session`
 
-## 为什么需要它（设计初衷）
-解决 agent 交互历史的单一事实来源问题：以『事件溯源』(event-sourced) 追加日志 + 内存存储作为会话的唯一真实来源，LLM 消息历史从日志推导，surface 投影层支持增量推导与压缩。持久化刻意不在此实现，由订阅 session/event 的插件负责，保证可重放、可 fork、可恢复。
-
-发展史：dsh 的核心子系统之一（architecture.md 所列 core/session，ctx 键 sessions）。模型可见的输入必须被记录（model-visible means logged），运行时不可变检查保证该约束。支持 fork/resume/transcript/telemetry 全部从此日志流推导。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/core/session/README.md
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/architecture.md
-- https://www.npmjs.com/package/@deepseek-ai/dsh-session
-
 ## 实现逻辑
-事件溯源(Event-sourced)会话存储。SessionStore(ctx.sessions) 维护内存 Map 存 Session，append-only 事件日志由 Session 类持有；append() 同步通知，通过 session/created / session/event / session/flush / session/disposed 事件向外广播，持久化由外部插件订阅事件自行落盘。Session 提供 deriveMessages()(折叠 surface 派生 LLM 消息历史)、requestHeader()(折叠 request/header 事件)、prepare/enter/announce 三段式发布边界(配合 agent-loop 的复合 effect 保证拆解顺序)。
+事件溯源会话服务：`SessionStore`（服务名 `sessions`）以 `Map<SessionId, SessionEntry>` 维护存活会话，提供 `prepare/enter/announce/create` 与 `session/created`、`session/event`、`session/flush` 派发；`flush()` 是所有持久性 checkpoint 的唯一入口，await 全部监听者并回传其失败 (src/index.ts:919-963,986-997,1194-1211)。`Session` 类维护 append-only 日志、surface 派生消息历史与 fork/seed (src/index.ts:446-560)；surface.ts 定义消息投影与 surface 折叠，repair.ts 为中断 turn 生成合成收尾事件，request-header.ts 折叠请求头，tool-history.ts 重建工具历史 (src/index.ts:19-35)。构造时经 `ctx.inject(['typert'])` 注册 session 的 typert lookup (src/index.ts:954-962)；invariant.ts 校验日志的 seq/turn/step/tool-call 关系不变量 (src/invariant.ts:16-258)。
 
 ## Provides
-- ctx.sessions(SessionStore)
-- session/created 事件
-- session/event 事件
-- session/flush 事件
-- session/disposed 事件
-- Session 类(append/events/deriveMessages/requestHeader/surface)
-- SessionPreparation
-- SessionForkError
-- packChunkRuns/decodeStorageRecord(存储格式)
-- deepFreeze 冻结的不可变事件契约
+- ctx.sessions (SessionStore 事件溯源会话服务：prepare/enter/announce/create/flush/get)
+- Session 类与 SessionId/SessionSeq/SessionLogOffset 品牌类型
+- session/created、session/disposed、session/event、session/flush 事件
+- surface/fork/repair/request-header/tool-history 派生与修复工具
+- SessionPreparation、foldRequestHeader、interruptedTurnClosers、KNOWN_SESSION_EVENT_TYPES 等导出
 
 ## Depends On (上游依赖)
-- `dsh-llm` [编译依赖] - import deepFreeze 冻结事件/头, Message/UserMessage 类型定义事件载荷
-  - 证据: `packages/core/session/package.json:46, packages/core/session/src/index.ts:11-14`
-- `dsh-typert-registry` [运行时依赖] - ctx.inject(['typert']) 注册 session 查找器(typert.lookups.register)
-  - 证据: `packages/core/session/src/index.ts:798-805`
+- `dsh-invariants` [E1+E2] - 注册会话日志关系不变量
+  - 证据: `session/package.json:52 devDep + src/invariant.ts:10 import + src/invariant.ts:20 inject(['invariants']) + src/invariant.ts:258 register`
+- `dsh-llm` [编译依赖] - 复用 llm 消息/工具/请求头等类型与派生消息词汇
+  - 证据: `src/index.ts:15,23,31 + src/types.ts:2-16 + package.json:58 dependency`
+- `dsh-scope` [E1+E2] - 为会话构造作用域路由载体并读取上下文作用域
+  - 证据: `src/index.ts:13-14 import scopeOf/scopeTarget + src/index.ts:426 scopeTarget 构造 carrier + package.json:50 peerDep`
 
 ## Dependents (下游被依赖)
-- `dsh-agent` - Agent 以 SessionId 为 id
-- `dsh-agent-instructions` - 订阅 session/event step 判定
-- `dsh-agent-loop` - ctx.sessions.prepare/enter/announce 创建会话
-- `dsh-agent-presets` - peerDependencies（session/event）
-- `dsh-agent-spine-demo` - ctx.plugin(SessionStore) 事件溯源会话存储
-- `dsh-api-remotes` - SessionHeader/SessionEvent/SessionId 类型与 ctx.sessions.get 服务（:139）
-- `dsh-client-ui-agent-preset` - 会话行 preset 折入与选中回写
-- `dsh-client-ui-commands` - 每会话 popup controller 与目录键
-- `dsh-client-ui-goal` - SessionEvent<'command/run'> 类型
-- `dsh-client-ui-input-trigger` - 按会话 scope 解析 controller
-- `dsh-client-ui-model-selection` - 会话目录键与可用性判定
-- `dsh-client-ui-permission-presets` - 会话绑定与命令执行
-- `dsh-client-ui-skill` - 会话身份判定与键控缓存
-- `dsh-client-ui-subagent` - 子会话候选源与导航动作
-- `dsh-client-ui-workflow-run` - 会话 id 类型契约
-- `dsh-code-runtime-worker-thread` - snapshotJsonValue 将绑定解析结果快照为无损耗 JSON
-- `dsh-command-feedback` - feedback/record 持久化
-- `dsh-commands` - 命令生命周期事件持久化
-- `dsh-compaction-basic` - 订阅 session/event + append compaction 事件
-- `dsh-compaction-tool-result-pruner` - 读 surface.nodes + append 替换
-- `dsh-cordis-host-runner` - snapshotJsonValue/JsonValue
-- `dsh-experimental-agent-team` - 以Lead会话为journal基底
-- `dsh-fs-observation-policy` - owner 从 actor.agent.session 派生
-- `dsh-goal` - goal/change 持久化
-- `dsh-goal-round-driver` - checkpoint 冲刷与 turn 边界
-- `dsh-hooks-claude-code` - session 消息类型
-- `dsh-hooks-codex` - session 消息类型
-- `dsh-host-apiproxy` - Session/SessionEvent/SessionId 类型
-- `dsh-llm-retry` - agent.session.append('llm/retry')
-- `dsh-message-feedback` - deriveEventMessage/isAppendSurfaceEvent 定位目标助手消息
-- `dsh-plan-mode` - plan/mode 持久化
-- `dsh-repeat-tool-reminder` - UserMessage 类型
-- `dsh-sandbox-local` - SessionId 会话隔离键
-- `dsh-sandbox-policy` - 会话事件日志作模式折叠存储
-- `dsh-schedule` - session 事件日志（提醒持久化载体）
-- `dsh-sdk-client` - SessionEvent 类型
-- `dsh-sdk-jsonrpc-server` - SessionId 类型
-- `dsh-session-checkpoint-policy` - ctx.sessions.flush 强制持久化屏障
-- `dsh-session-persistence-jsonl` - 订阅 session/created|event|flush|disposed 事件源
-- `dsh-session-persistence-sqlite` - 会话事件/头类型契约与 sessions 服务注入
-- `dsh-session-projection` - 订阅 session/event 驱动投影
-- `dsh-session-projection-cache` - Session/SessionEvent 类型与 snapshotJsonValue
-- `dsh-session-query-sqlite` - static inject sessions; observeLive
-- `dsh-session-reference` - SessionId branded 类型与 SessionHeader（cwd/createdAt）契约
-- `dsh-session-stats` - peerDependencies（事件类型）
-- `dsh-session-telemetry-otel` - static inject sessions; feedback 校验
-- `dsh-session-title` - 事件源读取/追加
-- `dsh-session-title-all-prompts-llm` - 会话事件流：标题生成时机（事件驱动）
-- `dsh-session-title-first-prompt-llm` - 会话服务访问
-- `dsh-shell-env` - 会话 id 注入 DSH_SESSION_ID
-- `dsh-spill-policy` - SessionId 类型
-- `dsh-subagent` - ctx.get('sessions') 枚举子代理
-- `dsh-subagent-acp` - SessionId 类型
-- `dsh-subagent-claude-code` - SessionId 类型
-- `dsh-subagent-codex` - SessionId 类型
-- `dsh-subagent-dsh-sdk` - SessionId/SessionEvent/TurnEndReason 类型
-- `dsh-subagent-fork-in-process` - parent.session.events 截取种子
-- `dsh-terminal-bash` - 会话事件驱动模式围栏
-- `dsh-time-context` - 扫描会话事件定位前序消息/上次注入/requestMessages
-- `dsh-tmux-context` - 扫描持久事件定位上次注入状态（latestInjectedState）
-- `dsh-token-meter` - 订阅 session/event；折叠 header/surface
-- `dsh-tool-cordis` - JSON 值/消息类型
-- `dsh-tool-fs` - 解析会话 cwd
-- `dsh-tool-fs-search` - 会话 cwd 作 rg workdir
-- `dsh-tool-goal` - open turn 判定
-- `dsh-tool-session-query` - SessionId branded 类型与会话头（cwd）
-- `dsh-tool-subagent-control` - SessionId 品牌化入参
-- `dsh-tool-todo` - todo 快照持久化
-- `dsh-tool-workflow` - Session.append 记录运行事件
-- `dsh-tools` - snapshotJsonValue 快照工具参数
-- `dsh-user-approval` - 审批审计事件与 policy 持久化
-- `dsh-web-search-deepseek` - session.append 记录搜索请求
-- `dsh-workflow-worker-thread` - snapshotJsonValue 序列化跨 worker
-- `dsh-workspace` - SessionHeader/SessionId 类型
+- `dsh-acp` - 会话身份、头与已提交事件的投影来源
+- `dsh-agent` - 复用 SessionId/SessionEvent/SessionLogOffset 会话身份与日志词汇，并依赖 agent.session 语义
+- `dsh-agent-instructions` - 读写会话表面历史以判定指令是否已注入，并在 step/end 边界触发刷新
+- `dsh-agent-loop` - 创建/恢复会话并把 agent 会话登记进 SessionStore
+- `dsh-agent-preset-registry` - 把预设选择写入会话日志
+- `dsh-api-job-controller` - 客户端会话身份类型
+- `dsh-api-session-controller` - 会话身份、事件与 fork 种子
+- `dsh-api-terminal-controller` - 会话身份类型
+- `dsh-api-workspace-controller` - 会话身份类型
+- `dsh-api-workspace-files` - 把会话身份解析为工作区根
+- `dsh-client-connection` - 共享客户端 SessionId/SessionEvent/StreamChunk 等协议类型
+- `dsh-client-file-upload` - 以 SessionId 寻址会话并观察 session/event 退役 receipt
+- `dsh-client-ui-agent-preset` - 会话标识类型
+- `dsh-client-ui-approval` - 会话标识类型
+- `dsh-client-ui-chat` - 会话事件与标识类型
+- `dsh-client-ui-commands` - 会话标识类型
+- `dsh-client-ui-conversation` - 会话标识类型
+- `dsh-client-ui-cordis` - 以 SessionId 标识会话作用域的运行卡片
+- `dsh-client-ui-deliverables` - 会话标识与事件类型
+- `dsh-client-ui-goal` - 会话标识类型
+- `dsh-client-ui-input-trigger` - 会话标识/上下文类型
+- `dsh-client-ui-jobs` - 会话标识类型
+- `dsh-client-ui-message-feedback` - 会话身份类型
+- `dsh-client-ui-model-selection` - 会话身份类型
+- `dsh-client-ui-plan` - 会话身份类型
+- `dsh-client-ui-schedule` - 会话身份与 surface 类型
+- `dsh-client-ui-session` - 会话身份类型
+- `dsh-client-ui-sidebar-documentpreview` - 会话 id 等类型
+- `dsh-client-ui-sidebar-files` - 会话 id 类型
+- `dsh-client-ui-sidebar-right` - SessionId 等类型
+- `dsh-client-ui-sidebar-terminal` - 会话标识类型
+- `dsh-client-ui-skill` - 会话标识类型
+- `dsh-client-ui-subagent` - 会话标识类型
+- `dsh-client-ui-trajectory` - 会话标识类型
+- `dsh-client-ui-user-questions` - 会话标识类型
+- `dsh-client-ui-workflow-run` - 成员子会话标识类型
+- `dsh-client-ui-workspace` - 会话标识类型
+- `dsh-command-feedback` - 向活会话追加 feedback/record 日志事件
+- `dsh-commands` - 把命令运行生命周期写入会话日志
+- `dsh-compaction-basic` - 直接读写会话表面的追加/替换事务与事件流，并在手动压缩后通过 sessions.flush 做持久化检查点
+- `dsh-compaction-image-offload` - 在会话表面上追加 image/offload 事件并注册纯函数消息投影，使卸载决策可重放且不改动节点身份
+- `dsh-compaction-tool-result-pruner` - 读取当前表面节点并按 surfaceOp 替换/追加会话事件，实现可重放的裁剪事务
+- `dsh-cordis-host-runner` - 运行与库存行以 SessionId 关联会话
+- `dsh-experimental-auto-review` - 读取会话事件日志并对受影响会话降级
+- `dsh-experimental-client-ui-agent-team` - 使用会话 id 类型与快照字段
+- `dsh-file-reference-local` - 订阅会话事件流以在工具结果提交后失效文件索引
+- `dsh-goal` - 以会话事件日志作为目标状态的唯一持久来源
+- `dsh-goal-round-driver` - 会话持久化检查点与基于事件流的轮次状态跟踪
+- `dsh-hook-protocol` - 追加 hook/invoked、hook/result 持久会话事件
+- `dsh-hooks-claude-code` - hook 上下文消息使用的会话消息类型
+- `dsh-hooks-codex` - hook 上下文消息使用的会话消息类型
+- `dsh-jobs-local` - 以会话 id 做作业访问隔离鉴权（assertAccess 越权拒绝）
+- `dsh-llm-retry` - 向会话日志追加持久重试事件并回放校验既有记录
+- `dsh-message-feedback` - 读取/追加会话事件并定位活会话
+- `dsh-permission-presets` - 记录预设选择与会话权限覆盖
+- `dsh-plan-mode` - 追加 plan/mode 事件供投影折叠与恢复
+- `dsh-plugin-package-inventory-deepseek` - 以 SessionId 类型标识请求所属会话
+- `dsh-repeat-tool-reminder` - 提醒消息所使用的会话消息类型
+- `dsh-sandbox-local` - 引用 SessionId 品牌以按会话/工作区对标记临时授权
+- `dsh-sandbox-policy` - 读取会话 cwd/日志并在事件上声明 sandbox/mode 事件类型
+- `dsh-schedule` - 以会话作为投递目标并强制送达前持久化
+- `dsh-sdk-jsonrpc-server` - 投影会话事件与生命周期到 SDK 结果
+- `dsh-session-checkpoint-policy` - 引用 Session 类型并对其调用 flush
+- `dsh-session-log-deepseek` - 从会话日志读取待上传事件并追加接受水位事件
+- `dsh-session-log-export` - 使用 SessionId/SessionHeader/SessionEvent/SessionStore 类型与 SESSION_FORMAT_VERSION 序列化日志
+- `dsh-session-persistence-jsonl` - 复用 SESSION_FORMAT_VERSION、SessionId/SessionLogOffset 与 Session 类型
+- `dsh-session-projection` - 以会话日志为唯一输入驱动投影并读取 seq/header 元数据
+- `dsh-session-projection-cache` - 以会话身份/日志水位作为缓存行匹配依据并做持久化屏障
+- `dsh-session-query-sqlite` - 读取 live 会话（ctx.sessions）并用 SessionHeader/SessionId/SessionSeq 类型构建索引
+- `dsh-session-reference` - 使用会话 id / 序列号等不透明标识类型区分源会话与捕获位置
+- `dsh-session-telemetry-otel` - 监听会话事件以判定 feedback 授权并捕获历史
+- `dsh-session-title` - 以会话日志为标题真相源并声明 session/title 事件类型
+- `dsh-session-title-all-prompts-llm` - 读取会话上下文以生成标题
+- `dsh-session-title-first-prompt-llm` - 读取会话上下文以生成标题
+- `dsh-session-turn-outline` - 复用 SessionSeq 与 SessionEvent 类型锚定轮次边界
+- `dsh-spill-policy` - 溢出归属 session id 的类型来源 (src/types.ts:16-25)
+- `dsh-subagent` - 读写会话事件、会话 id 与会话注册表
+- `dsh-subagent-acp` - 品牌化父命名空间的 run/子会话 id
+- `dsh-subagent-claude-code` - 品牌化 run id
+- `dsh-subagent-codex` - 品牌化 run id
+- `dsh-subagent-dsh-sdk` - 读取子会话事件与终态理由
+- `dsh-subagent-fork-in-process` - seed 事件的会话事件类型
+- `dsh-terminal-bash` - 订阅 session/event 校验 sandbox 模式切换
+- `dsh-time-context` - 倒序读取会话历史以收集本回合已进入的用户消息并定位回合起点
+- `dsh-token-meter` - 读取持久会话事件序列并做 surface 判定与表头规范化
+- `dsh-tool-goal` - 权威判定所需的会话事件与序列号类型
+- `dsh-tool-present` - 把交付声明持久化为 Session 事件
+- `dsh-tool-session-query` - 用 SessionSeq 品牌化事件序号、用 SessionId 标识目标会话
+- `dsh-tool-skill` - 用 SessionSeq 回溯 session 事件序列以构造既有目录历史 (src/index.ts:361-378)
+- `dsh-tool-subagent` - 会话身份与投影读取
+- `dsh-tool-subagent-control` - 子代理会话 id 类型
+- `dsh-tool-todo` - 耐久校验基于 session 事件日志
+- `dsh-tool-workflow` - 把运行记录写入会话并订阅会话事件做不变量折叠
+- `dsh-tools` - 复用会话消息类型并在 invariant 中读取会话校验工具调用
+- `dsh-user-approval` - 把审批审计对写入会话日志
+- `dsh-web-search-deepseek` - 向会话日志记录搜索请求（模型可见输入须可重建），并声明对应 SessionEventMap 事件
+- `dsh-webhook-github` - 声明式 peer 依赖（webhook 投递与会话生态保持一致）
+- `dsh-workflow-ptc` - 以 SessionId 标识子代理会话身份
+- `dsh-workspace` - 复用 SessionId/SessionHeader 类型与可选 sessions 服务，做会话存在性判定与 attach 时的 cwd 归属校验
+- `dsh-workspace-changes` - 按 Session 生命周期观察事件与释放记录器

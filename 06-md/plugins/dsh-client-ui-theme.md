@@ -1,40 +1,34 @@
 # dsh-client-ui-theme
 
 - 包名: `@deepseek-ai/dsh-client-ui-theme`
-- 分组: G26 客户端runtime
+- 分组: G06 客户端 UI 包
 - 拓扑层: Layer 12
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-theme`
 
-## 为什么需要它（设计初衷）
-主题插件：Host 引导预插件调色板、DOM-free ThemeRuntime（light/dark/system）、--dsw-* token 样式与 Appearance 设置行。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-theme/package.json
-
 ## 实现逻辑
-双面主题插件。node 半：ctx.inject(['settings']) 注册 THEME_SETTINGS_NAMESPACE 的 ThemeSettingsSchema；ctx.inject(['webServer']) 挂 tapIndex→injectBootTheme——在 body 后内联脚本按持久化偏好设置 colorScheme+data-ds-dark-theme（pre-plugin 预着色，system 在浏览器解析）。browser 半：ThemeRuntime——DOM-free（presenter 由 ui-layout 消费 snapshot），持有 prefers-color-scheme media query（system 偏好下 OS 切换触发 publish），register()/overrideTokens()（seq 序层折叠，later 层 per-token 胜出），setTheme 写 settingsScope；注册 'theme/change' 事件；把 AppearanceRow 注册进 settings.general.item slot（order 10）。styles/ 提供 --dsw-* token 与 base/design-platform/scrollbar/shiki CSS。
+浏览器主题注册表：ThemeRuntime 持有 light/dark/system 偏好、字号与 token 覆盖层，用 prefers-color-scheme 解析 system，发布不可变 ThemeSnapshot 并 emit 'theme/change'（src/client/index.ts:159-360）。apply 安装全局 --dsw-* 样式表、创建 ThemeRuntime 并 ctx.provide('theme')，再向 settings.general.item 注册 appearance 与 font-size 两行（src/client/index.ts:429-478）。Host 半 src/index.ts 通过 webserver/index-inject 注入 boot 调色板与字号脚本，避免首屏闪色（src/index.ts:39-43）。
 
 ## Provides
-- ctx.theme（ThemeRuntime/ThemeSnapshot）
-- 事件：theme/change
-- boot-theme 内联脚本（tapIndex 注入）
-- settings.general.item slot 行（id: 'appearance'）
-- 命名空间：settings.theme
-- --dsw-* token stylesheets
+- ctx.theme（主题服务：getTheme/setTheme/setFontSize/register/overrideTokens）
+- 事件 theme/change（主题或字号变更）
+- slot settings.general.item 的 appearance 与 font-size 设置行
+- Host 侧 webserver/index-inject 的 boot 主题行与 Config（preference/fontSize）
 
 ## Depends On (上游依赖)
-- `dsh-api-remotes` [运行时依赖] - settings 刷新 remote 通道
-  - 证据: `packages/client/ui-theme/src/client/index.ts:376（inject ['remote']）`
-- `dsh-client-connection` [运行时依赖] - 传输/remote 通道
-  - 证据: `packages/client/ui-theme/src/client/index.ts:376（inject ['connection']）`
-- `dsh-client-locale` [编译依赖] - locale Context 合并（ctx.locale）
-  - 证据: `packages/client/ui-theme/src/client/index.ts:17（import type {} from '@deepseek-ai/dsh-client-locale/client'）；package.json peerDependencies + dsh.client.inject 含 locale`
-- `dsh-client-runtime` [编译依赖] - ClientContext/slots 服务
-  - 证据: `packages/client/ui-theme/src/client/index.ts:12（import type { ClientContext, SettingsScope } from '@deepseek-ai/dsh-client-runtime/client'）；package.json dsh.client.inject 含 runtime`
-- `dsh-client-ui-settings` [运行时依赖] - 持久化主题偏好（settings 文档）
-  - 证据: `packages/client/ui-theme/src/client/index.ts:376（inject ['settingsScope']）、:385（ctx.settingsScope.bind({namespace})）`
+- `dsh-client-locale` [E1+E2] - 注册 settings.theme 字典
+  - 证据: `src/client/index.ts:16 + src/client/index.ts:435 ctx.locale.register`
+- `dsh-client-ui-renderer` [编译依赖] - 拉入 SlotRegistry 服务合并类型
+  - 证据: `src/client/index.ts:18 import type`
+- `dsh-client-ui-settings` [E1+E2] - 读取/持久化主题偏好并注册 settings.general.item 槽
+  - 证据: `src/client/index.ts:14 import type + src/client/index.ts:431 ctx.configForms.get`
+- `dsh-host-webserver` [E1+E2] - 向 HTML index 注入 boot 主题样式与脚本
+  - 证据: `src/index.ts:9 import type + src/index.ts:41 ctx.on('webserver/index-inject')`
+- `dsh-settings` [E1+E2] - Host 侧设置作用域配置（关闭自动保存）
+  - 证据: `src/index.ts:2 import type + src/index.ts:40 child.settings.configure`
 
 ## Dependents (下游被依赖)
-- `dsh-client-ui-layout` - ctx.theme 服务与主题事件流
-- `dsh-cordis-client-runner` - 动态包可经 ctx.theme.overrideTokens 挂 token 覆盖层
+- `dsh-client-ui-layout` - 读取主题快照并订阅主题变化以投影到 DOM
+- `dsh-client-ui-settings-account` - 主题区分账户界面外观
+- `dsh-client-ui-sidebar-terminal` - 终端配色跟随全局主题快照，订阅 theme/change
+- `dsh-cordis-client-runner` - 动态半渲染时读取主题令牌

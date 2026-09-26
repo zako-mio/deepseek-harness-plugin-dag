@@ -1,37 +1,33 @@
 # dsh-client-web
 
 - 包名: `@deepseek-ai/dsh-client-web`
-- 分组: G26 客户端runtime
-- 拓扑层: Layer 14
-- 来源层: L2 web-app
+- 分组: G05 客户端运行时
+- 拓扑层: Layer 2
+- 来源层: L3 其余
 - 源码路径: `packages/client/web`
 
-## 为什么需要它（设计初衷）
-Web shell 内核 bootWebShell（模块持有+种子表+两阶段启动+AppRoot 门+app-shell 组装入口），由 apps/web vite 入口消费。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/web-react/README.md
-- https://www.npmjs.com/package/@deepseek-ai/dsh-client-web
-
 ## 实现逻辑
-Web shell kernel（import 底座，无 cordis 行）。AppWebEntry.run() 两阶段启动：① module 面——parseBootManifest 解析 window.__DSH_BOOT__，构建 ClientModuleSystem（modules+staticModules seed 表+loadBundle seams），registerStatic(APP_SHELL_ID, AppShell) 与 MODULES_ID，渲染 AppRoot loading 页；② plugin 面——ctx.plugin(Loader) 后 loader.internal=modules（internal 契约先于任何 entry 注入），订阅 internal/status 投影，await immediately 层 prefetch，创建 [MODULES_ID, ...plugin rows, APP_SHELL_ID] 每行一个 loader entry，loader.await()+assertEntriesActive 全 ACTIVE sweep（fail-loud 列出 pending 缺服务），flip settled。AppRoot 门：boot settled 前只渲染 loading/failure 报告，settled 后调 app-shell 的 renderApp()→ctx.slots.renderSlot('root')。
+Web 壳库入口导出 `AppWebEntry`、静态模块表与 index 注入应用器 (src/index.ts:9-12)。`AppWebEntry.run` 等待 boot-ready、从 `__ModuleLoader__` 创建模块系统与 manifest、预取 immediate 层，再以 `bootClient` 组装 Cordis Loader 激活全部客户端条目，最后用 `mountClient` 交接渲染器 (src/boot.ts:49-103)。`bootClient` 把 Loader 挂到模块系统并逐行 create、await，随后 `assertEntriesActive` 审计失败/待服务条目并抛聚合错误 (src/boot-client.ts:36-89)；`mountClient` 以 `uiRenderer` 依赖 fiber 挂载应用 (src/mount.ts:19-24)。
 
 ## Provides
-- AppWebEntry（boot kernel）
-- AppRoot 门组件
-- app-shell 装配 entry（APP_SHELL_ID='@deepseek-ai/dsh-client-app-shell'）
-- getStaticModules seed 表
-- PLATFORM_MODULES（平台字表）
+- AppWebEntry (Web 壳启动入口：模块系统+HMR 交接+应用挂载)
+- 客户端静态模块表与平台模块词表 (PLATFORM_MODULES/PRELOADED_CLIENT_EXTERNALS)
+- bootClient/assertEntriesActive/mountClient 组装与激活审计
+- applyIndexInjections (消费 webserver index 注入表)
 
 ## Depends On (上游依赖)
-- `dsh-client-modules` [编译依赖] - 模块表内核（bootstrap 例外）
-  - 证据: `packages/client/web/src/boot.tsx:38-42（import { ClientModuleSystem, parseBootManifest } from '@deepseek-ai/dsh-client-modules/client'）；package.json dependencies`
-- `dsh-client-runtime` [编译依赖] - SlotMap 'root' 声明合并（类型面）
-  - 证据: `packages/client/web/src/app.tsx:13（import type {} from '@deepseek-ai/dsh-client-runtime/client'）`
-- `dsh-client-ui-layout` [运行时依赖] - AppFrame 在 root slot 注册，shell 只做 ctx 级 renderSlot
-  - 证据: `packages/client/web/src/app-shell.ts:30（inject ['layout']）`
-- `dsh-cordis-host-runner` [运行时依赖] - vendored Loader 挂载与 entry 创建
-  - 证据: `packages/client/web/src/boot.tsx:163（await ctx.plugin(Loader)）、:198（loader.create({name})）`
+- `cordis-plugin-loader` [E1+E2] - 在浏览器端挂载 Loader 并逐行激活客户端插件
+  - 证据: `src/boot-client.ts:8 + src/boot-client.ts:38 ctx.plugin(Loader) + src/boot-client.ts:40 loader.internal`
+- `dsh-client-modules` [编译依赖] - 以客户端模块系统作为 loader.internal 并消费其 manifest/图
+  - 证据: `src/boot.ts:11 + src/boot-client.ts:9`
+- `dsh-client-ui-dockkit` [编译依赖] - 种子静态模块表内联 dockkit 布局库
+  - 证据: `src/seed.ts:17`
+- `dsh-client-ui-primitives` [编译依赖] - 种子静态模块表内联 UI 原语库
+  - 证据: `src/seed.ts:16`
+- `dsh-client-ui-renderer` [E1+E2] - 交接挂载点给 UI 渲染器，随其替换重挂
+  - 证据: `src/mount.ts:7 + src/mount.ts:20 ctx.inject(['uiRenderer'])`
+- `dsh-host-webserver` [编译依赖] - 消费 webserver index 注入表以应用脚本/全局注入
+  - 证据: `src/apply-injections.ts:7`
 
 ## Dependents (下游被依赖)
-- 无下游（叶子/被消费端）
+- `dsh-experimental-webworker-runtime` - 复用 Client web 侧的 index injection 定义

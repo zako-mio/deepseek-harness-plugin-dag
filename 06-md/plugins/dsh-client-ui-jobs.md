@@ -1,34 +1,32 @@
 # dsh-client-ui-jobs
 
 - 包名: `@deepseek-ai/dsh-client-ui-jobs`
-- 分组: G27 会话交互UI
-- 拓扑层: Layer 15
+- 分组: G06 客户端 UI 包
+- 拓扑层: Layer 14
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-jobs`
 
-## 为什么需要它（设计初衷）
-会话头后台任务列表：从 session/jobs 帧镜像实时注册表状态，展示后台 job 进度。RC7 改用 useDismissOnOutsidePointer 处理外部点击关闭。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-jobs/package.json
-
 ## 实现逻辑
-session-header 后台作业列表。JobListAction 注册进 conversation.session.header.actions（id=job-list, order=20 位于 subagent catalog 之后）；数据完全来自 sessions list 镜像的 jobsBySession（useSessions(state => state.jobsBySession[sessionId])），不发任何 RPC、不持自身状态（仅 popover 可见性）；按 live/settled 排序渲染状态点（running/stopping/completed/killed/failed）+ 时长。RC7：popover 外部点击关闭改 useDismissOnOutsidePointer(自 ui-primitives)。
+在会话头动作带注册一个后台作业列表入口：apply 注册 job 字典后，用 slots.inject 把 JobListAction 以 order 20 注册进 'conversation.session.header.actions'（排在 preset 标签之后）(src/client/index.ts:33-52)。注入面只经 ctx.jobs（jobs 客户端服务）取 hooks.jobs 与 watchRows/observe/kill，不自行持有传输状态；killJob 在返回前把注册表 id 以 JobId 品牌盖回 (src/client/index.ts:43-50)。宿主半为空 apply，仅作 Loader row (src/index.ts:9)。
 
 ## Provides
-- conversation.session.header.actions id=job-list(JobListAction)
+- slot: conversation.session.header.actions#job-list (order 20 的后台作业列表与流式记录面板)
+- Locale 命名空间 job
+- 上抛 JobListActionProps/JobListInjected 类型
 
 ## Depends On (上游依赖)
-- `dsh-client-locale` [编译依赖] - job 命名空间字典
-  - 证据: `index.ts:9 type-only + index.ts:29 locale.register`
-- `dsh-client-runtime` [运行时依赖] - jobsBySession 列表镜像（dsh-jobs 注册的会话数据）
-  - 证据: `index.ts:7 ClientContext + JobListAction.tsx:95 useSessions(state => state.jobsBySession[sessionId]) + JobListAction.tsx:2 JobView`
-- `dsh-client-ui-conversation` [编译依赖] - 消费 header actions 座位声明
-  - 证据: `index.ts:30-39 注册 conversation.session.header.actions + JobListAction.tsx:6 type-only + package.json:54 peerDependencies`
-- `dsh-client-ui-primitives` [编译依赖] - 状态点/图标 atoms
-  - 证据: `JobListAction.tsx:3 StateDot,IconChevronDownOutline14`
-- `dsh-client-ui-slots` [编译依赖] - props 类型与 slot 注册
-  - 证据: `JobListAction.tsx:4 PropsLocale/PropsRuntime/TranslateNS`
+- `dsh-api-job-controller` [运行时依赖] - 作业注册表、观察流与 kill 的客户端服务
+  - 证据: `src/client/JobListAction.tsx:2 + src/client/index.ts:11 (ctx.jobs 服务来源)`
+- `dsh-client-locale` [运行时依赖] - 注册作业字典
+  - 证据: `src/client/index.ts:12 + src/client/index.ts:34 ctx.locale.register(NS)`
+- `dsh-client-ui-conversation` [运行时依赖] - 依赖 Conversation 声明的会话头动作槽
+  - 证据: `src/client/JobListAction.tsx:10 + src/client/index.ts:36 (conversation.session.header.actions 槽声明方)`
+- `dsh-client-ui-renderer` [编译依赖] - 引入 slots 服务声明
+  - 证据: `src/client/index.ts:13 merge`
+- `dsh-client-ui-session` [编译依赖] - 会话 UI 声明合并
+  - 证据: `src/client/index.ts:14 merge`
+- `dsh-session` [编译依赖] - 会话标识类型
+  - 证据: `src/client/JobListAction.tsx:3 import SessionId from @deepseek-ai/dsh-session`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

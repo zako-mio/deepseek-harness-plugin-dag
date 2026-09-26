@@ -1,0 +1,147 @@
+[
+  {
+    "id": "dsh-lsp-stdio",
+    "name": "@deepseek-ai/dsh-lsp-stdio",
+    "implementation": "通用 stdio 语言服务器后端：apply() 先经 ctx.subprocess.resolveExecutable 解析每个配置项的可执行文件，再为每个条目构造 LocalLspProvider 并通过 ctx.lsp.registerProvider 注册，注册失败逆序回滚（src/index.ts:126-186）。每个 Provider 按规范工作区单一实例池化，经 ctx.fs 读源码、经 ctx.subprocess 惰性拉起进程并服务只读查询，选中传输在下次查询前或期间故障时透明替换一次（src/index.ts:216-380、src/host.ts:32-120）。LspInstance 拥有 initialize 握手、串行队列、瞬时 didOpen→request→didClose 与有界 teardown（src/instance.ts:110-320）；LspConnection 实现 Content-Length 分帧 JSON-RPC 与 id 关联（src/connection.ts:66-317、src/framing.ts:30-87）。",
+    "provides": [
+      "ctx.lsp (stdio 本地语言服务器 Provider 实现：按 provider id 注册、每规范工作区惰性单飞一个进程并服务只读查询，src/index.ts:171-185)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-lsp", "mechanism": "E1+E2", "evidence": "src/index.ts:16 import LspError/LspProviderId + src/index.ts:47 inject 'lsp' + src/index.ts:174 ctx.lsp.registerProvider", "purpose": "向 ctx.lsp seam 注册本地 Provider 并实现其 LspProvider 接口"},
+      {"plugin_id": "dsh-subprocess", "mechanism": "E1+E2", "evidence": "src/connection.ts:14 type import SubprocessHandle/SpawnSpec + src/index.ts:47 inject 'subprocess' + src/index.ts:146 resolveExecutable、src/index.ts:157 ctx.subprocess.spawn", "purpose": "解析并启动/终止语言服务器子进程（凭据擦洗由 seam 负责）"},
+      {"plugin_id": "dsh-fs", "mechanism": "E1+E2", "evidence": "src/host.ts:4 type import FileSystem/FsTarget + src/index.ts:47 inject 'fs' + src/index.ts:154 ctx.fs", "purpose": "经 fs seam 解析工作区身份并读取有界源码文件"},
+      {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "src/abort.ts:6 timeoutOf + src/index.ts:22 MAX_TIMER_DELAY_MS + src/instance.ts:16 deadline", "purpose": "查询取消分类与关闭/取消宽限期的时间预算"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/translate.ts:15 assertNever", "purpose": "封闭联合的穷尽性断言"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-lsp",
+    "name": "@deepseek-ai/dsh-tool-lsp",
+    "implementation": "面向模型的 `lsp` 工具：apply() 校验配置后注册 systemPrompt 的 tool:lsp 指导段，并用 ctx.tools.register 注册一个含四种只读操作（goToDefinition/findReferences/goToImplementation/hover）的工具（src/index.ts:97-232）。execute() 经 parseLspArgs 把模型的一基 UTF-16 坐标转成 seam 的零基位置（src/render.ts:46-59），强制要求会话工作区 cwd 否则抛 LSP_WORKSPACE_REQUIRED（src/session-cwd.ts:15-16、src/index.ts:185-188），并调用 ctx.lsp.query 等待结果（src/index.ts:189-194）。render.ts 纯函数把结果按文件分组渲染、按 maxLocations/maxResultChars 截断，并把 file: URI 解析为工作区相对路径（src/render.ts:85-164）。",
+    "provides": [
+      "ctx.tools 的 `lsp` 工具（四操作精确代码导航，含一基/零基坐标换算与结果截断，src/index.ts:109-231）",
+      "systemPrompt `tool:lsp` 段（何时用 lsp 而非文本检索的定位指导，src/index.ts:103-107）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "src/index.ts:15 import defineTool + src/index.ts:47 inject 'tools' + src/index.ts:109 ctx.tools.register", "purpose": "定义并注册 lsp 工具与其输出 schema/渲染"},
+      {"plugin_id": "dsh-lsp", "mechanism": "E1+E2", "evidence": "src/index.ts:16 import LspError + src/index.ts:47 inject 'lsp' + src/index.ts:189 ctx.lsp.query", "purpose": "经 lsp seam 执行语言服务器查询"},
+      {"plugin_id": "dsh-system-prompt", "mechanism": "E2", "evidence": "src/index.ts:47 inject 'systemPrompt' + src/index.ts:103 ctx.systemPrompt.section", "purpose": "注入 lsp 工具的模型可见使用指导段落"},
+      {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "src/index.ts:18 MAX_TIMER_DELAY_MS", "purpose": "校验工具超时预算不超过 Node 时钟上限"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/index.ts:19 assertNever", "purpose": "输出与结果封闭联合的穷尽性断言"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-mcp-client",
+    "name": "@deepseek-ai/dsh-mcp-client",
+    "implementation": "外部 MCP 服务器桥接：apply() 先解析重连策略、以 WeakMap 按注册作用域预留 serverName 命名空间，再由 startConnection 建立受监督连接并 registerServerContext 发布资源与指令，最后 await ready 以在激活前完成首连与工具同步（src/index.ts:154-203、src/connection.ts:127-409）。syncTools 拉取 tools/list，并以 mcp__<serverName>__<rawName> 公开名注册到 ctx.tools；注册冲突整代回滚（全有或全无）（src/tools.ts:113-162）。transport.ts 按 config 构造 stdio（经 dsh-subprocess 擦洗父环境）或 Streamable HTTP 传输（src/transport.ts:21-46）。连接断开时按有界指数退避重启，超预算则注销工具（src/connection.ts:211-245）。",
+    "provides": [
+      "ctx.tools 的 mcp__<serverName>__<rawName> 工具集（外部 MCP 工具桥接，src/tools.ts:149-151）",
+      "ctx.mcpResources 注册（把连接代次的资源访问暴露给资源工具，src/server-context.ts:28-31）",
+      "systemPrompt `mcp:<server>` 段（服务端指令原文，src/server-context.ts:32-38）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "src/index.ts:24 type import + src/index.ts:34 inject 'tools' + src/tools.ts:150 ctx.tools.register", "purpose": "把发现的 MCP 工具注册进 harness 工具运行时"},
+      {"plugin_id": "dsh-mcp-resources", "mechanism": "E1+E2", "evidence": "src/server-context.ts:8 type McpResourceProvider + src/server-context.ts:29 ctx.inject(['mcpResources'])", "purpose": "向资源运行时发布本连接的资源请求能力"},
+      {"plugin_id": "dsh-system-prompt", "mechanism": "E1+E2", "evidence": "src/server-context.ts:9 type import + src/server-context.ts:32 inner.systemPrompt.section", "purpose": "把服务端 attributed instructions 写入系统提示段"},
+      {"plugin_id": "dsh-attachment", "mechanism": "E1+E2", "evidence": "src/tools.ts:19 import isImageAdmissionError + src/tools.ts:353 ctx.get('attachments')", "purpose": "校验图像准入并把 MCP 图像结果持久化为附件"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1+E2", "evidence": "src/tools.ts:21 type ContentBlock + src/tools.ts:358 ctx.get('llm')、src/tools.ts:364 llm.resolveModelInfo", "purpose": "校验当前模型路由声明了图像输入能力"},
+      {"plugin_id": "dsh-scope", "mechanism": "E1", "evidence": "src/index.ts:18 scopeOf", "purpose": "按注册作用域隔离 serverName 与 Agent 级命名空间复用"},
+      {"plugin_id": "dsh-subprocess", "mechanism": "E1", "evidence": "src/transport.ts:12 scrubbedParentEnv", "purpose": "stdio 传输复用子进程 seam 的凭据擦洗环境定义"},
+      {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "src/index.ts:19 MAX_TIMER_DELAY_MS + src/connection.ts:22 MAX_TIMER_DELAY_MS", "purpose": "重连退避与超时字段的上界校验"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/connection.ts:20 assertNever/JsonValue + src/tools.ts:25 type JsonValue", "purpose": "资源请求封闭联合断言与 JSON 值类型"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-mcp-resources",
+    "name": "@deepseek-ai/dsh-mcp-resources",
+    "implementation": "McpResourceRuntime 继承 Service 并声明 ctx.mcpResources，以 ScopedLayers/NamedEntries 按作用域存放各 MCP 连接的资源 provider；某作用域首个 provider 注册时挂载三条共享工具，末个移除时同步卸载（src/index.ts:36-119）。request() 先按 exec.agent 的可视作用域解析目标 server，找不到即报错，再把操作委托给 provider（src/index.ts:122-126）。tools.ts 定义 list_mcp_resources、list_mcp_resource_templates、read_mcp_resource 三工具并适配模型参数（src/tools.ts:31-63）；render.ts 以 JSON replacer 把 blob 二进制替换为描述文本，避免其进入模型历史（src/render.ts:16-23）。",
+    "provides": [
+      "ctx.mcpResources (作用域化 MCP 资源运行时，含三条 list/read 资源工具，src/index.ts:47-127)",
+      "systemPrompt `mcp-resource-servers` 段（列出当前作用域可用资源服务器名，src/index.ts:59-71）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-scope", "mechanism": "E1", "evidence": "src/index.ts:8 createScope/NamedEntries/ScopedLayers/scopeOf", "purpose": "按 Agent 作用域分层保存与合并资源 provider"},
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "src/tools.ts:8 import defineTool + src/index.ts:49 static inject ['tools'] + src/tools.ts:33 ctx.tools.register", "purpose": "注册并注销三条共享资源工具"},
+      {"plugin_id": "dsh-system-prompt", "mechanism": "E1+E2", "evidence": "src/index.ts:11 type import + src/index.ts:59 ctx.inject(['systemPrompt'])", "purpose": "发布资源服务器清单提示段"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "src/render.ts:7 type ContentBlock", "purpose": "把资源结果投影为核心内容块"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/index.ts:9 type JsonValue + src/render.ts:8 + src/tools.ts:9", "purpose": "资源操作结果的无损 JSON 值类型"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-plan-mode",
+    "name": "@deepseek-ai/dsh-plan-mode",
+    "implementation": "PlanModeController 注册 `plan` 会话投影，折叠 command/run、command/done、plan/mode、request/header 事件以还原模式状态与待选意图（src/index.ts:137-169）。用户切换经 pendingIntents 暂存，仅在下一个被接受的 in-turn agent/pre-step 里 append plan/mode 并附模式切换叙述（src/index.ts:197-214、:419-454）。服务同时注册仅激活时渲染的 plan:policy 提示段（src/index.ts:217-225）、条件注入的 /plan on|off 命令（src/index.ts:230-276）与常驻 exit_plan_mode 工具——后者经 userQuestions 呈现计划评审，批准则排队退出（src/index.ts:278-366）。invariant.ts 校验 plan/mode 的 active 必须是布尔（src/invariant.ts:20-49）。",
+    "provides": [
+      "ctx.planMode (日志化计划协作状态控制器，src/index.ts:59-61、:176-469)",
+      "sessionProjections `plan` 投影（cropped {active,pending}，src/index.ts:227、:137-169）",
+      "ctx.tools 的 `exit_plan_mode` 工具（提交计划供用户评审，src/index.ts:278-366）",
+      "ctx.commands 的 `/plan` 命令（on/off 与消息附带，条件注册，src/index.ts:230-276）",
+      "systemPrompt `plan:policy` 段（部署自有计划指导，仅激活时渲染，src/index.ts:217-225）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "src/index.ts:33 import defineTool + src/index.ts:177 inject 'tools' + src/index.ts:278 ctx.tools.register", "purpose": "注册常驻的 exit_plan_mode 工具"},
+      {"plugin_id": "dsh-session-projection", "mechanism": "E1+E2", "evidence": "src/index.ts:36-37 type import ProjectionDefinition + src/index.ts:227 ctx.sessionProjections.register + src/index.ts:374 stateOf", "purpose": "注册 plan 投影并读取 plan/turnBoundary 状态"},
+      {"plugin_id": "dsh-commands", "mechanism": "E1+E2", "evidence": "src/index.ts:35 type import CommandDefinitionId + src/types.ts:11 CommandId + src/index.ts:230 ctx.inject(['commands'])", "purpose": "注册 /plan 命令并关联命令生命周期事件"},
+      {"plugin_id": "dsh-user-questions", "mechanism": "E1+E2", "evidence": "src/index.ts:34 import UserQuestionError + src/index.ts:303 ctx.get('userQuestions')", "purpose": "呈现计划评审问答通道"},
+      {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "src/index.ts:29 type import Agent/PreStepDecision + src/index.ts:202 agent.session", "purpose": "阅读并驱动 Agent 的会话与预备步决策"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "src/index.ts:32 type Session/UserMessage + src/invariant.ts:4 + src/index.ts:434 session.append('plan/mode')", "purpose": "追加 plan/mode 事件供投影折叠与恢复"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "src/index.ts:30 import createUserMessage + src/index.ts:31 type ContextFormed", "purpose": "构造模式切换的用户叙述消息"},
+      {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "src/index.ts:26 brandString", "purpose": "品牌化命令 definitionId"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E1+E2", "evidence": "src/invariant.ts:5 type InvariantInstaller + src/invariant.ts:49 ctx.invariants.register", "purpose": "注册 plan/mode 载荷校验不变式"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-agent-preset",
+    "name": "@deepseek-ai/dsh-agent-preset",
+    "implementation": "作为普通 Cordis 组合中的一行声明式预设：default-export AgentPreset，static inject=['agentPresets']，并设 EntryGroup.key=true 以在其插件激活前保留子表达式（src/index.ts:12-15、:25）。Config 用 schemastery 校验 id/name/description/order 与必填 plugins 数组（src/index.ts:16-23）。初始化时 [Service.init] 调用 ctx.agentPresets.register(this.config) 并把返回的注销器 yield 给 Cordis 以供回收（src/index.ts:27-29）。",
+    "provides": [
+      "预设声明行（把子插件清单注册进 ctx.agentPresets，src/index.ts:27-29）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-agent-preset-registry", "mechanism": "E1+E2", "evidence": "src/index.ts:5-6 type import PresetDefinition + src/index.ts:13 static inject 'agentPresets' + src/index.ts:28 ctx.agentPresets.register", "purpose": "把本行声明的预设定义提交给注册表激活"},
+      {"plugin_id": "cordis-plugin-loader", "mechanism": "E1", "evidence": "src/index.ts:3 import EntryGroup", "purpose": "借用 EntryGroup 语义保留声明式子插件表达式"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-agent-preset-registry",
+    "name": "@deepseek-ai/dsh-agent-preset-registry",
+    "implementation": "AgentPresetRegistry 为 TypertRemoteService，构造时注册 agentPreset 投影并监听 session/event 转发 agent-preset/selected（src/index.ts:63-71、src/session.ts:35-44）。register() 立即激活定义，activate() 在独立 scope 内用 mountPreset 挂载 Loader 子树，失败则记录 broken 并 dispose scope（src/index.ts:80-118、src/mount.ts:258-272）。mount()/bind() 以 bindScopeParent 把 Agent scope 绑到保留的 standing revision，用引用计数 collect 回收，composeFrom 让子 Agent 继承父的精确版次（src/index.ts:208-284）。auditRows 与 leakedServices 审计行可用性与根域服务泄漏（src/mount.ts:86-212）；invariant.ts 在 internal/service 与 system-prompt/assemble 复核隔离与绑定（src/invariant.ts:33-59）。",
+    "provides": [
+      "ctx.agentPresets (Agent 预设注册表：激活/绑定/选择与 composition 读取，src/index.ts:51-365)",
+      "sessionProjections `agentPreset` 投影（会话实际运行的预设定，src/index.ts:66、src/session.ts:35-44）",
+      "Remote 方法 list/read/select（客户端花名册读取与选择，src/index.ts:170-206、:318-334）"
+    ],
+    "depends_on": [
+      {"plugin_id": "cordis-plugin-loader", "mechanism": "E1+E2", "evidence": "src/index.ts:52 inject 'loader' + src/composition-inventory.ts:3 EntryTree/isJsExpr + src/mount.ts:3 EntryTree + src/index.ts:137 this.owner.loader.await()", "purpose": "挂载、审计并定位预设的 Loader entry 树"},
+      {"plugin_id": "cordis-plugin-include", "mechanism": "E1", "evidence": "src/index.ts:6 import entryListSchema", "purpose": "以 Loader dialect 序列化预设声明的 entry 列表供查看"},
+      {"plugin_id": "dsh-scope", "mechanism": "E1", "evidence": "src/index.ts:5 bindScopeParent/createScope/scopeOf + src/mount.ts:6 scopeOf/scopeParentOf", "purpose": "建立 Agent scope 与 preset standing scope 的父子绑定关系"},
+      {"plugin_id": "dsh-typert-protocol", "mechanism": "E1", "evidence": "src/index.ts:4 import Remote/RemoteError/TypertRemoteService + src/index.ts:51 extends TypertRemoteService", "purpose": "暴露 Remote 方法与远程错误语义"},
+      {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "src/index.ts:8 type import Agent + src/index.ts:325 agent.ctx、src/index.ts:326 agent.session", "purpose": "绑定并读取活动 Agent 的预设版次"},
+      {"plugin_id": "dsh-session-projection", "mechanism": "E1+E2", "evidence": "src/index.ts:66 ctx.sessionProjections.register + src/session.ts:17 type ProjectionDefinition + src/index.ts:321 stateOf", "purpose": "注册 agentPreset 投影并读取 turnBoundary 判定空会话"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "src/types.ts:2 type SessionId + src/index.ts:326 agent.session.append('agent-preset/selected')", "purpose": "把预设选择写入会话日志"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E1+E2", "evidence": "src/invariant.ts:7 type InvariantInstaller + src/invariant.ts:68 ctx.invariants.register", "purpose": "注册预设隔离与 Agent 绑定不变式"},
+      {"plugin_id": "dsh-system-prompt", "mechanism": "E1+E2", "evidence": "src/invariant.ts:10 type import + src/invariant.ts:48 ctx.on('system-prompt/assemble')", "purpose": "在模型组装水线校验 Agent 已加入某预设"},
+      {"plugin_id": "dsh-settings", "mechanism": "E2", "evidence": "src/index.ts:10 type import + src/index.ts:67 ctx.inject(['settings'], ...) settings.configure({ auto: false })", "purpose": "关闭 settings 自动持久化以自管 selectedDefault"},
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "src/index.ts:11 type import + src/index.ts:308 this.owner.emit('tools/change')", "purpose": "预设重绑后通知工具目录变更"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-persona",
+    "name": "@deepseek-ai/dsh-persona",
+    "implementation": "作用域级 persona 行：inject=['systemPrompt']，apply() 用 ctx.effect 注册 deployment:persona-prefix 段（order 取 DEPLOYMENT_PERSONA_PREFIX，complete 时令其为完整系统提示）与 deployment:persona-suffix 段（order 取 DEPLOYMENT_PERSONA_SUFFIX）（src/index.ts:62-73）。当 includeRuntimeContext 为假时调用 ctx.systemPrompt.suppressRuntimeContext() 抑制该作用域的运行时上下文快照（src/index.ts:74）。因 dsh-system-prompt 无条件注册部署 persona，本行只能挂载在 agent preset 作用域内遮蔽之，全局挂载会冲突失败（src/index.ts:1-14）。",
+    "provides": [
+      "systemPrompt `deployment:persona-prefix` / `deployment:persona-suffix` 段（作用域级 persona 覆盖，src/index.ts:63-73）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-system-prompt", "mechanism": "E1+E2", "evidence": "src/index.ts:18-19 import PERSONA_PREFIX_SECTION/PERSONA_SUFFIX_SECTION + src/index.ts:27 inject 'systemPrompt' + src/index.ts:63 ctx.systemPrompt.section", "purpose": "注册 persona 段落并抑制运行时上下文"}
+    ],
+    "dependents": []
+  }
+]

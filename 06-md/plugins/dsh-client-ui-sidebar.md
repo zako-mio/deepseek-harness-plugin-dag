@@ -1,38 +1,38 @@
 # dsh-client-ui-sidebar
 
 - 包名: `@deepseek-ai/dsh-client-ui-sidebar`
-- 分组: G29 UI底座
+- 分组: G06 客户端 UI 包
 - 拓扑层: Layer 14
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-sidebar`
 
-## 为什么需要它（设计初衷）
-侧边栏插件：会话多级树、搜索、分组、状态点，组织会话导航。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-sidebar/package.json
-
 ## 实现逻辑
-侧栏外壳。SidebarRoot 注册进 layout 声明的 'sidebar' slot，并声明三个 child：sidebar.workspaces（whole browsing region，ui-workspace 占据）、sidebar.settings（ui-settings 占据）、sidebar.footer.action（list，ui-cordis 等注册）；inject 提供 startSession（ctx.workspaces.startSession，当前 Workspace→最近回退）与 toggleSidebar（ctx.layout.toggleSidebar）。
+浏览器半注册 `sidebar` 槽并声明 brand.mark/brand.name/toggle.badge/panellist/workspaces/settings/footer.action 子槽（src/client/index.ts:72-85）。它把 `sidebar.panellist` 台账投影为有序面板元数据快照，并在台账或 locale 变化时重算（src/client/index.ts:47-62）。注入面暴露 startSession（经 uiWorkspace 共享动作，src/client/index.ts:45、67）、toggleSidebar/selectPanel（经 ctx.layout，src/client/index.ts:68-69）与 shortcuts 目录（src/client/index.ts:70）；同一注入面还被 `shell.leading` 头部控件复用（src/client/index.ts:90-94）。node half 为空 apply（src/index.ts:4）。
 
 ## Provides
-- slot 声明: sidebar.workspaces(single/root), sidebar.settings(single/root), sidebar.footer.action(list/root)
-- SidebarRoot 外壳（含折叠 rail）
+- sidebar locale 命名空间字典
+- sidebar 槽位占用者（侧边栏外壳），声明 sidebar.brand.mark / sidebar.brand.name / sidebar.toggle.badge / sidebar.panellist / sidebar.workspaces / sidebar.settings / sidebar.footer.action 子槽
+- shell.leading 槽的头部前置控件（折叠侧栏 / 新建会话，用于 macOS 隐藏侧栏场景）
+- sidebar.panellist 台账投影为有序面板元数据 observable 源
 
 ## Depends On (上游依赖)
-- `dsh-client-locale` [编译依赖] - sidebar 命名空间字典
-  - 证据: `index.ts:4 type-only + index.ts:32 locale.register`
-- `dsh-client-runtime` [运行时依赖] - 新会话创建与工作区服务
-  - 证据: `index.ts:26 inject sessions/workspaces + index.ts:37 ctx.workspaces.startSession`
-- `dsh-client-ui-layout` [编译依赖] - 消费 sidebar 列座位与 ctx.layout 面板动作
-  - 证据: `index.ts:41-53 注册 'sidebar'（layout 声明的 child）+ package.json:36 dsh.client.inject + index.ts:38 ctx.layout.toggleSidebar()`
-- `dsh-client-ui-primitives` [编译依赖] - UI atoms
-  - 证据: `package.json:53 peerDependencies`
-- `dsh-client-ui-slots` [编译依赖] - slot 注册与 child 声明
-  - 证据: `contract/slots.ts 类型 + slots.register API`
+- `dsh-api-workspace-controller` [编译依赖] - startSession 的 workspace 参数类型
+  - 证据: `src/client/contract/slots.ts:12 import type WorkspaceId`
+- `dsh-client-locale` [E1+E2] - 注册并绑定 sidebar 文案，并订阅 locale 变化重算面板标签
+  - 证据: `src/client/index.ts:7 type-only import + src/client/index.ts:46 ctx.locale.register`
+- `dsh-client-shortcuts` [E1+E2] - 把快捷键目录快照交给侧边栏展示
+  - 证据: `src/client/contract/slots.ts:13 import type ShortcutCatalogEntry + src/client/index.ts:70 ctx.shortcuts.catalog`
+- `dsh-client-ui-layout` [E1+E2] - 经布局服务切换/选择面板并引用面板 id 类型
+  - 证据: `src/client/index.ts:5 import type MainPanelId + src/client/index.ts:68 ctx.layout.toggleSidebar`
+- `dsh-client-ui-renderer` [编译依赖] - 引入 ctx.slots 合并
+  - 证据: `src/client/index.ts:9 type-only import`
+- `dsh-client-ui-session` [编译依赖] - 引入会话标准 props 合并
+  - 证据: `src/client/index.ts:11 type-only import`
 
 ## Dependents (下游被依赖)
-- `dsh-client-ui-brand-official` - 填充侧边栏品牌slot contract
-- `dsh-client-ui-cordis` - 消费 sidebar.footer.action 座位声明
-- `dsh-client-ui-settings-general` - 占用 sidebar 提供的 settings 洞
-- `dsh-client-ui-workspace` - 消费 sidebar.workspaces 座位（SidebarRoot 声明的洞）
+- `dsh-client-ui-brand-official` - 占据侧边栏品牌槽位
+- `dsh-client-ui-cordis` - 把 cordis 面板挂载到侧边栏页脚动作位
+- `dsh-client-ui-plugin-manager` - 使用 ui-sidebar 声明的面板列表槽
+- `dsh-client-ui-schedule` - 向侧栏面板列表注册任务入口
+- `dsh-client-ui-settings-general` - 引用 sidebar 的 SlotMap 与 owner props 类型以渲染该槽占位
+- `dsh-client-ui-workspace` - 引入 sidebar.workspaces 等槽的声明类型

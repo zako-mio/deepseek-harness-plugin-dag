@@ -1,33 +1,25 @@
 # dsh-jobs-local
 
 - 包名: `@deepseek-ai/dsh-jobs-local`
-- 分组: G16 作业
-- 拓扑层: Layer 3
+- 分组: G22 作业调度
+- 拓扑层: Layer 5
 - 来源层: L1 核心集
 - 源码路径: `packages/jobs/jobs-local`
 
-## 为什么需要它（设计初衷）
-解决 agent 后台任务（jobs）的进程内注册表实现：提供 LocalJobRegistry，按所属者(owner)管理并发上限（默认 10），任务归属 owner/后端而非执行光纤，使生产者与控制器重载后任务不中断，为模型提供 job_kill/等待/重试等容错语义。
-
-发展史：定位为 @deepseek-ai/dsh-jobs 注册契约的进程本地方案。已知局限：任务随进程死亡，跨重启的持久化需独立后端实现同一 seam。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/jobs/jobs-local/README.md
-- https://www.npmjs.com/package/@deepseek-ai/dsh-jobs-local
-
 ## 实现逻辑
-实现 JobRegistry 抽象(默认导出)的进程内版本：TrackedTask 全内存、snapshot 永不外泄 live state。start() 校验 owner controller 可达与 maxConcurrentJobsPerOwner 限额，创建 job 并挂 hooks.done settle；list/get/read/kill/wait 按 owner session-id 鉴权；onJobDone/onJobsChanged/attachController 经 ScopedLayers 分层注册，disposeAll 在 ctx teardown 时 cancel。
+以进程内内存实现 ctx.jobs 后台作业 seam：LocalJobRegistry 继承 JobRegistry 并用 Map 保存每条作业记录，OutputRing 提供 UTF-8 安全的有界输出环形缓冲与绝对偏移非消耗式读取 (src/ring.ts:38-113)，startPump 以有限轮询把作业的 pull 源排入环并在结算后做最终排空 (src/pump.ts:53-106)。JobEventHub 按注册 scope 分层路由注册/输出/进度/结算事件 (src/events.ts:43-93)。start/settle/kill/wait 处理 owner-session 隔离、每 owner 并发上限、首写胜出的结算与 teardown 级联取消 (src/index.ts:206-304, 577-607)。
 
 ## Provides
-- ctx.jobs(LocalJobRegistry)
-- start/list/get/read/kill/wait
-- onJobDone/onJobsChanged/attachController
-- TASK_WAIT_TIMEOUT
+- ctx.jobs (进程内后台作业注册表实现，落实 dsh-jobs 定义的能力 seam，供 tool-jobs 等消费)
+- ctx.jobs.events 事件流 (jobs.events.subscribe 按 scope/owner 过滤的 registered/output/progress/settled/removed 事件)
 
 ## Depends On (上游依赖)
-- `dsh-agent` [编译依赖] - job owner 生命周期
-  - 证据: `packages/jobs/jobs-local/src/index.ts:14,46`
+- `dsh-agent` [E1+E2] - 把作业 owner 会话解析为活 Agent 实例并挂接其 scope 清理，实现按 owner 归属与生命周期取消
+  - 证据: `src/index.ts:15 import type Agent + src/index.ts:359 ctx.get('agents')`
+- `dsh-scope` [编译依赖] - 用 scope 分层存放控制器与订阅，使每 owner 的读与通知相对化
+  - 证据: `src/events.ts:9 import ScopedLayers/scopeOf`
+- `dsh-session` [编译依赖] - 以会话 id 做作业访问隔离鉴权（assertAccess 越权拒绝）
+  - 证据: `src/index.ts:17 import type SessionId`
 
 ## Dependents (下游被依赖)
-- `dsh-agent-spine-demo` - ctx.plugin(LocalJobRegistry) 进程内后台任务
-- `dsh-tool-jobs` - controller 注册落地
+- 无下游（叶子/被消费端）

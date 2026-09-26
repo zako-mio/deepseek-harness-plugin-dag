@@ -1,0 +1,338 @@
+[
+  {
+    "id": "dsh-client-ui-settings-agent-loop",
+    "name": "@deepseek-ai/dsh-client-ui-settings-agent-loop",
+    "implementation": "浏览器半在 apply 中注册 `settings.agentLoop` 字典并把 AgentLoopCardController 绑定到 Host 侧 `agent-loop` 设置命名空间的 staged form（src/client/index.ts:43-46）；待 Host 服务该命名空间后，经 `ctx.slots.inject('plugins.item')` 把卡片注册进 Plugins 页（src/client/index.ts:47-49）。控制器用 `settingsNumberField('maxParallelToolCalls')` 构造 SettingsFormModel，并把表单状态投影为 store 快照与 actions 注入面（src/client/agent-loop-card-controller.ts:44-59）。卡片按 `view === 'summary'` 输出一行描述，否则渲染只含并行工具调用上限的 SettingsForm（src/client/AgentLoopCard.tsx:20-40）。node half 为空 apply，仅用于让该插件出现在宿主 Loader（src/index.ts:10）。",
+    "provides": [
+      "settings.agentLoop locale 命名空间字典（zh/en 文案）",
+      "plugins.item 槽位条目 id='agent-loop' (order 20)：agent 循环并行工具调用上限设置卡片",
+      "AgentLoopCardFace 注入面（staged form actions + useAgentLoopCard 快照）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1+E2", "evidence": "src/client/AgentLoopCard.tsx:5 type-only import + src/client/index.ts:47 ctx.slots.inject/register", "purpose": "注册卡片到 plugins.item 槽并借用槽 props/注入面类型"},
+      {"plugin_id": "dsh-client-ui-settings", "mechanism": "E1+E2", "evidence": "src/client/index.ts:12 type-only import + src/client/index.ts:45 ctx.configForms.get(AGENT_LOOP_NS)", "purpose": "经 configForms 服务取得 agent-loop 命名空间的设置表单 scope"},
+      {"plugin_id": "dsh-client-ui-plugin-manager", "mechanism": "E1+E2", "evidence": "src/client/index.ts:14 type-only import + src/client/index.ts:47-48 向 plugins.item 注册条目", "purpose": "Plugins 页拥有 plugins.item 槽位，本包向其贡献页面"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E1+E2", "evidence": "src/client/index.ts:9 type-only import + src/client/index.ts:43 ctx.locale.bind(NS)", "purpose": "注册并绑定本页文案字典"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/AgentLoopCard.tsx:4 import SettingsForm/SettingsValueField", "purpose": "复用共享设置表单原语渲染数值字段"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/agent-loop-card-controller.ts:3 import type SnapshotStore", "purpose": "卡片状态以 store 快照形式暴露给渲染层"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1", "evidence": "src/client/index.ts:15 type-only import", "purpose": "引入 ctx.slots 的 SlotRegistry Context 合并"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-settings-general",
+    "name": "@deepseek-ai/dsh-client-ui-settings-general",
+    "implementation": "浏览器半渲染 `sidebar.settings` 槽位的设置外壳 SettingsRoot，并声明 settings.launcher/trigger/header/action/close/section/onboarding 等子槽（src/client/index.ts:198-212）；它把 `settings.section` 与 `settings.onboarding` 台账投影为有序导航行/步骤快照（src/client/index.ts:129-172）。无主设置项也在此注册：Developer Tools 行（src/client/index.ts:76-82）、Current version 行（src/client/index.ts:84-86）、仅在 loopback 连接下启用的本地设置文档动作（src/client/index.ts:102-104、220-228）、sidebar.toggle.badge 桌面更新指示（src/client/index.ts:92-95），以及 `settings.open` 快捷键（src/client/index.ts:179-196）。node half 定义 volatile 配置 welcomeNoticeVersion 并经 settings 服务 configure（src/index.ts:15-23）。",
+    "provides": [
+      "sidebar.settings 槽位占用者：设置面板外壳 SettingsRoot，声明 settings.launcher/trigger/header/action/close/section/onboarding 子槽",
+      "settings.section 条目 id='general' (order 0) 及 settings.general.item 子槽（developer-tools order 15、current-version order 100）",
+      "settings.trigger / settings.header / settings.close 单例实现与 settings.action 条目 id='open-document'",
+      "sidebar.toggle.badge 槽的桌面更新徽标",
+      "settings locale 命名空间字典（外壳 + General 文案）",
+      "settings.open 快捷键命令（primary+,）",
+      "Host 侧 settings 命名空间配置项 welcomeNoticeVersion（volatile）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-settings", "mechanism": "E1+E2", "evidence": "src/client/index.ts:19 type-only import + src/client/index.ts:103 ctx.configForms.describe()", "purpose": "设置槽声明与 configForms 镜像由 ui-settings 提供"},
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1+E2", "evidence": "src/client/index.ts:14 import resolveSlotLabel + src/client/index.ts:198 ctx.slots.register", "purpose": "声明/注册设置槽并解析注册项标签"},
+      {"plugin_id": "dsh-client-ui-sidebar", "mechanism": "E1", "evidence": "src/client/shell-contract.ts:15 type-only import（SlotMap 'sidebar.settings'）", "purpose": "引用 sidebar 的 SlotMap 与 owner props 类型以渲染该槽占位"},
+      {"plugin_id": "dsh-client-connection", "mechanism": "E1+E2", "evidence": "src/client/shell-contract.ts:9 import type ConnectionState + src/client/index.ts:88 ctx.get('connection')", "purpose": "取连接状态用于重连入口与桌面更新徽标"},
+      {"plugin_id": "dsh-api-remotes", "mechanism": "E1+E2", "evidence": "src/client/index.ts:12 type-only import + src/client/index.ts:102 ctx.remote.$host.isLoopback", "purpose": "判断 loopback 以决定是否注册本地设置文档动作"},
+      {"plugin_id": "dsh-client-shortcuts", "mechanism": "E1+E2", "evidence": "src/client/shell-contract.ts:20 import type ShortcutCatalogEntry + src/client/index.ts:126 ctx.shortcuts.catalog, src/client/index.ts:179 ctx.shortcuts.register", "purpose": "注册设置打开命令并展示快捷键目录"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E1+E2", "evidence": "src/client/index.ts:21 type-only import + src/client/index.ts:100 ctx.locale.bind(NS)", "purpose": "注册 settings 字典并投影本地化标签"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/shell-contract.ts:18 import type PropsStore + src/client/shell-store.ts:2 import", "purpose": "外壳 store 与设置文档 store 基于该快照引擎"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/index.ts:15 import closeTopModal", "purpose": "复用共享原语关闭顶层模态并渲染设置行"},
+      {"plugin_id": "dsh-settings", "mechanism": "E1+E2", "evidence": "src/index.ts:2 type-only import + src/index.ts:23 ctx.inject(['settings']) → child.settings.configure", "purpose": "Host 侧把欢迎版本配置挂到 settings 服务"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1", "evidence": "src/client/index.ts:22 type-only import", "purpose": "引入 ctx.slots 合并"},
+      {"plugin_id": "dsh-client-ui-session", "mechanism": "E1", "evidence": "src/client/index.ts:23 type-only import", "purpose": "引入会话标准 props 合并（设置外壳在会话上下文渲染）"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-settings-models",
+    "name": "@deepseek-ai/dsh-client-ui-settings-models",
+    "implementation": "浏览器半向 `settings.section` 注册 Models 页（id='models' order 10，声明 settings.models.provider-card 与 settings.models.footer 子槽，src/client/index.ts:136-146），并向 `settings.onboarding` 注册 welcome-notice（order -100）与 deepseek-official（order 0，声明 settings.models.sign-in 子槽）两个引导步骤（src/client/index.ts:147-159）。它经 `ctx.settingsSchema` 与 `ctx.configForms.describe()` 构造 ModelsSettingsStore/operations（src/client/index.ts:84-88），并订阅 settings/document-updated、credentials/record-updated、credentials/reference-updated、llm/adapters-updated 及 connection/reset 推送事件刷新（src/client/index.ts:121-134）。node half 监听 `webserver/index-inject` 把 credentialOnboarding 开关注入页面全局（src/index.ts:14-21）。",
+    "provides": [
+      "settings.section 条目 id='models' (order 10)：模型/供应商编辑页，声明 settings.models.provider-card（keyed）与 settings.models.footer（list）子槽",
+      "settings.onboarding 条目 id='welcome-notice' (order -100) 与 id='deepseek-official' (order 0，声明 settings.models.sign-in 子槽)",
+      "settings.models locale 命名空间字典（Models 页 + 产品引导文案）",
+      "Host 侧页面全局 ONBOARDING_CONFIG_GLOBAL（credentialOnboarding 开关）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-settings", "mechanism": "E1+E2", "evidence": "src/client/index.ts:11 type-only import + src/client/index.ts:88 ctx.configForms.describe()", "purpose": "设置槽声明、settingsSchema/configForms 镜像由 ui-settings 提供"},
+      {"plugin_id": "dsh-api-remotes", "mechanism": "E1+E2", "evidence": "src/client/index.ts:17 type-only import + src/client/index.ts:124-127 ctx.remote.$on(...)", "purpose": "订阅 Host 推送的设置/凭据/适配器失效事件"},
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1+E2", "evidence": "src/client/slot-contract.ts:20 type-only import + src/client/index.ts:136 ctx.slots.inject/register", "purpose": "注册设置槽/引导槽并引用槽 props 类型"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/store.ts:14 import + src/client/welcome-store.ts:8 import", "purpose": "页面 store 与欢迎提示 store 基于该快照引擎"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E1+E2", "evidence": "src/client/index.ts:13 type-only import + src/client/index.ts:91 ctx.locale.bind(NS)", "purpose": "注册并绑定 settings.models 字典"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/ModelsSection.tsx:26 import", "purpose": "复用共享 UI 原语渲染模型编辑器"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1", "evidence": "src/client/index.ts:14 type-only import", "purpose": "引入 ctx.slots 合并"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/client/CustomProviderCard.tsx:29 import + src/client/ProviderEditor.tsx:29 import", "purpose": "复用值处理工具做供应商配置归一"},
+      {"plugin_id": "dsh-host-webserver", "mechanism": "E1+E2", "evidence": "src/index.ts:4 type-only import + src/index.ts:15 ctx.on('webserver/index-inject')", "purpose": "Host 侧向浏览器页面注入引导配置全局"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-settings-plugin-inventory",
+    "name": "@deepseek-ai/dsh-client-ui-settings-plugin-inventory",
+    "implementation": "浏览器半把只读 Host 插件清单注册为 Plugins 设置段的 tab（`settings.plugins.tab` id='all' order 10，src/client/index.ts:56-63）。注入面提供 list()（经 `ctx.remote.pluginInventory.list()`，src/client/index.ts:37-43）、presetName()（经 agent-preset 字典解析内置预设名，src/client/index.ts:46-48）、resolveText 以及 clientSync 快照与重试（src/client/index.ts:49-54）。组件按 agent 预设组与全局平面两组渲染可折叠插件卡片，含搜索、启用状态标签与 Fiber 阶段指示（src/client/PluginInventorySettingsTab.tsx:236-579）。node half 为空 apply（src/index.ts:4）。",
+    "provides": [
+      "settings.pluginInventory locale 命名空间字典",
+      "settings.plugins.tab 槽位条目 id='all' (order 10)：只读 Host 插件清单 tab（预设分组 + 全局平面 + 搜索 + 客户端模块同步状态）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1+E2", "evidence": "src/client/PluginInventorySettingsTab.tsx:14 type-only import + src/client/index.ts:56 ctx.slots.inject/register", "purpose": "注册 tab 并引用槽 props 类型"},
+      {"plugin_id": "dsh-client-modules", "mechanism": "E1+E2", "evidence": "src/client/index.ts:4 type-only import + src/client/index.ts:52 ctx.modules.entries.state", "purpose": "读取客户端模块加载状态并触发重试"},
+      {"plugin_id": "dsh-api-remotes", "mechanism": "E1+E2", "evidence": "src/client/PluginInventorySettingsTab.tsx:4 import type PluginInventorySnapshot + src/client/index.ts:38 ctx.remote.pluginInventory.list()", "purpose": "获取 Host 插件清单快照"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E1+E2", "evidence": "src/client/index.ts:3 type-only import + src/client/index.ts:34 ctx.locale.register", "purpose": "注册并绑定本 tab 文案"},
+      {"plugin_id": "dsh-client-ui-settings", "mechanism": "E1+E2", "evidence": "src/client/index.ts:6 type-only import + 经 settings.plugins.tab 槽协作（src/client/index.ts:56）", "purpose": "复用 Plugins 设置段的 tab 槽声明"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1", "evidence": "src/client/index.ts:7 type-only import", "purpose": "引入 ctx.slots 合并"},
+      {"plugin_id": "dsh-client-ui-agent-preset", "mechanism": "E1+E2", "evidence": "src/client/index.ts:10 type-only import + src/client/index.ts:46 ctx.locale.bind('settings.agentPreset')", "purpose": "借用预设字典解析内置 agent 预设显示名"},
+      {"plugin_id": "dsh-agent-preset-registry", "mechanism": "E1", "evidence": "src/client/index.ts:12 import { presetDisplayText }", "purpose": "复用共享的预设显示名折叠逻辑"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/PluginInventorySettingsTab.tsx:3 import type ObservableSnapshot", "purpose": "客户端同步快照的 observable 类型"},
+      {"plugin_id": "dsh-package-manifest", "mechanism": "E1", "evidence": "src/client/PluginInventorySettingsTab.tsx:5 import type LocalizedText", "purpose": "包元数据本地化文本类型"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/PluginInventorySettingsTab.tsx:13 import Menu/StateDot/Tag", "purpose": "复用菜单、状态点与标签原语"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-settings-plugins",
+    "name": "@deepseek-ai/dsh-client-ui-settings-plugins",
+    "implementation": "浏览器半向 `settings.section` 注册 Built-in plugins 导航条目（id='plugins' order 15，src/client/index.ts:76-84），并在注册项上声明子槽 `settings.plugins.tab`（list 类型，src/client/index.ts:83）。它把 tab 台账 `ctx.slots.entries('settings.plugins.tab')` 与 locale revision 组合成带缓存的 observable 快照（src/client/index.ts:42-72），使 language 切换时标签重解析。node half 为空 apply，仅用于出现在宿主 Loader（src/index.ts:11）。",
+    "provides": [
+      "settings.plugins locale 命名空间字典",
+      "settings.section 条目 id='plugins' (order 15)：Built-in plugins 设置段外壳，声明 settings.plugins.tab (list) 子槽",
+      "settings.plugins.tab 台账投影为有序 tab 条目 observable 源（标签 locale 跟随）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1+E2", "evidence": "src/client/index.ts:18 import { resolveSlotLabel } + src/client/index.ts:46 ctx.slots.getVersion, src/client/index.ts:76 ctx.slots.inject", "purpose": "声明 tab 子槽并投影台账条目"},
+      {"plugin_id": "dsh-client-ui-settings", "mechanism": "E1+E2", "evidence": "src/client/index.ts:15 type-only import + 经 settings.section 槽协作（src/client/index.ts:76）", "purpose": "复用设置外壳的 section 槽声明"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E1+E2", "evidence": "src/client/index.ts:11 type-only import + src/client/index.ts:36 ctx.locale.bind(NS)", "purpose": "注册并绑定本段文案，并订阅 locale revision"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1", "evidence": "src/client/index.ts:16 type-only import", "purpose": "引入 ctx.slots 合并"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-settings-shell",
+    "name": "@deepseek-ai/dsh-client-ui-settings-shell",
+    "implementation": "浏览器半在 Host 服务 bash 或 pwsh 命名空间时，把 shell 设置卡片注册进 Plugins 页的 `plugins.item`（id='shell' order 10，src/client/index.ts:50-52）。它按实际服务的命名空间选择控制器（`served.has(PWSH_NS) ? pwsh : bash`，src/client/index.ts:51），两个 ShellCardController 各自绑定 `bash`/`pwsh` 命名空间的 staged form 并在 effect 中 dispose（src/client/index.ts:47-49）。node half 为空 apply（src/index.ts:10）。",
+    "provides": [
+      "settings.shell locale 命名空间字典",
+      "plugins.item 槽位条目 id='shell' (order 10)：shell 执行器命令超时与单流输出上限设置卡片（按平台绑定 bash 或 pwsh 命名空间）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1+E2", "evidence": "src/client/ShellCard.tsx:5 type-only import + src/client/index.ts:50 ctx.slots.inject/register", "purpose": "注册卡片并引用槽 props 类型"},
+      {"plugin_id": "dsh-client-ui-settings", "mechanism": "E1+E2", "evidence": "src/client/index.ts:13 type-only import + src/client/index.ts:47 ctx.configForms.get(BASH_NS)", "purpose": "经 configForms 取得 shell 命名空间的表单 scope"},
+      {"plugin_id": "dsh-client-ui-plugin-manager", "mechanism": "E1+E2", "evidence": "src/client/index.ts:15 type-only import + src/client/index.ts:50-51 向 plugins.item 注册", "purpose": "Plugins 页拥有 plugins.item 槽位"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E1+E2", "evidence": "src/client/index.ts:10 type-only import + src/client/index.ts:44 ctx.locale.bind(NS)", "purpose": "注册并绑定本页文案"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/ShellCard.tsx:4 import + src/client/locales.ts:3 import", "purpose": "复用共享设置表单原语"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/shell-card-controller.ts:3 import type SnapshotStore", "purpose": "卡片状态以 store 快照暴露"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1", "evidence": "src/client/index.ts:16 type-only import", "purpose": "引入 ctx.slots 合并"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-settings-subagent",
+    "name": "@deepseek-ai/dsh-client-ui-settings-subagent",
+    "implementation": "浏览器半把 Subagent 设置页注册进 `plugins.item`（id='subagent' order 30，src/client/index.ts:85-92），页面把委派上限控制器（绑 `subagent` 命名空间）与模型选择控制器（绑 `subagent-model-selection` 命名空间）合成一个注入面（src/client/index.ts:62-69、91）。它订阅 Host 推送的 `llm/adapters-updated` 与 `settings/document-updated` 事件刷新模型目录（src/client/index.ts:72-79），并在 `connection/reset` 时重置连接态（src/client/index.ts:80-83）。node half 为空 apply（src/index.ts:11）。",
+    "provides": [
+      "settings.subagent locale 命名空间字典",
+      "plugins.item 槽位条目 id='subagent' (order 30)：子代理委派上限 + 可选模型选择设置卡片",
+      "subagent-card-controller 合成的注入面（limits face 与 model selection face 合一，一份保存）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1+E2", "evidence": "src/client/SubagentCard.tsx:4 type-only import + src/client/index.ts:85 ctx.slots.inject/register", "purpose": "注册卡片并引用槽 props 类型"},
+      {"plugin_id": "dsh-client-ui-settings", "mechanism": "E1+E2", "evidence": "src/client/index.ts:13 type-only import + src/client/index.ts:62-65 ctx.configForms.get(...)", "purpose": "经 configForms 取得两个命名空间的表单 scope"},
+      {"plugin_id": "dsh-client-ui-plugin-manager", "mechanism": "E1+E2", "evidence": "src/client/index.ts:15 type-only import + src/client/index.ts:86 向 plugins.item 注册", "purpose": "Plugins 页拥有 plugins.item 槽位"},
+      {"plugin_id": "dsh-api-remotes", "mechanism": "E1+E2", "evidence": "src/client/index.ts:18 type-only import + src/client/index.ts:73 ctx.remote.$on('llm/adapters-updated')", "purpose": "订阅 Host 推送的适配器/设置失效事件"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E1+E2", "evidence": "src/client/index.ts:10 type-only import + src/client/index.ts:60 ctx.locale.bind(NS)", "purpose": "注册并绑定本页文案"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/subagent-limits-card-controller.ts:3 import type SnapshotStore", "purpose": "卡片状态以 store 快照暴露"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/SubagentLimitsFields.tsx:4 import + src/client/locales.ts:3 import", "purpose": "复用共享设置字段原语"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1", "evidence": "src/client/index.ts:16 type-only import", "purpose": "引入 ctx.slots 合并"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-settings-web-search",
+    "name": "@deepseek-ai/dsh-client-ui-settings-web-search",
+    "implementation": "浏览器半在 Host 服务 `web-search-deepseek` 命名空间时，把 Web Search 卡片注册进 `plugins.item`（id='web-search' order 40，src/client/index.ts:57-59）。控制器绑定该命名空间的 staged form（src/client/index.ts:48-49），并经 `ctx.remote.$on('credentials/reference-updated')` 在别处写入的密钥变更时刷新凭据态（src/client/index.ts:53-56）——注释说明这是该页能感知 Host 侧凭据更新的唯一信号。node half 为空 apply（src/index.ts:11）。",
+    "provides": [
+      "settings.webSearch locale 命名空间字典",
+      "plugins.item 槽位条目 id='web-search' (order 40)：web 搜索提供者的 key / endpoint / 单次请求预算设置卡片"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1+E2", "evidence": "src/client/WebSearchCard.tsx:9 type-only import + src/client/index.ts:57 ctx.slots.inject/register", "purpose": "注册卡片并引用槽 props 类型"},
+      {"plugin_id": "dsh-client-ui-settings", "mechanism": "E1+E2", "evidence": "src/client/index.ts:13 type-only import + src/client/index.ts:48 ctx.configForms.get(WEB_SEARCH_NS)", "purpose": "经 configForms 取得命名空间的表单 scope"},
+      {"plugin_id": "dsh-api-remotes", "mechanism": "E1+E2", "evidence": "src/client/index.ts:18 type-only import + src/client/index.ts:54 ctx.remote.$on('credentials/reference-updated')", "purpose": "订阅 Host 推送的凭据失效事件以刷新密钥态"},
+      {"plugin_id": "dsh-client-ui-plugin-manager", "mechanism": "E1+E2", "evidence": "src/client/index.ts:15 type-only import + src/client/index.ts:57-58 向 plugins.item 注册", "purpose": "Plugins 页拥有 plugins.item 槽位"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E1+E2", "evidence": "src/client/index.ts:10 type-only import + src/client/index.ts:46 ctx.locale.bind(NS)", "purpose": "注册并绑定本页文案"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/web-search-card-controller.ts:15 import", "purpose": "卡片状态以 store 快照暴露"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/WebSearchCard.tsx:8 import + src/client/locales.ts:3 import", "purpose": "复用共享设置表单原语"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1", "evidence": "src/client/index.ts:16 type-only import", "purpose": "引入 ctx.slots 合并"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-shortcuts",
+    "name": "@deepseek-ai/dsh-client-ui-shortcuts",
+    "implementation": "浏览器半注册 `shortcuts` 字典后，先用 `ctx.shortcuts.registerFixed` 批量注册固定命令（src/client/index.ts:37-39），再把快捷键参考行注册进 Settings 的 `settings.general.item`（id='shortcuts' order 20，src/client/index.ts:42-45），并把参考浮层注册进 `shell.overlay`（src/client/index.ts:46-71）。同时注册 `shortcuts.open` 命令（primary+/）在 settings 与 shortcuts 两种模态间切换开合（src/client/index.ts:47-65）。一个 store 句柄在 apply 内创建并同时交给设置行与浮层两处注册（src/client/index.ts:31-33）。",
+    "provides": [
+      "shortcuts locale 命名空间字典",
+      "settings.general.item 条目 id='shortcuts' (order 20)：General 设置中的快捷键参考入口行",
+      "shell.overlay 条目 id='shortcuts'：快捷键参考浮层",
+      "shortcuts.open 命令（primary+/）以及经 shortcuts.registerFixed 注册的固定命令集"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-shortcuts", "mechanism": "E1+E2", "evidence": "src/client/Editor.tsx:6 import (client) + src/client/index.ts:34 ctx.shortcuts.edit, src/client/index.ts:38 ctx.shortcuts.registerFixed", "purpose": "注册命令/固定命令并读写快捷键目录与配置"},
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1+E2", "evidence": "src/client/Editor.tsx:7 type-only import + src/client/index.ts:42 ctx.slots.inject, src/client/index.ts:66 ctx.slots.register", "purpose": "注册设置行与浮层槽并引用槽 props 类型"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/Editor.tsx:4 import + src/client/index.ts:4 import closeTopModal", "purpose": "复用编辑器/菜单原语并关闭顶层模态"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/Reference.tsx:5 import + src/client/store.ts:2 import", "purpose": "参考浮层状态 store 基于该快照引擎"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E1+E2", "evidence": "src/client/index.ts:5 type-only import + src/client/index.ts:29 ctx.locale.register, src/client/index.ts:30 ctx.locale.bind('shortcuts')", "purpose": "注册并绑定本包文案"},
+      {"plugin_id": "dsh-client-ui-layout", "mechanism": "E1", "evidence": "src/client/index.ts:7 type-only import", "purpose": "引入 layout 的 Context/SlotMap 合并"},
+      {"plugin_id": "dsh-client-ui-settings", "mechanism": "E1+E2", "evidence": "src/client/index.ts:8 type-only import + src/client/index.ts:42 向 settings.general.item 注册", "purpose": "引入设置域槽声明，General 段的 item 槽由其外壳渲染"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1", "evidence": "src/client/index.ts:6 type-only import", "purpose": "引入 ctx.slots 合并"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-sidebar",
+    "name": "@deepseek-ai/dsh-client-ui-sidebar",
+    "implementation": "浏览器半注册 `sidebar` 槽并声明 brand.mark/brand.name/toggle.badge/panellist/workspaces/settings/footer.action 子槽（src/client/index.ts:72-85）。它把 `sidebar.panellist` 台账投影为有序面板元数据快照，并在台账或 locale 变化时重算（src/client/index.ts:47-62）。注入面暴露 startSession（经 uiWorkspace 共享动作，src/client/index.ts:45、67）、toggleSidebar/selectPanel（经 ctx.layout，src/client/index.ts:68-69）与 shortcuts 目录（src/client/index.ts:70）；同一注入面还被 `shell.leading` 头部控件复用（src/client/index.ts:90-94）。node half 为空 apply（src/index.ts:4）。",
+    "provides": [
+      "sidebar locale 命名空间字典",
+      "sidebar 槽位占用者（侧边栏外壳），声明 sidebar.brand.mark / sidebar.brand.name / sidebar.toggle.badge / sidebar.panellist / sidebar.workspaces / sidebar.settings / sidebar.footer.action 子槽",
+      "shell.leading 槽的头部前置控件（折叠侧栏 / 新建会话，用于 macOS 隐藏侧栏场景）",
+      "sidebar.panellist 台账投影为有序面板元数据 observable 源"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-layout", "mechanism": "E1+E2", "evidence": "src/client/index.ts:5 import type MainPanelId + src/client/index.ts:68 ctx.layout.toggleSidebar", "purpose": "经布局服务切换/选择面板并引用面板 id 类型"},
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1+E2", "evidence": "src/client/HeaderLeadingControls.tsx:5 type-only import + src/client/index.ts:72 ctx.slots.register", "purpose": "声明/注册侧边栏槽并解析面板标签"},
+      {"plugin_id": "dsh-client-shortcuts", "mechanism": "E1+E2", "evidence": "src/client/contract/slots.ts:13 import type ShortcutCatalogEntry + src/client/index.ts:70 ctx.shortcuts.catalog", "purpose": "把快捷键目录快照交给侧边栏展示"},
+      {"plugin_id": "dsh-api-workspace-controller", "mechanism": "E1", "evidence": "src/client/contract/slots.ts:12 import type WorkspaceId", "purpose": "startSession 的 workspace 参数类型"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/index.ts:3 import createSnapshotStore", "purpose": "面板元数据快照存储"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E1+E2", "evidence": "src/client/index.ts:7 type-only import + src/client/index.ts:46 ctx.locale.register", "purpose": "注册并绑定 sidebar 文案，并订阅 locale 变化重算面板标签"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1", "evidence": "src/client/index.ts:9 type-only import", "purpose": "引入 ctx.slots 合并"},
+      {"plugin_id": "dsh-client-ui-session", "mechanism": "E1", "evidence": "src/client/index.ts:11 type-only import", "purpose": "引入会话标准 props 合并"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-sidebar-browser",
+    "name": "@deepseek-ai/dsh-client-ui-sidebar-browser",
+    "implementation": "浏览器半把 `browser` tab 类型注册进 `ctx.sidebarRightTabs`（src/client/index.ts:74），并按是否存在协议版本 1 的桌面 carrier 选择 iframe 或 Electron 页面实现（src/client/index.ts:69-72、97-101）。面板主体经键控槽 `sidebar.right.pane.tab` 注册 BrowserBody，按 sessionId 复用控制器并支持行动作重绑（src/client/index.ts:75-95），标题经 `sidebar.right.pane.tab.title` 注册 BrowserTitle（src/client/index.ts:102-104）；另在 shortcuts 服务可见时注册 `browser.new` 命令（src/client/index.ts:46-66）。node half 为空 apply。",
+    "provides": [
+      "sidebarBrowser locale 命名空间字典",
+      "sidebarRightTabs 注册 'browser' tab 类型定义（并扩展 SidebarRightTabParamsMap.browser 参数，src/client/index.ts:32-37）",
+      "sidebar.right.pane.tab 键控条目 key=BROWSER_ID：浏览器面板 body（iframe / Electron webview 两实现）",
+      "sidebar.right.pane.tab.title 键控条目 key=BROWSER_ID：浏览器标签标题",
+      "browser.new 快捷键命令（primary+T）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-sidebar-right", "mechanism": "E1+E2", "evidence": "src/client/definition.tsx:5 import (client) + src/client/index.ts:74 ctx.sidebarRightTabs.register", "purpose": "把 tab 类型与 body/title 注册进右侧边栏的两级公共路径"},
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1+E2", "evidence": "src/client/browser/BrowserController.ts:4 type-only import + src/client/index.ts:82 ctx.slots.inject('sidebar.right.pane.tab')", "purpose": "注册面板 body 与标题并引用槽 props 类型"},
+      {"plugin_id": "dsh-client-shortcuts", "mechanism": "E1+E2", "evidence": "src/client/definition.tsx:2 import (client) + src/client/index.ts:47 ctx.shortcuts.register", "purpose": "注册新建浏览器标签命令并声明其可用性"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E1+E2", "evidence": "src/client/definition.tsx:3 import + src/client/index.ts:45 ctx.locale.bind(namespace)", "purpose": "注册并绑定本 tab 文案"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/browser/BrowserController.ts:2 import + src/client/browser/store.ts:2 import", "purpose": "浏览器面板状态基于该快照引擎"},
+      {"plugin_id": "dsh-client-ui-dockkit", "mechanism": "E1", "evidence": "src/client/browser/BrowserController.ts:3 import + src/client/browser/store.ts:3 import", "purpose": "复用 dock 标签/布局原语"},
+      {"plugin_id": "dsh-api-workspace-controller", "mechanism": "E1+E2", "evidence": "src/client/electron/workspace.ts:2 import (client) + src/client/index.ts:98 ctx.inject(['workspaces'])", "purpose": "经 workspace 服务把浏览器页面映射到工作区"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/definition.tsx:4 import + src/client/view/BrowserTitle.tsx:3 import", "purpose": "复用共享 UI 原语"},
+      {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "src/types.ts:2 import", "purpose": "跨边界不透明 id 使用品牌化类型"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1", "evidence": "src/client/index.ts:5 type-only import", "purpose": "引入 ctx.slots 合并"},
+      {"plugin_id": "dsh-client-ui-session", "mechanism": "E1", "evidence": "src/client/index.ts:6 type-only import", "purpose": "引入会话标准 props 合并"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-sidebar-documentpreview",
+    "name": "@deepseek-ai/dsh-client-ui-sidebar-documentpreview",
+    "implementation": "浏览器半把 `text` tab 类型注册进 `ctx.sidebarRightTabs`（src/client/index.ts:93），并新建 DocumentPreviewRegistry 经 `ctx.reflect.provide('documentPreviews', ...)` 暴露为扩展点 seam（src/client/index.ts:90-92、54-58）。主体经键控槽 `sidebar.right.pane.tab` 注册 TextPreview 并声明 document 系列子槽（src/client/index.ts:103-117），标题经 `sidebar.right.pane.tab.title` 注册 TextTitle（src/client/index.ts:118-121）。随后依次装配 text/markdown/html/image/pdf/office/excel/code 八类渲染器（src/client/index.ts:122-129），每类都把定义注册进 documentPreviews 并注册 keyed 文档主体（如 src/client/code/index.ts:15-25）。node half 在 `webserver/index-inject` 时把校验过的预览配置注入页面全局（src/index.ts:14-16）。",
+    "provides": [
+      "sidebarDocumentPreview locale 命名空间字典",
+      "ctx.documentPreviews（文件扩展名 → 文档渲染器定义注册表 seam，供各内建/外部预览类型注册）",
+      "sidebarRightTabs 注册 'text' tab 类型定义（并扩展 SidebarRightResourceParamsMap.file 参数，src/client/index.ts:64-69）",
+      "sidebar.right.pane.tab 键控条目 key=TEXTPREVIEW_ID：文档预览 body，声明 sidebar.right.tab.document / document.actions / document.unpreviewable / document.action 子槽",
+      "sidebar.right.pane.tab.title 键控条目 key=TEXTPREVIEW_ID：预览标签标题",
+      "内建 8 类文档渲染器（text / markdown / html / image / pdf / office / excel / code）",
+      "Host 侧页面全局 __DSH_DOCUMENT_PREVIEW_CONFIG__（预览缓存配置）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-sidebar-right", "mechanism": "E1+E2", "evidence": "src/client/definition.ts:11 import (client) + src/client/index.ts:93 ctx.sidebarRightTabs.register", "purpose": "经两级公共路径把预览类型、body 与标题注册进右侧边栏"},
+      {"plugin_id": "dsh-client-resources", "mechanism": "E1+E2", "evidence": "src/client/document/resource-group.ts:2 import (client) + src/client/index.ts:100 ctx.resources", "purpose": "借用资源模型登记/固定被预览的文件资源"},
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1+E2", "evidence": "src/client/TextPreview.tsx:16 type-only import + src/client/index.ts:103 ctx.slots.inject/register", "purpose": "注册预览 body/title 并声明 document 子槽"},
+      {"plugin_id": "dsh-api-remotes", "mechanism": "E1+E2", "evidence": "src/client/failure-line.ts:8 import (client) + src/client/index.ts:98 ctx.remote", "purpose": "经 remote 面读取工作区文件字节与分页文本"},
+      {"plugin_id": "dsh-api-workspace-files", "mechanism": "E1", "evidence": "src/client/index.ts:21-22 import (/remote, /client) + src/client/document/resource-group.ts:3 import (/types)", "purpose": "工作区文件读取的类型与 remote 调用签名"},
+      {"plugin_id": "dsh-client-ui-dockkit", "mechanism": "E1", "evidence": "src/client/document/tab-lifetime.ts:3 import", "purpose": "标签生命周期与 dock 原语"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E1+E2", "evidence": "src/client/failure-line.ts:9 import + src/client/index.ts:94 ctx.locale.register", "purpose": "注册并绑定预览文案"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/TextPreview.tsx:15 import", "purpose": "预览状态基于该快照引擎"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/LoadingIndicator.tsx:4 import + src/client/code/index.ts:3 import", "purpose": "复用加载指示与代码高亮扩展名等共享原语"},
+      {"plugin_id": "dsh-util-workspace-path", "mechanism": "E1", "evidence": "src/client/TextPreview.tsx:21 import + src/client/code/CodeBody.tsx:5 import", "purpose": "工作区路径归一与拼接"},
+      {"plugin_id": "dsh-client-ui-settings", "mechanism": "E1+E2", "evidence": "src/client/html/index.ts:8 import (client) + src/client/html/index.ts:35 ctx.configForms", "purpose": "html 预览经设置服务注册其配置表单"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "src/client/face.ts:21 import (/types)", "purpose": "会话 id 等类型"},
+      {"plugin_id": "dsh-office-to-pdf", "mechanism": "E1", "evidence": "src/client/office/cache.ts:2 import (/types) + src/client/office/index.ts:5 import (/remote)", "purpose": "office 文档转 PDF 渲染"},
+      {"plugin_id": "dsh-api-gateway", "mechanism": "E1", "evidence": "src/client/index.ts:20 import (client)", "purpose": "引入网关客户端面与其类型合并"},
+      {"plugin_id": "dsh-host-webserver", "mechanism": "E1+E2", "evidence": "src/index.ts:3 type-only import + src/index.ts:14 ctx.on('webserver/index-inject')", "purpose": "Host 侧向浏览器页面注入预览配置全局"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1", "evidence": "src/client/index.ts:17 type-only import", "purpose": "引入 ctx.slots 合并"},
+      {"plugin_id": "dsh-client-ui-session", "mechanism": "E1", "evidence": "src/client/index.ts:18 type-only import", "purpose": "引入会话标准 props 合并"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-sidebar-files",
+    "name": "@deepseek-ai/dsh-client-ui-sidebar-files",
+    "implementation": "浏览器半把 `files` tab 类型注册进 `ctx.sidebarRightTabs`（src/client/index.ts:67），并在 shortcuts 服务可见时注册 `workspace.files` 命令（primary+P，src/client/index.ts:46-66）。面板 body 经键控槽 `sidebar.right.pane.tab` 注册 FilesBody，其注入面由 `filesFace(createList(ctx.remote), createWatch(ctx.remote))` 组合（src/client/index.ts:70-75）；标题经 `sidebar.right.pane.tab.title` 注册 FilesTitle（src/client/index.ts:76-79）。node half 为空 apply。",
+    "provides": [
+      "sidebarFiles locale 命名空间字典",
+      "sidebarRightTabs 注册 'files' tab 类型定义",
+      "sidebar.right.pane.tab 键控条目 key=FILES_ID：工作区文件浏览 body",
+      "sidebar.right.pane.tab.title 键控条目 key=FILES_ID：标签标题",
+      "workspace.files 快捷键命令（primary+P）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-ui-sidebar-right", "mechanism": "E1+E2", "evidence": "src/client/definition.tsx:9 import (client) + src/client/index.ts:67 ctx.sidebarRightTabs.register", "purpose": "把 tab 类型、body 与标题注册进右侧边栏"},
+      {"plugin_id": "dsh-api-remotes", "mechanism": "E1+E2", "evidence": "src/client/FilesBody.tsx:14 import (client) + src/client/index.ts:71 ctx.remote", "purpose": "经 remote 面列目录/订阅文件变更"},
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1+E2", "evidence": "src/client/FilesBody.tsx:15 type-only import + src/client/index.ts:72 ctx.slots.inject/register", "purpose": "注册 body/title 并引用槽 props 类型"},
+      {"plugin_id": "dsh-client-shortcuts", "mechanism": "E1+E2", "evidence": "src/client/definition.tsx:8 import (client) + src/client/index.ts:47 ctx.shortcuts.register", "purpose": "注册打开文件面板命令"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E1+E2", "evidence": "src/client/definition.tsx:10 import + src/client/index.ts:45 ctx.locale.bind(NS)", "purpose": "注册并绑定本 tab 文案"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/face.ts:22 import", "purpose": "文件树状态基于该快照引擎"},
+      {"plugin_id": "dsh-api-workspace-files", "mechanism": "E1", "evidence": "src/client/FilesBody.tsx:21 import (/types)", "purpose": "工作区文件条目类型"},
+      {"plugin_id": "dsh-util-workspace-path", "mechanism": "E1", "evidence": "src/client/FilesBody.tsx:20 import", "purpose": "工作区路径归一"},
+      {"plugin_id": "dsh-typert-protocol", "mechanism": "E1", "evidence": "src/client/face.ts:27 import", "purpose": "Typert 协议类型（remote 方法签名）"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "src/client/face.ts:24 import (/types)", "purpose": "会话 id 类型"},
+      {"plugin_id": "dsh-client-ui-dockkit", "mechanism": "E1", "evidence": "src/client/face.ts:23 import", "purpose": "标签/dock 原语"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/FilesTitle.tsx:8 import", "purpose": "复用共享 UI 原语"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1", "evidence": "src/client/index.ts:16 type-only import", "purpose": "引入 ctx.slots 合并"},
+      {"plugin_id": "dsh-client-ui-session", "mechanism": "E1", "evidence": "src/client/index.ts:17 type-only import", "purpose": "引入会话标准 props 合并"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-sidebar-right",
+    "name": "@deepseek-ai/dsh-client-ui-sidebar-right",
+    "implementation": "浏览器半在 apply 顶层构造 SidebarRightTabRegistry，并分别经 `ctx.reflect.provide('sidebarRightTabs')` 与 `ctx.reflect.provide('sidebarRight')` 暴露 tab 类型注册表与导航面（src/client/index.ts:109、122-123），使其它包可注册而本包 effect 不作为其宿主。它声明 `rightbar` 槽（含 rightbar.session 及 keyed `sidebar.right.pane.tab`/`title` 与 list `sidebar.right.tab.menu.item` 子槽，src/client/index.ts:177-205），并在会话代际间对同一 store 做 adopt/forget（src/client/index.ts:140-159）。同一 store 还供 `conversation.session.header.corner` 展开按钮使用（src/client/index.ts:210-215），内建 `guide` tab 类型经同一公共两级路径注册（src/client/index.ts:176、224-240）。node half 为空 apply（src/index.ts:4）。",
+    "provides": [
+      "sidebarRight locale 命名空间字典",
+      "ctx.sidebarRightTabs（右侧边栏 tab 类型注册表，任何包第二阶段注册的入口）",
+      "ctx.sidebarRight（右侧边栏导航/展示面：openTab/openTabFromTarget/bind/splitPane/toggleFullscreen/commandTarget 等）",
+      "rightbar 槽位占用者，声明 rightbar.session 及 sidebar.right.pane.tab（keyed）/ sidebar.right.pane.tab.title（keyed）/ sidebar.right.tab.menu.item（list）子槽",
+      "conversation.session.header.corner 槽的展开按钮",
+      "sidebarRightTabs 注册内建 'guide' tab 类型（含 sidebar.right.tab.guide.entry / sidebar.right.tab.guide 子槽）"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-client-resources", "mechanism": "E1+E2", "evidence": "src/client/index.ts:27 import (client) + src/client/index.ts:120 ctx.resources.pin", "purpose": "把 tab 资源登记/固定到资源模型"},
+      {"plugin_id": "dsh-client-shortcuts", "mechanism": "E1+E2", "evidence": "src/client/contract/slots.ts:23 import (client) + src/client/index.ts:135 registerSidebarShortcuts(ctx.shortcuts, ...)", "purpose": "注册右栏快捷键并读取快捷键目录"},
+      {"plugin_id": "dsh-client-ui-layout", "mechanism": "E1+E2", "evidence": "src/client/contract/slots.ts:25 import (client) + src/client/index.ts:160 const layout: ILayout = ctx.layout", "purpose": "经布局服务开合/全屏右栏面板"},
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1+E2", "evidence": "src/client/contract/slots.ts:24 type-only import + src/client/index.ts:177 ctx.slots.inject/register", "purpose": "注册 rightbar 与各子槽并引用槽 props 类型"},
+      {"plugin_id": "dsh-api-session-controller", "mechanism": "E1", "evidence": "src/client/session-view.ts:2 import (client)", "purpose": "会话视图类型（SidebarSessionViews 消费 SessionManager）"},
+      {"plugin_id": "dsh-client-ui-dockkit", "mechanism": "E1", "evidence": "src/client/contract/slots.ts:29 import (client) + src/client/index.ts:47 import type TabId", "purpose": "dock 布局/标签 id 与纯规划器"},
+      {"plugin_id": "dsh-client-ui-conversation", "mechanism": "E1", "evidence": "src/client/index.ts:32 import (client)", "purpose": "注册会话头部角槽需要其槽声明合并"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/service.ts:35 import", "purpose": "右栏布局状态基于该快照引擎"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E1+E2", "evidence": "src/client/contract/slots.ts:28 import + src/client/index.ts:134 ctx.locale.register", "purpose": "注册并绑定本包文案"},
+      {"plugin_id": "dsh-util-crypto", "mechanism": "E1", "evidence": "src/client/service.ts:34 import", "purpose": "生成 occurrence/资源 id 的稳定哈希"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "src/client/focus.ts:3 import (/types)", "purpose": "SessionId 等类型"},
+      {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "src/client/tab-domain.ts:19 import", "purpose": "品牌化不透明 id"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/shell/ExpandButton.tsx:19 import", "purpose": "复用共享 UI 原语"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1", "evidence": "src/client/index.ts:28 type-only import", "purpose": "引入 ctx.slots 合并"},
+      {"plugin_id": "dsh-client-ui-session", "mechanism": "E1", "evidence": "src/client/index.ts:29 type-only import", "purpose": "引入会话标准 props 合并"}
+    ],
+    "dependents": []
+  }
+]

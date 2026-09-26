@@ -1,0 +1,171 @@
+[
+  {
+    "id": "dsh-jobs-local",
+    "name": "@deepseek-ai/dsh-jobs-local",
+    "implementation": "以进程内内存实现 ctx.jobs 后台作业 seam：LocalJobRegistry 继承 JobRegistry 并用 Map 保存每条作业记录，OutputRing 提供 UTF-8 安全的有界输出环形缓冲与绝对偏移非消耗式读取 (src/ring.ts:38-113)，startPump 以有限轮询把作业的 pull 源排入环并在结算后做最终排空 (src/pump.ts:53-106)。JobEventHub 按注册 scope 分层路由注册/输出/进度/结算事件 (src/events.ts:43-93)。start/settle/kill/wait 处理 owner-session 隔离、每 owner 并发上限、首写胜出的结算与 teardown 级联取消 (src/index.ts:206-304, 577-607)。",
+    "provides": [
+      "ctx.jobs (进程内后台作业注册表实现，落实 dsh-jobs 定义的能力 seam，供 tool-jobs 等消费)",
+      "ctx.jobs.events 事件流 (jobs.events.subscribe 按 scope/owner 过滤的 registered/output/progress/settled/removed 事件)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-jobs", "mechanism": "E1", "evidence": "src/index.ts:19 import JobRegistry/JobId + src/ring.ts:8 import JobAppendOptions 等类型", "purpose": "继承并实现 JobRegistry 能力 seam，复用其契约类型与事件词汇"},
+      {"plugin_id": "dsh-agent", "mechanism": "E1+E2", "evidence": "src/index.ts:15 import type Agent + src/index.ts:359 ctx.get('agents')", "purpose": "把作业 owner 会话解析为活 Agent 实例并挂接其 scope 清理，实现按 owner 归属与生命周期取消"},
+      {"plugin_id": "dsh-scope", "mechanism": "E1", "evidence": "src/events.ts:9 import ScopedLayers/scopeOf", "purpose": "用 scope 分层存放控制器与订阅，使每 owner 的读与通知相对化"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "src/index.ts:17 import type SessionId", "purpose": "以会话 id 做作业访问隔离鉴权（assertAccess 越权拒绝）"},
+      {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "src/index.ts:18 import deadline/timeoutOf", "purpose": "wait 使用带码 scoped deadline 区分限定等待超时与调用方取消"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-jobs",
+    "name": "@deepseek-ai/dsh-tool-jobs",
+    "implementation": "在 ctx.jobs 之上注册模型可见的 job_output/job_list/job_kill 三个工具 (src/index.ts:310-414)，并在加载时 attachController('tool-jobs') 让生产者可启动作业 (src/index.ts:247)。订阅 jobs 事件把未被模型取回的完成通知注入忙碌 owner 的下一步、或唤醒空闲 owner（受 maxConsecutiveWakes 约束）(src/index.ts:271-308)。按 job 的 outputLimitBytes 截断 job_output/job_kill 的模型可见内容 (src/index.ts:225-244)，render.ts 负责把读取增量渲染为 stdout/stderr 分区与 [status] 行 (src/render.ts:75-84)。",
+    "provides": [],
+    "depends_on": [
+      {"plugin_id": "dsh-jobs", "mechanism": "E1+E2", "evidence": "src/index.ts:18 import JobId + src/index.ts:31 inject jobs + src/index.ts:247 ctx.jobs.attachController", "purpose": "消费作业注册表：附着控制器、读取/等待/杀死作业并订阅其事件"},
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "src/index.ts:16 import defineTool + src/index.ts:31 inject tools + src/index.ts:310 ctx.tools.register", "purpose": "以上游工具定义注册三个作业控制工具并挂接 tools/pre-execute 拦截"},
+      {"plugin_id": "dsh-agent", "mechanism": "E1+E2", "evidence": "src/index.ts:20 import type Agent + src/index.ts:212 ctx.on('agent/inbox/claimed')", "purpose": "把完成通知投递到 owner Agent（inject/followup）并据其 input 重置唤醒预算"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "src/index.ts:13 import createUserMessage/boundContextSummary", "purpose": "构造带来源标记的用户消息作为完成通知并做长度约束"},
+      {"plugin_id": "dsh-system-prompt", "mechanism": "E2", "evidence": "src/index.ts:31 inject systemPrompt + src/index.ts:250 ctx.systemPrompt.section", "purpose": "注入 tool:jobs 段系统提示，指导模型跟踪/收集后台作业"},
+      {"plugin_id": "dsh-output-retention", "mechanism": "E1", "evidence": "src/index.ts:15 import TextRetainer", "purpose": "用头/尾保留器把超限工具结果截断到字节预算内"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-deepseek-llm-api-extensions",
+    "name": "@deepseek-ai/dsh-deepseek-llm-api-extensions",
+    "implementation": "定义并暴露 ctx.deepseekLlmApiExtensions 服务，作为官方 DeepSeek 请求顶层字段的扩展注册表 (src/index.ts:66-71, 18-22)。register() 以 ctx.effect 让插件按字段名注册唯一 provider 并在释放时撤销 (src/index.ts:79-99)。prepare() 在 HTTP 派发前并发调用各 provider 准备字段、对取值做结构化克隆并冻结，并把各 provider 的 accept 回调收拢为幂等的联合提交事务，支持中止传播 (src/index.ts:108-129)。types.ts 用声明合并声明可扩展字段表与 provider 协议 (src/types.ts:16, 39-48)。",
+    "provides": [
+      "ctx.deepseekLlmApiExtensions (DeepSeek 顶层请求字段扩展注册表，供 plugin-package-inventory-deepseek 等贡献独立字段)"
+    ],
+    "depends_on": [],
+    "dependents": []
+  },
+  {
+    "id": "dsh-llm",
+    "name": "@deepseek-ai/dsh-llm",
+    "implementation": "抽象出 provider 无关的 ctx.llm 服务：LlmAdapter 注册表加上可被 llm/stream waterfall 拦截的流式调用 API (src/index.ts:342-352, 1135-1157)。registerAdapter/registerConfigurableProviders 以 ctx.effect 做全有或全无的原子路由注册/替换，并在每次拓扑变更发布 llm/adapters-updated (src/index.ts:396-471, 490-543)。prepareCall 冻结一次调用的 config、retryPolicy 与模型元数据并绑定同一适配器注册代，防止 HMR 混用能力 (src/index.ts:936-983)。adapterStream 在最终适配器边界把文件/图像投影为文本句柄、按 model 能力裁剪工具，并把适配器失败归一为终止 chunk (src/index.ts:1033-1122)；invariant.ts 的 companion 校验流语法与适配器注册可读性 (src/invariant.ts:87-104)。",
+    "provides": [
+      "ctx.llm (provider 无关的 LLM 适配器注册表与流式调用 API，供各 llm-* 适配器注册路由、供 agent loop 发起请求)",
+      "llm/stream waterfall 扩展点 (可拦截或短路每次流式模型调用)",
+      "llm/adapters-updated 事件 (适配器路由与目录拓扑变更的非否决通知)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "src/brand.ts:13 import type Branded + src/types.ts:7 import", "purpose": "使用 Branded 承载 ProviderRequestId 等不透明跨边界标识"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/index.ts:11 import deepFreeze + src/content.ts:9 import", "purpose": "深冻结请求与内容，保证 loop 构建请求的不可变语义"},
+      {"plugin_id": "dsh-typert-protocol", "mechanism": "E1", "evidence": "src/index.ts:10 import Remote/RemoteError/TypertRemoteService", "purpose": "以 TypertRemoteService 暴露可远程调用的 llm 服务方法"},
+      {"plugin_id": "dsh-util-crypto", "mechanism": "E1", "evidence": "src/message.ts:3 import from '@deepseek-ai/dsh-util-crypto'", "purpose": "消息冻结/哈希所需的加密工具"},
+      {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "src/retry-policy.ts:11 import MAX_TIMER_DELAY_MS", "purpose": "约束解析出的重试退避上限在计时器可表示范围内"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E1+E2", "evidence": "src/invariant.ts:4 import type InvariantInstaller + src/invariant.ts:112 ctx.invariants.register", "purpose": "注册 llm 包拥有的流协议与注册表不变量 companion"},
+      {"plugin_id": "dsh-attachment", "mechanism": "E1+E2", "evidence": "src/index.ts:42 import type FileAttachmentRef + src/types.ts:8 import + src/index.ts:1015 ctx.get('attachments')", "purpose": "把持久文件引用解析为当前执行世界的读取路径文本"},
+      {"plugin_id": "dsh-fs", "mechanism": "E2", "evidence": "src/index.ts:1024 ctx.get('fs') processPathFromHostPath", "purpose": "结构化消费文件系统 seam，把宿主路径映射为进程可见路径（只读单一方法，避免 llm 依赖 fs 包）"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-llm-deepseek-account",
+    "name": "@deepseek-ai/dsh-llm-deepseek-account",
+    "implementation": "以 DeepSeek 账号令牌为鉴权实现官方 provider 路由 'deepseek-account'：resolveAuth 经 ctx.get('deepseekAccount').resolveToken 取令牌并注入 x-dsh-auth-token 头 (src/index.ts:20-38)，在 onRequestError 中把配额超限映射为 ACCOUNT_QUOTA_EXCEEDED、401 映射为 ACCOUNT_TOKEN_INVALID 并拒绝失效令牌 (src/index.ts:26-36)。向 ctx.llm 注册可配置 provider 目录项并注册适配器 (src/index.ts:39-53)，配置直接复用 llm-deepseek 的协议字段（无 API-key 引用）(src/config.ts:2-6)。",
+    "provides": [
+      "DeepSeek Account provider 路由注册 (以账号令牌鉴权，向 ctx.llm 注册 'deepseek-account' 适配器与可配置目录项)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "src/index.ts:4 import ACCOUNT_QUOTA_EXCEEDED_CODE/LlmError/QUOTA_EXCEEDED_CODE", "purpose": "复用 provider 无关的错误码与错误类型表达鉴权/配额失败"},
+      {"plugin_id": "dsh-llm-deepseek", "mechanism": "E1", "evidence": "src/index.ts:7 import plainOptions/resolveAdapterOptions/registerDeepSeekProvider/catalogModelInfo + src/config.ts:2 import Config", "purpose": "复用 DeepSeek 协议适配器的选项解析、provider 注册与模型目录，账号路由只替换鉴权"},
+      {"plugin_id": "dsh-deepseek-account", "mechanism": "E1+E2", "evidence": "src/index.ts:5 import type {} + src/index.ts:21 ctx.get('deepseekAccount')", "purpose": "从账号服务解析令牌，并在令牌失效时通知其移除凭据"},
+      {"plugin_id": "dsh-launch-environment", "mechanism": "E1", "evidence": "src/index.ts:6 import launchEnvironmentOf", "purpose": "解析协议端点时读取应用启动环境快照"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-llm-deepseek-api-key",
+    "name": "@deepseek-ai/dsh-llm-deepseek-api-key",
+    "implementation": "以 API key 鉴权实现官方 DeepSeek 路由 'deepseek-official'：resolveApiKey 先经 ctx.get('credentials').resolve 解析凭据引用，无 seam 时退化到启动环境变量，对空或含非法字符的 key 抛 INVALID_CREDENTIAL (src/index.ts:20-35)。注册可配置 provider 目录项并以 x-api-key 头鉴权、以 catalogModelInfo 列出模型 (src/index.ts:36-46)。config.ts 在协议配置上追加默认 DEEPSEEK_API_KEY 的 credential-ref 字段，并与端点一起解析出 ResolvedDeepSeekOptions (src/config.ts:14-38)。",
+    "provides": [
+      "DeepSeek 官方 provider 路由注册 (以 API key 鉴权，向 ctx.llm 注册 'deepseek-official' 适配器与可配置目录项)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "src/index.ts:3 import assertUsableApiKey/LlmError", "purpose": "复用共享的 API key 可用性校验与错误类型"},
+      {"plugin_id": "dsh-llm-deepseek", "mechanism": "E1", "evidence": "src/index.ts:6 import registerDeepSeekProvider/catalogModelInfo + src/config.ts:6 import deepSeekConfigFields/plainOptions", "purpose": "复用 DeepSeek 协议适配器的字段、端点解析与 provider 注册"},
+      {"plugin_id": "dsh-credentials", "mechanism": "E1+E2", "evidence": "src/config.ts:4 import credentialRef + src/index.ts:22 ctx.get('credentials')", "purpose": "把凭据引用解析为密钥值（无 seam 时退化到环境变量）"},
+      {"plugin_id": "dsh-launch-environment", "mechanism": "E1", "evidence": "src/index.ts:5 import launchEnvironmentOf + src/config.ts:5 import type LaunchEnvironmentSnapshot", "purpose": "从启动环境读取端点与密钥的回退来源"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-llm-pi-ai",
+    "name": "@deepseek-ai/dsh-llm-pi-ai",
+    "implementation": "以 @earendil-works/pi-ai 为后端实现通用多 provider LLM 适配器：PiAiAdapter 每次操作捕获一个不可变 snapshot（profiles 与其 Models 集合），保证一次调用的 provider/模型/凭据在 await 期间冻结 (src/adapter.ts:232-241, 330-348)。config.ts 按 provider 路由解析 profile、物化模型目录与注册时捕获的 retryPolicy (src/config.ts:410-509)，context.ts 把 harness 消息历史（含持久图像解析与 offload 占位）转成 pi-ai 的 Context (src/context.ts:262-338)。index.ts 以设置驱动注册/原子替换适配器路由与可配置目录，并注册按命名空间的模型发现 (src/index.ts:285-316, 275-278)；auth.ts 与 login.ts 把 harness 的 credentials/authorization seam 桥接到 pi-ai 的凭据存储与登录流 (src/auth.ts:141-231, src/login.ts:120-160)。",
+    "provides": [
+      "pi-ai 多 provider LLM 适配器 (向 ctx.llm 注册一组 provider 路由，实现 LlmAdapter 并声明各路由 retry policy)",
+      "pi-ai 凭据/登录桥接 (把 credentials 记录与 authorization 流程映射为 pi-ai 的 CredentialStore/AuthContext 与登录事件)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-llm", "mechanism": "E1+E2", "evidence": "src/adapter.ts:41 import LlmAdapter/attributionHeaders + src/index.ts:94 inject llm + src/index.ts:302 ctx.llm.registerAdapter", "purpose": "实现并注册 llm seam 适配器，复用其错误类型、图像投影与目录 API"},
+      {"plugin_id": "dsh-attachment", "mechanism": "E1+E2", "evidence": "src/context.ts:19 import requestImageDimensions + src/adapter.ts:58 import type + src/index.ts:216 ctx.get('attachments')", "purpose": "请求时解析持久图像的确定性字节版本与工具访问"},
+      {"plugin_id": "dsh-authorization", "mechanism": "E1+E2", "evidence": "src/login.ts:12 import type AuthorizationMethod + src/login.ts:138 ctx.authorization.registerFlow", "purpose": "把 pi-ai 的登录会话翻译成 harness 中立的通知/提问流程"},
+      {"plugin_id": "dsh-credentials", "mechanism": "E1+E2", "evidence": "src/auth.ts:19 import credentialKey/isCredentialRefName + src/auth.ts:113 ctx.get('credentials')", "purpose": "以 harness 凭据记录作为 pi-ai 登录/刷新的持久存储"},
+      {"plugin_id": "dsh-fs", "mechanism": "E1+E2", "evidence": "src/index.ts:65 import type {} from '@deepseek-ai/dsh-fs' + src/index.ts:219 ctx.get('fs')", "purpose": "把宿主图像路径映射进当前工具执行世界"},
+      {"plugin_id": "dsh-launch-environment", "mechanism": "E1", "evidence": "src/auth.ts:20 import launchEnvironmentOf + src/index.ts:62 import", "purpose": "在无凭据 seam 时从启动环境解析环境变量凭据"},
+      {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "src/adapter.ts:59 import idleWatchdog/timeoutOf + src/config.ts:21 import MAX_TIMER_DELAY_MS", "purpose": "对流读取实施空闲看门狗并对配置的空闲超时做上界校验"},
+      {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "src/context.ts:7 import brandString + src/stream.ts:11 import", "purpose": "构造品牌化的 ToolCallId 等不透明标识"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/index.ts:66 import deepEqualJson + src/config.ts:24 import", "purpose": "比较目录/注册事实以判断路由集合是否真正变化"},
+      {"plugin_id": "dsh-settings", "mechanism": "E1", "evidence": "src/index.ts:57 import type {} from '@deepseek-ai/dsh-settings'", "purpose": "激活 settings 服务声明，使插件可按设置命名空间配置 provider 路由"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-llm-retry",
+    "name": "@deepseek-ai/dsh-llm-retry",
+    "implementation": "在 agent loop 的 agent/request-error 恢复扩展点上实现按 provider 路由的模型请求重试：按 ResolvedRetryPolicy 的 normal/always 模式与可重试错误码判定是否重试，计算指数退避加抖动并做可取消等待 (src/index.ts:194-241, 59-64)。每次调度先 append 持久的 llm/retry 事件、等待成功后再记 llm/retry-started，并把每 provider/policy 的重试计数保存在 sessionProjections 的 llmRetry 状态中 (src/index.ts:125-138, 188-191)。invariant.ts 的 companion 校验这些持久记录与当前打开的 turn/step、路由 provider 与策略链一致 (src/invariant.ts:45-146)。",
+    "provides": [
+      "agent/request-error 恢复策略执行器 (按 provider 路由的退避重试，normal/always 两种模式)",
+      "llm/retry 与 llm/retry-started 持久会话事件，以及 llmRetry session projection 状态"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-agent", "mechanism": "E1+E2", "evidence": "src/index.ts:12 import type Agent/RequestErrorAction + src/index.ts:22 inject agents", "purpose": "在 agent 请求错误恢复点上裁决是否重试，并把重试写入 agent.session"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "src/index.ts:13 import type LlmFailure/ResolvedRetryPolicy + src/types.ts:1 import from dsh-llm/types", "purpose": "消费 provider 中立失败事实与已解析的重试策略类型"},
+      {"plugin_id": "dsh-session", "mechanism": "E1+E2", "evidence": "src/history.ts:3 import type SessionEvent + src/invariant.ts:160 ctx.sessions.list", "purpose": "向会话日志追加持久重试事件并回放校验既有记录"},
+      {"plugin_id": "dsh-session-projection", "mechanism": "E1+E2", "evidence": "src/index.ts:14 import type {} + src/index.ts:125 ctx.sessionProjections.register", "purpose": "注册 llmRetry projection 以在重试间保持每 provider/策略的尝试计数"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E1+E2", "evidence": "src/invariant.ts:7 import type InvariantInstaller + src/invariant.ts:178 ctx.invariants.register", "purpose": "注册包拥有的重试持久事件不变量 companion"},
+      {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "src/invariant.ts:6 import MAX_TIMER_DELAY_MS", "purpose": "校验持久 delayMs 落在计时器可表示范围内"},
+      {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "src/brand.ts:1 import type Branded", "purpose": "以 Branded 定义跨尝试稳定的 RetryId 不透明标识"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-plugin-package-inventory-deepseek",
+    "name": "@deepseek-ai/dsh-plugin-package-inventory-deepseek",
+    "implementation": "在官方 DeepSeek 请求上贡献 dsh_plugin_packages 字段：收集 Loader 活跃且非结构化的条目，并按请求 agent 的 standing preset 追加其预设树条目 (src/index.ts:157-185, 138-149)。PackageIdentityResolver 为每个条目解析其 owning package 的 name/version 身份——bare 包按锚点定位 manifest，相对/绝对模块则向上查找最近 manifest，并对非包松散模块返回匿名 (src/index.ts:101-135, 54-98)。去重、按确定性文本序排序后经 ctx.deepseekLlmApiExtensions.register 注册字段的 prepare 逻辑 (src/index.ts:176-204)。",
+    "provides": [
+      "dsh_plugin_packages 请求字段贡献 (向 ctx.deepseekLlmApiExtensions 注册，携带当前活跃插件包的 name/version 清单)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-deepseek-llm-api-extensions", "mechanism": "E1+E2", "evidence": "src/index.ts:17 import type {} + src/index.ts:29 inject deepseekLlmApiExtensions + src/index.ts:196 ctx.deepseekLlmApiExtensions.register", "purpose": "把插件包清单作为独立顶层字段注册进 DeepSeek 请求扩展注册表"},
+      {"plugin_id": "dsh-agent", "mechanism": "E1+E2", "evidence": "src/index.ts:16 import type {} + src/index.ts:29 inject agents + src/index.ts:165 ctx.agents.get", "purpose": "按请求会话定位 agent，以追加其 standing preset 的活跃条目"},
+      {"plugin_id": "dsh-agent-preset-registry", "mechanism": "E1+E2", "evidence": "src/index.ts:19 import type {} + src/index.ts:169 dynamic import standingMountFor + src/index.ts:164 ctx.get('agentPresets')", "purpose": "查询 agent 的 standing preset 挂载树以纳入预设内活跃插件包"},
+      {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "src/index.ts:14 import brandString", "purpose": "把请求 sessionId 字符串品牌化为 SessionId 后查询 agent"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "src/index.ts:18 import type SessionId", "purpose": "以 SessionId 类型标识请求所属会话"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-token-meter",
+    "name": "@deepseek-ai/dsh-token-meter",
+    "implementation": "提供 ctx.tokenMeter 服务，以 replay-aware 方式从持久 session log 计算请求压力与 surface (src/index.ts:101-123, 146-191, 219-240)。注册三个 session projection：tokenUsage 累计 provider usage、contextPressure 以 provider 采样叠加 O(1) shadow-price surface fold 推算占用、contextBreakdown 启发式分解 system/tools/message (src/usage-projection.ts:117-150, 173-217, src/breakdown-projection.ts:48-81)。estimate.ts 以固定密度启发式统一给消息/工具定价 (src/estimate.ts:88-102)，route-pricing.ts 按路由的图片/文件表示重定价 surface 并校验定价对齐 (src/route-pricing.ts:32-75)，turn-usage.ts 折叠一个完整 Turn 的各次尝试得出精确 token 账目 (src/turn-usage.ts:178-273)。",
+    "provides": [
+      "ctx.tokenMeter (从持久 session log 回放测量的 token 计量服务，供 compaction 与上下文压力消费)",
+      "tokenUsage / contextPressure / contextBreakdown 三个 session projection 供 UI 与压缩读取"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "src/types.ts:8 import type SessionEvent + src/index.ts:19 import canonicalHeader/isSurfaceEvent/SessionSeq", "purpose": "读取持久会话事件序列并做 surface 判定与表头规范化"},
+      {"plugin_id": "dsh-session-projection", "mechanism": "E1+E2", "evidence": "src/index.ts:27 import type {} + src/index.ts:106 static inject sessionProjections + src/index.ts:114 ctx.sessionProjections.register", "purpose": "注册三个投影单元并读取其在会话上的状态"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1+E2", "evidence": "src/index.ts:10 import assembleAssistantStream + src/index.ts:11 import type TokenUsage + src/index.ts:197 ctx.get('llm')", "purpose": "读取路由图像定价与文件请求文本，并重组 assistant 流以估算 provider 输出"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/index.ts:12 import deepFreeze", "purpose": "把测量结果冻结为深度不可变快照"},
+      {"plugin_id": "dsh-llm-retry", "mechanism": "E1", "evidence": "src/turn-usage.ts:3 import from '@deepseek-ai/dsh-llm-retry/types' + src/usage-projection.ts:7 import type {}", "purpose": "识别 llm/retry-started 以正确区分一次 Turn 内的多次尝试"},
+      {"plugin_id": "dsh-compaction", "mechanism": "E1", "evidence": "src/surface-projection.ts:21 import type {} from '@deepseek-ai/dsh-compaction'", "purpose": "激活 compaction/* shadow-price 事件声明以消费替换区间定价"},
+      {"plugin_id": "dsh-compaction-image-offload", "mechanism": "E1", "evidence": "src/index.ts:8 import from '@deepseek-ai/dsh-compaction-image-offload/projection'", "purpose": "激活 image/offload 事件投影声明以在折价时标记已卸载图像"}
+    ],
+    "dependents": []
+  }
+]

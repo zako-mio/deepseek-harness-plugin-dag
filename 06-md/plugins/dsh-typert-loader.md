@@ -1,29 +1,22 @@
 # dsh-typert-loader
 
 - 包名: `@deepseek-ai/dsh-typert-loader`
-- 分组: G02 类型契约
+- 分组: G45 类型契约
 - 拓扑层: Layer 1
 - 来源层: L1 核心集
 - 源码路径: `packages/typert/loader`
 
-## 为什么需要它（设计初衷）
-Typert Loader 集成：扫描 Loader 条目并注册生成的主机类型产物进运行时 registry，喂给 typert 类型图（ctx.typert）。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/typert/loader
-- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/typert
-
 ## 实现逻辑
-Typert 构建产物的自动注册集成。apply(ctx) 扫描 loader entries 与显式配置 packages，对每个 entry 解析其 package.json 的 './typert' export，动态 import 后经 validateTypertManifest 严格校验，通过 ctx.typert.register(manifest) 注册。监听 'internal/plugin' 事件把 fiber entry 标记 dirty，microtask 批量 flush 增量 reconcile；unmount 时撤下注册。
+Loader 集成：当 Loader entry 挂载时解析其 package.json，若导出 ./typert 则导入 host 面并把 TYPERT 清单注册进 ctx.typert，entry 卸载时撤下注册（src/index.ts:1-26）。扫描按 entry 名增量进行：internal/plugin 标脏后经微任务 flush 对账实时 entries（src/index.ts:435-463）。
 
 ## Provides
-- typert manifest 自动注册/撤销能力
-- inject=['typert','loader'] 插件入口
-- validateTypertManifest/TYPERT_HOST_EXPORT
+- 自动注册挂载插件包的 ./typert 清单到 ctx.typert（src/index.ts:410）
 
 ## Depends On (上游依赖)
-- `dsh-typert-registry` [运行时依赖] - ctx.typert.register
-  - 证据: `packages/typert/loader/src/index.ts:35,383`
+- `cordis-plugin-loader` [E1+E2] - 观察 Loader entry 生命周期并定位包
+  - 证据: `package.json:30 peerDep + src/index.ts:34 type-only import + src/index.ts:45 inject ['loader']`
+- `dsh-typert-registry` [E1+E2] - 向 typert 注册表写入清单
+  - 证据: `package.json:31 peerDep + src/index.ts:36-37 import + src/index.ts:410 ctx.typert.register`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

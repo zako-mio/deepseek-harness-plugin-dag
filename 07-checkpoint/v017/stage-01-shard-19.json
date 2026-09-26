@@ -1,0 +1,336 @@
+[
+  {
+    "id": "dsh-subprocess-local",
+    "name": "@deepseek-ai/dsh-subprocess-local",
+    "implementation": "本地子进程能力 seam 的 provider：LocalSubprocessRuntime 继承 SubprocessRuntime（src/index.ts:59-85），按平台选择 linux-scope / windows-job / fallback 三种受管进程范围（src/index.ts:213-232），提供普通进程 spawn（src/spawn.ts:454-492）与 node-pty 终端 spawn（src/index.ts:264-329）。它负责 per-stream stdio 处置、输出 tail-keep 与 spill 文件（src/spawn.ts:267-446）、凭据清洗环境（src/spawn.ts:44-54），并在 JS 可观察的 host 退出时同步终止仍存活的进程范围（src/index.ts:77-105）。",
+    "provides": [
+      "ctx.subprocess（本地实现：受管进程范围 spawn、终端 spawn、可执行文件解析与退出清理）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-subprocess",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:45 peerDep + src/index.ts:20 import SubprocessRuntime + src/control-spawn.ts:3 import @deepseek-ai/dsh-subprocess/control",
+        "purpose": "继承其服务基类以实现子进程 seam 契约，并复用控制管道协议常量"
+      },
+      {
+        "plugin_id": "dsh-timeout",
+        "mechanism": "E1",
+        "evidence": "package.json:46 peerDep + src/spawn.ts:15 import MAX_TIMER_DELAY_MS",
+        "purpose": "复用超时上界常量校验 graceMs"
+      },
+      {
+        "plugin_id": "dsh-lazy-require",
+        "mechanism": "E1",
+        "evidence": "package.json:50 dep + src/index.ts:19 import createLazyRequire",
+        "purpose": "延迟加载 node-pty / koffi 等可选原生依赖"
+      },
+      {
+        "plugin_id": "dsh-win32-process",
+        "mechanism": "E1",
+        "evidence": "package.json:51 dep + src/windows-job.ts:12 import loadWin32ProcessBindings/probeCurrentTokenJobSupport",
+        "purpose": "Windows Job 原生绑定与当前令牌能力探测"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-terminal",
+    "name": "@deepseek-ai/dsh-terminal",
+    "implementation": "owner 作用域的持久 PTY 注册表：TerminalSessionService 注册 ctx.terminals（src/index.ts:105-118），管理 backend 注册（src/index.ts:125-137）、按精确 Agent owner 隔离的会话发布（src/index.ts:154-224）与 awaited 清理（src/index.ts:423-454）。服务只拥有 ids、发布、授权与清理，把终端机制留给 backend（src/types.ts:166-171），并以机器可路由的 TerminalError 暴露失败（src/index.ts:55-71）。",
+    "provides": [
+      "ctx.terminals（持久 PTY 会话 seam：backend 注册、owner 隔离 id、send/read/signal/close 与 awaited 清理）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:30 peerDep + src/index.ts:8 import Agent + src/index.ts:319 ctx.get('agents')",
+        "purpose": "以精确 Agent 作为会话 owner，并绑定其生命周期做 cleanup"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "package.json:31 peerDep + src/types.ts:7 import Branded",
+        "purpose": "提供 TerminalSessionId 品牌类型"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-terminal-bash",
+    "name": "@deepseek-ai/dsh-terminal-bash",
+    "implementation": "本地持久 shell PTY backend：BashTerminalBackend 经 ctx.subprocess.spawnTerminal 拉起 bash/pwsh 交互会话（src/index.ts:201-230），并注册到 ctx.terminals（src/index.ts:237）。它结合 sandboxPolicy 生成 argv（src/index.ts:100-109）、设置受控提示符 PS1/PROMPT_COMMAND（src/index.ts:64-89），用 LocalPtySession 做有界输出、就绪判定与终端协议回复（src/session.ts:1-60）。",
+    "provides": [
+      "ctx.terminals 的 shell 后端（TerminalBackend 实现，默认 type shell，注册于 src/index.ts:237）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-terminal",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:31 peerDep + src/index.ts:10-11 import + src/index.ts:237 ctx.terminals.registerBackend",
+        "purpose": "向 PTY seam 注册 backend 并复用其类型与 TerminalError"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:30 peerDep + src/index.ts:8 import Agent + src/index.ts:37 ensureSandboxModeFence(owner)",
+        "purpose": "以会话 owner Agent 及其 session 做沙箱模式护栏"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "package.json:34 peerDep + src/index.ts:9 import Session/SessionEvent",
+        "purpose": "订阅 session/event 校验 sandbox 模式切换"
+      },
+      {
+        "plugin_id": "dsh-subprocess",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:35 peerDep + src/index.ts:12 import + src/index.ts:27 inject ['subprocess']",
+        "purpose": "经 ctx.subprocess.spawnTerminal 启动 PTY 进程"
+      },
+      {
+        "plugin_id": "dsh-sandbox",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:32 peerDep + src/index.ts:13 import SandboxExecutionPolicy + src/index.ts:103 ctx.get('sandbox')",
+        "purpose": "按执行策略 confine 终端 argv"
+      },
+      {
+        "plugin_id": "dsh-sandbox-policy",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:33 peerDep + src/index.ts:14 type-only import + src/index.ts:27 inject ['sandboxPolicy']",
+        "purpose": "解析当前会话的沙箱执行策略"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:37 peerDep + src/index.ts:15 type-only import + src/index.ts:27 inject ['sessionProjections']",
+        "purpose": "读取 sandboxMode 投影以校验模式切换"
+      },
+      {
+        "plugin_id": "dsh-pwsh-local",
+        "mechanism": "E1",
+        "evidence": "package.json:41 dep + src/config.ts:4 import resolvePwshPath + src/index.ts:16 import ENCODING_PREAMBLE",
+        "purpose": "pwsh 方言的可执行路径解析与 UTF-8 前置"
+      },
+      {
+        "plugin_id": "dsh-lazy-require",
+        "mechanism": "E1",
+        "evidence": "package.json:40 dep + src/session.ts:5 import createLazyRequire",
+        "purpose": "延迟加载 @xterm/headless"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-terminal",
+    "name": "@deepseek-ai/dsh-tool-terminal",
+    "implementation": "六个面向模型的持久终端工具，用 defineTool 注册到 ctx.tools：terminal_open/send/read/signal/close/list（src/index.ts:163-403）。owner 身份取自工具执行 Agent（src/index.ts:118-121, 185），前台 send 等待就绪/静默/超时/退出（src/index.ts:280-283），后台 send 交给通用 ctx.jobs 管理（src/index.ts:251-278，src/background.ts:22-31），结果经 TextRetainer 做字节上限渲染（src/render.ts:3）。",
+    "provides": [
+      "工具 terminal_open / terminal_send / terminal_read / terminal_signal / terminal_close / terminal_list（注册到 ctx.tools，src/index.ts:163-403）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-terminal",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:35 peerDep + src/index.ts:11-12 import + src/index.ts:28 inject ['terminals']",
+        "purpose": "调用 ctx.terminals 的会话操作"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:33 peerDep + src/index.ts:9 import Agent + src/index.ts:185 requireAgent(exec.agent)",
+        "purpose": "以执行 Agent 作为终端 owner"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:39 peerDep + src/index.ts:14-15 import defineTool + src/index.ts:28 inject ['tools']",
+        "purpose": "注册工具定义与 schema"
+      },
+      {
+        "plugin_id": "dsh-jobs",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:38 peerDep + src/index.ts:13 import + src/index.ts:253 ctx.get('jobs')",
+        "purpose": "后台 pty-send 任务的 id 生成与输出收集"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:37 peerDep + src/index.ts:28 inject ['systemPrompt'] + src/index.ts:157 ctx.systemPrompt.section",
+        "purpose": "注入终端使用指引段落"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "package.json:34 peerDep + src/index.ts:10 import ContentBlock",
+        "purpose": "工具结果内容块类型"
+      },
+      {
+        "plugin_id": "dsh-output-retention",
+        "mechanism": "E1",
+        "evidence": "package.json:36 peerDep + src/render.ts:3 import TextRetainer",
+        "purpose": "结果文本的字节上限保留与截断"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-todo",
+    "name": "@deepseek-ai/dsh-tool-todo",
+    "implementation": "面向模型的整表替换 todo_write 工具：校验去空白、唯一 content 与 in_progress 策略（src/index.ts:80-100），并把 todo/write 快照 append 到调用 Agent 的 session（src/index.ts:199）。同时注册 sessionProjections 的 todos 投影（最新列表、turn/start 清零，src/index.ts:123-134），配套 invariant 伴生插件校验耐久日志的形状与 turn 边界（src/invariant.ts:24-58）。",
+    "provides": [
+      "工具 todo_write（注册 ctx.tools，src/index.ts:135）",
+      "ctx.sessionProjections 的 todos 投影单元（src/index.ts:123）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:48 peerDep + src/index.ts:12 import defineTool + src/index.ts:23 inject ['tools']",
+        "purpose": "注册 todo_write 工具"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:47 peerDep + src/index.ts:15 type-only import + src/index.ts:23 inject ['sessionProjections']",
+        "purpose": "注册 todos 投影单元"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:44 peerDep + src/index.ts:199 exec.agent.session.append",
+        "purpose": "todo 列表挂在调用 Agent 的 session 上"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:46 peerDep + src/invariant.ts:4 import Session/SessionEvent + src/invariant.ts:92 ctx.on('session/event')",
+        "purpose": "耐久校验基于 session 事件日志"
+      },
+      {
+        "plugin_id": "dsh-invariants",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:45 peerDep + src/invariant.ts:5 import InvariantInstaller + src/invariant.ts:104 ctx.invariants.register",
+        "purpose": "注册 todo 快照不变量校验"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-typert-loader",
+    "name": "@deepseek-ai/dsh-typert-loader",
+    "implementation": "Loader 集成：当 Loader entry 挂载时解析其 package.json，若导出 ./typert 则导入 host 面并把 TYPERT 清单注册进 ctx.typert，entry 卸载时撤下注册（src/index.ts:1-26）。扫描按 entry 名增量进行：internal/plugin 标脏后经微任务 flush 对账实时 entries（src/index.ts:435-463）。",
+    "provides": [
+      "自动注册挂载插件包的 ./typert 清单到 ctx.typert（src/index.ts:410）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-typert-registry",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:31 peerDep + src/index.ts:36-37 import + src/index.ts:410 ctx.typert.register",
+        "purpose": "向 typert 注册表写入清单"
+      },
+      {
+        "plugin_id": "cordis-plugin-loader",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:30 peerDep + src/index.ts:34 type-only import + src/index.ts:45 inject ['loader']",
+        "purpose": "观察 Loader entry 生命周期并定位包"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-typert-registry",
+    "name": "@deepseek-ai/dsh-typert-registry",
+    "implementation": "共享 Typert 运行时注册表：TypertRegistry 注册 ctx.typert（src/service.ts:456），存储生成的包反射元数据与 Zod schema，并提供 register/get/resolve/list 与 toJSONSchema 等契约（src/index.ts:17-26）。它不做 TypeScript 分析或 schema 生成（src/service.ts:1-6），web 客户端面复用同一实现（src/client/index.ts:13-15）。",
+    "provides": [
+      "ctx.typert（生成式反射元数据与 Zod schema 运行时注册表，host 与 client 双面）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:4 import TypertDisposer + src/types.ts:8 import InvocationDescriptor",
+        "purpose": "实现其服务契约并复用共享 wire 类型"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "cordis-plugin-group",
+    "name": "@deepseek-ai/cordis-plugin-group",
+    "implementation": "把 Loader 的 Group 类作为默认导出暴露为独立插件包（src/index.ts:1-3），用于在 cordis 配置中声明嵌套插件组。",
+    "provides": [
+      "Group 插件（嵌套插件组的默认导出，src/index.ts:1-3）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "cordis-plugin-loader",
+        "mechanism": "E1",
+        "evidence": "package.json:33 peerDep + src/index.ts:1 import Group",
+        "purpose": "复用 Loader 的 Group 实现"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "cordis-plugin-include",
+    "name": "@deepseek-ai/cordis-plugin-include",
+    "implementation": "文件支持的 Loader 子树：Include 继承 EntryTree（src/index.ts:159），从 ctx.baseUrl 解析 YAML/JSON 入口清单，应用 patch（src/index.ts:57-127），并支持写回与热重载（src/index.ts:279-287, 289-334）。entryListSchema 承载 !!js 表达式的 YAML 方言，供配置工具与挂载共用（src/index.ts:9-23）。",
+    "provides": [
+      "Include 插件（文件支持的 Loader 子树 EntryTree，src/index.ts:159）",
+      "entryListSchema（支持 !!js 表达式的 YAML 方言，src/index.ts:23）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "cordis-plugin-loader",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:33 peerDep + src/index.ts:1 import EntryGroup/EntryTree + src/index.ts:160 static inject=['loader']",
+        "purpose": "继承 EntryTree/EntryGroup 并注入 loader 写入挂载结果"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "cordis-plugin-loader",
+    "name": "@deepseek-ai/cordis-plugin-loader",
+    "implementation": "cordis 插件加载器：Loader 继承 EntryTree（src/index.ts:77），持有 entry 树与模块导入器，负责导入配置插件、解析 inject、处理自卸载与热更新写回（src/index.ts:129-166）。它注册 loader 服务并声明 exit 与 loader/* 事件（src/index.ts:23-55, 102）。",
+    "provides": [
+      "ctx.loader（插件加载器：entry 树、插件导入与热更新，src/index.ts:77/102）",
+      "事件 loader/config-update、loader/entry-init、loader/partial-dispose、loader/volatile-update、loader/patch-context、exit（src/index.ts:23-42）"
+    ],
+    "depends_on": [],
+    "dependents": []
+  },
+  {
+    "id": "cordis-plugin-logger-console",
+    "name": "@deepseek-ai/cordis-plugin-logger-console",
+    "implementation": "控制台日志导出器：ConsoleExporter 基类在 shared 中定义配置与通用实现（src/shared.ts:28-42），Node 面以 util.inspect 与 supports-color 格式化对象（src/index.ts:9-26），browser 面派发原生 console 方法（src/browser.ts:8-15）。",
+    "provides": [
+      "logger-console 导出器（ConsoleExporter，Node 与 browser 双面，src/index.ts:14 / src/browser.ts:8）"
+    ],
+    "depends_on": [],
+    "dependents": []
+  },
+  {
+    "id": "cordis-plugin-timer",
+    "name": "@deepseek-ai/cordis-plugin-timer",
+    "implementation": "可随 fiber 处置的计时器服务：TimerService 注册 ctx.timer 并把 timeout/interval/throttle/debounce 混入 Context（src/index.ts:12-16）。每个计时器经 ctx.effect 在作用域处置时自动清理（src/index.ts:28-54），interval 另提供异步迭代器形态（src/index.ts:57-104）。",
+    "provides": [
+      "ctx.timer / ctx.timeout / ctx.interval / ctx.throttle / ctx.debounce（随 fiber dispose 的计时器服务，src/index.ts:12-16）"
+    ],
+    "depends_on": [],
+    "dependents": []
+  },
+  {
+    "id": "schemastery",
+    "name": "@deepseek-ai/schemastery",
+    "implementation": "类型驱动的 schema 校验器：Schema 工厂与 Schema 类做值校验、默认值填充与类型推断（src/index.ts:42-50, 254），默认导出供 z(...) 调用（src/index.ts:962）。它基于 cosmokit 的原语（Binary/clone/deepEqual/volatile 等）实现 schema 组合与序列化简写（src/index.ts:1-2, 5-6）。",
+    "provides": [
+      "Schema / z(...) 类型驱动校验器（默认导出，src/index.ts:962）"
+    ],
+    "depends_on": [],
+    "dependents": []
+  }
+]

@@ -29,17 +29,17 @@
 <body>
 <header>
   <h1>DeepSeek Harness 插件级 DAG 依赖链分析</h1>
-  <p>以 cordis 插件为最小分析单元，三硬依据（E1 编译 / E2 运行时 / E3 组合）+ 源码行引用逐条溯源，回答每个插件「实现了什么」「依赖谁」「被谁依赖」。L1 核心集（base bundle）+ L2 web-app bundle（宿主层/前端 runtime/ui-*）+ L3 其余（examples/hooks/web 变体/e2b/lsp/sdk/子代理外部后端）已全部完成。</p>
+  <p>以 cordis 插件为最小分析单元，三硬依据（E1 编译 / E2 运行时 / E3 组合）+ 源码行引用逐条溯源，回答每个插件「实现了什么」「依赖谁」「被谁依赖」。<b>2026-09-27 全量重建至 dsh-v0.1.7-rc.2</b>：L1 核心集（base bundle）+ L2 web-app bundle（宿主层/前端 runtime/ui-*）+ L3 其余（SDK/ACP/hooks/实验特性/SSH/Browser-Use 等 5 个 bundle 之外的可挂载插件）已全部完成。</p>
 </header>
 <main>
   <h2>核心统计</h2>
   <div>
-    <div class="stat"><b>180</b><span>插件节点（76 L1 + 58 L2 + 46 L3）</span></div>
-    <div class="stat"><b>50</b><span>外部 seam 基座</span></div>
-    <div class="stat"><b>578</b><span>依赖边（含 22 个 web 变体 disabled 标注）</span></div>
-    <div class="stat"><b>17</b><span>拓扑层</span></div>
-    <div class="stat"><b>39</b><span>分组</span></div>
-    <div class="stat"><b>230</b><span>HTML 插件页（180 DAG 节点 + 50 seam，1 个双身份共享页）</span></div>
+    <div class="stat"><b>239</b><span>插件节点（90 L1 + 82 L2 + 67 L3）</span></div>
+    <div class="stat"><b>73</b><span>外部 seam 基座</span></div>
+    <div class="stat"><b>1077</b><span>节点间依赖边（另 536 条 seam 边）</span></div>
+    <div class="stat"><b>19</b><span>拓扑层</span></div>
+    <div class="stat"><b>50</b><span>分组</span></div>
+    <div class="stat"><b>312</b><span>HTML 插件页（239 DAG 节点 + 73 seam）</span></div>
   </div>
 
   <h2>入口导航</h2>
@@ -50,14 +50,14 @@
 
   <h2>查看方式</h2>
   <div class="cards">
-    <div class="card"><h3>交互图</h3><p>cytoscape 本地渲染，组级视图 40 节点（39 组 + EXT）彩色，点击组节点下钻组内插件 DAG；disabled 插件灰显红边。<a href="04-interactive/index.html">打开 →</a></p></div>
+    <div class="card"><h3>交互图</h3><p>cytoscape 本地渲染，组级视图 51 节点（50 组 + EXT）彩色，点击组节点下钻组内插件 DAG；支持 <code>?drill=Gxx</code> / <code>#Gxx</code> 深链；disabled 插件灰显红边。<a href="04-interactive/index.html">打开 →</a></p></div>
     <div class="card"><h3>插件页</h3><p>每插件一页：设计初衷 + 实现逻辑 + provides + 上游/下游 DAG 链式导航 + 源码引用。<a href="02-plugin-pages/dsh-session.html">示例 dsh-session →</a></p></div>
-    <div class="card"><h3>分组索引</h3><p>39 组索引（L1 24 组 + L2 5 组 + L3 8 组 + 新增 G38/G39），每组列出组内插件与拓扑层。<a href="03-groups/index.html">打开 →</a></p></div>
+    <div class="card"><h3>分组索引</h3><p>50 组索引（按 packages 域划分，客户端 UI 单独成组），每组列出组内插件与拓扑层。<a href="03-groups/index.html">打开 →</a></p></div>
     <div class="card"><h3>MD 镜像</h3><p>AI 友好 Markdown 简表，供检索与二次加工（非人类浏览入口，见 README）。</p></div>
   </div>
 
   <h2>方法说明</h2>
-  <p>依赖判定三硬依据：<b>E1 编译依赖</b>（package.json peerDependencies / import）、<b>E2 运行时依赖</b>（ctx 服务注入 / ctx.get / 事件订阅）、<b>E3 组合依赖</b>（cordis.patch.yml 装配）。拓扑分层采用层次遍历：被依赖方先于依赖方（Layer 0 为基础能力，Layer 16 为最外层 UI 插件）。L2 另标注 22 个 web 变体 disabled 插件（模型侧工具移到 agent presets）。L3 追加 8 组（外部执行后端/协议与SDK/LSP集成/子代理外部后端/Web上下文扩展/会话存储变体/Hooks工具扩展/示例与框架）+ 4 特殊模块页（base/headless/app-boot/cmdline）。</p>
+  <p>依赖判定三硬依据：<b>E1 编译依赖</b>（package.json peerDependencies / import）、<b>E2 运行时依赖</b>（ctx 服务注入 / ctx.get / 事件订阅）、<b>E3 组合依赖</b>（cordis.patch.yml 装配）。拓扑分层采用<b>最长路径</b>（被依赖方先于依赖方，Layer 0 为基础能力，Layer 18 为最外层客户端插件）；<b>type-only 类型导入边</b>标注但不参与分层（TS 类型环合法）；1 条运行时反馈边标 soft；另有 19 个装配行 disabled 标注（灰显红边）。特殊模块 8 页（base/headless/web-app/sdk-app/sdk-minimal/acp-app + app-boot/cmdline）。</p>
 </main>
 </body>
 </html>

@@ -1,43 +1,39 @@
 # dsh-user-approval
 
 - 包名: `@deepseek-ai/dsh-user-approval`
-- 分组: G09 审批权限
+- 分组: G21 交互命令
 - 拓扑层: Layer 3
 - 来源层: L1 核心集
 - 源码路径: `packages/interaction/user-approval`
 
-## 为什么需要它（设计初衷）
-Harness 的人机审批接缝 ctx.approval：一次性权限决策经 approval/request 瀑布分发给各 answerer，默认 fail-closed（无 answerer 即拒绝）。它为工具流水线的 ask 决策和沙箱 bash 提级重试提供安全阀，模型只看到被记录的最终工具结果，审计事件仅入日志。解决'Agent 工具执行前如何获得人的一次许可'的安全性问题。
-
-发展史：自 approval-seam 设计（2026-07-06 Agent Note）演进为渠道无关的一次性审批服务，同时用于 ACP 自动化桥的机器决策。策略仅 ask/never 两态，无 allow-always/撤销/持久授权，均列为 deferred。版本 0.1.0-rc.8。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/interaction/user-approval/README.md
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/interaction/user-approval/package.json
-
 ## 实现逻辑
-定义 ctx.approval 审批 seam(Service 默认导出)。request() 先校验 open turn，append approval/asked 审计事件，再经 ctx.waterfall 调度 scope-targeted 'approval/request' 瀑布(fail-closed 默认 'unavailable'，'never' 策略确定性 reject，abort 得 'cancelled')，最后 append approval/decided 配对事件。setPolicy() 用 setApprovalPolicy 写 session 日志并 agent.inject 用户可见切换通知；经 ctx.inject(['systemPrompt']) 注册 'approval:policy' context 段向模型陈述当前策略。
+实现 ctx.approval 审批能力 seam 的服务定义：request() 要求处于未闭合 turn 内，先写 approval/asked 审计再经作用域 waterfall 求决策并写 approval/decided（src/index.ts:215-234、267-307）。策略 'never' 在任何答案者之前由服务自身决断性拒绝，缺答案者则 fail-closed 返回 unavailable（src/index.ts:275、283）。setPolicy 写 approval/policy 事件并把切换通知注入模型，systemPrompt 上下文档声明当前策略（src/index.ts:162-195）。
 
 ## Provides
-- ctx.approval(ApprovalService)
-- approval/request 瀑布事件(Scoped)
-- session 事件 approval/asked|decided|policy
-- systemPrompt context 段 approval:policy
-- setApprovalPolicy/effectiveApprovalPolicy/APPROVAL_POLICIES
+- ctx.approval (审批服务 + approval/request 作用域 waterfall；approval/asked↔decided 审计不变量，src/index.ts:150-308)
 
 ## Depends On (上游依赖)
-- `dsh-agent` [编译依赖] - 携带 live agent 路由 answerer
-  - 证据: `packages/interaction/user-approval/src/index.ts:10,159,230`
-- `dsh-llm` [编译依赖] - createUserMessage
-  - 证据: `packages/interaction/user-approval/src/index.ts:11`
-- `dsh-session` [运行时依赖] - 审批审计事件与 policy 持久化
-  - 证据: `packages/interaction/user-approval/src/index.ts:146,267,274`
-- `dsh-system-prompt` [组合依赖] - 向模型暴露 approval policy
-  - 证据: `packages/interaction/user-approval/src/index.ts:204`
+- `dsh-agent` [编译依赖] - 以 agent/session 为审批作用域与日志目标
+  - 证据: `package.json:40 peerDep + src/index.ts:10、src/types.ts:10 type import Agent`
+- `dsh-invariants` [E1+E2] - 注册审批审计流不变量
+  - 证据: `package.json:42 peerDep + src/invariant.ts:5 import; src/invariant.ts:112 ctx.invariants.register`
+- `dsh-llm` [E1+E2] - 把策略切换通知注入模型消息
+  - 证据: `package.json:43 peerDep + src/index.ts:11-12 import createUserMessage/ContextFormed; src/index.ts:188 agent.inject`
+- `dsh-scope` [E1+E2] - 按 agent 过滤审批请求分派
+  - 证据: `package.json:44 peerDep + src/index.ts:19、src/types.ts:9 import scopeTarget/Scoped; src/index.ts:282 作用域 waterfall`
+- `dsh-session` [E1+E2] - 把审批审计对写入会话日志
+  - 证据: `package.json:45 peerDep + src/index.ts:20-21 import Session/SessionSeq; src/index.ts:225/232 session.append`
+- `dsh-system-prompt` [E1+E2] - 声明当前审批策略的模型可见上下文
+  - 证据: `package.json:46 peerDep + src/index.ts:22 type import; src/index.ts:162 ctx.inject(['systemPrompt'])`
 
 ## Dependents (下游被依赖)
-- `dsh-host-apiproxy` - ApprovalOutcome/ApprovalRequestId
-- `dsh-permission-presets` - approval 旋钮写穿
-- `dsh-tool-bash` - 升级批准通道
-- `dsh-tool-fs` - approveEscalation 的 approver 通道
-- `dsh-tools` - ctx.get('approval') 可选 seam：ask 决策转 approval.request
+- `dsh-acp` - 声明合并权限 waterfall 并提供一次性决策
+- `dsh-api-remotes` - 审批 waterfall 事件签名
+- `dsh-experimental-auto-review` - 按 approval policy 决定 reviewer deny 是 ask 还是终态 deny
+- `dsh-permission-presets` - 按预设写穿 approval 策略
+- `dsh-plugin-manager` - 对提权的管理动作要求用户审批
+- `dsh-subagent` - 将子代理审批策略固定为 never
+- `dsh-tool-bash` - 把沙箱升级请求路由到用户审批通道
+- `dsh-tool-fs` - 沙箱升级等敏感操作走用户审批
+- `dsh-tool-pwsh` - 把沙箱升级请求路由到用户审批通道
+- `dsh-tools` - 可选消费审批服务以处理升级请求

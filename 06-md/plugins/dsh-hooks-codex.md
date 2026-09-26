@@ -1,35 +1,30 @@
 # dsh-hooks-codex
 
 - 包名: `@deepseek-ai/dsh-hooks-codex`
-- 分组: G36 Hooks工具扩展
+- 分组: G19 Hooks 扩展
 - 拓扑层: Layer 5
 - 来源层: L3 其余
 - 源码路径: `packages/hooks/hooks-codex`
 
-## 为什么需要它（设计初衷）
-Codex hook 桥：把用户既有 .codex/hooks.json 的 5 个钩子点映射到 harness 的规范拦截点，作为兼容路径而非原生能力。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/hooks/hooks-codex
-
 ## 实现逻辑
-Bridge 插件：在 harness 拦截 seam 上运行未修改的 Codex hooks.json。name='hooks-codex', inject=['shell']（src/index.ts:40-41）。apply 读入解析 Codex hooks.json（parseCodexConfig, :81-97），注册 5 个扩展点：agent/session-start(SessionStart, detached, :188)、agent/pre-step(UserPromptSubmit, 仅 reject 支持, :199)、tools/pre-execute(PreToolUse, 仅 deny, :225)、tools/post-execute(PostToolUse, :234)、agent/turn-stopping(Stop, :260)。Codex 方言：snake_case payload、每事件带 model、正则匹配器、无 hook 环境/命令替换、无 pre-tool approval/rewrite 路径，仅 honor 阻断决策；stop_hook_active 恒 false。共享执行/解析在 dsh-hook-protocol。
+把未改动的 Codex command hooks 桥接到 harness：SessionStart、UserPromptSubmit、PreToolUse/PostToolUse、Stop，仅同步 command 类型、正则匹配、snake_case payload 且 stdin 无尾换行（src/index.ts:119-176, 152）。config.ts 解析 Codex 五事件子集，跳过非 command 与 async hooks，并对非法 matcher 抛 SyntaxError（src/config.ts:43-85）。决策映射只保留阻断路径：工具与生命周期拦截点分别映射为 PreToolDecision/PostToolDecision 与 PreStepDecision（src/index.ts:191-276）。
 
 ## Provides
-- 5 个拦截扩展点处理（SessionStart/UserPromptSubmit/PreToolUse/PostToolUse/Stop）
-- Codex 方言 payload 编解码（snake_case + model + turn_id）
-- hook/invoked + hook/result session 事件对
-- inject ['shell']
+- Codex hooks 桥 (SessionStart/UserPromptSubmit/Pre+PostToolUse/Stop 到 harness 拦截点的决策映射)
 
 ## Depends On (上游依赖)
-- `dsh-agent` [编译依赖] - agent 类型与决策契约
-  - 证据: `packages/hooks/hooks-codex/src/index.ts:18 (Agent/PreStepDecision); package.json:38 (peerDep)`
-- `dsh-llm` [编译依赖] - hook 输出构造上下文
-  - 证据: `packages/hooks/hooks-codex/src/index.ts:19-20 (createUserMessage/ContentBlock/MessageSource); package.json:41 (peerDep)`
-- `dsh-session` [编译依赖] - session 消息类型
-  - 证据: `packages/hooks/hooks-codex/src/index.ts:21 (UserMessage); package.json:42 (peerDep)`
-- `dsh-tools` [编译依赖] - tool 前后决策类型
-  - 证据: `packages/hooks/hooks-codex/src/index.ts:23 (PostToolDecision/PreToolDecision/ToolExecution); package.json:44 (peerDep)`
+- `dsh-agent` [E1+E2] - 在 agent 生命周期与步进点注入上下文并映射 hook 决策
+  - 证据: `src/index.ts:17 import (Agent, PreStepDecision) + src/index.ts:191 ctx.on('agent/created') + src/index.ts:205 ctx.on('agent/pre-step')`
+- `dsh-hook-protocol` [E1+E2] - 复用共享的 hook 执行/解析/合并/持久事件与 matcher 校验
+  - 证据: `src/index.ts:30-42 import (runHook, mergeHookOutputs, appendHookInvoked, ...) + src/index.ts:147 runHook(...) + src/config.ts:8 import matcherDiagnostic`
+- `dsh-llm` [编译依赖] - 构造注入模型的上下文消息及其来源标签
+  - 证据: `src/index.ts:19-20 import (createUserMessage, ContextFormed) + src/index.ts:27 import (ContentBlock, MessageSource)`
+- `dsh-session` [编译依赖] - hook 上下文消息使用的会话消息类型
+  - 证据: `src/index.ts:28 import UserMessage`
+- `dsh-session-projection` [E1+E2] - 读取 turnBoundary 投影获取 turn_id 以记录 hook 事件
+  - 证据: `src/index.ts:18 import type {} + src/index.ts:288 ctx.sessionProjections.stateOf(agent.session,'turnBoundary')`
+- `dsh-tools` [E1+E2] - 在工具执行前后拦截点运行 hook 并映射为工具决策
+  - 证据: `src/index.ts:29 import (PostToolDecision, PreToolDecision, ToolExecution, ToolExecutionResult) + src/index.ts:231 ctx.on('tools/pre-execute') + src/index.ts:240 ctx.on('tools/post-execute')`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

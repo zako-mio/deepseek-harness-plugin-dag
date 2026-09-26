@@ -1,35 +1,26 @@
 # dsh-client-ui-settings-plugins
 
 - 包名: `@deepseek-ai/dsh-client-ui-settings-plugins`
-- 分组: G28 设置输入UI
+- 分组: G06 客户端 UI 包
 - 拓扑层: Layer 12
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-settings-plugins`
 
-## 为什么需要它（设计初衷）
-插件设置分区：功能所属标签页 + 可配置的宿主平面插件卡片。RC7 槽 keyed 化并引入 tab-store 支撑按命名空间动态编卡。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-settings-plugins/package.json
-
 ## 实现逻辑
-插件配置 section：注册 settings.section id=plugins order=15（index.ts:111-119），其 configurable tab(order=0) 声明 settings.plugin.item 槽并渲染三张 host-plane 卡片 bash/agent-loop/web-search（:123-157）。RC7：settings.plugin.item 槽由 list 改为 keyed(按所编辑的 settings namespace 编键，插件页按 namespace 渲染其卡片)；新增 tab-store(ConfigurablePluginsTabController) 订阅 slots.entries('settings.plugin.item') 维护可配置插件 tab 状态。每卡经 ctx.settingsScope.bind 绑定各自命名空间；订阅 credentials/updated 使 webSearch 刷新凭据（:70）。
+浏览器半向 `settings.section` 注册 Built-in plugins 导航条目（id='plugins' order 15，src/client/index.ts:76-84），并在注册项上声明子槽 `settings.plugins.tab`（list 类型，src/client/index.ts:83）。它把 tab 台账 `ctx.slots.entries('settings.plugins.tab')` 与 locale revision 组合成带缓存的 observable 快照（src/client/index.ts:42-72），使 language 切换时标签重解析。node half 为空 apply，仅用于出现在宿主 Loader（src/index.ts:11）。
 
 ## Provides
-- settings.section 'plugins' 注册 (PluginsSettingsSection)
-- settings.plugins.tab 'configurable' + settings.plugin.item 槽(keyed by namespace)
-- tab-store(ConfigurablePluginsTabController/State)
-- BashCard / AgentLoopCard / WebSearchCard 三卡片
+- settings.plugins locale 命名空间字典
+- settings.section 条目 id='plugins' (order 15)：Built-in plugins 设置段外壳，声明 settings.plugins.tab (list) 子槽
+- settings.plugins.tab 台账投影为有序 tab 条目 observable 源（标签 locale 跟随）
 
 ## Depends On (上游依赖)
-- `dsh-api-remotes` [运行时依赖] - 凭据推送失效事件
-  - 证据: `packages/client/ui-settings-plugins/src/client/index.ts:70 (ctx.remote.$on('credentials/updated'))`
-- `dsh-client-connection` [运行时依赖] - webSearch 卡凭据/校验远程调用
-  - 证据: `packages/client/ui-settings-plugins/src/client/index.ts:58 (ctx.get('connection').api)`
-- `dsh-client-locale` [编译依赖] - settings.plugins 字典
-  - 证据: `packages/client/ui-settings-plugins/src/client/index.ts:14,60 (type-only + locale.register)`
-- `dsh-client-ui-settings` [编译依赖] - settings.section 槽声明 + 命名空间 scope 服务
-  - 证据: `packages/client/ui-settings-plugins/src/client/index.ts:18 (type-only), :51 (inject settingsScope), :62-64 (ctx.settingsScope.bind)`
+- `dsh-client-locale` [E1+E2] - 注册并绑定本段文案，并订阅 locale revision
+  - 证据: `src/client/index.ts:11 type-only import + src/client/index.ts:36 ctx.locale.bind(NS)`
+- `dsh-client-ui-renderer` [编译依赖] - 引入 ctx.slots 合并
+  - 证据: `src/client/index.ts:16 type-only import`
+- `dsh-client-ui-settings` [E1+E2] - 复用设置外壳的 section 槽声明
+  - 证据: `src/client/index.ts:15 type-only import + 经 settings.section 槽协作（src/client/index.ts:76）`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

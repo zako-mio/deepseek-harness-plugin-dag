@@ -1,33 +1,25 @@
 # dsh-client-ui-brand-official
 
 - 包名: `@deepseek-ai/dsh-client-ui-brand-official`
-- 分组: G29 UI底座
+- 分组: G06 客户端 UI 包
 - 拓扑层: Layer 15
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-brand-official`
 
-## 为什么需要它（设计初衷）
-将官方DeepSeek品牌视觉从通用sidebar/conversation slot中解耦为独立插件，按official构建profile选择性注入，使非官方部署可替换品牌而不改UI框架代码。
-
-发展史：RC8 新增
-
 ## 实现逻辑
-纯浏览器UI插件(node半apply为空占位)。浏览器半 src/client/index.ts:14 apply 在 DSH_CLIENT_BUILD_PROFILE==='official' 时调用 ctx.slots.inject 将官方品牌注入三个brand slot(sidebar.brand.mark/name、conversation.hero.brand.mark)，每slot register一个React组件；Brand.tsx:12 OfficialBrandMark 用 ui-primitives 的 FishLogo 渲染鲸鱼标志，OfficialBrandName 渲染名称字标。装配于 cordis.patch.yml:213-214(E3)。
+官方品牌占位插件：apply 先在进程环境上判 DSH_CLIENT_BUILD_PROFILE !== 'official' 直接返回，非官方构建不注册任何东西 (src/client/index.ts:17)。官方构建下用嵌套 slots.inject 加 generator 一次性装配两个注册：'sidebar.brand.mark' 落 OfficialBrandMark、'sidebar.brand.name' 落 OfficialBrandName，任一失败则整体回滚 (src/client/index.ts:18-22)。conversation hero 品牌位不在此注册，仍走声明包的动画鱼回退。组件用 ui-primitives 渲染 (src/client/Brand.tsx:1)。
 
 ## Provides
-- ctx.slots 品牌slot填充(sidebar.brand.mark/name、conversation.hero.brand.mark)
-- 官方鱼标志FishLogo与名称字标BrandWordmark的React呈现
-- 仅official构建profile生效的brand占位
+- slot: sidebar.brand.mark (官方侧边栏品牌标志，仅 official 构建注册)
+- slot: sidebar.brand.name (官方侧边栏品牌名，仅 official 构建注册)
 
 ## Depends On (上游依赖)
-- `dsh-client-runtime` [运行时依赖] - 注入品牌slot所需slots注册表
-  - 证据: `src/client/index.ts:14 apply(ctx); peerDependencies`
-- `dsh-client-ui-conversation` [编译依赖] - 填充会话Hero品牌slot contract
-  - 证据: `src/client/index.ts:21 注册conversation.hero.brand.mark`
-- `dsh-client-ui-primitives` [运行时依赖] - 复用官方品牌图形组件
-  - 证据: `Brand.tsx:1 import BrandWordmark, FishLogo`
-- `dsh-client-ui-sidebar` [编译依赖] - 填充侧边栏品牌slot contract
-  - 证据: `src/client/index.ts:19 注册sidebar.brand.* slot`
+- `dsh-client-ui-primitives` [编译依赖] - 品牌标志与品牌名的呈现组件
+  - 证据: `src/client/Brand.tsx:1 import @deepseek-ai/dsh-client-ui-primitives`
+- `dsh-client-ui-renderer` [E1+E2] - 引入并驱动槽位注册服务
+  - 证据: `src/client/index.ts:3 merge + src/client/index.ts:18 ctx.slots.inject`
+- `dsh-client-ui-sidebar` [E1+E2] - 占据侧边栏品牌槽位
+  - 证据: `src/client/Brand.tsx:2 import @deepseek-ai/dsh-client-ui-sidebar/client + src/client/index.ts:18-21 ctx.slots.inject('sidebar.brand.*')`
 
 ## Dependents (下游被依赖)
-- `dsh-web-app` - web-app装配官方品牌
+- 无下游（叶子/被消费端）

@@ -1,28 +1,24 @@
 # dsh-tool-bash-persistent
 
 - 包名: `@deepseek-ai/dsh-tool-bash-persistent`
-- 分组: G30 外部执行后端
-- 拓扑层: Layer 5
+- 分组: G36 Shell 执行
+- 拓扑层: Layer 6
 - 来源层: L3 其余
 - 源码路径: `packages/shell/tool-bash-persistent`
 
-## 为什么需要它（设计初衷）
-模型面向的 bash() 工具，复用 owner-scoped 持久 shell（cwd/环境跨调用保留）。RC7 移除自定义 PS1 注入、完成判定改 waitReason==='stdin_read'。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/shell/tool-bash-persistent/README.md
-
 ## 实现逻辑
-注册单个持久 `bash` 工具 (src/index.ts:374-398)；persistentShells 以 WeakMap/Map 缓存 owner→PTY session (:200-270)，经 ctx.terminals.spawn(backendType) (:234) 创建，初始化仅发送 stty -echo 抑制回显、不再注入自定义 PS1(提示符保留为后端自带，后端提示符就绪检测继续生效)(:240-247)；命令以 nonce 起止标记包裹 (:62-83)，轮询 scrollback 收尾、完成判定改 result.waitReason === 'stdin_read' (:337)，deadline 超时→reset (:280,:307-321)，shell 退出→reset (:330-341)；per-owner 串行队列 (:362-372)；inject ['tools','terminals'] (:402)。
+向模型注册基于 PTY 的持久 bash 工具：每个 owner(Agent) 映射一个持久终端会话，命令用随机 nonce 的起止标记包裹后发送，轮询 scrollback 直到读到结束标记/超时/会话退出 (src/index.ts:297-390)。persistentShells() 管理按 owner 的创建/复用/重置与 fiber 处置清理，初始化时先发送 stty -echo 抑制回显 (src/index.ts:223-295)。输出按 maxOutputChars 截断（不切断代理对）并渲染退出码/超时/重置提示；同一 owner 的调用经队列串行化 (src/index.ts:58-221, 401-437)。
 
 ## Provides
-- tool: bash（owner 作用域持久 shell）
+- 模型工具 bash (基于 owner 级 PTY 持久会话的持久 bash，状态跨调用保持)
 
 ## Depends On (上游依赖)
-- `dsh-agent` [E1+E2] - owner 隔离与 shell 生命周期
-  - 证据: `package.json:34 peerDep + src/index.ts:9 import type Agent；E2: :391 exec.agent owner、:201-204 per-owner 缓存`
-- `dsh-tools` [E1+E2] - 工具注册
-  - 证据: `package.json:38 peerDep + src/index.ts:12 import defineTool；E2: :374 ctx.tools.register`
+- `dsh-agent` [编译依赖] - 以 Agent 为 owner 隔离持久 shell 并读取其会话 cwd
+  - 证据: `src/index.ts:9 import type { Agent }; package.json:29 peerDep`
+- `dsh-terminal` [E1+E2] - 经 owner 级 PTY 服务创建/发送/读取/终止持久 shell 会话
+  - 证据: `src/index.ts:11 import type { TerminalSessionId }; src/index.ts:441 inject ['terminals']; src/index.ts:257 ctx.terminals.spawn`
+- `dsh-tools` [E1+E2] - 注册持久 bash 工具定义
+  - 证据: `src/index.ts:13 import defineTool; src/index.ts:441 inject ['tools']; src/index.ts:413 ctx.tools.register`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

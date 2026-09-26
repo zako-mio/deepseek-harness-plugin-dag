@@ -1,0 +1,696 @@
+[
+  {
+    "id": "dsh-fs-ssh",
+    "name": "@deepseek-ai/dsh-fs-ssh",
+    "implementation": "以 SshFileSystem 继承 dsh-fs 的 FileSystem seam，把 resolve/stat/lstat/readText/streamText/readBytes/listDir/writeText/editText 等全部文件系统原语转成 ctx.ssh.request('fs.*') 远程调用 (src/index.ts:20-95)。写入与编辑会先经 sandboxPolicy 解析执行策略再随请求下发，并把远端 RemoteOperationError 按错误码映射为本仓 FsError (src/index.ts:82-104)。sandboxMode 直接取 sandboxPolicy 的 defaultMode (src/index.ts:23)。",
+    "provides": [
+      "ctx.fs (SSH 远程 FileSystem seam 提供者 SshFileSystem，供文件系统消费方使用)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-fs",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:4 (import FileSystem, FsError) + src/index.ts:20 (extends FileSystem)",
+        "purpose": "实现 FileSystem seam 的 SSH 远程提供者"
+      },
+      {
+        "plugin_id": "dsh-sandbox",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:6 (import type SandboxExecutionPolicy, SandboxMode) + src/index.ts:23 (SandboxMode)",
+        "purpose": "复用沙箱执行策略与模式类型"
+      },
+      {
+        "plugin_id": "dsh-sandbox-policy",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:7 (type import) + src/index.ts:21 (static inject ['ssh','sandboxPolicy']) + src/index.ts:23 (ctx.sandboxPolicy.defaultMode)",
+        "purpose": "读取默认沙箱模式并在写/编辑时解析策略"
+      },
+      {
+        "plugin_id": "dsh-ssh",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:8-10 (import ssh/protocol/schemas) + src/index.ts:21 (inject ['ssh']) + src/index.ts:98 (this.ctx.ssh.request)",
+        "purpose": "通过 SSH 连接执行远程 fs.* 操作"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-sandbox-ssh",
+    "name": "@deepseek-ai/dsh-sandbox-ssh",
+    "implementation": "SshSandboxProvider 继承 dsh-sandbox 的 SandboxProvider，把 confine() 约束请求经 ctx.ssh.request('sandbox', …) 发往远端主机解析并返回 ConfinedArgv (src/index.ts:10-25)。返回结果会规范化 runnerFailureRules 中的可选字段 (src/index.ts:20-24)，任何失败都包装为 SandboxUnavailableError (src/index.ts:26-29)。",
+    "provides": [
+      "ctx.sandbox (SSH 远程沙箱约束提供者 SshSandboxProvider)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-sandbox",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:2 (import SandboxProvider, SandboxUnavailableError) + src/index.ts:10 (extends SandboxProvider)",
+        "purpose": "实现沙箱 seam 的 SSH 远端提供者"
+      },
+      {
+        "plugin_id": "dsh-ssh",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:4 (type import) + src/index.ts:11 (static inject ['ssh']) + src/index.ts:16 (ctx.ssh.request('sandbox'))",
+        "purpose": "在远端主机上解析并应用沙箱约束"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-subprocess-ssh",
+    "name": "@deepseek-ai/dsh-subprocess-ssh",
+    "implementation": "SshSubprocessRuntime 继承 dsh-subprocess 的 SubprocessRuntime，经 ctx.ssh 在远端主机管理普通进程与 PTY（resolveExecutable/terminalEnvironment/spawn/spawnTerminal）(src/index.ts:229-343)。RemoteProcess 用独立 SSH 流复用本地 OutputCollector 处理 stdout/stderr 的收集、快照与背压，并通过 process.prepare/start/done/terminate 协议驱动远端进程生命周期 (src/index.ts:21-226)。构造函数内注册 ctx.effect 清理器，在插件销毁时终止所有存活进程与终端 (src/index.ts:236-253)。",
+    "provides": [
+      "ctx.subprocess (SSH 远程子进程与 PTY 提供者 SshSubprocessRuntime)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-subprocess",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:5 (import SubprocessRuntime, SubprocessExecutableNotFoundError) + src/index.ts:6 (type import) + src/index.ts:229 (extends SubprocessRuntime)",
+        "purpose": "实现子进程 seam 的 SSH 远程提供者"
+      },
+      {
+        "plugin_id": "dsh-subprocess-local",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:7 (import OutputCollector from '@deepseek-ai/dsh-subprocess-local/output')",
+        "purpose": "复用本地输出收集器实现远程收集快照"
+      },
+      {
+        "plugin_id": "dsh-ssh",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:8-11 (import ssh/protocol/schemas) + src/index.ts:230 (inject ['ssh']) + src/index.ts:257 (ctx.ssh.request)",
+        "purpose": "通过 SSH 连接管理远程进程与 PTY"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-storage",
+    "name": "@deepseek-ai/dsh-storage",
+    "implementation": "Storage 服务实现存储中枢 ctx.storage：自身不做 IO，只维护命名后端注册表 BackendRegistry 与可挂载的数据形态表 forms (src/index.ts:47-93)。mount()/form() 以 effect 语义挂载与解析数据形态，domain getter 暴露域形态 (src/index.ts:64-93)。BackendRegistry 支持多后端并存，注册返回 disposer 且带 stale-disposer 保护 (src/registry.ts:25-37)。",
+    "provides": [
+      "ctx.storage (存储中枢：命名后端注册表 + 数据形态挂载与解析)"
+    ],
+    "depends_on": [],
+    "dependents": []
+  },
+  {
+    "id": "dsh-storage-domain",
+    "name": "@deepseek-ai/dsh-storage-domain",
+    "implementation": "向存储中枢挂载 domain 数据形态：DomainFacility 按 Config.backend/routes 路由到后端 kv facet，打开单元、用 zod schema 校验载入记录后构造 DomainImpl (src/index.ts:103-175)。DomainImpl 维护权威内存状态与每域唯一写链，写操作先落盘、再改内存、再 emit domain/changed，从而读与介质不产生分叉 (src/domain.ts:236-270)。spec.ts 用 defineDomain 校验域声明并投影为后端 descriptor (src/spec.ts:107-163)，invariant 保证事件快照等于内存状态 (src/invariant.ts:24-59)。",
+    "provides": [
+      "ctx.storage.domain (域数据形态 DomainFacility)",
+      "ctx.storageDomain (域设施服务别名，供 Provider 注入)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-storage",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:12 (import storageBackendServiceKey) + src/index.ts:44 (inject ['storage']) + src/index.ts:108-117 (ctx.storage.backend.get / kv.open) + src/index.ts:228 (domainCtx.storage.mount)",
+        "purpose": "作为存储中枢的 domain 数据形态，经后端路由打开域单元"
+      },
+      {
+        "plugin_id": "dsh-invariants",
+        "mechanism": "E1+E2",
+        "evidence": "src/invariant.ts:13 (import type InvariantFailure, InvariantInstaller) + src/invariant.ts:21 (inject ['invariants']) + src/invariant.ts:67 (ctx.invariants.register)",
+        "purpose": "注册 domain/changed 与内存状态一致性不变量"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-storage-json",
+    "name": "@deepseek-ai/dsh-storage-json",
+    "implementation": "注册存储后端 json：JsonStorageBackend 在配置 root 下按 descriptor.layout 打开 single（整单元单文件）或 per-record（记录级目录）单元 (src/index.ts:64-80)。single 单元以内存为权威，每次写整文件原子重写并在失败时回滚 (src/single-unit.ts:74-112)；per-record 单元不持有内存态、目录即状态，记录键映射为路径段并带版本戳读取 (src/per-record-unit.ts:195-254)。原子发布用同目录临时文件 fsync 后 rename，并对父目录 fsync (src/atomic.ts:24-40)。",
+    "provides": [
+      "storage 后端 `json` (storage.backend.json 生命周期服务与 kv facet)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-storage",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:12-13 (import StorageError/UNIT_NAME_RE/storageBackendServiceKey 与类型) + src/index.ts:20 (inject ['storage']) + src/index.ts:112 (ctx.storage.backend.register('json'))",
+        "purpose": "向存储中枢注册 json 后端并提供 kv facet"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-storage-sqlite",
+    "name": "@deepseek-ai/dsh-storage-sqlite",
+    "implementation": "注册存储后端 sqlite：SqliteStorageBackend 独占一个 DatabaseSync 连接，在 units 表强制每单元版本戳，并为 descriptor.tables 建立 u_<unit>_<table> 记录表 (src/index.ts:98-123)。单元原语为单条 prepared statement（upsert/delete/selectAll），原子性由 SQLite 保证，不用显式事务也无写队列 (src/unit.ts:27-118)。打开数据库时创建 owner-only 文件、施加 journal_mode，并把布局版本戳入 PRAGMA user_version，非当前版本拒绝 (src/schema.ts:60-107)。",
+    "provides": [
+      "storage 后端 `sqlite` (storage.backend.sqlite 生命周期服务与 kv facet)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-storage",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:11-12 (import StorageError/UNIT_NAME_RE/storageBackendServiceKey 与类型) + src/index.ts:21 (inject ['storage']) + src/index.ts:161 (ctx.storage.backend.register('sqlite')) + src/schema.ts:12 (import StorageError)",
+        "purpose": "向存储中枢注册 sqlite 后端并提供 kv facet"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-subagent",
+    "name": "@deepseek-ai/dsh-subagent",
+    "implementation": "定义子代理 seam 服务 ctx.subagents（SubagentRuntime）：命名 provider 注册表加 capability 校验的 start()、startContinuable()、sendMessage()、prompt/interruptByParent 远程面与 listChildren/listDescendants 发现 API (src/index.ts:199-661)。continuation.ts 管理可续子代理的稳定 id、descriptor 持久化、冷恢复与消息路由 (src/continuation.ts:82-550)；child-agent.ts 统一 in-process 子代理的深度、血缘、策略播种与作用域组合 (src/child-agent.ts:50-280)。catalog/projection 记录并投影父目录子项身份，lifecycle 统一发射 subagent/start|end 生命周期边 (src/catalog.ts:143-165, src/projection.ts:68-190, src/lifecycle.ts:101-219)。",
+    "provides": [
+      "ctx.subagents (子代理 seam 服务定义：命名 provider 注册表 + 启动/续跑/消息/中断/发现 API)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:40 (import type Agent) + src/child-agent.ts:12 (import type Agent,AgentOptions,CreateAgentOptions) + src/index.ts:217 (ctx.inject(['agents'])) + src/continuation.ts:210 (ctx.agents.get)",
+        "purpose": "创建与检索子 Agent、读取其会话与状态"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "src/descriptor.ts:25 (import type SessionEvent) + src/types.ts:15 (import type SessionEvent,SessionId) + src/list-children.ts:69 (ctx.get('sessions'))",
+        "purpose": "读写会话事件、会话 id 与会话注册表"
+      },
+      {
+        "plugin_id": "dsh-session-query",
+        "mechanism": "E1+E2",
+        "evidence": "src/archive-admission.ts:12 (type import) + src/list-children.ts:36 (ctx.get('sessionQuery')) + src/continuation.ts:541 (ctx.get('sessionQuery'))",
+        "purpose": "冷恢复与目录发现时观察持久化会话"
+      },
+      {
+        "plugin_id": "dsh-session-persistence",
+        "mechanism": "E1+E2",
+        "evidence": "src/continuation.ts:24 (import type SessionPersistence) + src/continuation.ts:529 (ctx.get('sessionPersistence'))",
+        "purpose": "可续子代理持久化与子 id 存在性检查"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "src/catalog.ts:17 (import type ProjectionDefinition) + src/index.ts:228 (ctx.inject(['sessionProjections'])) + src/index.ts:230 (projections.register)",
+        "purpose": "注册父目录、身份与时长投影"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1+E2",
+        "evidence": "src/descriptor.ts:26 (import type ReasoningEffortId) + src/assistant-output.ts:13 (import joinAssistantStreamText) + src/continuation.ts:515 (ctx.get('llm'))",
+        "purpose": "内容块/流文本处理、推理强度与模型图像能力查询"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:38 (import assertObjectJsonSchema) + src/types.ts:16 (import type ObjectJsonSchema,ToolRestriction) + src/continuation.ts:179 (ctx.get('tools')?.get('send_message'))",
+        "purpose": "校验输出 schema、工具过滤与判定标准 send_message 工具"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E1+E2",
+        "evidence": "src/child-agent.ts:15 (type import) + src/child-agent.ts:206 (childCtx.systemPrompt.context)",
+        "purpose": "为子代理注册委派作用域上下文与 persona 段"
+      },
+      {
+        "plugin_id": "dsh-sandbox",
+        "mechanism": "E1",
+        "evidence": "src/child-agent.ts:13 (import type SandboxMode)",
+        "purpose": "使用沙箱模式类型播种子策略"
+      },
+      {
+        "plugin_id": "dsh-sandbox-policy",
+        "mechanism": "E1+E2",
+        "evidence": "src/child-agent.ts:21 (type import) + src/child-agent.ts:253 (ctx.get('sandboxPolicy')?.overrideOf)",
+        "purpose": "捕获父会话沙箱覆盖并播种给子代理"
+      },
+      {
+        "plugin_id": "dsh-user-approval",
+        "mechanism": "E1+E2",
+        "evidence": "src/child-agent.ts:22 (type import) + src/child-agent.ts:254 (ctx.get('approval'))",
+        "purpose": "将子代理审批策略固定为 never"
+      },
+      {
+        "plugin_id": "dsh-permission-presets",
+        "mechanism": "E1+E2",
+        "evidence": "src/child-agent.ts:23 (type import) + src/child-agent.ts:250 (ctx.get('permissionPresets')?.current)",
+        "purpose": "继承 auto/full-access 权限预设身份"
+      },
+      {
+        "plugin_id": "dsh-agent-preset-registry",
+        "mechanism": "E1+E2",
+        "evidence": "src/child-agent.ts:29 (type import) + src/child-agent.ts:205 (ctx.get('agentPresets')?.composeFrom)",
+        "purpose": "让子代理加入父的 preset 组合"
+      },
+      {
+        "plugin_id": "dsh-chunked-list",
+        "mechanism": "E1",
+        "evidence": "src/catalog.ts:8-9 (import appendChunkedList, chunkedListSchema, iterateChunkedList)",
+        "purpose": "父目录事件的分块列表存储"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "src/types.ts:13 (import type Branded) + src/continuation.ts:19 (import brandString)",
+        "purpose": "品牌化 run/子会话 id"
+      },
+      {
+        "plugin_id": "dsh-attachment",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:35 (type import) + src/control-types.ts:8 (import PromptContentPart) + src/control.ts:8 (import AttachmentError) + src/index.ts:449 (ctx.get('attachments'))",
+        "purpose": "浏览器 prompt 的图片附件持久化与校验"
+      },
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:43 (import Remote, RemoteError, TypertRemoteService) + src/control.ts:10 (import RemoteError)",
+        "purpose": "暴露远程 prompt/interrupt 面"
+      },
+      {
+        "plugin_id": "dsh-scope",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:36-37 (import scopeTarget, Scoped) + src/index.ts:216 (scopeTarget(this, parent))",
+        "purpose": "按委派父级做作用域过滤的事件派发"
+      },
+      {
+        "plugin_id": "dsh-util-time",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:42 (import canonicalClientTimeZone)",
+        "purpose": "校验浏览器时区"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/descriptor.ts:24 (import snapshotJsonValue)",
+        "purpose": "descriptor 的无损 JSON 快照"
+      },
+      {
+        "plugin_id": "dsh-workspace",
+        "mechanism": "E1+E2",
+        "evidence": "src/archive-admission.ts:13 (import type SessionActivity, SessionActivityItem) + src/archive-admission.ts:23 (ctx.on('workspace/session-activity')) + src/archive-admission.ts:30 (ctx.on('workspace/session-stop'))",
+        "purpose": "响应工作区归档准入与活动上报"
+      },
+      {
+        "plugin_id": "dsh-jobs",
+        "mechanism": "E1",
+        "evidence": "src/run-settlement.ts:10 (import type JobOutcome)",
+        "purpose": "一次性后台子代理 run 结算映射为 JobOutcome"
+      },
+      {
+        "plugin_id": "dsh-invariants",
+        "mechanism": "E1+E2",
+        "evidence": "src/invariant.ts:4 (import type InvariantFailure, InvariantInstaller) + src/invariant.ts:12 (inject ['invariants']) + src/invariant.ts:92 (ctx.invariants.register)",
+        "purpose": "注册 provider 注册表与 start/end 配对不变量"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-subagent-acp",
+    "name": "@deepseek-ai/dsh-subagent-acp",
+    "implementation": "以 AcpProvider 注册进程外 ACP 子代理 provider（默认名 acp），声明零启动能力，且只从 parent 读取会话 workspace cwd (src/index.ts:132-188)。start() 经 ctx.subprocess.spawn 启动子进程，run.ts 用官方 ACP SDK 完成 initialize、session.new、session.prompt 握手，并对子进程权限请求按配置自动拒绝或选择首个 allow 选项 (src/run.ts:337-618)。运行结果经 seam 的 settleRunResult/subprocessRunHandle 结算，dispose 走 stdin EOF→terminate 的协作式关闭阶梯 (src/run.ts:184-219, 598-618)。",
+    "provides": [
+      "ctx.subagents 注册的 provider `acp` (进程外 ACP 子代理执行能力)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-subagent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:14-19 (import 类型) + src/index.ts:24 (inject ['subagents','subprocess']) + src/index.ts:205 (ctx.subagents.registerProvider) + src/run.ts:22 (import settleRunResult, subprocessRunHandle)",
+        "purpose": "复用 seam 契约并注册 acp provider"
+      },
+      {
+        "plugin_id": "dsh-subprocess",
+        "mechanism": "E1+E2",
+        "evidence": "src/run.ts:24 (import type SubprocessHandle,SubprocessSpawnSpec) + src/index.ts:179 (this.ctx.subprocess.spawn)",
+        "purpose": "派生并托管子进程及其生命周期"
+      },
+      {
+        "plugin_id": "dsh-timeout",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:20 (import MAX_TIMER_DELAY_MS)",
+        "purpose": "校验 dispose grace 不超过定时器上限"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/run.ts:19 (import type ContentBlock)",
+        "purpose": "使用内容块类型"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/run.ts:21 (import type SessionId)",
+        "purpose": "品牌化父命名空间的 run/子会话 id"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "src/run.ts:20 (import brandString)",
+        "purpose": "品牌化子会话 id"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-subagent-claude-code",
+    "name": "@deepseek-ai/dsh-subagent-claude-code",
+    "implementation": "以 ClaudeCodeProvider 注册 provider claude-code，声明零启动能力并仅从 parent 读取 workspace cwd (src/index.ts:73-126)。start() 在父会话 workspace 中调用官方 @anthropic-ai/claude-agent-sdk 的 query()，并用自定义 spawnClaudeCodeProcess 把真实 CLI 进程托管到 ctx.subprocess (src/run.ts:316-377, 385-449)。只有严格 SDK success 才算完成，工具权限/MCP elicitation/用户对话框一律无人值守拒绝或取消，dispose 关闭 query 并终止整段进程 (src/run.ts:206-306, 571-586)。",
+    "provides": [
+      "ctx.subagents 注册的 provider `claude-code` (官方 Claude Agent SDK 进程外子代理)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-subagent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:12-19 (import NO_START_CAPABILITIES, resolveChildCwd, 类型) + src/index.ts:31 (inject ['subagents','subprocess']) + src/index.ts:151 (ctx.subagents.registerProvider)",
+        "purpose": "复用 seam 契约与共享辅助并注册 provider"
+      },
+      {
+        "plugin_id": "dsh-subprocess",
+        "mechanism": "E1+E2",
+        "evidence": "src/run.ts:29-34 (import scrubbedParentEnv, SubprocessHandle, SubprocessSpawnSpec) + src/index.ts:116 (this.ctx.subprocess.spawn)",
+        "purpose": "托管真实 CLI 进程并做环境清洗"
+      },
+      {
+        "plugin_id": "dsh-timeout",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:11 (import MAX_TIMER_DELAY_MS)",
+        "purpose": "校验 dispose grace 上限"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/run.ts:18 (import type ContentBlock)",
+        "purpose": "使用内容块类型"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/run.ts:20 (import type SessionId)",
+        "purpose": "品牌化 run id"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "src/run.ts:19 (import brandString)",
+        "purpose": "品牌化 run id"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-subagent-codex",
+    "name": "@deepseek-ai/dsh-subagent-codex",
+    "implementation": "以 CodexProvider 注册 provider codex，声明零启动能力并只从 parent 读取 workspace cwd (src/index.ts:63-109)。start() 经 ctx.subprocess.spawn 启动包内 codex app-server --stdio，wire.ts 用共享 JsonRpcLineTransport 完成 initialize、创建 ephemeral thread 并驱动 turn (src/run.ts:225-301, src/wire.ts:192-374)。无人值守审批按 permissionMode 选择 cancel/decline，仅最终答案计入结果，失败按 stage/category 映射为固定诊断，dispose 关闭 wire 并终止进程 (src/wire.ts:571-630, src/run.ts:380-438)。",
+    "provides": [
+      "ctx.subagents 注册的 provider `codex` (Codex app-server 进程外子代理)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-subagent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:12-19 (import NO_START_CAPABILITIES, resolveChildCwd, 类型) + src/index.ts:31 (inject ['subagents','subprocess']) + src/index.ts:135 (ctx.subagents.registerProvider)",
+        "purpose": "复用 seam 契约与共享辅助并注册 provider"
+      },
+      {
+        "plugin_id": "dsh-subprocess",
+        "mechanism": "E1+E2",
+        "evidence": "src/run.ts:25-29 (import type SubprocessHandle,SubprocessSpawnSpec) + src/index.ts:101 (this.ctx.subprocess.spawn)",
+        "purpose": "派生并托管 app-server 子进程"
+      },
+      {
+        "plugin_id": "dsh-sdk-protocol",
+        "mechanism": "E1",
+        "evidence": "src/wire.ts:13 (import JsonRpcLineTransport)",
+        "purpose": "复用 JSON-RPC 行协议传输层"
+      },
+      {
+        "plugin_id": "dsh-timeout",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:11 (import MAX_TIMER_DELAY_MS)",
+        "purpose": "校验 dispose grace 上限"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/run.ts:15 (import type ContentBlock)",
+        "purpose": "使用内容块类型"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/run.ts:16 (import type SessionId)",
+        "purpose": "品牌化 run id"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "src/run.ts:14 (import brandString)",
+        "purpose": "品牌化 run id"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-subagent-dsh-sdk",
+    "name": "@deepseek-ai/dsh-subagent-dsh-sdk",
+    "implementation": "以 SdkSubagentProvider 注册 provider dsh-sdk，仅支持 agentOptions 能力（provider/model/reasoning/maxTokens）(src/index.ts:110-175)。start() 经 @deepseek-ai/dsh-sdk-client 的 DeepSeekHarness 以 stdio JSON-RPC 启动带独立 profile/patch/dshHome 的嵌套 DSH 运行时，并用 scrubbedParentEnv 清洗环境 (src/run.ts:233-254)。握手成功后驱动 session.run，按子运行时的 turn/end 理由映射 stopReason，dispose 通过 harness.close() 关闭并回收 (src/run.ts:147-182, 307-358)。",
+    "provides": [
+      "ctx.subagents 注册的 provider `dsh-sdk` (嵌套 DSH 运行时进程外子代理)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-subagent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:19-20 (import NO_START_CAPABILITIES, resolveChildCwd, validateConfiguredCwd, 类型) + src/index.ts:31 (inject ['subagents']) + src/index.ts:199 (ctx.subagents.registerProvider)",
+        "purpose": "复用 seam 契约与共享辅助并注册 provider"
+      },
+      {
+        "plugin_id": "dsh-sdk-client",
+        "mechanism": "E1",
+        "evidence": "src/run.ts:15-22 (import DeepSeekHarness, JsonRpcResponseError 等) + src/run.ts:119 (new DeepSeekHarness)",
+        "purpose": "驱动嵌套 DSH 运行时进程（stdio JSON-RPC）"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:18 (import type AgentOptions)",
+        "purpose": "解析并合并子代理 route 选项"
+      },
+      {
+        "plugin_id": "dsh-subprocess",
+        "mechanism": "E1",
+        "evidence": "src/run.ts:27 (import scrubbedParentEnv)",
+        "purpose": "复用环境清洗"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/run.ts:23 (import type ContentBlock, ReasoningEffortId)",
+        "purpose": "内容块与推理强度类型"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/run.ts:24 (import type SessionEvent, SessionId, TurnEndReason)",
+        "purpose": "读取子会话事件与终态理由"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "src/run.ts:14 (import brandString)",
+        "purpose": "品牌化 run id"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-subagent-fork-in-process",
+    "name": "@deepseek-ai/dsh-subagent-fork-in-process",
+    "implementation": "以 ForkInProcessProvider 注册 in-process provider fork（默认名），支持全部启动能力且 inheritsParentContext=true (src/index.ts:63-83)。start() 取父会话最后一个 turn/end 之前的平衡前缀作为 seed，交给共享 in-process driver 执行 (src/index.ts:48-83)。prepareContinuable() 在创建时一次性捕获同一前缀，作为可续子代理的 seed，冷恢复时重放该前缀而非重新 fork (src/index.ts:85-91)。",
+    "provides": [
+      "ctx.subagents 注册的 provider `fork` (继承父会话已完成轮次的 in-process 子代理)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-subagent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:14-20 (import 类型) + src/index.ts:28 (static inject ['subagents']) + src/index.ts:95 (ctx.subagents.registerProvider)",
+        "purpose": "实现并注册 fork provider"
+      },
+      {
+        "plugin_id": "dsh-subagent-in-process-driver",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:21 (import startInProcessRun)",
+        "purpose": "复用共享的 in-process 一次性运行驱动"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:13 (import type Agent)",
+        "purpose": "从父 Agent 会话日志切取 seed"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:12 (import type SessionEvent)",
+        "purpose": "seed 事件的会话事件类型"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-subagent-spawn-in-process",
+    "name": "@deepseek-ai/dsh-subagent-spawn-in-process",
+    "implementation": "以 SpawnInProcessProvider 注册 in-process provider spawn（默认名），支持全部启动能力且 inheritsParentContext=false (src/index.ts:41-59)。start() 不传 seed，直接调用共享 in-process driver 执行一个全新子代理 (src/index.ts:54-59)。prepareContinuable() 贡献空 spec（新子代理无继承历史），其后的生命周期全部由 continuation 管理器接管 (src/index.ts:61-65)。",
+    "provides": [
+      "ctx.subagents 注册的 provider `spawn` (全新 in-process 子代理)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-subagent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:14-16 (import 类型) + src/index.ts:22 (static inject ['subagents']) + src/index.ts:69 (ctx.subagents.registerProvider)",
+        "purpose": "实现并注册 spawn provider"
+      },
+      {
+        "plugin_id": "dsh-subagent-in-process-driver",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:17 (import startInProcessRun)",
+        "purpose": "复用共享的 in-process 一次性运行驱动"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-subagent",
+    "name": "@deepseek-ai/dsh-tool-subagent",
+    "implementation": "注册 model 可见委派工具 subagent：按配置绑定一个 ctx.subagents provider，工具随 provider 出现/移除动态注册与注销，并据 inheritsParentContext 选择措辞 (src/index.ts:360-606)。execute() 解析子代理模型路由（可选 list_subagent_models 策略与 preflight），前台调用 await start() 并 settleForegroundRun，一次性后台走 ctx.jobs，可续后台走 startContinuable (src/index.ts:471-568)。model-selection*.ts 实现逐会话路由策略、持久化投影与发现工具，invariant 保证可选路由定义可重构 (src/model-selection.ts:99-196, src/model-selection-state.ts:37-81, src/invariant.ts:19-41)。",
+    "provides": [
+      "model 可见工具 `subagent` (经 provider 启动前/后台子代理)",
+      "model 可见工具 `list_subagent_models` (子代理 LLM 路由发现)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-subagent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:21-26 (import assertSubagentMaxDepth, parentAgentOptionsForDelegation, settleRun, 类型) + src/index.ts:45 (inject ['tools','subagents','systemPrompt','sessionProjections']) + src/index.ts:530 (ctx.subagents.startContinuable) + src/index.ts:563 (ctx.subagents.start)",
+        "purpose": "启动子代理并复用 seam 辅助"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:14 (import defineTool) + src/index.ts:45 (inject ['tools']) + src/index.ts:379 (runtimeCtx.tools.register)",
+        "purpose": "注册委派工具定义"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E2",
+        "evidence": "src/index.ts:45 (inject ['systemPrompt']) + src/index.ts:598 (runtimeCtx.systemPrompt.section)",
+        "purpose": "为可续后台委派注册提示段"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "src/model-selection-state.ts:5-6 (import ProjectionDefinition, SessionProjectionRegistry) + src/index.ts:45 (inject ['sessionProjections']) + src/index.ts:326 (ctx.sessionProjections.register)",
+        "purpose": "注册逐会话模型选择策略投影"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:15 (import type Agent, AgentOptions) + src/index.ts:658 (ctx.get('agents'))",
+        "purpose": "读取调用 Agent 与 reconciling 组合作用域"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:16 (import ReasoningEffortId) + src/list-models.ts:4-5 (import type LlmRuntime, LlmProviderInfo) + src/index.ts:498 (runtimeCtx.get('llm'))",
+        "purpose": "子代理路由发现与 preflight"
+      },
+      {
+        "plugin_id": "dsh-scope",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:13 (import scopeChainOf, scopeOf) + src/index.ts:654 (scopeOf(ctx))",
+        "purpose": "识别 preset 组合作用域"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:19-20 (import SessionSeq, type Session) + src/model-selection-state.ts:4 (import type Session)",
+        "purpose": "会话身份与投影读取"
+      },
+      {
+        "plugin_id": "dsh-jobs",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:27 (import type JobOutcome) + src/index.ts:538 (runtimeCtx.get('jobs')) + src/index.ts:544 (jobs.start)",
+        "purpose": "一次性后台子代理作为 Task 运行"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:18 (import type JsonValue)",
+        "purpose": "工具输出 JSON 值类型"
+      },
+      {
+        "plugin_id": "dsh-invariants",
+        "mechanism": "E1+E2",
+        "evidence": "src/invariant.ts:8 (import type InvariantFailure, InvariantInstaller) + src/invariant.ts:16 (inject ['invariants']) + src/invariant.ts:49 (ctx.invariants.register)",
+        "purpose": "注册可选路由定义完整性不变量"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-subagent-control",
+    "name": "@deepseek-ai/dsh-tool-subagent-control",
+    "implementation": "注册 model 可见控制工具 send_message 与 interrupt_agent，二者是 ctx.subagents.sendMessage()/interrupt() 的薄适配层，不含自身的生命周期路由 (src/index.ts:27-111)。send_message 用 markAdjacentAgentSendMessageTool 标注标准工具身份并投递消息 (src/index.ts:28-72)；interrupt_agent 以 {kind:'ancestor',agent:caller} 授权中断 (src/index.ts:74-111)。list-agents.ts 另注册 list_agents，将 children/descendants 投影为模型可见行，省略一次性子项并保留诊断 (src/list-agents.ts:59-177)。",
+    "provides": [
+      "model 可见工具 `send_message` / `interrupt_agent` (子代理控制薄适配)",
+      "model 可见工具 `list_agents` (子代理发现，children/descendants)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-subagent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:17-18 (import 类型与 markAdjacentAgentSendMessageTool) + src/index.ts:21 (inject ['tools','subagents']) + src/index.ts:64 (ctx.subagents.sendMessage) + src/index.ts:108 (ctx.subagents.interrupt)",
+        "purpose": "转发消息/中断并复用相邻 Agent 工具标记"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:14 (import defineTool) + src/index.ts:21 (inject ['tools','subagents']) + src/index.ts:28 (ctx.tools.register) + src/list-agents.ts:86 (ctx.tools.register)",
+        "purpose": "注册控制与发现工具"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/list-agents.ts:12 (import type Agent) + src/list-agents.ts:20 (inject ['tools','subagents','agents']) + src/list-agents.ts:163 (ctx.agents)",
+        "purpose": "读取活跃 Agent 状态用于发现结果"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:15 (import type ContentBlock)",
+        "purpose": "构造模型可见消息内容块"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:16 (import type SessionId) + src/list-agents.ts:13 (import type SessionId)",
+        "purpose": "子代理会话 id 类型"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:13 (import brandString)",
+        "purpose": "品牌化 agent_id"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/list-agents.ts:17 (import assertNever)",
+        "purpose": "封闭 scope 联合的穷尽断言"
+      }
+    ],
+    "dependents": []
+  }
+]

@@ -1,40 +1,42 @@
 # dsh-client-ui-tool
 
 - 包名: `@deepseek-ai/dsh-client-ui-tool`
-- 分组: G27 会话交互UI
-- 拓扑层: Layer 15
+- 分组: G06 客户端 UI 包
+- 拓扑层: Layer 10
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-tool`
 
-## 为什么需要它（设计初衷）
-客户端工具调用展示：调度 tool-call 节点与原子 toolview 渲染（terminal/read/diff 等卡片）。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-tool/README.md
-
 ## 实现逻辑
-工具调用树 + 业务 Tool 视图。apply() 注册：conversation.chat.node keyed 'tool-call'（ToolCallTree，含 child slot tool.call.toolview keyed dispatch）、conversation.details.tool（ToolDetails 渲染选中调用输出）；再以 7 个独立 registrant plugin（bash/read/file-mutation/search/web/todo/ask-question toolviews）注册 keyed 'tool.call.toolview' 原子视图，未覆盖的 toolName 由 GenericToolCard fallback。declares slot 'tool.call.toolview'（keyed，open key 域，toolName 即 key）。
+注册整棵工具调用树与内建原子 toolview：apply 向 'conversation.chat.node' 注册 key='tool-call' 的 ToolCallTree，并声明子槽 'tool.call.toolview' 与参数前缀 hook（src/client/apply.ts:35-46）；随后用 ctx.plugin 挂载 bash/read/read-image/file-mutation/search/web/todo/details/ask-question 九个 toolview 模块（src/client/apply.ts:48-56）。各 toolview 模块各自通过 slots.inject/register 注册按工具名分发的 keyed 视图，模型层从原始 call/result 事件派生卡片。
 
 ## Provides
-- slot 声明: tool.call.toolview(keyed)
-- conversation.chat.node keyed 'tool-call' 渲染器(ToolCallTree)
-- conversation.details.tool 渲染器(ToolDetails)
-- 7 个内置原子 toolview: read/search/web/todo/file-mutation/bash-sample/ask-question
+- slot conversation.chat.node key='tool-call' 的工具调用树渲染
+- slot tool.call.toolview 的按工具名 keyed 视图（bash/read/read-image/file-mutation/search/web/todo/details/ask-question 等）
+- 子槽 tool.call.images 声明与 hooks.toolCallArgumentsPartial（准备阶段参数前缀订阅）
 
 ## Depends On (上游依赖)
-- `dsh-api-remotes` [编译依赖] - remote 类型底座
-  - 证据: `package.json:52 peerDependencies`
-- `dsh-client-locale` [编译依赖] - locale 命名空间（复用 conversation 命名空间文案）
-  - 证据: `package.json:53 peerDependencies + locale.ts`
-- `dsh-client-runtime` [编译依赖] - 会话快照/ToolCallBlock 类型与运行时
-  - 证据: `apply.ts:2 ClientContext + ToolCallTree.tsx:3 ToolCallBlock`
-- `dsh-client-ui-conversation` [编译依赖] - 消费 conversation.chat.node/details.tool 座位声明与 ChatNodeDataMap 'tool-call' 数据契约
-  - 证据: `apply.ts:3 type-only import + package.json:55 peerDependencies + package.json:37 dsh.client.inject`
-- `dsh-client-ui-primitives` [编译依赖] - 图标/组件 atoms
-  - 证据: `toolviews/read-row.tsx:11 IconBrowseOutline16 等`
-- `dsh-client-ui-slots` [编译依赖] - slot 注册 API 与四份 props 类型
-  - 证据: `contract/slots.ts:2 PropsLocale/PropsRenderSlots/PropsRuntime + 各 toolview 注册用 ctx.slots.inject`
+- `dsh-api-remotes` [E1+E2] - 提供 Host home 事实用于 POSIX ~ 显示
+  - 证据: `src/client/apply.ts:3 import + src/client/apply.ts:31 ctx.remote.$host`
+- `dsh-client-locale` [编译依赖] - 引入本地化命名空间类型
+  - 证据: `src/client/contract/slots.ts:11 import type`
+- `dsh-client-ui-chat` [编译依赖] - 复用 AssistantChatData/ToolResultNode 等工具视图数据契约
+  - 证据: `src/client/contract/slots.ts:9 import type`
+- `dsh-client-ui-conversation` [编译依赖] - 引入 MessageImageLoader/OpenFileOptions 与 conversation 节点类型
+  - 证据: `src/client/apply.ts:6 import + src/client/apply.ts:10`
+- `dsh-client-ui-primitives` [编译依赖] - 复用对话卡片原语与标签
+  - 证据: `src/client/tool/models/tool-call-model.ts:12 + src/client/tool/toolviews/todo-row.tsx:2`
+- `dsh-client-ui-renderer` [编译依赖] - 拉入槽/渲染服务类型合并
+  - 证据: `src/client/apply.ts:7 import type`
+- `dsh-client-ui-session` [编译依赖] - 拉入会话 UI 服务类型合并
+  - 证据: `src/client/apply.ts:8 import type`
+- `dsh-spill-policy` [编译依赖] - 渲染输出溢出/截断提示 notice
+  - 证据: `src/client/tool/models/inspection-details-model.ts:3 + terminal-card-model.ts:5`
+- `dsh-tools` [编译依赖] - 复用工具类型（todo 历史）
+  - 证据: `src/client/tool/models/todo-history.ts:2 import type`
 
 ## Dependents (下游被依赖)
-- `dsh-client-ui-cordis` - 消费 tool.call.toolview 座位注册业务 Tool 卡片
-- `dsh-client-ui-skill` - keyed 工具行槽声明
+- `dsh-client-ui-attachment` - 占据工具调用图片槽
+- `dsh-client-ui-cordis` - 为 cordis_* 工具调用提供 tool view 卡片渲染
+- `dsh-client-ui-deliverables` - present 工具行视图
+- `dsh-client-ui-schedule` - 复用工具视图类型/卡片
+- `dsh-client-ui-skill` - 复用 tool.call.toolview 的 props 类型契约

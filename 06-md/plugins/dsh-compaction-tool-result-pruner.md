@@ -1,34 +1,24 @@
 # dsh-compaction-tool-result-pruner
 
 - 包名: `@deepseek-ai/dsh-compaction-tool-result-pruner`
-- 分组: G21 上下文治理
-- 拓扑层: Layer 4
+- 分组: G07 上下文压缩
+- 拓扑层: Layer 5
 - 来源层: L1 核心集
 - 源码路径: `packages/compaction/compaction-tool-result-pruner`
 
-## 为什么需要它（设计初衷）
-回放安全、无模型的 head/middle/tail 修剪器，用于压缩工具结果表层节点。
-
-来源：
-- https://registry.npmjs.org/@deepseek-ai/dsh-compaction-tool-result-pruner
-- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/compaction/compaction-tool-result-pruner
-
 ## 实现逻辑
-以 ToolResultPruner 类(extends Service，super(ctx,'toolResultPruner'))默认导出，static inject=['tokenMeter']。pruneSession 遍历 session.surface.nodes 中 tool/result 事件，pruneContent 按 Unicode 码点做 head/middle/tail 截断；超预算的替换先 append 'compaction/prune' 影子定价事件，再 append 同内容裁剪版 'tool/result' 事件并带 surfaceOp:{op:'replace'} 落盘。
+无模型、可重放的工具结果裁剪服务 ToolResultPruner：按字符预算把超预算的文段替换为 head+marker+tail，按 Unicode 码点切分以免劈开代理对（src/index.ts:83-122、src/index.ts:68-74）。pruneSession 对当前表面的全部 tool/result 节点做一次稳定快照裁剪，并为每个被遮蔽节点先追加一条 compaction/prune 影子价格事件（经 tokenMeter 计价），再追加带 surfaceOp=replace 的替换事件（src/index.ts:136-182）。配置阈值在加载期校验 head+marker+tail ≤ threshold（src/config.ts:36-65）。
 
 ## Provides
-- ctx.toolResultPruner 服务
-- pruneSession 模型无关裁剪
-- compaction/prune 影子定价协议
-- surfaceOp replace 重写
+- ctx.toolResultPruner (确定性工具结果裁剪服务：按字符预算裁剪并写 compaction/prune 影子价格事件)
 
 ## Depends On (上游依赖)
-- `dsh-llm` [组合依赖] - freezeMessage
-  - 证据: `packages/compaction/compaction-tool-result-pruner/src/index.ts:9`
-- `dsh-session` [编译依赖] - 读 surface.nodes + append 替换
-  - 证据: `packages/compaction/compaction-tool-result-pruner/src/index.ts:138-171`
-- `dsh-token-meter` [编译依赖] - estimateMessage 计算 shadowedTokenCount
-  - 证据: `packages/compaction/compaction-tool-result-pruner/src/index.ts:47,165`
+- `dsh-llm` [编译依赖] - 构造不可变的替换工具结果消息并复用其内容块/调用 id 类型
+  - 证据: `src/index.ts:9 import freezeMessage + src/index.ts:10 import type ContentBlock + src/types.ts:1 import type ToolCallId`
+- `dsh-session` [编译依赖] - 读取当前表面节点并按 surfaceOp 替换/追加会话事件，实现可重放的裁剪事务
+  - 证据: `src/index.ts:11 import type Session/SessionEvent/SessionSeq/ToolResultMessage + src/types.ts:2 import type SessionSeq + src/index.ts:160 session.append('compaction/prune')`
+- `dsh-token-meter` [E1+E2] - 为每个被遮蔽节点计价以写入影子价格事件，使纯消费者无需保留逐节点状态即可扣减
+  - 证据: `src/index.ts:15 type-only import + src/index.ts:47 static inject ['tokenMeter'] + src/index.ts:163 this.ctx.tokenMeter.estimateMessage`
 
 ## Dependents (下游被依赖)
-- `dsh-compaction-basic` - 可选 pruneSession(压缩前先裁剪)
+- `dsh-compaction-basic` - 可选地先执行无模型工具结果裁剪降低压力，再决定是否摘要；缺少该插件时保持可独立组合

@@ -3,7 +3,7 @@
 - 包名: `@deepseek-ai/dsh-subagent-in-process-driver`
 - 源码路径: `packages/subagent/subagent-in-process-driver`
 - 被插件引用: 2 次
-- 描述: Shared in-process subagent run driver: drives a child agent on ctx.agents (used by the spawn and fork backends)
+- 描述: 
 
 ## 被集依赖 (下游)
 - `dsh-subagent-fork-in-process`

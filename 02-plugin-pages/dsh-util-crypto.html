@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dsh-util-crypto · @deepseek-ai/dsh-util-crypto · DeepSeek Harness 插件 DAG</title>
+<style>
+:root{--bg:#0f1117;--panel:#161a22;--border:#2a2f3a;--text:#e6e8ee;--dim:#9aa3b2;--accent:#4f8cff;--ext:#b48a3c;--ok:#2fb98a;--dis:#c0504d;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+header{background:var(--panel);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+header h1{font-size:17px;font-weight:600;}
+header .crumb{color:var(--dim);font-size:13px;}
+header .crumb a{color:var(--accent);text-decoration:none;}
+.badge{background:#20324f;color:#7fb0ff;padding:2px 10px;border-radius:20px;font-size:12px;}
+.badge.ext{background:#3a2f1a;color:#e0b25e;}
+.badge.layer{background:#1d2a24;color:#5fc9a0;}
+.badge.l2{background:#2f2440;color:#b48ae0;}
+.badge.l3{background:#1d3a30;color:#5fd0a8;}
+.badge.dis{background:#3a1d1d;color:#e08584;}
+main{padding:24px;max-width:1200px;margin:0 auto;}
+h2{font-size:18px;margin:26px 0 12px;color:#cfd6e4;border-bottom:1px solid var(--border);padding-bottom:8px;}
+h3{font-size:15px;margin:18px 0 8px;color:#b8c2d4;}
+p,li{font-size:14px;}
+ul{padding-left:22px;}
+.dep-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;margin:10px 0;}
+.dep-item{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 12px;}
+.dep-item .name{font-weight:600;color:var(--accent);}
+.dep-item .mech{display:inline-block;font-size:11px;background:#1d2a3f;color:#7fb0ff;border-radius:4px;padding:1px 6px;margin-left:6px;}
+.dep-item .evi{font-size:12px;color:var(--dim);margin-top:4px;font-family:Consolas,monospace;word-break:break-all;}
+.dep-item .purpose{font-size:13px;margin-top:4px;}
+.ext .name{color:var(--ext);}
+.dis .name{color:var(--dis);}
+.provides li{font-size:13px;margin:3px 0;}
+.evidence{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-family:Consolas,monospace;font-size:12px;color:#9fb0c3;margin:6px 0;word-break:break-all;}
+.dagnav{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:14px 0;}
+.dagnav .label{font-size:12px;color:var(--dim);margin-bottom:6px;}
+.dagnav .chips{display:flex;flex-wrap:wrap;gap:6px;}
+.chip{font-size:12px;background:#1d2a3f;border:1px solid #2b3d5f;border-radius:6px;padding:2px 8px;color:#7fb0ff;text-decoration:none;}
+.chip:hover{background:#2b3d5f;}
+.chip.ext{background:#3a2f1a;border-color:#5a4422;color:#e0b25e;}
+.chip.dis{background:#3a1d1d;border-color:#6a3231;color:#e08584;}
+.chip.l2{background:#2f2440;border-color:#4a3560;color:#b48ae0;}
+.chip.l3{background:#1d3a30;border-color:#2f5a4a;color:#5fd0a8;}
+.chip.self{background:#20324f;border-color:#4f8cff;color:#fff;cursor:default;}
+.treenav{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:14px 0;display:flex;flex-wrap:wrap;gap:4px 14px;}
+.treenav a{color:var(--dim);font-size:13px;text-decoration:none;}
+.treenav a:hover{color:var(--accent);}
+.treenav .sep{color:#3a3f4a;}
+.layernav{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}
+.layernav a{font-size:12px;background:#161d2c;border:1px solid var(--border);border-radius:6px;padding:2px 8px;color:var(--dim);text-decoration:none;}
+.layernav a.cur{background:#20324f;color:#7fb0ff;border-color:#4f8cff;}
+footer{margin-top:40px;padding:16px 24px;border-top:1px solid var(--border);color:var(--dim);font-size:12px;text-align:center;}
+table{border-collapse:collapse;width:100%;margin:10px 0;}
+th,td{border:1px solid var(--border);padding:6px 10px;font-size:13px;text-align:left;}
+th{background:var(--panel);color:#b8c2d4;}
+.whybox{background:#0d1a14;border:1px solid #2f5a4a;border-radius:8px;padding:14px 18px;margin:10px 0;}
+.whybox .tag{color:#5fc9a0;font-size:12px;font-weight:600;letter-spacing:1px;}
+.whybox p{font-size:14px;color:#cfe8dd;margin:6px 0;}
+.whybox .hist{font-size:13px;color:var(--dim);margin-top:8px;}
+.whybox .src{font-size:11px;color:var(--dim);margin-top:8px;}
+.whybox .src a{color:#7fb0ff;text-decoration:none;word-break:break-all;}
+.whybox .src a:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+<header>
+  <span class="crumb"><a href="../index.html">DAG总览</a> / <a href="../03-groups/index.html">组目录</a> / 外部基座 seam</span>
+  <h1>dsh-util-crypto · @deepseek-ai/dsh-util-crypto</h1>
+  <span class="badge ext">外部 seam</span>
+</header>
+<main>
+<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">ACP 协议</a><a href="../03-groups/G02.html">API 网关与控制器</a><a href="../03-groups/G03.html">附件</a><a href="../03-groups/G04.html">启动与插件管理</a><a href="../03-groups/G05.html">客户端运行时</a><a href="../03-groups/G06.html">客户端 UI 包</a><a href="../03-groups/G07.html">上下文压缩</a><a href="../03-groups/G08.html">上下文注入</a><a href="../03-groups/G09.html">核心运行时</a><a href="../03-groups/G10.html">凭据与授权</a><a href="../03-groups/G11.html">交付物</a><a href="../03-groups/G12.html">文档处理</a><a href="../03-groups/G13.html">实验特性</a><a href="../03-groups/G14.html">宿主扩展</a><a href="../03-groups/G15.html">反馈通道</a><a href="../03-groups/G16.html">文件系统</a><a href="../03-groups/G17.html">目标与计划</a><a href="../03-groups/G18.html">工具守卫</a><a href="../03-groups/G19.html">Hooks 扩展</a><a href="../03-groups/G20.html">宿主服务</a><a href="../03-groups/G21.html">交互命令</a><a href="../03-groups/G22.html">作业调度</a><a href="../03-groups/G23.html">LLM 适配</a><a href="../03-groups/G24.html">LSP 集成</a><a href="../03-groups/G25.html">MCP 协议</a><a href="../03-groups/G26.html">规划模式</a><a href="../03-groups/G27.html">Agent 预设</a><a href="../03-groups/G28.html">代码执行运行时</a><a href="../03-groups/G29.html">运行时诊断</a><a href="../03-groups/G30.html">沙箱</a><a href="../03-groups/G31.html">定时调度</a><a href="../03-groups/G32.html">SDK 与协议</a><a href="../03-groups/G33.html">会话核心</a><a href="../03-groups/G34.html">会话检索</a><a href="../03-groups/G35.html">设置</a><a href="../03-groups/G36.html">Shell 执行</a><a href="../03-groups/G37.html">技能</a><a href="../03-groups/G38.html">溢出存储</a><a href="../03-groups/G39.html">SSH 远程执行</a><a href="../03-groups/G40.html">存储</a><a href="../03-groups/G41.html">子代理</a><a href="../03-groups/G42.html">子进程</a><a href="../03-groups/G43.html">终端</a><a href="../03-groups/G44.html">待办</a><a href="../03-groups/G45.html">类型契约</a><a href="../03-groups/G46.html">框架 vendor</a><a href="../03-groups/G47.html">Web 访问</a><a href="../03-groups/G48.html">Webhook</a><a href="../03-groups/G49.html">工作流</a><a href="../03-groups/G50.html">工作区</a></div><div class="dagnav"><div class="label">被核心/Web/L3 集插件依赖（下游消费者）：</div><div class="chips"><a class="chip" href="dsh-api-gateway.html">dsh-api-gateway</a><a class="chip" href="dsh-api-session-controller.html">dsh-api-session-controller</a><a class="chip" href="dsh-api-terminal-controller.html">dsh-api-terminal-controller</a><a class="chip" href="dsh-client-file-upload.html">dsh-client-file-upload</a><a class="chip" href="dsh-client-ui-conversation.html">dsh-client-ui-conversation</a><a class="chip" href="dsh-client-ui-plan.html">dsh-client-ui-plan</a><a class="chip" href="dsh-client-ui-plugin-manager.html">dsh-client-ui-plugin-manager</a><a class="chip" href="dsh-client-ui-sidebar-right.html">dsh-client-ui-sidebar-right</a><a class="chip" href="dsh-commands.html">dsh-commands</a><a class="chip" href="dsh-experimental-inspector.html">dsh-experimental-inspector</a><a class="chip" href="dsh-experimental-webworker-runtime.html">dsh-experimental-webworker-runtime</a><a class="chip" href="dsh-llm.html">dsh-llm</a></div></div><h2>基座 seam 说明</h2><p>（抽象基座，被核心/Web/L3 集插件依赖）</p><table><tr><th>包名</th><td>@deepseek-ai/dsh-util-crypto</td></tr><tr><th>源码路径</th><td><code>packages/util/crypto</code></td></tr><tr><th>被插件引用</th><td>12 次</td></tr></table><h2>被依赖（下游）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-api-gateway.html">dsh-api-gateway</a></span></div><div class="dep-item"><span class="name"><a href="dsh-api-session-controller.html">dsh-api-session-controller</a></span></div><div class="dep-item"><span class="name"><a href="dsh-api-terminal-controller.html">dsh-api-terminal-controller</a></span></div><div class="dep-item"><span class="name"><a href="dsh-client-file-upload.html">dsh-client-file-upload</a></span></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-conversation.html">dsh-client-ui-conversation</a></span></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-plan.html">dsh-client-ui-plan</a></span></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-plugin-manager.html">dsh-client-ui-plugin-manager</a></span></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-sidebar-right.html">dsh-client-ui-sidebar-right</a></span></div><div class="dep-item"><span class="name"><a href="dsh-commands.html">dsh-commands</a></span></div><div class="dep-item"><span class="name"><a href="dsh-experimental-inspector.html">dsh-experimental-inspector</a></span></div><div class="dep-item"><span class="name"><a href="dsh-experimental-webworker-runtime.html">dsh-experimental-webworker-runtime</a></span></div><div class="dep-item"><span class="name"><a href="dsh-llm.html">dsh-llm</a></span></div></div><h2>依赖机制分布</h2><p>E1</p>
+</main>
+<footer>DeepSeek Harness 插件级 DAG 依赖链分析 · L1 核心集 + L2 web-app + L3 其余插件 · 源码三依据(E1编译/E2运行时/E3组合)逐条溯源</footer>
+</body>
+</html>

@@ -1,0 +1,432 @@
+[
+  {
+    "id": "dsh-tool-web",
+    "name": "@deepseek-ai/dsh-tool-web",
+    "implementation": "以函数插件在 ctx.tools 上注册模型可见的 web_search 与 web_fetch 工具：Config 控制启用项与上限，apply() 据配置分派到 applyWebSearchTool/applyWebFetchTool (src/index.ts:83-95)。web_fetch 经 ctx.web.fetch 抓取 URL，用 turndown + GFM 把 HTML 转为 markdown，并对深层嵌套 HTML 做深度守卫 (src/fetch.ts:25-95, 447-515)。web_search 校验查询上限后并发调用 ctx.web.search 并合并去重、按结果上限截断 (src/search.ts:231-377)。两者都注册 systemPrompt 信任提示（外部内容视为数据而非指令，src/trust.ts:7）并附可回放的结果卡片元数据。",
+    "provides": [
+      "tools.web_search (模型可见的联网搜索工具，经 ctx.web 执行)",
+      "tools.web_fetch (模型可见的 URL 抓取并转 markdown 的工具)",
+      "systemPrompt 章节 tool:web_search / tool:web_fetch (外部内容信任与引用指引)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:33 peerDep + src/fetch.ts:11 import defineTool + src/index.ts:24 static inject ['tools','web','systemPrompt']",
+        "purpose": "通过 ctx.tools 注册 web_search/web_fetch 工具定义（含 schema、render、presentationMeta）"
+      },
+      {
+        "plugin_id": "dsh-web",
+        "mechanism": "E1+E2+E3",
+        "evidence": "package.json:34 peerDep + src/fetch.ts:13 import WebFetchBody/WebFetchResult + src/index.ts:24 inject 'web' + src/fetch.ts:501 ctx.web.fetch + packages/bundle/base/cordis.patch.yml:471-486",
+        "purpose": "调用 ctx.web 执行实际抓取/搜索，且 base bundle 中装配在 web 行之后"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:32 peerDep + src/index.ts:24 inject 'systemPrompt' + src/fetch.ts:448 ctx.systemPrompt.section",
+        "purpose": "注册工具使用与外部内容信任指引的 system prompt 章节"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "package.json:37 dep + src/fetch.ts:14 import { assertNever, type JsonValue } + src/search.ts:11 import type JsonValue",
+        "purpose": "工具结果值的 JSON 类型与闭合联合的穷尽检查"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "package.json:31 peerDep",
+        "purpose": "声明式 peer 依赖（模型消息/类型兼容面）"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-web",
+    "name": "@deepseek-ai/dsh-web",
+    "implementation": "WebRuntime 服务 (src/index.ts:74-164) 作为 ctx.web 能力 seam：持有 search/fetch 两个 provider 注册表，暴露 registerSearchProvider/registerFetchProvider (src/index.ts:103-116)。search()/fetch() 在调用时经 resolveProvider 做与注册顺序无关的选择（配置缺失→WEB_PROVIDER_CONFIGURED_MISSING、多个可用→WEB_PROVIDER_AMBIGUOUS 等，src/index.ts:172-194），并按 maxResults 截断结果并置 truncated (src/index.ts:196-200)。types.ts 定义请求/结果词汇、provider 接口与 WebError 分类 (src/types.ts:35-130)，并以默认导出满足服务类插件约定 (src/index.ts:202)。",
+    "provides": [
+      "ctx.web (Web 访问能力 seam：search/fetch provider 注册表与与注册顺序无关的选择)",
+      "WebError 错误分类与 WebSearch/WebFetch 请求结果词汇"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "package.json:30 peerDep + src/types.ts:8 import { HarnessError }",
+        "purpose": "以 dsh-llm 的 HarnessError 为基类定义 WebError，保持全仓错误分类一致"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-web-fetch-http",
+    "name": "@deepseek-ai/dsh-web-fetch-http",
+    "implementation": "函数插件 apply() 构造 HttpFetchProvider 并通过 ctx.web.registerFetchProvider 注册为 fetch provider 'http' (src/index.ts:79-93，id 见 src/provider.ts:36-40)。provider.fetch 用 deadline 施加超时 (src/provider.ts:56-63)，validateFetchUrl 校验 URL 并只跟随同源重定向 (src/provider.ts:66-115)，经 publicHttpNetwork 解析并固定公共 IP、可选择走 dsh-http-proxy 代理 (src/provider.ts:134-139)。readBody 按字节/字符上限截断并按 charset 解码 (src/provider.ts:147-177)。",
+    "provides": [
+      "ctx.web 的 fetch provider 'http' (匿名公共 HTTP(S) 安全抓取实现)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-web",
+        "mechanism": "E1+E2+E3",
+        "evidence": "package.json:32 peerDep + src/provider.ts:9 import { WebError } + src/index.ts:29 static inject ['web'] + src/index.ts:93 ctx.web.registerFetchProvider + packages/bundle/base/cordis.patch.yml:471-483",
+        "purpose": "实现并注册 WebFetchProvider 到 web seam，base bundle 中装配在 web 行之后"
+      },
+      {
+        "plugin_id": "dsh-timeout",
+        "mechanism": "E1",
+        "evidence": "package.json:31 peerDep + src/provider.ts:11 import { deadline, timeoutOf }",
+        "purpose": "为一次抓取施加可区分来源的超时 deadline"
+      },
+      {
+        "plugin_id": "dsh-http-proxy",
+        "mechanism": "E1",
+        "evidence": "package.json:33 peerDep + src/provider.ts:13 import { proxyRouteFor }",
+        "purpose": "决定某些抓取经代理 dispatcher 走（跳过多余的公共地址校验）"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-web-search-deepseek",
+    "name": "@deepseek-ai/dsh-web-search-deepseek",
+    "implementation": "函数插件把 DeepSeekSearchProvider 注册进 ctx.web（id 'deepseek-official'，src/index.ts:127-131）。provider 调用 Anthropic 兼容 Messages API 并携带原生 web_search_20250305 服务端工具 (src/provider.ts:199-278)，把 web_search_tool_result 块与 text 引文按 URL 合并为规范化来源 (src/provider.ts:120-173)。凭证与端点由 resolveOptions 从 ctx.get('credentials')/launchEnvironmentOf 解析，并在派发前把无密请求写入调用方会话 (src/index.ts:93-124)。",
+    "provides": [
+      "ctx.web 的 search provider 'deepseek-official' (DeepSeek 官方联网搜索)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-web",
+        "mechanism": "E1+E2+E3",
+        "evidence": "package.json:36 peerDep + src/provider.ts:9 import { WebError } + src/index.ts:41 static inject ['web'] + src/index.ts:128 ctx.web.registerSearchProvider + packages/bundle/base/cordis.patch.yml:471-478",
+        "purpose": "实现并注册 WebSearchProvider 到 web seam，base bundle 中装配在 web 行之后"
+      },
+      {
+        "plugin_id": "dsh-credentials",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:33 peerDep + src/index.ts:12 import { credentialRef } + src/index.ts:103 ctx.get('credentials') + src/provider.ts:16 import type { CredentialRef }",
+        "purpose": "解析 DEEPSEEK_API_KEY 等凭据引用，取搜索所需的 API key"
+      },
+      {
+        "plugin_id": "dsh-launch-environment",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:34 peerDep + src/index.ts:13 import { launchEnvironmentOf } + src/index.ts:106 launchEnvironmentOf(ctx).get(apiKeyEnv)",
+        "purpose": "在无 credentials seam 时以启动环境作为凭据/端点回退来源"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:32 peerDep + src/index.ts:11 import type {} from dsh-agent (声明合并) + src/index.ts:118 ctx.get('agents')?.currentInitiator()",
+        "purpose": "通过 ctx.get('agents') 找到当前发起方 Agent，以记录辅助搜索请求"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:35 peerDep + src/index.ts:14 import type {} from dsh-session + src/provider.ts:79 declare module SessionEventMap + src/index.ts:118 session.append('web/deepseek-search-llm-request', ...)",
+        "purpose": "向会话日志记录搜索请求（模型可见输入须可重建），并声明对应 SessionEventMap 事件"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-web-search-exa",
+    "name": "@deepseek-ai/dsh-web-search-exa",
+    "implementation": "函数插件把 ExaSearchProvider 注册进 ctx.web（id 'exa'，src/index.ts:57-66）。provider 以 POST /search 携带 highlights 请求 Exa (src/provider.ts:96-149)，把首个非空 highlight 映射为 snippet、publishedDate→publishedAt，并丢弃无 snippet 的条目 (src/provider.ts:56-81)。API key 缺省从 launchEnvironmentOf(ctx).get('EXA_API_KEY') 取得。",
+    "provides": [
+      "ctx.web 的 search provider 'exa' (Exa 检索)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-web",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:31 peerDep + src/provider.ts:9 import { WebError } + src/index.ts:32 static inject ['web'] + src/index.ts:58 ctx.web.registerSearchProvider",
+        "purpose": "实现并注册 WebSearchProvider 到 web seam"
+      },
+      {
+        "plugin_id": "dsh-launch-environment",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:30 peerDep + src/index.ts:9 import { launchEnvironmentOf } + src/index.ts:61 launchEnvironmentOf(ctx).get('EXA_API_KEY')",
+        "purpose": "从启动环境解析 Exa API key（缺 key 则 provider 不可用）"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-web-search-perplexity",
+    "name": "@deepseek-ai/dsh-web-search-perplexity",
+    "implementation": "函数插件把 PerplexitySearchProvider 注册进 ctx.web（id 'perplexity'，src/index.ts:52-61）。provider 以 POST /chat/completions 调用 sonar 模型 (src/provider.ts:101-152)，把生成答案作为 content，来源优先结构化 search_results[]、缺失时回退为仅 URL 的 citations[] (src/provider.ts:73-83)。API key 缺省从 launchEnvironmentOf(ctx).get('PERPLEXITY_API_KEY') 取得。",
+    "provides": [
+      "ctx.web 的 search provider 'perplexity' (Perplexity 生成式检索)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-web",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:31 peerDep + src/provider.ts:9 import { WebError } + src/index.ts:27 static inject ['web'] + src/index.ts:53 ctx.web.registerSearchProvider",
+        "purpose": "实现并注册 WebSearchProvider 到 web seam"
+      },
+      {
+        "plugin_id": "dsh-launch-environment",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:30 peerDep + src/index.ts:9 import { launchEnvironmentOf } + src/index.ts:56 launchEnvironmentOf(ctx).get('PERPLEXITY_API_KEY')",
+        "purpose": "从启动环境解析 Perplexity API key（缺 key 则 provider 不可用）"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-webhook-github",
+    "name": "@deepseek-ai/dsh-webhook-github",
+    "implementation": "函数插件在 ctx.webServer 上注册一条 exact 路由 (src/index.ts:47-61)。handler 校验 POST 与 JSON Content-Type，读取受限 body 及 x-hub-signature-256/x-github-delivery/x-github-event 头，用 ctx.credentials 解析密钥并经 Octokit Webhooks 校验签名 (src/handler.ts:82-105)。校验通过后构造 VerifiedWebhookDelivery<'github'> 交给 ctx.webhookRuntime.dispatch 做 fire-and-forget 分发 (src/handler.ts:107-119)，并在 types.ts 里向 WebhookEventMap 合并 'github' 事件 (src/types.ts:16-20)。",
+    "provides": [
+      "ctx.webServer 上的 GitHub 签名 webhook 路由",
+      "WebhookEventMap['github'] 事件类型 (dsh-webhook 的 provider 事件族)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-credentials",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:36 peerDep + src/index.ts:4 import { credentialRef } + src/index.ts:14 static inject ['webServer','webhookRuntime','credentials'] + src/handler.ts:95 ctx.credentials.resolve",
+        "purpose": "解析 webhook 签名共享密钥所在的凭据引用"
+      },
+      {
+        "plugin_id": "dsh-webhook",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:39 peerDep + src/handler.ts:9-12 import WebhookDeliveryId/WebhookSourceId/VerifiedWebhookDelivery + src/index.ts:14 inject 'webhookRuntime' + src/handler.ts:115 ctx.webhookRuntime.dispatch + src/types.ts:16 declare module WebhookEventMap",
+        "purpose": "构造已验证投递并交给 webhook runtime 分发，同时注册 github 事件类型"
+      },
+      {
+        "plugin_id": "dsh-host-webserver",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:37 peerDep + src/handler.ts:13 import type { WebRoute } + src/index.ts:14 inject 'webServer' + src/index.ts:59 ctx.webServer.register",
+        "purpose": "在宿主机 WebServer 上注册 webhook 的 exact 路由"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "package.json:42 dep + src/handler.ts:7 import { snapshotJsonValue } + src/types.ts:3 import type { JsonValue }",
+        "purpose": "把解析后的 payload 快照成无损 JSON 并给出 JSON 值类型"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "package.json:38 peerDep",
+        "purpose": "声明式 peer 依赖（webhook 投递与会话生态保持一致）"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-ralph",
+    "name": "@deepseek-ai/dsh-tool-ralph",
+    "implementation": "注册模型可见的 ralph 工具与专用 systemPrompt 章节 (src/index.ts:402-477)。execute 先校验调用方 agent，并要求子代理 provider 是「新鲜且支持结构化输出」的 (src/index.ts:218-230)，随后用固定的 RALPH_SCRIPT 通过 ctx.workflowEngine.start 启动工作流 (src/index.ts:445-453)。脚本每轮开一个无父上下文的新子代理，只传不可变目标与受 maxHandoffChars 限制的结构化 handoff，宿主侧再防御性解码每轮报告与终态 (src/index.ts:88-175, 244-331)。",
+    "provides": [
+      "tools.ralph (模型可见的 fresh-agent Ralph 循环工具)",
+      "systemPrompt 章节 tool:ralph (仅显式请求时使用的使用策略)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:34 peerDep + src/index.ts:13 import { defineTool } + src/index.ts:18 static inject ['tools','workflowEngine','subagents','systemPrompt'] + src/index.ts:410 ctx.tools.register",
+        "purpose": "注册 ralph 工具定义与结果呈现"
+      },
+      {
+        "plugin_id": "dsh-workflow",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:35 peerDep + src/index.ts:15 import type { WorkflowResult, WorkflowRun } + src/index.ts:18 inject 'workflowEngine' + src/index.ts:445 ctx.workflowEngine.start",
+        "purpose": "通过 workflow seam 启动固定脚本的编排运行并读取其结果/停止原因"
+      },
+      {
+        "plugin_id": "dsh-subagent",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:32 peerDep + src/index.ts:12 import type { SubagentProvider } + src/index.ts:18 inject 'subagents' + src/index.ts:219 ctx.subagents.getProvider",
+        "purpose": "校验并指定每轮新子代理所用的 provider（新鲜、支持结构化输出）"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:33 peerDep + src/index.ts:18 inject 'systemPrompt' + src/index.ts:405 ctx.systemPrompt.section",
+        "purpose": "注册 ralph 的显式请求使用策略提示章节"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "package.json:31 peerDep + src/index.ts:10 import type { ContentBlock }",
+        "purpose": "工具结果呈现使用 dsh-llm 的内容块类型"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:11 import type { JsonValue }",
+        "purpose": "符合 seam 的 JSON 值类型用于工具输出"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "package.json:30 peerDep",
+        "purpose": "声明式 peer 依赖（通过 exec.agent 取得调用方 Agent）"
+      },
+      {
+        "plugin_id": "dsh-workflow-ptc",
+        "mechanism": "E3",
+        "evidence": "packages/bundle/base/cordis.patch.yml:392-397, 446-448",
+        "purpose": "base bundle 中 workflow-ptc 先行装配以提供 ctx.workflowEngine，tool-ralph 随后装配使用该服务"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-workflow",
+    "name": "@deepseek-ai/dsh-tool-workflow",
+    "implementation": "注册模型可见的 workflow 工具（默认名 workflow）与使用指引章节 (src/index.ts:315-483)。前台执行把脚本交给 ctx.workflowEngine.start 并 await result，非 completed 停止原因转为工具错误 (src/index.ts:433-479)；run_in_background 则把运行注册为 ctx.jobs 作业并立即返回 jobId (src/index.ts:262-313)。createWorkflowRecorder 把 workflow/* 事件折叠成 tool-workflow/* 会话记录 (src/index.ts:93-151)，record.ts 把进度镜像进作业输出环 (src/record.ts:37-63)，invariant.ts 作为伴生插件校验这些记录的持久化不变量 (src/invariant.ts:132-168)。",
+    "provides": [
+      "tools.workflow (模型可见的工作流编排工具，前台/后台两态)",
+      "systemPrompt 章节 tool:workflow",
+      "tool-workflow/* 会话事件 (持久化的工作流运行记录)",
+      "invariants 伴生校验 (tool-workflow 记录折叠)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:47 peerDep + src/index.ts:17 import { defineTool } + src/index.ts:41 static inject ['tools','workflowEngine','systemPrompt'] + src/index.ts:328 ctx.tools.register",
+        "purpose": "注册 workflow 工具定义与呈现"
+      },
+      {
+        "plugin_id": "dsh-workflow",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:48 peerDep + src/index.ts:25 import type WorkflowResult/WorkflowRun + src/index.ts:41 inject 'workflowEngine' + src/index.ts:115 ctx.on('workflow/agent-start') + src/index.ts:433 ctx.workflowEngine.start",
+        "purpose": "启动/观测 workflow 运行并订阅 workflow/* 生命周期事件"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:41 peerDep + src/index.ts:19 import type { Agent } + src/index.ts:407 exec.agent + src/index.ts:442 parent.session",
+        "purpose": "取得调用方 Agent 以归属后台作业与工作流运行记录"
+      },
+      {
+        "plugin_id": "dsh-jobs",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:43 peerDep + src/index.ts:21 import type { JobId, JobOutcome } + src/index.ts:269 ctx.get('jobs') + src/index.ts:274 jobs.start + src/record.ts:12 import type { JobHandle }",
+        "purpose": "把后台工作流注册为受管后台作业并写进度环"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:45 peerDep + src/index.ts:22 import type { Session, SessionEventMap } + src/index.ts:102 session.append + src/invariant.ts:4 import type { Session, SessionEvent } + src/invariant.ts:154 ctx.on('session/event')",
+        "purpose": "把运行记录写入会话并订阅会话事件做不变量折叠"
+      },
+      {
+        "plugin_id": "dsh-invariants",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:42 peerDep + src/invariant.ts:5 import type { InvariantFailure, InvariantInstaller } + src/invariant.ts:13 static inject ['invariants'] + src/invariant.ts:168 ctx.invariants.register",
+        "purpose": "注册 tool-workflow 记录的伴生不变量校验器"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:46 peerDep + src/index.ts:41 inject 'systemPrompt' + src/index.ts:323 ctx.systemPrompt.section",
+        "purpose": "注册 workflow 工具的使用策略提示章节"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "package.json:44 peerDep + src/index.ts:20 import type { ContentBlock }",
+        "purpose": "工具呈现使用 dsh-llm 的内容块类型"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:23 import type { JsonValue } + src/index.ts:463 result.value as JsonValue",
+        "purpose": "把工作流返回值投影为合法 JSON 值"
+      },
+      {
+        "plugin_id": "dsh-workflow-ptc",
+        "mechanism": "E3",
+        "evidence": "packages/bundle/base/cordis.patch.yml:392-398",
+        "purpose": "base bundle 中 workflow-ptc 先行装配以提供 ctx.workflowEngine，tool-workflow 随后装配使用该服务"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-workflow-ptc",
+    "name": "@deepseek-ai/dsh-workflow-ptc",
+    "implementation": "PtcWorkflowEngine 继承 dsh-workflow 的 WorkflowEngine 并注册为 ctx.workflowEngine (src/index.ts:102-189)。start() 先校验 meta（src/meta.ts:76-82）与脚本体可解析，再解析子代理 provider 与总子代理上限，构造 WorkerInit 与 PtcWorkflowRun (src/index.ts:133-174)。PtcWorkflowRun 通过注入的 ctx.ptcRuntime 在沙箱 Node 进程中执行脚本，VM 提供 agent/parallel/pipeline/phase/log 钩子并按调用方 Session 的文件策略约束 (src/host.ts:112-306, src/runtime.ts:56-367)。运行管理子代理的启动、结果、取消与释放，并在 start() 后发出 workflow/* 事件。",
+    "provides": [
+      "ctx.workflowEngine (基于共享沙箱 PTC 执行器的工作流引擎实现)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-workflow",
+        "mechanism": "E1",
+        "evidence": "package.json:36 peerDep + src/index.ts:14 import WorkflowEngine, { WorkflowError, WorkflowRunId } + src/host.ts:12 import type { WorkflowRun, WorkflowResult }",
+        "purpose": "继承 WorkflowEngine 服务基类并复用其错误/运行词汇作为引擎实现"
+      },
+      {
+        "plugin_id": "dsh-ptc-runtime",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:37 peerDep + src/host.ts:4 import type { PtcRuntime } + src/index.ts:103 static inject ['subagents','ptcRuntime','sandboxPolicy'] + src/index.ts:117 ctx.ptcRuntime.language",
+        "purpose": "在共享沙箱 PTC 运行时中执行脚本并携带绑定函数"
+      },
+      {
+        "plugin_id": "dsh-sandbox-policy",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:39 peerDep + src/index.ts:12 import type {} from dsh-sandbox-policy + src/index.ts:103 inject 'sandboxPolicy' + src/index.ts:166 ctx.sandboxPolicy.resolve",
+        "purpose": "按调用方 Session 解析文件/沙箱策略并施加于运行"
+      },
+      {
+        "plugin_id": "dsh-subagent",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:34 peerDep + src/host.ts:7-8 import SubagentRuntime/SubagentRun + src/index.ts:103 inject 'subagents' + src/host.ts:200 subagents.start",
+        "purpose": "为脚本的 agent() 钩子启动/等待/释放子代理"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "package.json:31 peerDep + src/host.ts:3 import type { Agent }",
+        "purpose": "承载子代理的父 Agent 身份与归属"
+      },
+      {
+        "plugin_id": "dsh-sandbox",
+        "mechanism": "E1",
+        "evidence": "package.json:38 peerDep + src/host.ts:5 import type { SandboxExecutionPolicy }",
+        "purpose": "使用沙箱执行策略类型约束工作目录与执行环境"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "package.json:33 peerDep + src/host.ts:6 import { SessionId } + src/runtime.ts:11 import type { SessionId }",
+        "purpose": "以 SessionId 标识子代理会话身份"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1",
+        "evidence": "package.json:35 peerDep + src/host.ts:9 import { assertObjectJsonSchema } + src/runtime.ts:12 import { assertObjectJsonSchema, JsonSchemaError }",
+        "purpose": "校验 agent() 的结构化输出 schema 是否在支持子集内"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "package.json:43 dep + src/host.ts:11 import { assertNever, snapshotJsonValue }",
+        "purpose": "快照/校验跨 PTC 边界传递的无损 JSON 值"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "package.json:42 dep + src/runtime.ts:9 import { brandString }",
+        "purpose": "把子代理 childId 品牌化为 SessionId"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "package.json:32 peerDep + src/runtime.ts:10 import type { ContentBlock } + src/types.ts:7 import type { ContentBlock }",
+        "purpose": "把子代理最终输出块展平为文本作为 agent() 结果"
+      }
+    ],
+    "dependents": []
+  }
+]

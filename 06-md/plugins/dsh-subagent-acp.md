@@ -1,36 +1,24 @@
 # dsh-subagent-acp
 
 - 包名: `@deepseek-ai/dsh-subagent-acp`
-- 分组: G33 子代理外部后端
-- 拓扑层: Layer 6
+- 分组: G41 子代理
+- 拓扑层: Layer 7
 - 来源层: L3 其余
 - 源码路径: `packages/subagent/subagent-acp`
 
-## 为什么需要它（设计初衷）
-子 Agent 的进程外 ACP 提供者：每个子 Agent 在新子进程中以 Agent Client Protocol 客户端驱动，子进程拥有自己的 runtime、session、模型配置与工具，不继承父会话上下文。是 spawn/fork 的进程外替代，让 DSH 能驱动任何 ACP 协议 Agent（不限于 DSH 自家 runtime），实现彻底的执行世界隔离与 token 隔离。
-
-发展史：2026-06-21 子 Agent capability seam 决策后出现的第一个进程外后端；postmortem 0001 记录默认导出丢失 inject 元数据的教训。每 run 全新进程，无进程池。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/subagent/subagent-acp
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-06-21-subagent-capability-seam.md
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/postmortem/0001-acp-default-export-drops-inject.md
-
 ## 实现逻辑
-进程外 ACP 子代理后端：在独立子进程中按 Agent Client Protocol 驱动子 agent，子进程拥有自己的 process/session/model/tools，不共享父 Cordis context、不声明父强制的 start capabilities；唯一读取 request.parent 的是 session workspace cwd(resolveCwd)。permission 策略自动应答 session/request_permission(reject 默认/allow)。经外部 @agentclientprotocol/sdk(0.25.1) 通信——不依赖 dsh-acp seam。
+以 AcpProvider 注册进程外 ACP 子代理 provider（默认名 acp），声明零启动能力，且只从 parent 读取会话 workspace cwd (src/index.ts:132-188)。start() 经 ctx.subprocess.spawn 启动子进程，run.ts 用官方 ACP SDK 完成 initialize、session.new、session.prompt 握手，并对子进程权限请求按配置自动拒绝或选择首个 allow 选项 (src/run.ts:337-618)。运行结果经 seam 的 settleRunResult/subprocessRunHandle 结算，dispose 走 stdin EOF→terminate 的协作式关闭阶梯 (src/run.ts:184-219, 598-618)。
 
 ## Provides
-- ctx.subagents 命名 provider 'acp'
-- startAcpRun 进程外驱动
-- PermissionPolicy 权限应答
+- ctx.subagents 注册的 provider `acp` (进程外 ACP 子代理执行能力)
 
 ## Depends On (上游依赖)
-- `dsh-llm` [编译依赖] - ContentBlock 类型
-  - 证据: `packages/subagent/subagent-acp/src/run.ts:25`
-- `dsh-session` [编译依赖] - SessionId 类型
-  - 证据: `packages/subagent/subagent-acp/src/run.ts:26`
-- `dsh-subagent` [运行时依赖] - inject ['subagents'] 注册 provider；SubagentProvider/ResolvedSubagentStartRequest/AssistantOutputFold 类型(E1)
-  - 证据: `packages/subagent/subagent-acp/src/index.ts:14-19,24, packages/subagent/subagent-acp/src/run.ts:27-28`
+- `dsh-llm` [编译依赖] - 使用内容块类型
+  - 证据: `src/run.ts:19 (import type ContentBlock)`
+- `dsh-session` [编译依赖] - 品牌化父命名空间的 run/子会话 id
+  - 证据: `src/run.ts:21 (import type SessionId)`
+- `dsh-subagent` [E1+E2] - 复用 seam 契约并注册 acp provider
+  - 证据: `src/index.ts:14-19 (import 类型) + src/index.ts:24 (inject ['subagents','subprocess']) + src/index.ts:205 (ctx.subagents.registerProvider) + src/run.ts:22 (import settleRunResult, subprocessRunHandle)`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

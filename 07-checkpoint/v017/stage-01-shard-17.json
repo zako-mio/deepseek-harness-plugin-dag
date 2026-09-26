@@ -1,0 +1,113 @@
+[
+  {
+    "id": "dsh-skill",
+    "name": "@deepseek-ai/dsh-skill",
+    "implementation": "技能能力 seam 的 Service Definition：实现分层技能注册表 SkillRegistry（以 'skills' 名注册 ctx 服务），按调用上下文 scope 把 provider 与运行时技能分入 global 层与各 scope 层，读取时合并 global 与 scope 链、同层内按 rank 解析同名胜出者，并按 revision+cwd+scope 链做目录缓存 (src/index.ts:356-660)。对外暴露 list/snapshot/get 读取目录与技能正文，registerProvider/register 供 provider 与运行时贡献注册，变更时提升 revision 并使缓存失效、向 skills/change 事件广播 (src/index.ts:390-517, src/index.ts:621-659)。",
+    "provides": [
+      "ctx.skills (技能注册表 seam：合并多渠道 provider 目录、按 scope 分层与 rank 解析唯一胜出技能，暴露 list/snapshot/get)",
+      "skills/change 事件 (技能目录失效通知，订阅者据此重新拉取目录)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "package.json:31 peerDep + src/index.ts:14 import type", "purpose": "声明合并 dsh-llm 的 MessageSourceMap 以注册 'skill-invocation' 消息来源类型 (src/index.ts:154-159)"},
+      {"plugin_id": "dsh-scope", "mechanism": "E1", "evidence": "package.json:32 peerDep + src/index.ts:16-17 import", "purpose": "复用 ScopedLayers/NamedEntries/scopeOf/scopeChainOf 实现按 agent scope 分层的注册表与缓存键 (src/index.ts:362-371)"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "package.json:35 dependency + src/index.ts:15 import", "purpose": "用 assertNever 对封闭联合 SkillResourceBase.kind 做穷尽性检查 (src/index.ts:209-212)"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-skill-badge",
+    "name": "@deepseek-ai/dsh-skill-badge",
+    "implementation": "内置技能提供者插件：构造单个 dsh-badge 技能候选（bundled 来源、BUNDLED_SKILL_RANK 优先级、资源基目录指向 ../assets/），list 返回静态候选、get 读取 assets/dsh-badge.md 正文 (src/index.ts:25-50)。apply 时经 ctx.skills.registerProvider 注册名为 'dsh-badge' 的 provider (src/index.ts:57-60)。",
+    "provides": [
+      "dsh-badge 技能 (bundled 提供者：向 ctx.skills 注册官方 powered-by-dsh 徽章技能)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-skill", "mechanism": "E1+E2", "evidence": "package.json:30 peerDep + src/index.ts:10-15 import + src/index.ts:55 inject['skills'] + src/index.ts:59 ctx.skills.registerProvider", "purpose": "向技能注册表注册 bundled provider，并复用其 BUNDLED_SKILL_RANK 与 SkillCandidate/SkillProvider 契约"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-skill-filesystem",
+    "name": "@deepseek-ai/dsh-skill-filesystem",
+    "implementation": "本地文件系统技能提供者：按 project(.dsh/.agents skill 根)/custom/user/bundled 有序根（各带 rank）发现目录式 SKILL.md 与扁平 .md 技能，解析 YAML frontmatter 与 invocation 策略后产出候选；技能正文优先经 ctx.fs 读取，无 fs 服务时退回 node fs (src/index.ts:134-266, src/index.ts:723-840)。内置 SkillWatchManager 以 chokidar/watchFile 监听技能根，并在 fs/observed 的一手写改后同步失效目录，dispose 时收敛全部 watcher (src/index.ts:288-601, src/index.ts:143-146)。",
+    "provides": [
+      "filesystem 技能提供者 (从项目/自定义/用户/bundled 根发现并加载本地技能注册进 ctx.skills)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-skill", "mechanism": "E1+E2", "evidence": "package.json:32 peerDep + src/index.ts:23-34 import + src/index.ts:46 inject['skills'] + src/index.ts:136 ctx.skills.registerProvider", "purpose": "实现并注册文件系统技能提供者，复用其 rank 常量、候选/定义与观察结果类型契约"},
+      {"plugin_id": "dsh-fs", "mechanism": "E1+E2", "evidence": "package.json:30 peerDep + src/index.ts:21 import type + src/index.ts:843 ctx.get('fs')", "purpose": "存在 fs seam 时经其 resolve/listDir/stat/readText 枚举与读取技能文件 (src/index.ts:759-771, src/index.ts:862-893)，缺失时退回 node fs"},
+      {"plugin_id": "dsh-home-paths", "mechanism": "E1", "evidence": "package.json:31 peerDep + src/index.ts:22 import", "purpose": "用 resolveDshHome 解析 DSH 技能根、canonicalizeWatchPath 规范化 watch 目标路径 (src/index.ts:167, src/index.ts:638)"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-skill-office",
+    "name": "@deepseek-ai/dsh-skill-office",
+    "implementation": "内置 Office 技能提供者：从打包 assets 目录为 office-docx/office-pptx/office-xlsx 三个技能解析 frontmatter 描述生成候选（bundled 来源、统一 BUNDLED_SKILL_RANK），get 返回 SKILL.md 正文并追加 LibreOffice Kit 运行时说明 (src/index.ts:37-96)。officeRuntime 校验 node 与 kit cli.js 均为绝对可执行文件，或按显式 cli:false 关闭 KIT (src/index.ts:47-62)。",
+    "provides": [
+      "office-docx/office-pptx/office-xlsx 技能 (bundled 提供者：文档编写工作流与 LibreOffice Kit 资源指引)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-skill", "mechanism": "E1+E2", "evidence": "package.json:30 peerDep + src/index.ts:10 import + src/index.ts:35 inject['skills'] + src/index.ts:96 ctx.skills.registerProvider", "purpose": "向技能注册表注册 office bundled provider，并复用其 BUNDLED_SKILL_RANK 与 SkillCandidate/SkillProvider 契约"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-skill",
+    "name": "@deepseek-ai/dsh-tool-skill",
+    "implementation": "注册面向模型的 skill 加载工具与持久化技能目录：defineTool 'skill' 经 ctx.skills 按 agent scope 查找并加载技能，正文渲染为 <skill_content> 块 (src/index.ts:81-161)。两个 agent/pre-step 监听器在决策后分别追加用户显式 /name 手势对应的技能注入（仅 user 来源消息可触发，src/index.ts:177-204），以及在工具对当前 agent 可见时，按目录条目摘要（sha256 digest 判重）发布或替换 session 技能目录消息 (src/index.ts:213-251, src/index.ts:328-378)。",
+    "provides": [
+      "skill 工具 (模型侧技能加载入口，加载完整技能指令)",
+      "session 技能目录消息 (skill-catalog 来源的持久化目录，随技能变化发布/替换)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-agent", "mechanism": "E1+E2", "evidence": "package.json:30 peerDep + src/index.ts:10 import type + src/index.ts:177,213 agent/pre-step", "purpose": "订阅 agent/pre-step 注入技能正文与技能目录，并读取 agent.session 的 cwd 与事件序列"},
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "package.json:33 peerDep + src/index.ts:11 import + src/index.ts:25 inject['tools'] + src/index.ts:161 ctx.tools.register + src/index.ts:220 ctx.tools.get", "purpose": "注册 skill 工具并据其在当前 agent 的可见性决定是否发布技能目录"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "package.json:31 peerDep + src/index.ts:12 import + src/index.ts:43-47 declare module", "purpose": "用 createUserMessage 构造带 source 的目录/注入消息，并注册 'skill-catalog' 消息来源类型"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "package.json:44 devDep + src/index.ts:13 import", "purpose": "用 SessionSeq 回溯 session 事件序列以构造既有目录历史 (src/index.ts:361-378)"},
+      {"plugin_id": "dsh-skill", "mechanism": "E1+E2", "evidence": "package.json:32 peerDep + src/index.ts:14-22 import + src/index.ts:25 inject['skills'] + src/index.ts:134,141,189,222 ctx.skills.list/get/snapshot", "purpose": "解析并加载技能、渲染正文块，并读取目录快照用于计算 digest 与发布"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-workspace-dependencies",
+    "name": "@deepseek-ai/dsh-tool-workspace-dependencies",
+    "implementation": "注册只读工具 load_workspace_dependencies：校验 payload 的 runtime.json（parsePrimaryRuntime 把 legacy components 格式归一化为顶层版本与发行版映射）并返回捆绑 Python/Node/pnpm 的绝对路径与 Python 发行版版本 (src/index.ts:82-156)。配置 root 时经 installPrimaryRuntime 以 staging 复制 + previous 目录回滚实现原子安装，未配置时原地校验使用 (src/index.ts:204-233, src/index.ts:267-274)。",
+    "provides": [
+      "load_workspace_dependencies 工具 (返回捆绑 Python/Node/pnpm 绝对路径与捆绑发行版版本)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "package.json:29 peerDep + src/index.ts:7 import + src/index.ts:12 inject['tools'] + src/index.ts:249 ctx.tools.register", "purpose": "向工具注册表注册其读路径查询工具"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-spill-local",
+    "name": "@deepseek-ai/dsh-spill-local",
+    "implementation": "溢出存储 seam 的宿主机实现 LocalSpillStore：把超长文本以随机名加注入式 encodeSegment 路径安全编码写入会话私有目录（根 0700、文件 0600 独占写），返回路径 locator 与 read/grep 检索提示 (src/index.ts:65-162, src/store.ts:55-131)。构造时经 ctx.effect 启动一次尽力而为的启动清理，回收早于 cleanupPeriodDays 的过期文件、剪除空 session 目录与历史默认根，并由 fiber 保证 dispose 前清理收敛 (src/index.ts:95-101, src/cleanup.ts:274-362)。",
+    "provides": [
+      "ctx.spillStore (宿主机文件系统溢出存储实现：会话隔离私有文件写入 + 启动过期清理)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-spill", "mechanism": "E1+E2", "evidence": "package.json:30 peerDep + src/index.ts:16-17 import + src/index.ts:65 extends SpillStore", "purpose": "作为 dsh-spill 定义的 SpillStore seam 的本地文件系统 provider，复用其 SpillLocator/SpillRef/SaveTextSpill 契约"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-spill-policy",
+    "name": "@deepseek-ai/dsh-spill-policy",
+    "implementation": "为工具结果与 PTC dispatch 日志挂载 token 预算保留策略：命中 tools/post-execute 与 tools/ptc-dispatch-log 时，若内容估算 token 超过 maxInlineTokens，则把完整文本（含图像附件可读路径）经 ctx.spillStore.saveText 落盘，再用 retainContent 保留头尾并按预算裁剪，末尾追加带 locator 与检索提示的省略通知 (src/index.ts:91-155, src/retention.ts:48-104, src/notice.ts:21-24)。图像定价缺失或保存失败时捕获异常并保持原始内联内容不改 (src/index.ts:56-75, src/index.ts:127-130)。",
+    "provides": [],
+    "depends_on": [
+      {"plugin_id": "dsh-llm", "mechanism": "E1+E2", "evidence": "package.json:35 peerDep + src/index.ts:10-11 import + src/index.ts:65 ctx.get('llm').imageRequestPricing", "purpose": "按当前模型路由估算图像 token 定价，并构造 PTC 图像结果的 additionalContexts 用户消息 (src/index.ts:144)"},
+      {"plugin_id": "dsh-token-meter", "mechanism": "E1", "evidence": "package.json:43 peerDep + src/index.ts:12 import", "purpose": "用 estimateContent 估算文本/内容 token 以决定溢出并计算头尾保留预算"},
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "package.json:39 peerDep + src/index.ts:14 import type + src/index.ts:33 inject['tools'] + src/index.ts:133,152 events", "purpose": "挂载工具结果后处理与 PTC dispatch 日志的 token 保留策略"},
+      {"plugin_id": "dsh-attachment", "mechanism": "E1+E2", "evidence": "package.json:41 peerDep + src/index.ts:15 import type + src/index.ts:81 ctx.get('attachments')", "purpose": "解析图像附件为执行侧可读路径以写入溢出文本 (src/index.ts:83-86)"},
+      {"plugin_id": "dsh-fs", "mechanism": "E1+E2", "evidence": "package.json:42 peerDep + src/index.ts:16 import type + src/index.ts:82 ctx.get('fs')", "purpose": "将附件主机路径映射为进程可读路径，供 resolveImageAttachmentAccess 使用"},
+      {"plugin_id": "dsh-output-retention", "mechanism": "E1", "evidence": "package.json:36 peerDep + src/notice.ts:2 import", "purpose": "复用 describeOmitted 词表生成与识别省略通知文本"},
+      {"plugin_id": "dsh-spill", "mechanism": "E1+E2", "evidence": "package.json:38 peerDep + src/index.ts:13 import type + src/notice.ts:3 import type + src/index.ts:101 ctx.get('spillStore')", "purpose": "经 spillStore seam 保存完整文本并取回 locator 与 retrievalHint 拼入通知"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "package.json:37 peerDep + src/types.ts:13 import type", "purpose": "溢出归属 session id 的类型来源 (src/types.ts:16-25)"}
+    ],
+    "dependents": []
+  }
+]

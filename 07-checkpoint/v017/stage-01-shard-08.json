@@ -1,0 +1,161 @@
+[
+  {
+    "id": "dsh-agent",
+    "name": "@deepseek-ai/dsh-agent",
+    "implementation": "Agent 接口与注册表实现：`AgentRegistry`（服务名 `agents`）用 `Map<SessionId, AgentEntry>` 维护存活 agent，并以 `AsyncLocalStorage` 承载进程内 initiator scope，提供 `create/resume`（委派给已注册的 `AgentFactory`）、`register/enter/announce/get/list/roots` 等生命周期方法 (src/index.ts:245-283,391-416,437-559)。构造时经 `ctx.inject(['typert'])` 注册 agent 的 typert lookup/host context，并安装 workspace 归档准入监听 (src/index.ts:257-270,282)。dispatch.ts 提供 `agentCarrier/agentEvents/emitAgentEvent/assembleContextFor`，把 agent 主体与其 scope carrier 融合，保证派发作用域键与 payload.agent 不漂移 (src/dispatch.ts:94-176)。model-selection.ts 把可变模型选择耦合到 `system-prompt/assemble` 与 `agent/request` 瀑布并在路由变化时追加持久化通知 (src/model-selection.ts:81-131)；consumed-work.ts 单遍折叠会话日志判定已消费工作 (src/consumed-work.ts:69-108)；invariant.ts 校验 `agent/status` 无空转 (src/invariant.ts:15-24)。",
+    "provides": [
+      "ctx.agents (Agent 注册表服务：create/resume/register/enter/announce/get/list/roots 与 initiator scope)",
+      "Agent 事件词表 (agent/created、agent/disposed、agent/status、agent/inbox/*、agent/pre-step、agent/request、agent/request-error、agent/assistant-stream、agent/turn-stopping、agent/error)",
+      "agentEvents/agentCarrier/emitAgentEvent/assembleContextFor 融合作用域派发助手",
+      "installModelSelection (agent 级模型选择与请求路由耦合)",
+      "foldConsumedWork (会话日志的已消费工作折叠)",
+      "Agent/Inbox/AgentOptions/TurnBoundaryProjection 等公共类型与声明合并"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "src/index.ts:14 import type + src/types.ts:10", "purpose": "复用 SessionId/SessionEvent/SessionLogOffset 会话身份与日志词汇，并依赖 agent.session 语义"},
+      {"plugin_id": "dsh-workspace", "mechanism": "E1+E2", "evidence": "src/archive-admission.ts:12 import type + src/archive-admission.ts:27,34 事件订阅", "purpose": "回答 workspace/session-activity 的 turn 家族，并在 workspace/session-stop 时取消运行中的 agent"},
+      {"plugin_id": "dsh-scope", "mechanism": "E1+E2", "evidence": "src/index.ts:12 import scopeTarget + src/dispatch.ts:10", "purpose": "用 scopeTarget/Scoped 构建 agent 作用域载体"},
+      {"plugin_id": "dsh-system-prompt", "mechanism": "E1", "evidence": "src/dispatch.ts:12 import type AssembleContext + src/runtime-types.ts:17", "purpose": "assembleContextFor 返回 AssembleContext，并向该类型声明合并 agent 字段"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E1+E2", "evidence": "src/invariant.ts:4 import + src/invariant.ts:12 inject(['invariants']) + src/invariant.ts:32 register", "purpose": "作为 invariant companion 注册 agent 生命周期不变量"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "src/model-selection.ts:14 import + package.json:42 peerDep", "purpose": "复用 LlmCallConfig/ReasoningEffortId 及 createUserMessage/boundContextSummary 生成模型切换通知"},
+      {"plugin_id": "dsh-session-projection", "mechanism": "E1", "evidence": "src/projection.ts:2 + src/types.ts:58 声明合并", "purpose": "向会话投影表声明 turnBoundary/inbox 投影条目"},
+      {"plugin_id": "dsh-typert-protocol", "mechanism": "E1+E2", "evidence": "src/types.ts:11 import type + src/index.ts:257 ctx.inject(['typert'])", "purpose": "注册 agent 的 typert lookup 与 host context"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/types.ts:12 import type JsonValue", "purpose": "复用 JsonValue 等零依赖工具类型"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-agent-default-model",
+    "name": "@deepseek-ai/dsh-agent-default-model",
+    "implementation": "实现 `AgentDefaultModelConfig`（服务名 `agentDefaultModel`），为未显式指定模型的 Agent 提供默认模型选择 (src/index.ts:48-95)。构造时经 `ctx.inject(['settings'], ...)` 关闭 settings 自动模式，并把 provider/model/reasoningEffort 三个 volatile Config 字段投影为 `ModelSelection` (src/index.ts:34-42,57-61)。`currentSelection()` 读取当前默认选择 (src/index.ts:67-73)；`saveSelection()` 在部署装配了 configEditor 时按提交顺序串行写入 profile，无 editor 时保留组合项 (src/index.ts:82-94)。",
+    "provides": [
+      "ctx.agentDefaultModel (默认模型选择服务：currentSelection 读取与 saveSelection 持久化)",
+      "AgentDefaultModelConfig 服务类与 Config 字段 (provider/model/reasoningEffort)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "package.json:34 peerDep + src/index.ts:12 import type ModelSelection", "purpose": "复用 Agent 侧的 ModelSelection 选择类型"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "package.json:35 peerDep + src/index.ts:13 import ReasoningEffortId", "purpose": "把存储的 effort 字符串投影为适配器推理强度 id"},
+      {"plugin_id": "dsh-config-editor", "mechanism": "E1+E2", "evidence": "package.json:31 dependency + src/index.ts:14 import type + src/index.ts:85 ctx.get('configEditor')", "purpose": "将默认模型选择持久化写入 profile"},
+      {"plugin_id": "dsh-settings", "mechanism": "E1+E2", "evidence": "src/index.ts:6 import type + src/index.ts:60 ctx.inject(['settings'])", "purpose": "关闭 settings 自动模式并使默认模型从 settings 读取"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-agent-loop",
+    "name": "@deepseek-ai/dsh-agent-loop",
+    "implementation": "具体 agent 循环插件：`AgentLoop`（服务名 `agentLoop`）继承 Service 并实现 `AgentFactory`，构造时加载 declarative agents、注册 turnBoundary 与 inbox 两个会话投影、把自身注册为 `ctx.agents` 工厂，并注册 provider/model/cwd 三个 system-prompt 变量 (src/index.ts:330-404)。`create/createAgent/resume/resumeWith` 经 `SessionPreparation` 与持久化写句柄在单一事务内构造 session 与 `ReactLoopAgent`，`prepare()` 建立 memo 化反向拆卸，setup 后 `publish()` 进入两个注册表并 announce (src/index.ts:479-640,714-780,807-890)。`ReactLoopAgent` 以 Phase 状态机驱动 turn/step 边界，所有请求由会话日志派生 (src/agent.ts:98-160)；inbox.ts 提供 inbox 投影与命令门面 (src/inbox.ts:27-74)；tool-calls.ts/assistant-stream.ts/runtime-context.ts 处理工具调用调度、流式发布与运行时上下文投影；invariant.ts 校验 loop 构造的 llm 请求可从会话日志重建 (src/invariant.ts:19-57)。",
+    "provides": [
+      "ctx.agentLoop (具体 Agent 工厂与驱动器服务，实现 AgentFactory)",
+      "turnBoundary 会话投影定义",
+      "inbox 会话投影定义",
+      "agent-loop/config-start-failed 事件",
+      "ReactLoopAgent/ReactLoopInbox 驱动实现与 DEFAULT_MAX_PARALLEL_TOOL_CALLS"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-agent", "mechanism": "E1+E2", "evidence": "src/agent.ts:18 import + src/index.ts:24 + src/index.ts:331 inject(['agents'])", "purpose": "实现 AgentFactory 并经 ctx.agents 工厂/注册表发布与登记 agent"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1+E2", "evidence": "src/agent.ts:19 import + src/index.ts:25 + src/index.ts:331 inject(['llm'])", "purpose": "构造并执行模型请求，复用 LlmCallConfig/PreparedLlmCall 等"},
+      {"plugin_id": "dsh-scope", "mechanism": "E1+E2", "evidence": "src/agent.ts:28-29 import createScope + src/agent.ts:130 createScope(loopCtx, this)", "purpose": "为每个 agent 铸造作用域上下文"},
+      {"plugin_id": "dsh-session", "mechanism": "E1+E2", "evidence": "src/index.ts:26-27 import + src/index.ts:331 inject(['sessions']) + src/index.ts:618-622 ctx.sessions.enter/announce", "purpose": "创建/恢复会话并把 agent 会话登记进 SessionStore"},
+      {"plugin_id": "dsh-session-persistence", "mechanism": "E1+E2", "evidence": "src/index.ts:32-33 import + src/index.ts:680,808 ctx.get('sessionPersistence') + src/index.ts:393 ctx.inject(['sessionPersistence'])", "purpose": "持久化会话的创建/打开/追加与恢复加载"},
+      {"plugin_id": "dsh-session-projection", "mechanism": "E1+E2", "evidence": "src/index.ts:30-31 import + src/index.ts:364-365 ctx.sessionProjections.register + src/index.ts:331 inject(['sessionProjections'])", "purpose": "注册 turnBoundary 与 inbox 投影定义"},
+      {"plugin_id": "dsh-system-prompt", "mechanism": "E1+E2", "evidence": "src/agent.ts:32-33 import + src/index.ts:370-372 ctx.systemPrompt.variable + src/index.ts:331 inject(['systemPrompt'])", "purpose": "注册 provider/model/cwd 提示变量并驱动提示装配"},
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "src/index.ts:29 import + src/tool-calls.ts:17 + src/index.ts:331 inject(['tools'])", "purpose": "调度工具调用执行流水线"},
+      {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "src/index.ts:13 import brandString", "purpose": "把生成的会话 id 字符串品牌化为 SessionId"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/agent.ts:27 import assertNever/deepFreeze + src/tool-calls.ts:18", "purpose": "复用判别穷尽断言与深冻结工具"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E1+E2", "evidence": "src/invariant.ts:8 import + src/invariant.ts:16 inject(['invariants']) + src/invariant.ts:65 register", "purpose": "注册 loop 请求可重建性不变量"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-agent-tool-presentation",
+    "name": "@deepseek-ai/dsh-agent-tool-presentation",
+    "implementation": "函数插件（named export `name`/`inject`/`Config`/`apply`，无默认导出）。`apply` 依据 Config 的 mode 在挂载 scope 上调用 `ctx.tools.presentAs('native')`；对 `ptc`/`both` 模式先 `ctx.inject(['ptcRuntime'], ...)` 等待 PTC 运行时再声明呈现，未装配运行时的行在挂载期显式失败 (src/index.ts:59-72)。该行按组合（preset 常驻 scope）而非按会话声明工具呈现模式 (src/index.ts:1-19,27-35)。",
+    "provides": [
+      "无 ctx 服务；作为 preset 行声明挂载 scope 的工具呈现模式 (native/ptc/both)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "package.json:33 peerDep + src/index.ts:23 import type + src/index.ts:35 inject(['tools']) + src/index.ts:64 ctx.tools.presentAs", "purpose": "在 scope 上声明该组合的工具呈现模式"},
+      {"plugin_id": "dsh-ptc-runtime", "mechanism": "E2", "evidence": "src/index.ts:69 ctx.inject(['ptcRuntime'])", "purpose": "ptc/both 模式需要 PTC 运行时服务，缺失时在挂载期显式失败"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-scope",
+    "name": "@deepseek-ai/dsh-scope",
+    "implementation": "提供作用域上下文原语：`createScope` 用 `ctx.plugin()` 铸造带 `kScope` 标记的子上下文并给出 exact/shared 两种拆卸边界 (src/index.ts:137-147)；`bindScopeParent`/`scopeParentOf`/`scopeChainOf` 维护 key 的父子链并做环检测 (src/index.ts:54-102)；`scopeTarget` 构造保留基础 filter、按 key 及其祖先准入监听的作用域载体 (src/index.ts:170-185)。store.ts 提供 `NamedEntries`/`AnonymousEntries` 插入有序存储与 `ScopedLayers` 全局/精确作用域层聚合，经 `ctx.effect()` 绑定注册所有权与可见性 (src/store.ts:30-266)。invariant.ts 注册作用域派发不变量，要求 scope-filtered 事件必须携带匹配的 scope carrier (src/invariant.ts:16-32)。",
+    "provides": [
+      "createScope/bindScopeParent/scopeParentOf/scopeChainOf/scopeOf (作用域铸造与父子链)",
+      "scopeTarget/isScopeCarrier/carrierKeyOf (作用域路由载体)",
+      "NamedEntries/AnonymousEntries/ScopedLayers/ScopeLayer (作用域感知注册表存储)",
+      "ScopeKey/Scope/Scoped/ScopeParentBinding 类型"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-invariants", "mechanism": "E1+E2", "evidence": "package.json:35 peerDep + src/invariant.ts:4 import + src/invariant.ts:13 inject(['invariants']) + src/invariant.ts:41 register", "purpose": "注册作用域派发关系的运行时不变量"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-session",
+    "name": "@deepseek-ai/dsh-session",
+    "implementation": "事件溯源会话服务：`SessionStore`（服务名 `sessions`）以 `Map<SessionId, SessionEntry>` 维护存活会话，提供 `prepare/enter/announce/create` 与 `session/created`、`session/event`、`session/flush` 派发；`flush()` 是所有持久性 checkpoint 的唯一入口，await 全部监听者并回传其失败 (src/index.ts:919-963,986-997,1194-1211)。`Session` 类维护 append-only 日志、surface 派生消息历史与 fork/seed (src/index.ts:446-560)；surface.ts 定义消息投影与 surface 折叠，repair.ts 为中断 turn 生成合成收尾事件，request-header.ts 折叠请求头，tool-history.ts 重建工具历史 (src/index.ts:19-35)。构造时经 `ctx.inject(['typert'])` 注册 session 的 typert lookup (src/index.ts:954-962)；invariant.ts 校验日志的 seq/turn/step/tool-call 关系不变量 (src/invariant.ts:16-258)。",
+    "provides": [
+      "ctx.sessions (SessionStore 事件溯源会话服务：prepare/enter/announce/create/flush/get)",
+      "Session 类与 SessionId/SessionSeq/SessionLogOffset 品牌类型",
+      "session/created、session/disposed、session/event、session/flush 事件",
+      "surface/fork/repair/request-header/tool-history 派生与修复工具",
+      "SessionPreparation、foldRequestHeader、interruptedTurnClosers、KNOWN_SESSION_EVENT_TYPES 等导出"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-scope", "mechanism": "E1+E2", "evidence": "src/index.ts:13-14 import scopeOf/scopeTarget + src/index.ts:426 scopeTarget 构造 carrier + package.json:50 peerDep", "purpose": "为会话构造作用域路由载体并读取上下文作用域"},
+      {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "src/index.ts:11 + src/types.ts:1 + src/repair.ts:11", "purpose": "品牌化会话 id、seq 与日志偏移类型"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/index.ts:12 + src/invariant.ts:12 + src/types.ts:17", "purpose": "复用 JsonValue 快照/深冻结与穷尽断言工具"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "src/index.ts:15,23,31 + src/types.ts:2-16 + package.json:58 dependency", "purpose": "复用 llm 消息/工具/请求头等类型与派生消息词汇"},
+      {"plugin_id": "dsh-typert-protocol", "mechanism": "E1+E2", "evidence": "src/index.ts:17 import type TypertLookup + src/index.ts:954 ctx.inject(['typert'])", "purpose": "注册 session 的 typert lookup"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E1+E2", "evidence": "session/package.json:52 devDep + src/invariant.ts:10 import + src/invariant.ts:20 inject(['invariants']) + src/invariant.ts:258 register", "purpose": "注册会话日志关系不变量"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-system-prompt",
+    "name": "@deepseek-ai/dsh-system-prompt",
+    "implementation": "系统提示装配注册表：`SystemPrompt`（服务名 `systemPrompt`）以 `ScopedLayers` 维护 section/context/tool-provider/variable 四类作用域层，构造时注册若干内建 section (src/index.ts:405-450)。`section/context/tools/variable` 分别在调用上下文作用域内注册贡献 (src/index.ts:454-547)；`assemble()` 合并全局与作用域 provider、脱离 tool 参数并按序产出权威装配 (src/index.ts:549-585)。对外声明 `system-prompt/assemble` 瀑布与 `system-prompt/change` 事件 (src/index.ts:18-38)；invariant.ts 前置校验装配结果的 section/context/tool/variable 合法性 (src/invariant.ts:16-51)。",
+    "provides": [
+      "ctx.systemPrompt (SystemPrompt 装配注册表：section/context/tools/variable/assemble/getSectionOrder)",
+      "system-prompt/assemble 瀑布与 system-prompt/change 事件",
+      "PromptSection/PromptContext/PromptAssembly/ToolProviderResult/AssembleContext 类型"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-scope", "mechanism": "E1+E2", "evidence": "src/index.ts:9-10 import AnonymousEntries/NamedEntries/ScopedLayers/scopeTarget", "purpose": "以作用域层存储并合并各作用域的提示贡献"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "src/index.ts:11 import type ContextSnapshotSection/ToolSchema", "purpose": "复用工具 schema 与上下文快照类型"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E1+E2", "evidence": "src/invariant.ts:4 import + src/invariant.ts:13 inject(['invariants']) + src/invariant.ts:60 register", "purpose": "注册提示装配结果合法性不变量"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tools",
+    "name": "@deepseek-ai/dsh-tools",
+    "implementation": "工具注册表与执行流水线：`ToolRuntime`（服务名 `tools`）用 `ScopedLayers` 维护作用域化工具注册与呈现模式，构造时向 systemPrompt 注册 tool-schema provider，并在非 native 默认模式下注册 PTC 折叠与 SDK section (src/index.ts:807-859)。`register()` 以 ctx.effect 绑定注册所有权 (src/index.ts:1063-1086)；呈现模式由 `presentAs` 按作用域声明并遮蔽全局默认 (src/index.ts:974-999)；执行走 pre/guard/around/post/result 多段 waterfall (src/index.ts:1325,1505,1605,1782)。ptc.ts 实现 `run_code` 传输，经 `ctx.ptcRuntime` 与 `dsh-sandbox` 执行嵌套子调用，审批经 `ctx.get('approval')` 可选消费 (src/index.ts:947,1731; src/ptc.ts:19-22)。schema/json-schema/ts-types/py-types 提供工具参数校验与 TS/Python SDK 渲染；invariant.ts 校验会话内工具调用关系 (src/invariant.ts:77-129)。",
+    "provides": [
+      "ctx.tools (ToolRuntime 工具注册表与执行流水线：register/presentAs/modeFor/调用调度)",
+      "tools/change 事件",
+      "defineTool/JSON Schema 校验与 ToolDefinition/ToolPresentationMode/ToolCallView 等类型",
+      "TS/Python 工具 SDK 渲染 (renderToolsSdk/renderToolsSdkPy/jsonSchemaToTs/jsonSchemaToPy)",
+      "PTC run_code 工具与沙箱升级审批集成"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-scope", "mechanism": "E1+E2", "evidence": "src/index.ts:9-10 import + src/index.ts:833 new ScopedLayers", "purpose": "以作用域层存储工具注册与呈现模式"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "src/index.ts:11-12 import + src/ptc.ts:10 createUserMessage/HarnessError", "purpose": "复用工具/内容块/调用 id 类型并构造消息与错误"},
+      {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "src/index.ts:13 import type Agent + package.json:41 peerDep", "purpose": "复用 Agent 类型以在调度中引用所属 agent"},
+      {"plugin_id": "dsh-session", "mechanism": "E1+E2", "evidence": "src/index.ts:14 import type UserMessage + src/invariant.ts:4 + src/invariant.ts:121 inject(['sessions']) + src/invariant.ts:77 ctx.sessions", "purpose": "复用会话消息类型并在 invariant 中读取会话校验工具调用"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/index.ts:15 + src/ptc.ts:23", "purpose": "复用 JsonValue/深冻结/快照工具"},
+      {"plugin_id": "dsh-system-prompt", "mechanism": "E1+E2", "evidence": "src/index.ts:16 import type + src/index.ts:808 inject(['systemPrompt']) + src/index.ts:854 ctx.systemPrompt.tools", "purpose": "向提示装配注册 tool-schema provider 与 SDK/折叠 section"},
+      {"plugin_id": "dsh-ptc-runtime", "mechanism": "E1+E2", "evidence": "src/index.ts:17 import type PtcRuntime + src/index.ts:680,1048 ctx.ptcRuntime + src/ptc.ts:19", "purpose": "PTC 模式下经运行时执行 run_code 程序与子调用"},
+      {"plugin_id": "dsh-sandbox-policy", "mechanism": "E1", "evidence": "src/index.ts:18 import type {} (声明合并)", "purpose": "引入沙箱策略服务的上下文类型合并"},
+      {"plugin_id": "dsh-user-approval", "mechanism": "E1+E2", "evidence": "src/index.ts:21 import type + src/index.ts:947,1731 ctx.get('approval')", "purpose": "可选消费审批服务以处理升级请求"},
+      {"plugin_id": "dsh-invariants", "mechanism": "E1+E2", "evidence": "src/invariant.ts:5 import + src/invariant.ts:13 inject(['invariants']) + src/invariant.ts:129 register", "purpose": "注册会话内工具调用关系不变量"},
+      {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "src/ptc.ts:9 import brandString", "purpose": "品牌化 PTC 子调用产生的内容块 id"},
+      {"plugin_id": "dsh-sandbox", "mechanism": "E1", "evidence": "src/ptc.ts:20-21 import approveEscalation/ESCALATION_TARGETS + type SandboxExecutionPolicy", "purpose": "执行沙箱升级审批与策略校验"}
+    ],
+    "dependents": []
+  }
+]

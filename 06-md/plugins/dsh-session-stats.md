@@ -1,30 +1,22 @@
 # dsh-session-stats
 
 - 包名: `@deepseek-ai/dsh-session-stats`
-- 分组: G25 宿主服务
-- 拓扑层: Layer 3
+- 分组: G33 会话核心
+- 拓扑层: Layer 4
 - 来源层: L2 web-app
 - 源码路径: `packages/session/session-stats`
 
-## 为什么需要它（设计初衷）
-注册 sessionStats 投影单元，从日志折算 turn/step 数与各阶段耗时的会话统计。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/session/session-stats/README.md
-
 ## 实现逻辑
-函数插件：在 ctx.sessionProjections.register 注册 'sessionStats' 投影单元（projection.ts 纯 fold：turn/step 计数、llm/tool/ttft/decode 墙钟与输出 token，zod schema 校验状态），apply 按事件流 step/start、assistant/chunk、assistant/message、tool/call、tool/result 折叠；交付由投影 seam 负责。
+以函数插件向 ctx.sessionProjections 注册 sessionStats 单元（src/index.ts:27-29）。该单元纯同步折叠 step/start、assistant/attempt、assistant/message、tool/call、tool/result、step/end、turn/end，产出整日志的 turns/steps 计数与 llm/tool/ttft/decode 墙钟时间（src/projection.ts:113-212）；以 step/end 而非 assistant/message 计步以正确覆盖失败/取消/超限步骤。stateVersion=1，wire 视图仅暴露会话总计（src/projection.ts:199-211）。
 
 ## Provides
-- sessionStats 投影单元（key 'sessionStats'）
+- sessionStats 投影单元（经 ctx.sessionProjections 交付整会话计数与墙钟时间）
 
 ## Depends On (上游依赖)
-- `dsh-llm` [编译依赖] - isTokenDelta 判定首 token
-  - 证据: `packages/session/session-stats/package.json:45; src/projection.ts:27`
-- `dsh-session` [编译依赖] - peerDependencies（事件类型）
-  - 证据: `packages/session/session-stats/package.json:46`
-- `dsh-session-projection` [编译依赖] - ProjectionDefinition 类型
-  - 证据: `packages/session/session-stats/package.json:47; src/projection.ts:28`
+- `dsh-llm` [编译依赖] - 复用 assistantStreamFirstTokenTime 计算首 token 延迟
+  - 证据: `src/projection.ts:27 import`
+- `dsh-session-projection` [E1+E2] - 把 sessionStats 单元注册到投影注册表并交付客户端视图
+  - 证据: `src/projection.ts:28 import + src/index.ts:20 static inject + src/index.ts:28 ctx.sessionProjections.register`
 
 ## Dependents (下游被依赖)
-- `dsh-client-ui-conversation` - sessionStats 投影 key 类型合并
+- `dsh-client-ui-chat` - 统计胶囊数据源

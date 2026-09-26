@@ -1,40 +1,31 @@
 # dsh-cordis-host-runner
 
 - 包名: `@deepseek-ai/dsh-cordis-host-runner`
-- 分组: G25 宿主服务
+- 分组: G14 宿主扩展
 - 拓扑层: Layer 5
 - 来源层: L2 web-app
 - 源码路径: `packages/extensions/cordis-host-runner`
 
-## 为什么需要它（设计初衷）
-模型动态加载 Cordis 插件的 host 侧：define/run/stop 生命周期、node:vm 沙箱求值、浏览器半的 run 往返与 invoke 路由。
-
-来源：
-- https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/extensions/cordis-host-runner/README.zh.md
-- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/extensions
-
 ## 实现逻辑
-DynamicCordisRunnerService（TypertRemote）：define/undefine/run/stop 模型装配的动态双半 Cordis 插件包；sandbox.ts VM 求值 host code + guard 门禁，lifecycle.ts 把 host 半挂入 cordis-dynamic group 子 fiber；发 cordis/request-run 审批事件；另提供 cordisInspect 注册表（inspect-registry.ts）。
+DynamicCordisRunnerService（继承 TypertRemoteService）实现进程级动态插件注册表与宿主半生命周期：持有不可变包定义、每插件单一活动运行、经人工审批后激活客户端半，并支持 Host/Client 双向调用 (src/index.ts:129-149)。宿主半代码在 node:vm 沙箱中求值，沙箱仅暴露 tagged console、harness.defineTool/registerTool 与 Node API 陷阱（重定向到 ctx.fs/ctx.web/ctx.bash/cordis 定时器）(src/sandbox.ts:101-117)；CordisInspectRegistryService 则提供只读 Inspect provider 注册表与跨页查询路由 (src/inspect-registry.ts:45-69, 37-42)。运行期发出 cordis/request-run、cordis/dynamic-package、cordis/dynamic-retract、cordis/inspect-query(-resolved) 等事件 (src/index.ts:296-1021, src/inspect-registry.ts:153-189)。
 
 ## Provides
-- ctx.dynamicCordisRunner（define/undefine/run/stop/approval）
-- ctx.cordisInspect（CordisInspectRegistryService）
-- cordis/request-run 事件
-- dynamic 相关 Typert Remote
+- ctx.dynamicCordisRunner (宿主动态插件注册表、宿主半沙箱生命周期与 Host/Client 调用表)
+- ctx.cordisInspect (宿主 Inspect provider 注册表与跨页查询路由)
+- 事件 cordis/request-run、cordis/request-run-resolved、cordis/dynamic-package、cordis/dynamic-retract、cordis/inspect-query、cordis/inspect-query-resolved
 
 ## Depends On (上游依赖)
-- `dsh-agent` [编译依赖] - Agent 类型（会话所有权）
-  - 证据: `packages/extensions/cordis-host-runner/package.json:57; src/index.ts:10`
-- `dsh-llm` [编译依赖] - createUserMessage 注入用户上下文
-  - 证据: `packages/extensions/cordis-host-runner/package.json:60; src/index.ts:11`
-- `dsh-session` [编译依赖] - snapshotJsonValue/JsonValue
-  - 证据: `packages/extensions/cordis-host-runner/package.json:62; src/inspect-registry.ts:6-7`
-- `dsh-tools` [编译依赖] - assertSupportedJsonSchema/JsonSchemaNode（inspect manifest 校验）
-  - 证据: `packages/extensions/cordis-host-runner/src/inspect-registry.ts:8; package.json:63`
+- `dsh-agent` [编译依赖] - Inspect 查询与运行请求以 Agent 为其作用域主体
+  - 证据: `src/index.ts:10 import + src/inspect-registry.ts:5 import`
+- `dsh-llm` [编译依赖] - 运行结果以用户消息源写入会话
+  - 证据: `src/index.ts:11 createUserMessage + src/guard.ts:21 import`
+- `dsh-scope` [编译依赖] - 校验动态包作用域与守卫条件
+  - 证据: `src/guard.ts:18 import`
+- `dsh-session` [编译依赖] - 运行与库存行以 SessionId 关联会话
+  - 证据: `src/registry.ts:7 import + src/types.ts:7 import`
+- `dsh-tools` [E1+E2] - 动态包经 harness 注册的工具须落入 tools 注册表
+  - 证据: `src/index.ts:130 static inject ['tools'] + src/guard.ts:19 import`
 
 ## Dependents (下游被依赖)
-- `dsh-api-remotes` - dynamicCordisRunner Remote 贡献（供 cordis-client-runner 消费）
-- `dsh-client-modules` - fiber 构造/处置标记 dirty 名字，增量扫描 loader entries
-- `dsh-client-web` - vendored Loader 挂载与 entry 创建
-- `dsh-host-apiproxy` - type-only 引用 client-safe ./types（动态包转发事件，避免环）
-- `dsh-tool-cordis` - dynamic Cordis 运行时宿主服务 + inspect registry 服务
+- `dsh-api-remotes` - 装配动态包运行器命名空间
+- `dsh-tool-cordis` - 消费宿主 Inspect 注册表以注册 provider 与执行查询

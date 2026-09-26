@@ -1,31 +1,22 @@
 # dsh-storage
 
 - 包名: `@deepseek-ai/dsh-storage`
-- 分组: G25 宿主服务
+- 分组: G40 存储
 - 拓扑层: Layer 0
-- 来源层: L2 web-app
+- 来源层: L1 核心集
 - 源码路径: `packages/storage/storage`
 
-## 为什么需要它（设计初衷）
-解决非会话数据（设置/工作区/领域 KV）的统一持久化枢纽问题：ctx.storage 作为后端注册表 + 数据形态(data-form)挂载点，自身不做 IO，后端各自拥有媒介（json/sqlite），数据形态拥有语义（如 domain 领域层），使持久化后端可插拔且可并存。
-
-发展史：定位为存储枢纽（storage hub）。设计依据见 2026-07-24 的 domain-KV-storage-and-workspace Agent Note。当前仅支持 kv 数据形态，forms 惰性解析。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/storage/storage/README.md
-- https://www.npmjs.com/package/@deepseek-ai/dsh-storage
-
 ## 实现逻辑
-存储中枢 ctx.storage：Storage 服务 = 命名后端注册表 BackendRegistry + 可挂载数据形式（StorageForms 接口声明合并扩展）。本身不做 IO；storageBackendServiceKey(name) 生成后端生命周期服务键；domain getter 读取挂载的 domain 形式。default export 服务类（非函数插件）。
+Storage 服务实现存储中枢 ctx.storage：自身不做 IO，只维护命名后端注册表 BackendRegistry 与可挂载的数据形态表 forms (src/index.ts:47-93)。mount()/form() 以 effect 语义挂载与解析数据形态，domain getter 暴露域形态 (src/index.ts:64-93)。BackendRegistry 支持多后端并存，注册返回 disposer 且带 stale-disposer 保护 (src/registry.ts:25-37)。
 
 ## Provides
-- ctx.storage（Storage：backend 注册表 + mount/form 数据形式）
-- storageBackendServiceKey(name) 服务键生成器
+- ctx.storage (存储中枢：命名后端注册表 + 数据形态挂载与解析)
 
 ## Depends On (上游依赖)
 - 无依赖（基础插件）
 
 ## Dependents (下游被依赖)
-- `dsh-storage-domain` - storageBackendServiceKey 与 StorageForms 声明合并
-- `dsh-storage-json` - 注册到 hub 后端注册表并取 storageBackendServiceKey
-- `dsh-storage-sqlite` - 存储中枢：后端注册表 + 服务键提供
+- `dsh-storage-domain` - 作为存储中枢的 domain 数据形态，经后端路由打开域单元
+- `dsh-storage-json` - 向存储中枢注册 json 后端并提供 kv facet
+- `dsh-storage-sqlite` - 向存储中枢注册 sqlite 后端并提供 kv facet
+- `dsh-workspace` - 声明工作区域数据形态所在存储服务 seam 的 peer（源码无直接 import，随 dsh-storage-domain 一起装配）

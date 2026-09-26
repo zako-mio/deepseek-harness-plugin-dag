@@ -1,37 +1,30 @@
 # dsh-tool-session-query
 
 - 包名: `@deepseek-ai/dsh-tool-session-query`
-- 分组: G35 会话存储变体
+- 分组: G34 会话检索
 - 拓扑层: Layer 5
 - 来源层: L3 其余
 - 源码路径: `packages/session-query/tool-session-query`
 
-## 为什么需要它（设计初衷）
-工作区授权的会话检索工具集：session_search/event_search/trace/read，默认不挂载。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/session-query/tool-session-query/README.md
-
 ## 实现逻辑
-模型面向、工作区授权的会话历史搜索/读取工具：apply() 注册 5 个工具到 ctx.tools + 一个 systemPrompt section（order 113，'tool:session-query' 指南，inject ['tools','systemPrompt','sessionQuery']）。工具：session_search（跨会话最强匹配事件）、session_event_search（单会话事件搜索）、session_trace（会话血统/祖先后代）、session_event_trace（事件血统）、session_event_read（未删节事件+相邻 raw 摘要），均 TEXT_OUTPUT 渲染。operations.ts：executeSessionSearch 先 workspaceAccess.callerOf 取调用者 cwd（无 cwd 即 SESSION_QUERY_TOOL_UNAUTHORIZED），authorizeSessionIds 授权父会话/命中会话，经 serviceBoundary.call 包装后调 ctx.sessionQuery.searchSessions/searchEvents/traceSession/traceEvent/readEvent（cursor 分页 collectPages，maxSearchResults=100 默认封顶，searchTimeoutMs=30s 协作超时）；workspace 作用域（cwd filter）强制注入。isConcurrencySafe 标记只读工具。
+向模型注册五个会话检索工具（session_search/session_event_search/session_trace/session_event_trace/session_event_read），并注入 systemPrompt 章节引导用法 (src/index.ts:56-122)。operations.ts 在 workspace 授权下调用 ctx.sessionQuery 的 searchSessions/searchEvents/traceSession/traceEvent/readEvent，用 collectPages 翻页累积至 maxResults 并对本会话裁剪到当前 step 边界 (src/operations.ts:55-277)。workspace-access.ts 以调用者会话 cwd 为边界做目标授权与可见谱系投影，service-boundary.ts 把服务错误翻译为模型安全的 HarnessError 并记录诊断 (src/workspace-access.ts:75-135, src/service-boundary.ts:99-141)。
 
 ## Provides
-- ctx.tools 注册 5 个工具：session_search/session_event_search/session_trace/session_event_trace/session_event_read
-- ctx.systemPrompt section 'tool:session-query'（order 113 使用指南）
-- 工作区授权（cwd 作用域 + authorizeSessionIds）与 cursor 分页 collectPages
-- TEXT_OUTPUT 文本渲染（presentation.formatSessionSearch 等）
+- 模型工具 session_search/session_event_search/session_trace/session_event_trace/session_event_read (workspace 授权的会话历史检索与读取)
 
 ## Depends On (上游依赖)
-- `dsh-llm` [编译依赖] - HarnessError 错误契约（工作区未授权报错）
-  - 证据: `packages/session-query/tool-session-query/src/operations.ts:8 HarnessError（SESSION_QUERY_TOOL_UNAUTHORIZED）`
-- `dsh-session` [编译依赖] - SessionId branded 类型与会话头（cwd）
-  - 证据: `packages/session-query/tool-session-query/src/operations.ts:9 SessionId 类型；package.json:36`
-- `dsh-session-query-sqlite` [组合依赖] - 宿主装配：session-query-sqlite 提供本工具依赖的 ctx.sessionQuery 服务实现
-  - 证据: `package.json devDependencies:55 dsh-session-query-sqlite（集成宿主）＋ base/cordis.patch.yml:117-118 装配 session-query-sqlite 提供 ctx.sessionQuery`
-- `dsh-system-prompt` [运行时依赖] - 系统提示 section 注册：模型面向的工具使用指南
-  - 证据: `packages/session-query/tool-session-query/src/index.ts:20 inject ['systemPrompt']；60-64 ctx.systemPrompt.section({name:'tool:session-query', order:113})；package.json:39`
-- `dsh-tools` [运行时依赖] - 工具注册表：defineTool 契约与注册
-  - 证据: `packages/session-query/tool-session-query/src/index.ts:20 inject ['tools']；66-122 ctx.tools.register(defineTool(...))；package.json:41`
+- `dsh-agent` [编译依赖] - 读取调用者 Agent 会话的 header 与边界投影类型
+  - 证据: `src/workspace-access.ts:14 import type { TurnBoundaryProjection }`
+- `dsh-llm` [编译依赖] - 用 HarnessError 承载模型安全的错误码与拒绝语义
+  - 证据: `src/operations.ts:8 import HarnessError; src/service-boundary.ts:8 import HarnessError; src/workspace-access.ts:9 import HarnessError`
+- `dsh-session` [编译依赖] - 用 SessionSeq 品牌化事件序号、用 SessionId 标识目标会话
+  - 证据: `src/operations.ts:9-10 import SessionSeq/SessionId`
+- `dsh-session-projection` [E1+E2] - 读取调用者会话的 turnBoundary 投影以裁剪本会话检索范围
+  - 证据: `src/workspace-access.ts:20 import type {}; src/workspace-access.ts:67 ctx.sessionProjections.stateOf(agent.session, 'turnBoundary')`
+- `dsh-system-prompt` [运行时依赖] - 注入会话检索工具的使用引导段落
+  - 证据: `src/index.ts:19 inject ['systemPrompt']; src/index.ts:59 ctx.systemPrompt.section`
+- `dsh-tools` [E1+E2] - 注册工具定义并消费工具运行上下文
+  - 证据: `src/index.ts:10 import; src/index.ts:19 inject ['tools']; src/index.ts:65 ctx.tools.register; src/operations.ts:18 import ToolRunContext`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

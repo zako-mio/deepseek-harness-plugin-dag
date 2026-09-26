@@ -1,44 +1,45 @@
 # dsh-sandbox-policy
 
 - 包名: `@deepseek-ai/dsh-sandbox-policy`
-- 分组: G15 沙箱执行
-- 拓扑层: Layer 3
+- 分组: G30 沙箱
+- 拓扑层: Layer 4
 - 来源层: L1 核心集
 - 源码路径: `packages/sandbox/sandbox-policy`
 
-## 为什么需要它（设计初衷）
-沙箱策略解析的唯一所有者（ctx.sandboxPolicy）：统一为每次调用解析部署默认与每会话持久覆盖的 SandboxMode（read-only / workspace-write / danger-full-access）及不可变工作区根。若 FS 工具、单次 bash、终端会话各自解析 mode+workspaceRoot，会漂移成分裂的世界——此插件正是为防止策略分裂而生，默认 read-only 故障安全。
-
-发展史：2026-07-06 sandbox 决策划定能力边界（进程约束缝，bwrap/Landlock/Seatbelt 后端）；2026-07-14 cross-family fs sandbox 决策让文件系统/子进程共享同一策略；策略由单个事件写入、重放可恢复。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/sandbox/sandbox-policy
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/feature/2026-07-06-sandbox.md
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/subsystems/sandbox.md
-
 ## 实现逻辑
-沙箱策略中枢(SandboxPolicyService extends Service,注册 ctx.sandboxPolicy):部署默认模式(read-only fail-safe)+ per-session 解析——resolve({session}) 合并 approved override > 会话 sandbox/mode 事件折叠 > 部署默认;会话级 mode 切换以 setSandboxMode 写 sandbox/mode 日志事件;另经 ctx.inject(['systemPrompt']) 提供 sandbox:policy 动态上下文段落。
+SandboxPolicyService（ctx.sandboxPolicy）是文件沙箱策略的单一归属：持有部署默认 mode 与 fallback workspaceRoot，并按 (显式 override > 会话最近 sandbox/mode 事件 > 部署默认) 结合 session.cwd 解析出每次调用的 SandboxExecutionPolicy（src/index.ts:110-181）。它把 sandboxMode 折叠注册为 session-projection 单元（src/index.ts:133-139），并在每次请求前经 systemPrompt.context 注入策略文本（src/index.ts:141-152）。session-mode.ts 定义 log-only 的 sandbox/mode 事件与其唯一写路径 setSandboxMode（src/session-mode.ts:33-54）。
 
 ## Provides
-- ctx.sandboxPolicy 服务
-- sandbox/mode 会话事件 + setSandboxMode/effectiveSandboxMode
-- ctx.systemPrompt context: sandbox:policy
+- ctx.sandboxPolicy (文件沙箱模式与 workspace 根的统一策略解析与 per-session override 折叠)
 
 ## Depends On (上游依赖)
-- `dsh-agent` [编译依赖] - 类型依赖
-  - 证据: `packages/sandbox/sandbox-policy/src/index.ts:24`
-- `dsh-session` [运行时依赖] - 会话事件日志作模式折叠存储
-  - 证据: `packages/sandbox/sandbox-policy/src/index.ts:26,139-150; session-mode.ts:70`
-- `dsh-system-prompt` [运行时依赖] - 策略投影进运行时上下文
-  - 证据: `packages/sandbox/sandbox-policy/src/index.ts:112-123`
+- `dsh-agent` [编译依赖] - 合并 agent 请求上下文事件类型以取到会话
+  - 证据: `src/index.ts:27 type import`
+- `dsh-invariants` [E1+E2] - 注册本包事件字段的运行时不变式检查
+  - 证据: `src/invariant.ts:5 import + src/invariant.ts:13 inject + src/invariant.ts:43 ctx.invariants.register`
+- `dsh-session` [E1+E2] - 读取会话 cwd/日志并在事件上声明 sandbox/mode 事件类型
+  - 证据: `src/index.ts:29 import + src/session-mode.ts:21 import + src/invariant.ts:25 ctx.sessions`
+- `dsh-session-projection` [E1+E2] - 把 sandboxMode 作为投影单元注册并读取会话模式覆盖
+  - 证据: `src/index.ts:30 type import + src/index.ts:119 static inject + src/index.ts:133 register`
+- `dsh-system-prompt` [运行时依赖] - 向模型请求注入解析后的文件策略文本
+  - 证据: `src/index.ts:31 type import + src/index.ts:141-144 systemPrompt.context`
 
 ## Dependents (下游被依赖)
-- `dsh-bash-sandbox` - 默认模式事实
-- `dsh-fs-sandbox` - static inject sandboxPolicy;默认模式取自 defaultMode
-- `dsh-permission-presets` - sandbox 旋钮写穿
-- `dsh-pwsh-sandbox` - 默认模式事实
-- `dsh-terminal-bash` - 沙箱模式决策与默认模式
-- `dsh-tool-bash` - standing policy 解析
-- `dsh-tool-fs` - per-call 策略解析
-- `dsh-tool-pwsh` - standing policy
-- `dsh-tool-str-replace-editor` - MutationPolicy per-call 模式
+- `dsh-api-terminal-controller` - 取工作目录与沙箱工作区根
+- `dsh-api-workspace-files` - 会话无 cwd 时的工作区根回退
+- `dsh-bash-sandbox` - 读取部署默认沙箱模式并解析每次调用的完整策略
+- `dsh-client-ui-deliverables` - native open 前校验沙箱策略
+- `dsh-fs-sandbox` - 解析每调用会话的沙箱模式与工作区根
+- `dsh-fs-ssh` - 读取默认沙箱模式并在写/编辑时解析策略
+- `dsh-permission-presets` - 按预设写穿 sandbox/mode 规范 setter
+- `dsh-plugin-manager` - 解析会话沙箱模式，决定管理操作是否需要 danger-full-access 提权
+- `dsh-ptc-runtime-node` - 读取部署/会话沙箱策略作为执行的文件效应边界
+- `dsh-pwsh-sandbox` - 读取部署默认沙箱模式并解析每次调用的完整策略
+- `dsh-subagent` - 捕获父会话沙箱覆盖并播种给子代理
+- `dsh-terminal-bash` - 解析当前会话的沙箱执行策略
+- `dsh-tool-bash` - 解析调用会话的完整沙箱执行策略
+- `dsh-tool-fs` - 解析每调用沙箱策略并映射拒绝错误
+- `dsh-tool-pwsh` - 解析调用会话的完整沙箱执行策略
+- `dsh-tool-str-replace-editor` - 解析每调用沙箱策略并映射拒绝错误
+- `dsh-tools` - 引入沙箱策略服务的上下文类型合并
+- `dsh-workflow-ptc` - 按调用方 Session 解析文件/沙箱策略并施加于运行

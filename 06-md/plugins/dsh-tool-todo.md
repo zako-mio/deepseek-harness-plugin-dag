@@ -1,35 +1,29 @@
 # dsh-tool-todo
 
 - 包名: `@deepseek-ai/dsh-tool-todo`
-- 分组: G23 工具守卫
+- 分组: G44 待办
 - 拓扑层: Layer 5
 - 来源层: L1 核心集
 - 源码路径: `packages/todo/tool-todo`
 
-## 为什么需要它（设计初衷）
-面向模型的 todo_write 工具，建立在事件源会话日志之上。
-
-来源：
-- https://registry.npmjs.org/@deepseek-ai/dsh-tool-todo
-- https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/todo/tool-todo
-
 ## 实现逻辑
-apply() 注册 todo_write 工具：整表替换语义，execute 校验后 exec.agent.session.append('todo/write')，返回新表+counts；无 agent 则拒绝。ctx.inject(['sessionProjections']) 注册 'todos' 投影(last todo/write 快照，turn/start 清空)。
+面向模型的整表替换 todo_write 工具：校验去空白、唯一 content 与 in_progress 策略（src/index.ts:80-100），并把 todo/write 快照 append 到调用 Agent 的 session（src/index.ts:199）。同时注册 sessionProjections 的 todos 投影（最新列表、turn/start 清零，src/index.ts:123-134），配套 invariant 伴生插件校验耐久日志的形状与 turn 边界（src/invariant.ts:24-58）。
 
 ## Provides
-- ctx.tools: todo_write
-- session 事件 todo/write
-- todos session projection
+- 工具 todo_write（注册 ctx.tools，src/index.ts:135）
+- ctx.sessionProjections 的 todos 投影单元（src/index.ts:123）
 
 ## Depends On (上游依赖)
-- `dsh-agent` [编译依赖] - owning session 归属
-  - 证据: `packages/todo/tool-todo/src/index.ts:208-212`
-- `dsh-session` [运行时依赖] - todo 快照持久化
-  - 证据: `packages/todo/tool-todo/src/index.ts:13,213`
-- `dsh-session-projection` [组合依赖] - todos 投影单元
-  - 证据: `packages/todo/tool-todo/src/index.ts:135`
-- `dsh-tools` [组合依赖] - 工具注册
-  - 证据: `packages/todo/tool-todo/src/index.ts:12,149`
+- `dsh-agent` [E1+E2] - todo 列表挂在调用 Agent 的 session 上
+  - 证据: `package.json:44 peerDep + src/index.ts:199 exec.agent.session.append`
+- `dsh-invariants` [E1+E2] - 注册 todo 快照不变量校验
+  - 证据: `package.json:45 peerDep + src/invariant.ts:5 import InvariantInstaller + src/invariant.ts:104 ctx.invariants.register`
+- `dsh-session` [E1+E2] - 耐久校验基于 session 事件日志
+  - 证据: `package.json:46 peerDep + src/invariant.ts:4 import Session/SessionEvent + src/invariant.ts:92 ctx.on('session/event')`
+- `dsh-session-projection` [E1+E2] - 注册 todos 投影单元
+  - 证据: `package.json:47 peerDep + src/index.ts:15 type-only import + src/index.ts:23 inject ['sessionProjections']`
+- `dsh-tools` [E1+E2] - 注册 todo_write 工具
+  - 证据: `package.json:48 peerDep + src/index.ts:12 import defineTool + src/index.ts:23 inject ['tools']`
 
 ## Dependents (下游被依赖)
-- `dsh-client-ui-conversation` - todos 投影类型（todo dock 数据）
+- `dsh-client-ui-conversation` - Todo 记录与 Todo 停靠面板

@@ -1,0 +1,388 @@
+[
+  {
+    "id": "dsh-command-goal",
+    "name": "@deepseek-ai/dsh-command-goal",
+    "implementation": "以纯函数 parseGoalCommand 解析 /goal 的人类语法（show/create/edit/pause/resume/clear），再由 executeGoalCommand 把这些控制动词映射到 ctx.goals 的 compare-and-set 变更并渲染直接 UI 输出（src/index.ts:35-45, 126-177）。命令对象携带的附件经 submitObjectiveAttachments 以模型可见的 user 消息形式在目标下一轮前投递（src/index.ts:117-123）。apply 在 ctx.commands 上注册 Codex 形状的 'goal' 命令（src/index.ts:190-197）。",
+    "provides": [
+      "/goal 人类命令 (注册进 commands 注册表，管理目标的创建/编辑/暂停/恢复/清除)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-commands",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:7-8 import (CommandDefinitionId, CommandInvocation) + src/index.ts:14 inject ['commands','goals'] + src/index.ts:191 ctx.commands.register",
+        "purpose": "把 /goal 命令注册进命令注册表并复用其调用/结果类型"
+      },
+      {
+        "plugin_id": "dsh-goal",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:9-10 import (GoalError, GoalPhase/GoalRef/GoalView) + src/index.ts:135 ctx.goals.get + src/index.ts:150 ctx.goals.create",
+        "purpose": "通过目标域服务读写持久化目标并捕获 GoalError"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:11 import createUserMessage",
+        "purpose": "为目标附件构造模型可见的用户消息"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-goal",
+    "name": "@deepseek-ai/dsh-goal",
+    "implementation": "GoalService 以会话日志为唯一持久源：每次变更把完整快照写成一个 goal/change 会话事件（src/index.ts:609-626），并由 goalProjectionDefinition 严格重放派生当前目标（src/index.ts:146-169）。fold.ts 提供纯函数式解码/校验/折叠，逐操作校验相位转移与修订号恰好加一（src/fold.ts:199-332）。进程本地的 activation（armed/disarmed）单独保存，变更时 emit 'goal/activation-changed'（src/index.ts:496-515）。invariant.ts 以独立增量折叠校验全量目标流的合法性（src/invariant.ts:40-80）。",
+    "provides": [
+      "ctx.goals (目标域服务 seam：create/edit/pause/resume/complete/block/clear/get/disarm + 远程绑定)",
+      "goal 会话投影 ('goal' 投影键，含 seenGoalIds 与失败状态)",
+      "goal/change 会话事件类型 (持久化目标变更载荷)",
+      "goal/changed 与 goal/activation-changed 事件 (变更通知与进程本地激活边)",
+      "goal-invariant 不变量伴随件 (目标流严格重放校验)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:12-13 import (agentEvents, Agent) + src/index.ts:241 inject ['agents','sessionProjections'] + src/index.ts:470 ctx.agents.get",
+        "purpose": "以 agent 为键持有运行时激活状态、校验 live 身份并订阅 agent/created"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "src/fold.ts:4 import SessionEvent + src/index.ts:14-15 import SessionSeq/Session + src/index.ts:613 agent.session.append('goal/change', change)",
+        "purpose": "以会话事件日志作为目标状态的唯一持久来源"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:17-18 import (ProjectionDefinition) + src/index.ts:258 ctx.sessionProjections.register(goalProjectionDefinition) + src/index.ts:477 ctx.sessionProjections.stateOf(session,'goal')",
+        "purpose": "注册并读取 'goal' 会话投影以派生当前目标"
+      },
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:16 import (TypertRemoteService, Remote)",
+        "purpose": "以远程服务基类暴露 goals 服务并声明 @Remote 方法"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/fold.ts:3 import MessageSource + src/runtime.ts:3 import HarnessError",
+        "purpose": "目标消息来源类型合并与 GoalError 的错误基类"
+      },
+      {
+        "plugin_id": "dsh-invariants",
+        "mechanism": "E1+E2",
+        "evidence": "src/invariant.ts:4 import InvariantInstaller + src/invariant.ts:14 inject ['invariants'] + src/invariant.ts:80 ctx.invariants.register",
+        "purpose": "注册目标流不变量校验伴随件"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "src/types.ts:13 import type Branded",
+        "purpose": "把 GoalId 品牌化为不可与裸 string 混用的类型"
+      },
+      {
+        "plugin_id": "dsh-scope",
+        "mechanism": "E1",
+        "evidence": "src/domain.ts:114 import('@deepseek-ai/dsh-scope').Scoped + package.json peerDependencies",
+        "purpose": "goal/changed 事件按 agent 作用域分发的类型约束"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-goal-round-driver",
+    "name": "@deepseek-ai/dsh-goal-round-driver",
+    "implementation": "在 agent 生命周期内自动驱动同一会话的目标续轮：readyToDrive 要求精确 live agent、状态 idle 且无竞争提示（src/index.ts:103-114），drive 在轮次预算内用 renderGoalRoundPrompt 生成模型可见续轮消息并 agent.followup 投递（src/index.ts:164-204）。pre-step 瀑布监听器用 validReservation 校验排队提示仍属于当前 live 修订，否则 reject 并 restoreOtherClaimed 恢复他人已认领消息（src/index.ts:344-425）。目标变更/暂停会取消 live turn 或 disarm 并进入持久化检查点（src/index.ts:282-293, 117-124）。",
+    "provides": [
+      "goal 自动续轮驱动 (按目标 activation/轮次上限投递 followup 并在 pre-step 拒绝过期续轮)",
+      "goal-round-driver-invariant 不变量伴随件 (校验续轮提示词与目标流一致)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-goal",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:10 import (GoalMessageSource/GoalRef/GoalView) + src/index.ts:19 inject ['agents','goals','sessions'] + src/index.ts:99 ctx.goals.get",
+        "purpose": "读取目标状态、disarm/block/pause 并在续轮消息上标注目标来源"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:9 import (Agent, PreStepDecision) + src/index.ts:98 ctx.agents.get + src/index.ts:192 agent.followup",
+        "purpose": "经 agent 生命周期/收件箱投递续轮消息并参与 pre-step 决策"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:11-12 import (createUserMessage, ContentBlock) + src/prompt.ts:3 import ContentBlock",
+        "purpose": "构造模型可见的续轮用户消息与提示块"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:13 import (Session, SessionEvent) + src/index.ts:145 ctx.sessions.flush(agent.session) + src/index.ts:318 ctx.on('session/event')",
+        "purpose": "会话持久化检查点与基于事件流的轮次状态跟踪"
+      },
+      {
+        "plugin_id": "dsh-invariants",
+        "mechanism": "E1+E2",
+        "evidence": "src/invariant.ts:6 import InvariantInstaller + src/invariant.ts:15 inject ['invariants'] + src/invariant.ts:85 ctx.invariants.register",
+        "purpose": "注册续轮提示词不变量伴随件"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-goal",
+    "name": "@deepseek-ai/dsh-tool-goal",
+    "implementation": "注册 get_goal/create_goal/update_goal 三个模型可调用工具，并向 systemPrompt 写入 tool:goal 策略节（src/index.ts:187-342）。authority.ts 在每次执行时要求精确 live 的调用 agent，并区分「直接人类输入」与「当前目标轮」两种权威（src/authority.ts:48-117）。update_goal 的 blocked 需满足配置的连续轮数阈值，且在目标轮内 complete/blocked 会 deferContext 注入收尾指令（src/index.ts:305-330）。",
+    "provides": [
+      "get_goal/create_goal/update_goal 模型工具 (定义并注册到 tools 注册表)",
+      "tool:goal 系统提示词节 (目标工具策略与 blocked 阈值指引)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:19-20 import (defineTool, GenericCallView) + src/index.ts:29 inject ['agents','goals','tools','systemPrompt','sessionProjections'] + src/index.ts:195 ctx.tools.register",
+        "purpose": "以 defineTool 定义并注册三个目标工具"
+      },
+      {
+        "plugin_id": "dsh-goal",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:9-10 import (GoalId, GoalRef, GoalView) + src/authority.ts:113 ctx.goals.get + src/index.ts:225 ctx.goals.create",
+        "purpose": "通过目标域服务执行工具操作并读取 CAS 引用"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/authority.ts:4 import Agent + src/authority.ts:53 ctx.agents.get + src/authority.ts:81 ctx.agents.roots",
+        "purpose": "校验调用 agent 的 live 身份与 root 归属以判定人类权威"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E2",
+        "evidence": "src/index.ts:29 inject [...'systemPrompt'] + src/index.ts:189-191 ctx.systemPrompt.section/getSectionOrder",
+        "purpose": "注册目标工具策略段并按序插入系统提示词"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:11 import (boundContextSummary, createUserMessage, HarnessError) + src/wrapup.ts:3 import ContentBlock",
+        "purpose": "构造收尾上下文消息与结构化工具错误"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "src/authority.ts:9 import type {} + src/authority.ts:35 ctx.sessionProjections.stateOf(agent.session,'turnBoundary')",
+        "purpose": "读取 turnBoundary 投影确定开放轮的起始序列号"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/authority.ts:7 import (SessionEvent, SessionSeq)",
+        "purpose": "权威判定所需的会话事件与序列号类型"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-repeat-tool-reminder",
+    "name": "@deepseek-ai/dsh-repeat-tool-reminder",
+    "implementation": "以 agent 为键维护「同一工具 + 规范化参数」的连续重复链，在 tools/post-execute 瀑布点观察并追加提醒，而从不否决或改写调用（src/index.ts:196-231）。参数先做深键排序再序列化以形成链键（src/index.ts:96-112），命中 thresholds 时首档发柔性提醒、后续档位带截断的参数预览（src/index.ts:206-213, 125-128）。agent/pre-step 检测到真实用户消息即重置该 agent 的链（src/index.ts:236-239）。",
+    "provides": [],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:22 import (PostToolDecision, ToolExecution) + src/index.ts:220 ctx.on('tools/post-execute')",
+        "purpose": "订阅工具执行后瀑布点以观察重复调用并附加提醒"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:11 import (Agent, PreStepDecision) + src/index.ts:236-237 ctx.on('agent/pre-step') + chains.delete(agent)",
+        "purpose": "以 agent 为键维护重复链并在用户插话时重置"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:12-13 import createUserMessage + src/index.ts:20 import MessageSource",
+        "purpose": "构造模型可见的提醒消息及其生产者来源标签"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:21 import UserMessage",
+        "purpose": "提醒消息所使用的会话消息类型"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-call-timeout-policy",
+    "name": "@deepseek-ai/dsh-tool-call-timeout-policy",
+    "implementation": "包装 tools/execute 瀑布点：读取工具声明的 timeoutsMs，用 dsh-timeout 的 deadline 为调用臂上截止并临时把 exec.signal 替换为派生的截止信号（src/index.ts:56-67）。委派下游后，若本插件自己的定时器胜出（按 TOOL_TIMEOUT code 作用域判定，避免误读嵌套的外层截止），用结构化 isError 结果替换返回值，最后在 finally 中恢复上游 signal（src/index.ts:68-79, 41-48）。",
+    "provides": [
+      "TOOL_TIMEOUT 结构化超时结果 (在 tools/execute 层把声明 timeoutMs 的调用映射为超时错误)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:16 import ToolExecutionResult + src/index.ts:31 inject ['tools'] + src/index.ts:56-57 ctx.on('tools/execute') + ctx.tools.get",
+        "purpose": "包装工具执行瀑布点并读取工具声明的超时预算"
+      },
+      {
+        "plugin_id": "dsh-timeout",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:15 import (deadline, timeoutOf)",
+        "purpose": "提供协作式截止控制器与按 code 作用域的超时分类"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-hook-protocol",
+    "name": "@deepseek-ai/dsh-hook-protocol",
+    "implementation": "不注册插件的共享协议库：导出方言中立的 matcher 匹配（Claude 字面/正则双模、Codex 全正则）、codec 对退出码与 stdout 的解码、merge 的「最严格优先」结果折叠、runner 经 shell 执行 hook，以及 events/detached 工具（src/index.ts:9-25）。runner.ts 用注入的 shell 执行器运行命令，并把基础设施异常降级为无退出码的非阻断结果（src/runner.ts:67-105）。events.ts 追加成对的 hook/invoked、hook/result 持久事件（src/events.ts:75-103），invariant.ts 校验其配对与 open-turn 边界（src/invariant.ts:31-113）。",
+    "provides": [
+      "hook 协议库 (匹配/解码/合并/执行/持久事件/脱离运行静默) 供各方言桥复用",
+      "hook-protocol-invariant 不变量伴随件 (hook invoked/result 配对与轮次边界校验)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-shell",
+        "mechanism": "E1+E2",
+        "evidence": "src/runner.ts:9 import ShellExecutor + src/runner.ts:87 bash.execute(bash.resolve(request))",
+        "purpose": "经 shell 服务执行 hook 命令并复用其凭据清洗与进程组取消"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "src/events.ts:9 import Session + src/events.ts:76 session.append('hook/invoked', ...)",
+        "purpose": "追加 hook/invoked、hook/result 持久会话事件"
+      },
+      {
+        "plugin_id": "dsh-invariants",
+        "mechanism": "E1+E2",
+        "evidence": "src/invariant.ts:5 import InvariantInstaller + src/invariant.ts:13 inject ['invariants'] + src/invariant.ts:122 ctx.invariants.register",
+        "purpose": "注册 hook 事件配对不变量伴随件"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-hooks-claude-code",
+    "name": "@deepseek-ai/dsh-hooks-claude-code",
+    "implementation": "把未改动的 Claude Code command hooks 桥接到 harness 拦截点：SessionStart、UserPromptSubmit、PreToolUse/PostToolUse、Stop、SubagentStart/Stop（src/index.ts:209-301）。config.ts 解析 CC 的 event→matcher-group 格式，仅保留 command 类型并对命令做 ${CLAUDE_PLUGIN_ROOT}/${CLAUDE_PROJECT_DIR} 替换（src/config.ts:78-122）。runPoint 对每个匹配 hook 记录 invoked/result 事件并调用 runHook，最后把合并结果映射为 PreStepDecision/PreToolDecision/PostToolDecision（src/index.ts:143-192, 225-271）。",
+    "provides": [
+      "Claude Code hooks 桥 (SessionStart/UserPromptSubmit/Pre+PostToolUse/Stop/SubagentStart+Stop 到 harness 拦截点的决策映射)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-hook-protocol",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:27-39 import (runHook, mergeHookOutputs, appendHookInvoked, ...) + src/index.ts:169 runHook(...) + src/config.ts:9 import matcherDiagnostic",
+        "purpose": "复用共享的 hook 执行/解析/合并/持久事件与 matcher 校验"
+      },
+      {
+        "plugin_id": "dsh-shell",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:48 inject ['shell','sessionProjections'] + src/index.ts:169 runHook(ctx.shell, hook, ...)",
+        "purpose": "经 shell 服务运行 CC hook 命令"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:15 import type {} + src/index.ts:318 ctx.sessionProjections.stateOf(agent.session,'turnBoundary')",
+        "purpose": "读取 turnBoundary 投影获取 open turn 号以记录 hook 事件"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:14 import (Agent, PreStepDecision, TurnBoundaryProjection) + src/index.ts:209 ctx.on('agent/created') + src/index.ts:214 agent.inject",
+        "purpose": "在 agent 生命周期与步进点注入上下文并映射 hook 决策"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:26 import (PostToolDecision, PreToolDecision, ToolExecution, ToolExecutionResult) + src/index.ts:244 ctx.on('tools/pre-execute') + src/index.ts:253 ctx.on('tools/post-execute')",
+        "purpose": "在工具执行前后拦截点运行 hook 并映射为工具决策"
+      },
+      {
+        "plugin_id": "dsh-subagent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:42 import SubagentRunId + src/index.ts:287 ctx.on('subagent/start') + src/index.ts:297 ctx.on('subagent/end')",
+        "purpose": "把子代理 start/end 映射到 SubagentStart/SubagentStop hook"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:16-17 import (createUserMessage, ContextFormed) + src/index.ts:24 import (ContentBlock, MessageSource)",
+        "purpose": "构造注入模型的上下文消息及其来源标签"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:25 import UserMessage",
+        "purpose": "hook 上下文消息使用的会话消息类型"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-hooks-codex",
+    "name": "@deepseek-ai/dsh-hooks-codex",
+    "implementation": "把未改动的 Codex command hooks 桥接到 harness：SessionStart、UserPromptSubmit、PreToolUse/PostToolUse、Stop，仅同步 command 类型、正则匹配、snake_case payload 且 stdin 无尾换行（src/index.ts:119-176, 152）。config.ts 解析 Codex 五事件子集，跳过非 command 与 async hooks，并对非法 matcher 抛 SyntaxError（src/config.ts:43-85）。决策映射只保留阻断路径：工具与生命周期拦截点分别映射为 PreToolDecision/PostToolDecision 与 PreStepDecision（src/index.ts:191-276）。",
+    "provides": [
+      "Codex hooks 桥 (SessionStart/UserPromptSubmit/Pre+PostToolUse/Stop 到 harness 拦截点的决策映射)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-hook-protocol",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:30-42 import (runHook, mergeHookOutputs, appendHookInvoked, ...) + src/index.ts:147 runHook(...) + src/config.ts:8 import matcherDiagnostic",
+        "purpose": "复用共享的 hook 执行/解析/合并/持久事件与 matcher 校验"
+      },
+      {
+        "plugin_id": "dsh-shell",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:47 inject ['shell','sessionProjections'] + src/index.ts:147 runHook(ctx.shell, hook, ...)",
+        "purpose": "经 shell 服务运行 Codex hook 命令"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:18 import type {} + src/index.ts:288 ctx.sessionProjections.stateOf(agent.session,'turnBoundary')",
+        "purpose": "读取 turnBoundary 投影获取 turn_id 以记录 hook 事件"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:17 import (Agent, PreStepDecision) + src/index.ts:191 ctx.on('agent/created') + src/index.ts:205 ctx.on('agent/pre-step')",
+        "purpose": "在 agent 生命周期与步进点注入上下文并映射 hook 决策"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:29 import (PostToolDecision, PreToolDecision, ToolExecution, ToolExecutionResult) + src/index.ts:231 ctx.on('tools/pre-execute') + src/index.ts:240 ctx.on('tools/post-execute')",
+        "purpose": "在工具执行前后拦截点运行 hook 并映射为工具决策"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:19-20 import (createUserMessage, ContextFormed) + src/index.ts:27 import (ContentBlock, MessageSource)",
+        "purpose": "构造注入模型的上下文消息及其来源标签"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:28 import UserMessage",
+        "purpose": "hook 上下文消息使用的会话消息类型"
+      }
+    ],
+    "dependents": []
+  }
+]

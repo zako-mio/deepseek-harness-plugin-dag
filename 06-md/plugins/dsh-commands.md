@@ -1,46 +1,41 @@
 # dsh-commands
 
 - 包名: `@deepseek-ai/dsh-commands`
-- 分组: G10 命令交互
+- 分组: G21 交互命令
 - 拓扑层: Layer 3
 - 来源层: L1 核心集
 - 源码路径: `packages/interaction/commands`
 
-## 为什么需要它（设计初衷）
-插件拥有、供交互式 UI 适配器使用的用户斜杠命令注册表。命令在 UI 命令平面执行、结果绝不进入模型历史，让人类与模型交互分离，避免未知命令变成模型提示词；注册/移除通过 commands/change 通知运行中适配器刷新。
-
-发展史：位于 packages/interaction/commands，2026-08-10 首批发布，0.1.0-rc.6 转公开。随产品基础组合(dsh base)挂载，Web 客户端经其分派命令；无 UI 的 headless/ACP 不提供命令适配器。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/interaction/commands/README.zh.md
-- https://registry.npmjs.org/@deepseek-ai/dsh-commands
-
 ## 实现逻辑
-定义 ctx.commands CommandRuntime(TypertRemoteService 默认导出)，用 ScopedLayers 做全局+per-agent scope 命令注册。register() 校验名称/描述/handler；execute() 解析斜杠行，mint commandId、append 'command/run' 日志事件、调用 handler、settle 后 append 'command/done'。list()/find() 是 @Remote 导出，notifyChange 发 'commands/change'。
+实现 ctx.commands 人类命令注册表：全局与 agent 作用域分层（NamedEntries/ScopedLayers），register() 校验并冻结定义（src/index.ts:94-111、179-292）。execute() 解析斜杠命令行，先写 command/run 再执行处理函数并写 command/done，附件准入与取消也在此强制（src/index.ts:360-431）。list/execute 以 TypertRemote 暴露给 UI（src/index.ts:314、360），invariant.ts 校验生命周期事件按 commandId 成对（src/invariant.ts:20-67）。
 
 ## Provides
-- ctx.commands(CommandRuntime)
-- session 事件 command/run|command/done
-- commands/change emit 事件
-- @Remote list/find/execute
-- parseCommand/CommandId
+- ctx.commands (命令注册与执行服务 + Remote list/execute；命令生命周期事件配对不变量，src/index.ts:263-490)
 
 ## Depends On (上游依赖)
-- `dsh-agent` [编译依赖] - 命令执行目标 agent
-  - 证据: `packages/interaction/commands/src/index.ts:7,260`
-- `dsh-llm` [编译依赖] - 命令图文输入模型处理
-  - 证据: `peerDependencies 新增llm`
-- `dsh-session` [运行时依赖] - 命令生命周期事件持久化
-  - 证据: `packages/interaction/commands/src/index.ts:308,330,360`
+- `dsh-agent` [编译依赖] - 命令以 agent 及其 session 为作用域与日志目标
+  - 证据: `package.json:56 peerDep + src/index.ts:8 type import Agent`
+- `dsh-invariants` [E1+E2] - 注册命令生命周期配对不变量
+  - 证据: `package.json:59 peerDep + src/invariant.ts:9 import; src/invariant.ts:67 ctx.invariants.register`
+- `dsh-llm` [编译依赖] - 附件以 LLM 块类型参与模型可见输入
+  - 证据: `package.json:60 peerDep + src/index.ts:11 import FileBlock/ImageBlock`
+- `dsh-scope` [E1+E2] - 全局与 agent 作用域的命令分层
+  - 证据: `package.json:61 peerDep + src/index.ts:12-13 import NamedEntries/ScopedLayers; src/index.ts:264 ScopedLayers`
+- `dsh-session` [E1+E2] - 把命令运行生命周期写入会话日志
+  - 证据: `package.json:62 peerDep + src/index.ts:14-15、src/invariant.ts:8 import; src/index.ts:373 session.append`
 
 ## Dependents (下游被依赖)
-- `dsh-client-ui-commands` - Host 命令目录与执行 wire
-- `dsh-client-ui-conversation` - command/run 事件与命令 surface 契约
-- `dsh-client-ui-goal` - command/run 事件与 CommandId 契约
-- `dsh-client-ui-plan` - 执行 /plan off 命令通道
-- `dsh-command-compact` - /命令注册
-- `dsh-command-feedback` - /命令注册
-- `dsh-command-goal` - /命令注册
-- `dsh-permission-presets` - /permission 命令注册
-- `dsh-plan-mode` - /plan 命令
-- `dsh-session-log-export` - CommandResult 类型
+- `dsh-api-remotes` - 装配 commands 命名空间与事件签名
+- `dsh-api-session-controller` - 命令注册表会话侧表面
+- `dsh-client-file-upload` - 让命令 prompt 能解析上传 receipt 为文件引用
+- `dsh-client-ui-chat` - 命令节点数据
+- `dsh-client-ui-commands` - 命令目录与结果类型
+- `dsh-client-ui-conversation` - 命令记录节点类型
+- `dsh-client-ui-goal` - goal 命令输入节点类型
+- `dsh-command-compact` - 承载 `/compact` 命令的注册面与命令调用/结果类型，命令必须注册进 commands 注册表才能被人类命令适配器看见
+- `dsh-command-feedback` - 注册 /feedback 命令定义并与命令适配器对接
+- `dsh-command-goal` - 把 /goal 命令注册进命令注册表并复用其调用/结果类型
+- `dsh-compaction-basic` - 手动命令发起的压缩需把发起命令身份写进压缩生命周期事件用于呈现关联
+- `dsh-permission-presets` - 以 /permission 命令暴露唯一写路径
+- `dsh-plan-mode` - 注册 /plan 命令并关联命令生命周期事件
+- `dsh-session-log-export` - 注册 Web /export 命令作为导出入口

@@ -1,39 +1,39 @@
 # dsh-client-ui-input-trigger
 
 - 包名: `@deepseek-ai/dsh-client-ui-input-trigger`
-- 分组: G28 设置输入UI
-- 拓扑层: Layer 12
+- 分组: G06 客户端 UI 包
+- 拓扑层: Layer 14
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-input-trigger`
 
-## 为什么需要它（设计初衷）
-输入触发流水线：光标处 / 与 @ 检测、分组候选菜单、路由到已注册 source（如命令、引用插入），纯内核+React 壳分离。
-
-来源：
-- https://raw.githubusercontent.com/deepseek-ai/deepseek-harness/master/packages/client/ui-input-trigger/README.zh.md
-- https://github.com/deepseek-ai/deepseek-harness
-
 ## 实现逻辑
-'/' | '@' 输入管线核心：browser 半注册 InputTriggerService（ctx.inputTriggers）——source 注册表 + 每会话 controller 解析（service.ts:28-100，registerSource/sessionOf）。MenuView 自注册进 conversation.input.overlay 槽（slash-menu，order=0，按 sessionId 解析 controller）。inject ['sessions','locale']。契约在 contract.ts，source 仅经 ctx.inputTriggers.registerSource 接入。
+以 InputTriggerService(注册为 ctx.inputTriggers) 拥有 '/' 与 '@' 的触发检测、候选菜单与 pick 流水线 (src/client/index.ts:1-6, 59-61)。apply 用 ctx.inject(['slots','inputTriggers','sessions']) 后把 MenuView 以 order 0 注册进 'conversation.input.overlay'，注入面按 sessionId 经 sessions.scope 解出该会话 controller 的 menu/headers，并桥接 onPick/onCrumb/onHover/onDismiss 回调 (src/client/index.ts:62-86)。检测与菜单归约的纯函数契约在 src/core/contract.ts 与 src/types.ts，source 只能经 ctx.inputTriggers 注册 (src/client/index.ts:24-32)。宿主半为空 apply (src/index.ts:9)。
 
 ## Provides
-- ctx.inputTriggers (InputTriggerService)
-- conversation.input.overlay 'slash-menu' 槽注册 (MenuView)
-- InputTriggerSource / TriggerChar 类型契约 (types.ts / contract.ts)
-- slash.menu 字典
+- ctx.inputTriggers (InputTriggerService：触发检测、候选菜单、pick 流水线；source 注册唯一入口)
+- slot: conversation.input.overlay#slash-menu (order 0 的候选菜单 MenuView)
+- Locale 命名空间 slash.menu
+- 上抛 InputTriggerService/InputTriggerController 与 InputTriggerSource/TriggerChar/MenuState/PickOutcome 等大量公开类型与契约
 
 ## Depends On (上游依赖)
-- `dsh-client-locale` [编译依赖] - 候选菜单本地化
-  - 证据: `packages/client/ui-input-trigger/src/client/index.ts:57 (locale.register MENU_NS)`
-- `dsh-client-runtime` [编译依赖] - client 运行时上下文与会话面
-  - 证据: `packages/client/ui-input-trigger/src/client/index.ts:48 (inject sessions/locale), service.ts:10 (ClientContext/ISessions 类型)`
-- `dsh-session` [运行时依赖] - 按会话 scope 解析 controller
-  - 证据: `packages/client/ui-input-trigger/src/client/service.ts:29,80-82 (static inject ['sessions'] + sessions.scopeOf)`
+- `dsh-api-session-controller` [运行时依赖] - 把槽 frame 的 sessionId 解析成会话作用域
+  - 证据: `src/client/index.ts:10 merge + src/client/index.ts:73 sessions.scope(sessionId)`
+- `dsh-client-locale` [运行时依赖] - 注册并观察菜单字典
+  - 证据: `src/client/index.ts:8 merge + src/client/index.ts:61 ctx.locale.register('slash.menu')`
+- `dsh-client-ui-conversation` [运行时依赖] - 依赖 Conversation 声明的输入浮层槽
+  - 证据: `src/client/slots.ts:2 + src/core/contract.ts:7 (conversation.input.overlay 槽)`
+- `dsh-client-ui-primitives` [编译依赖] - 候选菜单列表基础组件
+  - 证据: `src/client/MenuView.tsx:15 import @deepseek-ai/dsh-client-ui-primitives`
+- `dsh-client-ui-renderer` [编译依赖] - 引入 slots 服务声明
+  - 证据: `src/client/index.ts:11 merge`
+- `dsh-client-ui-session` [编译依赖] - 会话 UI 声明合并
+  - 证据: `src/client/index.ts:12 merge`
+- `dsh-session` [编译依赖] - 会话标识/上下文类型
+  - 证据: `src/client/controller.ts:15 + src/types.ts:15`
 
 ## Dependents (下游被依赖)
-- `dsh-client-ui-commands` - 作为 '/' 子类 source 注册并消费 claim/consume-token 契约
-- `dsh-client-ui-conversation` - '/'|'@' 输入触发控制器与 slash 事件契约（bail 监听）
-- `dsh-client-ui-cordis` - 注册 '@' cordis 引用源（@pluginId）
-- `dsh-client-ui-reference` - 注册@触发源所需服务
-- `dsh-client-ui-skill` - 注册 '/' 引用源并消费 lexicon/subscribeLexicon 契约
-- `dsh-client-ui-subagent` - 注册 '@' 引用源
+- `dsh-client-ui-chat` - 技能引用经触发管线打开
+- `dsh-client-ui-commands` - 把 '/' 命令面注册成触发源
+- `dsh-client-ui-permission-presets` - 命令/座位回调的会话上下文类型
+- `dsh-client-ui-reference` - 注册 '@' 触发源并消费其 Source/Crumb 契约
+- `dsh-client-ui-skill` - 注册斜杠菜单的 skill 候选源

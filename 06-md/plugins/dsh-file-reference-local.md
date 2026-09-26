@@ -1,33 +1,25 @@
 # dsh-file-reference-local
 
 - 包名: `@deepseek-ai/dsh-file-reference-local`
-- 分组: G21 上下文治理
+- 分组: G08 上下文注入
 - 拓扑层: Layer 5
 - 来源层: L2 web-app
 - 源码路径: `packages/context/file-reference-local`
 
-## 为什么需要它（设计初衷）
-为@file引用seam提供本地文件系统实现，以有界索引保证性能与可取消性，同时按agent注入引用指引，使Web端@菜单能实时补全工作区路径。
-
-发展史：RC8 新增
-
 ## 实现逻辑
-ctx.fileReferences 的本地文件系统实现。src/index.ts:45 LocalFileReferenceService extends FileReferenceService(seam)，list 按agent懒建 WorkspaceFileSearch(以agent cwd为root)；构造函数为每个agent安装FILE_REFERENCE_PROMPT的systemPrompt section(仅在read工具存在时)，并监听agent/created、tool/result事件维护搜索缓存与失效。search.ts:49 WorkspaceFileSearch 提供可取消可复用的有界模糊索引(默认maxEntries=10000)。装配于 cordis.patch.yml:85-86(E3)。
+ctx.fileReferences 的本地文件系统实现 LocalFileReferenceService，继承 dsh-file-reference 的服务基类并以 WorkspaceFileSearch 对 agent 工作目录建立可取消/可复用的模糊索引（src/index.ts:44-127、src/search.ts:84-255）。索引只含路径；目录前缀查询走实时列举，裸模糊查询共享一次有界遍历，且失效时旧索引继续应答、重建在后台进行（src/search.ts:114-130、src/search.ts:159-199）。按 agent 生命周期安装/卸载 system-prompt 的 context:file-reference 段落与搜索缓存，并在 tool/result 时使缓存失效（src/index.ts:66-102）。
 
 ## Provides
-- ctx.fileReferences 本地实现(LocalFileReferenceService)
-- 有界可取消WorkspaceFileSearch模糊索引
-- 按agent的@file系统提示注入
+- ctx.fileReferences (@file 引用的本地文件系统候选发现实现，供 @ 补全)
+- system-prompt section context:file-reference (@ 引用使用说明段落，仅在 read 工具可用时展示)
 
 ## Depends On (上游依赖)
-- `dsh-agent` [运行时依赖] - 枚举agent并安装提示
-  - 证据: `src/index.ts:46 static inject=['agents']`
-- `dsh-file-reference` [编译依赖] - 实现seam抽象list契约
-  - 证据: `src/index.ts:10-13 extends FileReferenceService`
-- `dsh-system-prompt` [运行时依赖] - 注入@file模型指引
-  - 证据: `src/index.ts:69-74 scope.systemPrompt.section`
-- `dsh-tools` [运行时依赖] - 检测read工具决定是否注入提示
-  - 证据: `src/index.ts:73 agent.ctx.tools.get('read')`
+- `dsh-agent` [E1+E2] - 按 agent 维护搜索索引与提示词 fiber 生命周期，并用 agent 的会话 cwd 作为搜索根
+  - 证据: `src/index.ts:9 import type Agent + src/index.ts:45 static inject ['agents'] + src/index.ts:91 ctx.agents.list + src/index.ts:92-93 ctx.on('agent/created'/'agent/disposed')`
+- `dsh-session` [运行时依赖] - 订阅会话事件流以在工具结果提交后失效文件索引
+  - 证据: `src/index.ts:98 ctx.on('session/event', ...) + src/index.ts:100 ctx.agents.get(session.id)`
+- `dsh-tools` [E1+E2] - 仅在 read 工具存在时展示 @ 提示词，并在工具结果后使工作区索引失效
+  - 证据: `src/index.ts:14 type-only import + src/index.ts:73 agent.ctx.tools.get('read', agent) + src/index.ts:98 ctx.on('session/event') tool-result invalidate`
 
 ## Dependents (下游被依赖)
-- `dsh-web-app` - web-app装配文件引用本地实现
+- 无下游（叶子/被消费端）

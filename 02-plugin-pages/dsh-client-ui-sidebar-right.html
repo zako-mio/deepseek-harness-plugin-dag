@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dsh-client-ui-sidebar-right · @deepseek-ai/dsh-client-ui-sidebar-right · DeepSeek Harness 插件 DAG</title>
+<style>
+:root{--bg:#0f1117;--panel:#161a22;--border:#2a2f3a;--text:#e6e8ee;--dim:#9aa3b2;--accent:#4f8cff;--ext:#b48a3c;--ok:#2fb98a;--dis:#c0504d;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+header{background:var(--panel);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+header h1{font-size:17px;font-weight:600;}
+header .crumb{color:var(--dim);font-size:13px;}
+header .crumb a{color:var(--accent);text-decoration:none;}
+.badge{background:#20324f;color:#7fb0ff;padding:2px 10px;border-radius:20px;font-size:12px;}
+.badge.ext{background:#3a2f1a;color:#e0b25e;}
+.badge.layer{background:#1d2a24;color:#5fc9a0;}
+.badge.l2{background:#2f2440;color:#b48ae0;}
+.badge.l3{background:#1d3a30;color:#5fd0a8;}
+.badge.dis{background:#3a1d1d;color:#e08584;}
+main{padding:24px;max-width:1200px;margin:0 auto;}
+h2{font-size:18px;margin:26px 0 12px;color:#cfd6e4;border-bottom:1px solid var(--border);padding-bottom:8px;}
+h3{font-size:15px;margin:18px 0 8px;color:#b8c2d4;}
+p,li{font-size:14px;}
+ul{padding-left:22px;}
+.dep-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;margin:10px 0;}
+.dep-item{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 12px;}
+.dep-item .name{font-weight:600;color:var(--accent);}
+.dep-item .mech{display:inline-block;font-size:11px;background:#1d2a3f;color:#7fb0ff;border-radius:4px;padding:1px 6px;margin-left:6px;}
+.dep-item .evi{font-size:12px;color:var(--dim);margin-top:4px;font-family:Consolas,monospace;word-break:break-all;}
+.dep-item .purpose{font-size:13px;margin-top:4px;}
+.ext .name{color:var(--ext);}
+.dis .name{color:var(--dis);}
+.provides li{font-size:13px;margin:3px 0;}
+.evidence{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-family:Consolas,monospace;font-size:12px;color:#9fb0c3;margin:6px 0;word-break:break-all;}
+.dagnav{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:14px 0;}
+.dagnav .label{font-size:12px;color:var(--dim);margin-bottom:6px;}
+.dagnav .chips{display:flex;flex-wrap:wrap;gap:6px;}
+.chip{font-size:12px;background:#1d2a3f;border:1px solid #2b3d5f;border-radius:6px;padding:2px 8px;color:#7fb0ff;text-decoration:none;}
+.chip:hover{background:#2b3d5f;}
+.chip.ext{background:#3a2f1a;border-color:#5a4422;color:#e0b25e;}
+.chip.dis{background:#3a1d1d;border-color:#6a3231;color:#e08584;}
+.chip.l2{background:#2f2440;border-color:#4a3560;color:#b48ae0;}
+.chip.l3{background:#1d3a30;border-color:#2f5a4a;color:#5fd0a8;}
+.chip.self{background:#20324f;border-color:#4f8cff;color:#fff;cursor:default;}
+.treenav{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:14px 0;display:flex;flex-wrap:wrap;gap:4px 14px;}
+.treenav a{color:var(--dim);font-size:13px;text-decoration:none;}
+.treenav a:hover{color:var(--accent);}
+.treenav .sep{color:#3a3f4a;}
+.layernav{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}
+.layernav a{font-size:12px;background:#161d2c;border:1px solid var(--border);border-radius:6px;padding:2px 8px;color:var(--dim);text-decoration:none;}
+.layernav a.cur{background:#20324f;color:#7fb0ff;border-color:#4f8cff;}
+footer{margin-top:40px;padding:16px 24px;border-top:1px solid var(--border);color:var(--dim);font-size:12px;text-align:center;}
+table{border-collapse:collapse;width:100%;margin:10px 0;}
+th,td{border:1px solid var(--border);padding:6px 10px;font-size:13px;text-align:left;}
+th{background:var(--panel);color:#b8c2d4;}
+.whybox{background:#0d1a14;border:1px solid #2f5a4a;border-radius:8px;padding:14px 18px;margin:10px 0;}
+.whybox .tag{color:#5fc9a0;font-size:12px;font-weight:600;letter-spacing:1px;}
+.whybox p{font-size:14px;color:#cfe8dd;margin:6px 0;}
+.whybox .hist{font-size:13px;color:var(--dim);margin-top:8px;}
+.whybox .src{font-size:11px;color:var(--dim);margin-top:8px;}
+.whybox .src a{color:#7fb0ff;text-decoration:none;word-break:break-all;}
+.whybox .src a:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+<header>
+  <span class="crumb"><a href="../index.html">DAG总览</a> / <a href="../03-groups/index.html">组目录</a> / G06 客户端 UI 包</span>
+  <h1>dsh-client-ui-sidebar-right · @deepseek-ai/dsh-client-ui-sidebar-right</h1>
+  <span class="badge">Layer 14</span><span class="badge">G06</span><span class="badge l2">L2 web-app</span>
+</header>
+<main>
+<div class="treenav"><span style="color:var(--dim);font-size:12px;">目录:</span><a href="../03-groups/G01.html">ACP 协议</a><a href="../03-groups/G02.html">API 网关与控制器</a><a href="../03-groups/G03.html">附件</a><a href="../03-groups/G04.html">启动与插件管理</a><a href="../03-groups/G05.html">客户端运行时</a><a href="../03-groups/G06.html">客户端 UI 包</a><a href="../03-groups/G07.html">上下文压缩</a><a href="../03-groups/G08.html">上下文注入</a><a href="../03-groups/G09.html">核心运行时</a><a href="../03-groups/G10.html">凭据与授权</a><a href="../03-groups/G11.html">交付物</a><a href="../03-groups/G12.html">文档处理</a><a href="../03-groups/G13.html">实验特性</a><a href="../03-groups/G14.html">宿主扩展</a><a href="../03-groups/G15.html">反馈通道</a><a href="../03-groups/G16.html">文件系统</a><a href="../03-groups/G17.html">目标与计划</a><a href="../03-groups/G18.html">工具守卫</a><a href="../03-groups/G19.html">Hooks 扩展</a><a href="../03-groups/G20.html">宿主服务</a><a href="../03-groups/G21.html">交互命令</a><a href="../03-groups/G22.html">作业调度</a><a href="../03-groups/G23.html">LLM 适配</a><a href="../03-groups/G24.html">LSP 集成</a><a href="../03-groups/G25.html">MCP 协议</a><a href="../03-groups/G26.html">规划模式</a><a href="../03-groups/G27.html">Agent 预设</a><a href="../03-groups/G28.html">代码执行运行时</a><a href="../03-groups/G29.html">运行时诊断</a><a href="../03-groups/G30.html">沙箱</a><a href="../03-groups/G31.html">定时调度</a><a href="../03-groups/G32.html">SDK 与协议</a><a href="../03-groups/G33.html">会话核心</a><a href="../03-groups/G34.html">会话检索</a><a href="../03-groups/G35.html">设置</a><a href="../03-groups/G36.html">Shell 执行</a><a href="../03-groups/G37.html">技能</a><a href="../03-groups/G38.html">溢出存储</a><a href="../03-groups/G39.html">SSH 远程执行</a><a href="../03-groups/G40.html">存储</a><a href="../03-groups/G41.html">子代理</a><a href="../03-groups/G42.html">子进程</a><a href="../03-groups/G43.html">终端</a><a href="../03-groups/G44.html">待办</a><a href="../03-groups/G45.html">类型契约</a><a href="../03-groups/G46.html">框架 vendor</a><a href="../03-groups/G47.html">Web 访问</a><a href="../03-groups/G48.html">Webhook</a><a href="../03-groups/G49.html">工作流</a><a href="../03-groups/G50.html">工作区</a></div><div class="dagnav"><div class="label">依赖链 · 上游（该插件依赖的前驱）：</div><div class="chips"><a class="chip" href="dsh-api-session-controller.html">dsh-api-session-controller</a><a class="chip" href="dsh-client-locale.html">dsh-client-locale</a><a class="chip" href="dsh-client-resources.html">dsh-client-resources</a><a class="chip" href="dsh-client-shortcuts.html">dsh-client-shortcuts</a><a class="chip" href="dsh-client-ui-conversation.html">dsh-client-ui-conversation</a><a class="chip" href="dsh-client-ui-dockkit.html">dsh-client-ui-dockkit</a><a class="chip" href="dsh-client-ui-layout.html">dsh-client-ui-layout</a><a class="chip" href="dsh-client-ui-primitives.html">dsh-client-ui-primitives</a><a class="chip" href="dsh-client-ui-renderer.html">dsh-client-ui-renderer</a><a class="chip" href="dsh-client-ui-session.html">dsh-client-ui-session</a><a class="chip" href="dsh-session.html">dsh-session</a></div><div class="label" style="margin-top:8px;">依赖链 · 下游（依赖该插件的节点）：</div><div class="chips"><a class="chip l2" href="dsh-client-ui-chat.html">dsh-client-ui-chat</a><a class="chip l2" href="dsh-client-ui-deliverables.html">dsh-client-ui-deliverables</a><a class="chip l2" href="dsh-client-ui-plan.html">dsh-client-ui-plan</a><a class="chip l2" href="dsh-client-ui-reference.html">dsh-client-ui-reference</a><a class="chip l2" href="dsh-client-ui-schedule.html">dsh-client-ui-schedule</a><a class="chip l2" href="dsh-client-ui-sidebar-browser.html">dsh-client-ui-sidebar-browser</a><a class="chip l2" href="dsh-client-ui-sidebar-documentpreview.html">dsh-client-ui-sidebar-documentpreview</a><a class="chip l2" href="dsh-client-ui-sidebar-files.html">dsh-client-ui-sidebar-files</a><a class="chip l2" href="dsh-client-ui-sidebar-terminal.html">dsh-client-ui-sidebar-terminal</a><a class="chip l2" href="dsh-client-ui-skill.html">dsh-client-ui-skill</a><a class="chip l2" href="dsh-client-ui-subagent.html">dsh-client-ui-subagent</a></div><div class="label" style="margin-top:8px;">同一拓扑层（Layer 14，层次遍历层序）：</div><div class="chips"><a class="chip" href="dsh-client-ui-approval.html">dsh-client-ui-approval</a><a class="chip" href="dsh-client-ui-input-trigger.html">dsh-client-ui-input-trigger</a><a class="chip" href="dsh-client-ui-jobs.html">dsh-client-ui-jobs</a><a class="chip" href="dsh-client-ui-sidebar.html">dsh-client-ui-sidebar</a><a class="chip self" href="dsh-client-ui-sidebar-right.html">dsh-client-ui-sidebar-right</a><a class="chip" href="dsh-client-ui-trajectory.html">dsh-client-ui-trajectory</a><a class="chip" href="dsh-client-ui-workspace.html">dsh-client-ui-workspace</a></div></div><div class="layernav"><a href="dsh-client-ui-conversation.html">↑ Layer 13（4 插件）</a><span class="chip self">Layer 14</span><a href="dsh-client-ui-agent-preset.html">↓ Layer 15（16 插件）</a></div><h2>插件信息</h2><table><tr><th>包名</th><td>@deepseek-ai/dsh-client-ui-sidebar-right</td></tr><tr><th>分组</th><td>G06 · 客户端 UI 包</td></tr><tr><th>拓扑层</th><td>Layer 14（层次遍历：被依赖方先于依赖方）</td></tr><tr><th>源码路径</th><td><code>packages/client/ui-sidebar-right</code></td></tr><tr><th>来源层</th><td>L2 web-app bundle（base 之上装配）</td></tr></table><h2>① 实现逻辑</h2><p>浏览器半在 apply 顶层构造 SidebarRightTabRegistry，并分别经 `ctx.reflect.provide(&#x27;sidebarRightTabs&#x27;)` 与 `ctx.reflect.provide(&#x27;sidebarRight&#x27;)` 暴露 tab 类型注册表与导航面（src/client/index.ts:109、122-123），使其它包可注册而本包 effect 不作为其宿主。它声明 `rightbar` 槽（含 rightbar.session 及 keyed `sidebar.right.pane.tab`/`title` 与 list `sidebar.right.tab.menu.item` 子槽，src/client/index.ts:177-205），并在会话代际间对同一 store 做 adopt/forget（src/client/index.ts:140-159）。同一 store 还供 `conversation.session.header.corner` 展开按钮使用（src/client/index.ts:210-215），内建 `guide` tab 类型经同一公共两级路径注册（src/client/index.ts:176、224-240）。node half 为空 apply（src/index.ts:4）。</p>
+<style>
+#dyn-dag{width:100%;height:480px;background:var(--panel);border:1px solid var(--border);border-radius:8px;margin:12px 0;}
+#dyn-dag-label{font-size:12px;color:var(--dim);margin:10px 0 4px;}
+#dyn-dag-legend{display:flex;gap:16px;font-size:12px;color:var(--dim);margin:6px 0 2px;flex-wrap:wrap;}
+#dyn-dag-legend .item{display:flex;align-items:center;gap:5px;}
+#dyn-dag-legend .dot{width:10px;height:10px;border-radius:3px;display:inline-block;}
+.dyn-self{background:var(--accent);}
+.dyn-up{background:#e8933b;}
+.dyn-down{background:#2fb98a;}
+.dyn-seam{background:var(--ext);}
+</style>
+
+<div id="dyn-dag-label">内部结构动态 DAG（深色主题：橙色=上游依赖 · 绿色=下游依赖 · 棕色=外部seam · 蓝=本插件）</div>
+<div id="dyn-dag-legend">
+  <span class="item"><span class="dot dyn-self"></span>本插件</span>
+  <span class="item"><span class="dot dyn-up"></span>上游依赖</span>
+  <span class="item"><span class="dot dyn-down"></span>下游依赖</span>
+  <span class="item"><span class="dot dyn-seam"></span>外部 seam</span>
+</div>
+<div id="dyn-dag"></div>
+
+<script src="../04-interactive/vendor/cytoscape.min.js"></script>
+<script src="../04-interactive/vendor/cytoscape-dagre.min.js"></script>
+<script>
+(function(){
+  const raw = {"elements": [{"data": {"id": "dsh-client-ui-sidebar-right", "label": "dsh-client-ui-sidebar-right", "kind": "self", "cls": "#4f8cff", "url": "dsh-client-ui-sidebar-right.html"}}, {"data": {"id": "dsh-api-session-controller", "label": "dsh-api-session-controller", "kind": "up", "cls": "#e8933b", "url": "dsh-api-session-controller.html"}}, {"data": {"id": "dsh-client-locale", "label": "dsh-client-locale", "kind": "up", "cls": "#e8933b", "url": "dsh-client-locale.html"}}, {"data": {"id": "dsh-client-resources", "label": "dsh-client-resources", "kind": "up", "cls": "#e8933b", "url": "dsh-client-resources.html"}}, {"data": {"id": "dsh-client-shortcuts", "label": "dsh-client-shortcuts", "kind": "up", "cls": "#e8933b", "url": "dsh-client-shortcuts.html"}}, {"data": {"id": "dsh-client-ui-conversation", "label": "dsh-client-ui-conversation", "kind": "up", "cls": "#e8933b", "url": "dsh-client-ui-conversation.html"}}, {"data": {"id": "dsh-client-ui-dockkit", "label": "dsh-client-ui-dockkit", "kind": "up", "cls": "#e8933b", "url": "dsh-client-ui-dockkit.html"}}, {"data": {"id": "dsh-client-ui-layout", "label": "dsh-client-ui-layout", "kind": "up", "cls": "#e8933b", "url": "dsh-client-ui-layout.html"}}, {"data": {"id": "dsh-client-ui-primitives", "label": "dsh-client-ui-primitives", "kind": "up", "cls": "#e8933b", "url": "dsh-client-ui-primitives.html"}}, {"data": {"id": "dsh-client-ui-renderer", "label": "dsh-client-ui-renderer", "kind": "up", "cls": "#e8933b", "url": "dsh-client-ui-renderer.html"}}, {"data": {"id": "dsh-client-ui-session", "label": "dsh-client-ui-session", "kind": "up", "cls": "#e8933b", "url": "dsh-client-ui-session.html"}}, {"data": {"id": "dsh-session", "label": "dsh-session", "kind": "up", "cls": "#e8933b", "url": "dsh-session.html"}}, {"data": {"id": "dsh-client-ui-chat", "label": "dsh-client-ui-chat", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-chat.html"}}, {"data": {"id": "dsh-client-ui-deliverables", "label": "dsh-client-ui-deliverables", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-deliverables.html"}}, {"data": {"id": "dsh-client-ui-plan", "label": "dsh-client-ui-plan", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-plan.html"}}, {"data": {"id": "dsh-client-ui-reference", "label": "dsh-client-ui-reference", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-reference.html"}}, {"data": {"id": "dsh-client-ui-schedule", "label": "dsh-client-ui-schedule", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-schedule.html"}}, {"data": {"id": "dsh-client-ui-sidebar-browser", "label": "dsh-client-ui-sidebar-browser", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-sidebar-browser.html"}}, {"data": {"id": "dsh-client-ui-sidebar-documentpreview", "label": "dsh-client-ui-sidebar-documentpreview", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-sidebar-documentpreview.html"}}, {"data": {"id": "dsh-client-ui-sidebar-files", "label": "dsh-client-ui-sidebar-files", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-sidebar-files.html"}}, {"data": {"id": "dsh-client-ui-sidebar-terminal", "label": "dsh-client-ui-sidebar-terminal", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-sidebar-terminal.html"}}, {"data": {"id": "dsh-client-ui-skill", "label": "dsh-client-ui-skill", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-skill.html"}}, {"data": {"id": "dsh-client-ui-subagent", "label": "dsh-client-ui-subagent", "kind": "down", "cls": "#2fb98a", "url": "dsh-client-ui-subagent.html"}}, {"data": {"id": "dsh-api-session-controller->dsh-client-ui-sidebar-right", "source": "dsh-api-session-controller", "target": "dsh-client-ui-sidebar-right"}}, {"data": {"id": "dsh-client-locale->dsh-client-ui-sidebar-right", "source": "dsh-client-locale", "target": "dsh-client-ui-sidebar-right"}}, {"data": {"id": "dsh-client-resources->dsh-client-ui-sidebar-right", "source": "dsh-client-resources", "target": "dsh-client-ui-sidebar-right"}}, {"data": {"id": "dsh-client-shortcuts->dsh-client-ui-sidebar-right", "source": "dsh-client-shortcuts", "target": "dsh-client-ui-sidebar-right"}}, {"data": {"id": "dsh-client-ui-conversation->dsh-client-ui-sidebar-right", "source": "dsh-client-ui-conversation", "target": "dsh-client-ui-sidebar-right"}}, {"data": {"id": "dsh-client-ui-dockkit->dsh-client-ui-sidebar-right", "source": "dsh-client-ui-dockkit", "target": "dsh-client-ui-sidebar-right"}}, {"data": {"id": "dsh-client-ui-layout->dsh-client-ui-sidebar-right", "source": "dsh-client-ui-layout", "target": "dsh-client-ui-sidebar-right"}}, {"data": {"id": "dsh-client-ui-primitives->dsh-client-ui-sidebar-right", "source": "dsh-client-ui-primitives", "target": "dsh-client-ui-sidebar-right"}}, {"data": {"id": "dsh-client-ui-renderer->dsh-client-ui-sidebar-right", "source": "dsh-client-ui-renderer", "target": "dsh-client-ui-sidebar-right"}}, {"data": {"id": "dsh-client-ui-session->dsh-client-ui-sidebar-right", "source": "dsh-client-ui-session", "target": "dsh-client-ui-sidebar-right"}}, {"data": {"id": "dsh-session->dsh-client-ui-sidebar-right", "source": "dsh-session", "target": "dsh-client-ui-sidebar-right"}}, {"data": {"id": "dsh-client-ui-sidebar-right->dsh-client-ui-chat", "source": "dsh-client-ui-sidebar-right", "target": "dsh-client-ui-chat"}}, {"data": {"id": "dsh-client-ui-sidebar-right->dsh-client-ui-deliverables", "source": "dsh-client-ui-sidebar-right", "target": "dsh-client-ui-deliverables"}}, {"data": {"id": "dsh-client-ui-sidebar-right->dsh-client-ui-plan", "source": "dsh-client-ui-sidebar-right", "target": "dsh-client-ui-plan"}}, {"data": {"id": "dsh-client-ui-sidebar-right->dsh-client-ui-reference", "source": "dsh-client-ui-sidebar-right", "target": "dsh-client-ui-reference"}}, {"data": {"id": "dsh-client-ui-sidebar-right->dsh-client-ui-schedule", "source": "dsh-client-ui-sidebar-right", "target": "dsh-client-ui-schedule"}}, {"data": {"id": "dsh-client-ui-sidebar-right->dsh-client-ui-sidebar-browser", "source": "dsh-client-ui-sidebar-right", "target": "dsh-client-ui-sidebar-browser"}}, {"data": {"id": "dsh-client-ui-sidebar-right->dsh-client-ui-sidebar-documentpreview", "source": "dsh-client-ui-sidebar-right", "target": "dsh-client-ui-sidebar-documentpreview"}}, {"data": {"id": "dsh-client-ui-sidebar-right->dsh-client-ui-sidebar-files", "source": "dsh-client-ui-sidebar-right", "target": "dsh-client-ui-sidebar-files"}}, {"data": {"id": "dsh-client-ui-sidebar-right->dsh-client-ui-sidebar-terminal", "source": "dsh-client-ui-sidebar-right", "target": "dsh-client-ui-sidebar-terminal"}}, {"data": {"id": "dsh-client-ui-sidebar-right->dsh-client-ui-skill", "source": "dsh-client-ui-sidebar-right", "target": "dsh-client-ui-skill"}}, {"data": {"id": "dsh-client-ui-sidebar-right->dsh-client-ui-subagent", "source": "dsh-client-ui-sidebar-right", "target": "dsh-client-ui-subagent"}}]};
+  const cy = cytoscape({
+    container: document.getElementById('dyn-dag'),
+    elements: raw.elements,
+    style: [
+      {
+        selector: 'node',
+        style: {
+          'label': 'data(label)',
+          'background-color': 'data(cls)',
+          'color': '#e6e8ee',
+          'font-size': 11,
+          'text-valign': 'bottom',
+          'text-margin-y': 4,
+          'width': 46,
+          'height': 46,
+          'shape': 'round-rectangle',
+          'border-width': 2,
+          'border-color': '#2a2f3a'
+        }
+      },
+      {
+        selector: 'node[kind="self"]',
+        style: {
+          'border-width': 3,
+          'border-color': '#4f8cff',
+          'width': 60,
+          'height': 60,
+          'font-size': 12,
+          'font-weight': 700
+        }
+      },
+      {
+        selector: 'edge',
+        style: {
+          'width': 1.5,
+          'line-color': '#4a5263',
+          'target-arrow-color': '#4a5263',
+          'target-arrow-shape': 'triangle',
+          'curve-style': 'bezier'
+        }
+      }
+    ],
+    layout: {
+      name: 'dagre',
+      rankDir: 'LR',
+      nodeSep: 30,
+      rankSep: 60,
+      padding: 20
+    },
+    wheelSensitivity: 0.2,
+    minZoom: 0.2,
+    maxZoom: 2.5
+  });
+  cy.on('tap', 'node', (evt) => {
+    const url = evt.target.data('url');
+    if (url) window.location.href = url;
+  });
+  // 等渲染完自适应容器尺寸
+  setTimeout(() => cy.resize(), 100);
+})();
+</script>
+<h2>② 注册/提供（provides）</h2><ul class="provides"><li>sidebarRight locale 命名空间字典</li><li>ctx.sidebarRightTabs（右侧边栏 tab 类型注册表，任何包第二阶段注册的入口）</li><li>ctx.sidebarRight（右侧边栏导航/展示面：openTab/openTabFromTarget/bind/splitPane/toggleFullscreen/commandTarget 等）</li><li>rightbar 槽位占用者，声明 rightbar.session 及 sidebar.right.pane.tab（keyed）/ sidebar.right.pane.tab.title（keyed）/ sidebar.right.tab.menu.item（list）子槽</li><li>conversation.session.header.corner 槽的展开按钮</li><li>sidebarRightTabs 注册内建 &#x27;guide&#x27; tab 类型（含 sidebar.right.tab.guide.entry / sidebar.right.tab.guide 子槽）</li></ul><h2>③ 依赖（depends_on · 上游前驱）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-api-session-controller.html">dsh-api-session-controller</a></span><span class="mech">E1</span><div class="purpose">会话视图类型（SidebarSessionViews 消费 SessionManager）</div><div class="evi">src/client/session-view.ts:2 import (client)</div></div><div class="dep-item"><span class="name"><a href="dsh-client-locale.html">dsh-client-locale</a></span><span class="mech">E1+E2</span><div class="purpose">注册并绑定本包文案</div><div class="evi">src/client/contract/slots.ts:28 import + src/client/index.ts:134 ctx.locale.register</div></div><div class="dep-item"><span class="name"><a href="dsh-client-resources.html">dsh-client-resources</a></span><span class="mech">E1+E2</span><div class="purpose">把 tab 资源登记/固定到资源模型</div><div class="evi">src/client/index.ts:27 import (client) + src/client/index.ts:120 ctx.resources.pin</div></div><div class="dep-item"><span class="name"><a href="dsh-client-shortcuts.html">dsh-client-shortcuts</a></span><span class="mech">E1+E2</span><div class="purpose">注册右栏快捷键并读取快捷键目录</div><div class="evi">src/client/contract/slots.ts:23 import (client) + src/client/index.ts:135 registerSidebarShortcuts(ctx.shortcuts, ...)</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-conversation.html">dsh-client-ui-conversation</a></span><span class="mech">E1</span><div class="purpose">注册会话头部角槽需要其槽声明合并</div><div class="evi">src/client/index.ts:32 import (client)</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-dockkit.html">dsh-client-ui-dockkit</a></span><span class="mech">E1</span><div class="purpose">dock 布局/标签 id 与纯规划器</div><div class="evi">src/client/contract/slots.ts:29 import (client) + src/client/index.ts:47 import type TabId</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-layout.html">dsh-client-ui-layout</a></span><span class="mech">E1+E2</span><div class="purpose">经布局服务开合/全屏右栏面板</div><div class="evi">src/client/contract/slots.ts:25 import (client) + src/client/index.ts:160 const layout: ILayout = ctx.layout</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-primitives.html">dsh-client-ui-primitives</a></span><span class="mech">E1</span><div class="purpose">复用共享 UI 原语</div><div class="evi">src/client/shell/ExpandButton.tsx:19 import</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-renderer.html">dsh-client-ui-renderer</a></span><span class="mech">E1</span><div class="purpose">引入 ctx.slots 合并</div><div class="evi">src/client/index.ts:28 type-only import</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-session.html">dsh-client-ui-session</a></span><span class="mech">E1</span><div class="purpose">引入会话标准 props 合并</div><div class="evi">src/client/index.ts:29 type-only import</div></div><div class="dep-item"><span class="name"><a href="dsh-session.html">dsh-session</a></span><span class="mech">E1</span><div class="purpose">SessionId 等类型</div><div class="evi">src/client/focus.ts:3 import (/types)</div></div></div><h2>④ 被依赖（dependents · 下游消费者）</h2><div class="dep-list"><div class="dep-item"><span class="name"><a href="dsh-client-ui-chat.html">dsh-client-ui-chat</a></span><div class="purpose">文件与外链送入右侧栏</div><div class="evi">src/client/apply.ts:9 + src/client/apply.ts:218-229 ctx.sidebarRight.openResource/openTab</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-deliverables.html">dsh-client-ui-deliverables</a></span><div class="purpose">打开 changes-review 资源 tab</div><div class="evi">src/client/index.ts:19 + src/client/index.ts:77 ctx.sidebarRight.openResource</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-plan.html">dsh-client-ui-plan</a></span><div class="purpose">打开计划资源与注册预览页型</div><div class="evi">src/client/index.ts:16 import type + src/client/index.ts:74 ctx.sidebarRight.openResource</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-reference.html">dsh-client-ui-reference</a></span><div class="purpose">在右侧栏打开被引用的文件</div><div class="evi">src/client/index.ts:20 import type + src/client/index.ts:149 ctx.sidebarRight.openResource</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-schedule.html">dsh-client-ui-schedule</a></span><div class="purpose">注册任务详情页型并打开详情 tab</div><div class="evi">src/client/index.ts:37 import type + src/client/index.ts:153 ctx.sidebarRight.tabsIn</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-sidebar-browser.html">dsh-client-ui-sidebar-browser</a></span><div class="purpose">把 tab 类型与 body/title 注册进右侧边栏的两级公共路径</div><div class="evi">src/client/definition.tsx:5 import (client) + src/client/index.ts:74 ctx.sidebarRightTabs.register</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-sidebar-documentpreview.html">dsh-client-ui-sidebar-documentpreview</a></span><div class="purpose">经两级公共路径把预览类型、body 与标题注册进右侧边栏</div><div class="evi">src/client/definition.ts:11 import (client) + src/client/index.ts:93 ctx.sidebarRightTabs.register</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-sidebar-files.html">dsh-client-ui-sidebar-files</a></span><div class="purpose">把 tab 类型、body 与标题注册进右侧边栏</div><div class="evi">src/client/definition.tsx:9 import (client) + src/client/index.ts:67 ctx.sidebarRightTabs.register</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-sidebar-terminal.html">dsh-client-ui-sidebar-terminal</a></span><div class="purpose">注册终端标签类型、读取 occurrence 参数并注册关闭处理器</div><div class="evi">src/client/index.ts:5 import + src/client/index.ts:40 ctx.sidebarRight.tabDomain</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-skill.html">dsh-client-ui-skill</a></span><div class="purpose">点击 skill 引用时在侧栏打开其文件资源</div><div class="evi">src/client/index.ts:35 import type + src/client/index.ts:203 ctx.sidebarRight.openResource</div></div><div class="dep-item"><span class="name"><a href="dsh-client-ui-subagent.html">dsh-client-ui-subagent</a></span><div class="purpose">打开子代理侧栏资源并注册 subagentchat 标签类型</div><div class="evi">src/client/index.ts:15 + src/client/sidebar-chat/index.tsx:181 sidebarRightTabs.register</div></div></div>
+</main>
+<footer>DeepSeek Harness 插件级 DAG 依赖链分析 · L1 核心集 + L2 web-app + L3 其余插件 · 源码三依据(E1编译/E2运行时/E3组合)逐条溯源</footer>
+</body>
+</html>

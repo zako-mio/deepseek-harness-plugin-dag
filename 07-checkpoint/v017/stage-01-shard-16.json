@@ -1,0 +1,224 @@
+[
+  {
+    "id": "dsh-session-log-export",
+    "name": "@deepseek-ai/dsh-session-log-export",
+    "implementation": "以 fflate 流式 Zip 把单个会话的逻辑日志（header 行 + 逐事件 JSONL）连同子会话与引用附件打包导出：serializeSessionLog/readSessionLogText 生成规范 JSONL，sessionLogZipEntries 按 zip 顺序产出根日志、子代理日志与 media/files 条目，streamSessionLogZip 用 ReadableStream + 背压闸门（ResponseCapacityGate）增量压缩并支持取消 (src/archive.ts:110-169, 347-404, 545-616)。Host 侧注册 /export 命令与 /api/session.export 的 GET/HEAD 路由，校验 sessionId/includeDescendants 并返回 400/404/500 (src/index.ts:78-168)。浏览器侧提供 ctx.sessionLogDownload 控制器并挂载会话头部菜单项，订阅 command/executed 在 /export 成功后触发下载 (src/client/index.ts:36-63)。",
+    "provides": [
+      "ctx.sessionLogDownload (浏览器端会话日志导出下载控制器，供会话头部动作与 /export 命令共享)",
+      "Web /export 命令与 /api/session.export ZIP 下载路由 (Host 侧流式导出能力)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-session-query", "mechanism": "E1+E2", "evidence": "src/archive.ts:29 import; src/index.ts:65 ctx.get('sessionQuery'); src/index.ts:123 deps.sessionQuery", "purpose": "通过 sessionQuery.traceSession() 枚举根会话谱系，导出子代理日志"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "src/archive.ts:30,32 import; package.json:46 peerDep", "purpose": "使用 SessionId/SessionHeader/SessionEvent/SessionStore 类型与 SESSION_FORMAT_VERSION 序列化日志"},
+      {"plugin_id": "dsh-session-format", "mechanism": "E1", "evidence": "src/archive.ts:31 import; package.json:39 dep", "purpose": "用 sessionFormatLogFilename() 生成当前代的规范日志文件名"},
+      {"plugin_id": "dsh-session-persistence", "mechanism": "E1+E2", "evidence": "src/archive.ts:33-34 import; src/index.ts:123 deps.sessionPersistence; package.json:47 peerDep", "purpose": "通过 SessionPersistence 读写句柄打开并读取存储的会话日志"},
+      {"plugin_id": "dsh-attachment", "mechanism": "E1+E2", "evidence": "src/archive.ts:26-28 import; src/index.ts:7 import; src/index.ts:125 deps.attachments", "purpose": "从 AttachmentStore 读取日志引用的图片与文件并流式打包进 ZIP"},
+      {"plugin_id": "dsh-commands", "mechanism": "E1+E2", "evidence": "src/index.ts:4,8 import; src/index.ts:41 inject ['commands']; src/index.ts:79 ctx.commands.register", "purpose": "注册 Web /export 命令作为导出入口"},
+      {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "src/index.ts:6 import; package.json:42 dep", "purpose": "用 brandString 生成品牌化的 CommandDefinitionId/SessionId"},
+      {"plugin_id": "dsh-client-store", "mechanism": "E1", "evidence": "src/client/controller.ts:3 import; src/client/Dialog.tsx:1 import", "purpose": "用 createSnapshotStore 持有并发布浏览器端下载状态"},
+      {"plugin_id": "dsh-client-ui-slots", "mechanism": "E1+E2", "evidence": "src/client/index.ts:30 inject ['slots']; src/client/index.ts:51 ctx.slots.register; src/client/Dialog.tsx:4 import", "purpose": "把导出/反馈菜单项挂载到 conversation.session.header.utilities 插槽"},
+      {"plugin_id": "dsh-client-ui-primitives", "mechanism": "E1", "evidence": "src/client/HeaderAction.tsx:6 import; src/client/Dialog.tsx:3 import", "purpose": "复用 Button/Menu/Modal 等基础组件渲染菜单与下载弹窗"},
+      {"plugin_id": "dsh-client-locale", "mechanism": "E2", "evidence": "src/client/index.ts:30 inject ['locale']; src/client/index.ts:40 ctx.locale.register", "purpose": "注册 session-log-download 命名空间的中英文字典"},
+      {"plugin_id": "dsh-client-ui-commands", "mechanism": "E2", "evidence": "src/client/index.ts:6 import; src/client/index.ts:48 ctx.on('command/executed')", "purpose": "订阅 /export 命令执行成功事件以启动浏览器下载"},
+      {"plugin_id": "dsh-client-ui-conversation", "mechanism": "E1", "evidence": "src/client/index.ts:7 import; src/client/Dialog.tsx:16 PropsRuntime<'conversation.session.header.utilities'>", "purpose": "声明会话头部工具插槽的运行时 props 类型"},
+      {"plugin_id": "dsh-client-ui-renderer", "mechanism": "E1", "evidence": "src/client/index.ts:8 import", "purpose": "沿用客户端渲染层的类型环境"},
+      {"plugin_id": "dsh-client-ui-session", "mechanism": "E1", "evidence": "src/client/index.ts:9 import", "purpose": "沿用会话视图的类型环境"},
+      {"plugin_id": "dsh-client-ui-message-feedback", "mechanism": "E1+E2", "evidence": "src/client/index.ts:10 import; src/client/index.ts:60 ctx.get('feedbackUi')", "purpose": "探测 feedbackUi 可用性并在下拉菜单中提供反馈入口"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-session-query-sqlite",
+    "name": "@deepseek-ai/dsh-session-query-sqlite",
+    "implementation": "继承抽象 SessionQueryEngine，作为 ctx.sessionQuery 的具体后端：按 openAt 配置在启动或首次检索时打开 SQLite 派生索引（FTS5），并把 live 与 persisted 会话事件索引化 (src/index.ts:203-266, 360-367)。searchSessions/searchEvents 先归一化请求，经 _serialized 串行化、_reconcile 对 live/persisted 语料做稳定观测与增量写入，再用 FTS5 MATCH + highlight() 查询并返回带指纹校验的游标分页 (src/index.ts:268-325, 407-562, 647-708)。query.ts 负责请求归一化、id/cwd/time/type 等谓词编译、FTS 短语转义、snippet 截取与请求指纹 (src/query.ts:100-216, 269-294)。",
+    "provides": [
+      "ctx.sessionQuery (SQLite FTS5 全文检索后端：跨会话/会话内事件检索，继承的精确读与追迹能力)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-session-query", "mechanism": "E1", "evidence": "src/index.ts:18 import SessionQueryEngine; src/index.ts:203 class SqliteSessionQueryEngine extends SessionQueryEngine; package.json:32 peerDep", "purpose": "继承抽象引擎并据其契约注册为 ctx.sessionQuery 实现"},
+      {"plugin_id": "dsh-session", "mechanism": "E1+E2", "evidence": "src/index.ts:8,12 import; src/index.ts:204 static inject ['sessions']; src/index.ts:503 this.ctx.sessions.list(); package.json:30 peerDep", "purpose": "读取 live 会话（ctx.sessions）并用 SessionHeader/SessionId/SessionSeq 类型构建索引"},
+      {"plugin_id": "dsh-session-persistence", "mechanism": "E1+E2", "evidence": "src/index.ts:13 import; src/index.ts:247 ctx.inject(['sessionPersistence']); src/index.ts:510 persistence.list(); package.json:36 peerDep optional", "purpose": "可选依赖持久化后端，枚举 persisted 会话快照并读取冷日志"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-session-query",
+    "name": "@deepseek-ai/dsh-tool-session-query",
+    "implementation": "向模型注册五个会话检索工具（session_search/session_event_search/session_trace/session_event_trace/session_event_read），并注入 systemPrompt 章节引导用法 (src/index.ts:56-122)。operations.ts 在 workspace 授权下调用 ctx.sessionQuery 的 searchSessions/searchEvents/traceSession/traceEvent/readEvent，用 collectPages 翻页累积至 maxResults 并对本会话裁剪到当前 step 边界 (src/operations.ts:55-277)。workspace-access.ts 以调用者会话 cwd 为边界做目标授权与可见谱系投影，service-boundary.ts 把服务错误翻译为模型安全的 HarnessError 并记录诊断 (src/workspace-access.ts:75-135, src/service-boundary.ts:99-141)。",
+    "provides": [
+      "模型工具 session_search/session_event_search/session_trace/session_event_trace/session_event_read (workspace 授权的会话历史检索与读取)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "src/index.ts:10 import; src/index.ts:19 inject ['tools']; src/index.ts:65 ctx.tools.register; src/operations.ts:18 import ToolRunContext", "purpose": "注册工具定义并消费工具运行上下文"},
+      {"plugin_id": "dsh-system-prompt", "mechanism": "E2", "evidence": "src/index.ts:19 inject ['systemPrompt']; src/index.ts:59 ctx.systemPrompt.section", "purpose": "注入会话检索工具的使用引导段落"},
+      {"plugin_id": "dsh-session-query", "mechanism": "E2", "evidence": "src/index.ts:19 inject ['sessionQuery']; src/operations.ts:95 ctx.sessionQuery.searchSessions", "purpose": "调用会话检索服务执行搜索、追迹与事件读取"},
+      {"plugin_id": "dsh-session-projection", "mechanism": "E1+E2", "evidence": "src/workspace-access.ts:20 import type {}; src/workspace-access.ts:67 ctx.sessionProjections.stateOf(agent.session, 'turnBoundary')", "purpose": "读取调用者会话的 turnBoundary 投影以裁剪本会话检索范围"},
+      {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "src/index.ts:9 import MAX_TIMER_DELAY_MS; src/index.ts:38 使用其作为 timeoutMs 上限", "purpose": "约束检索工具协作式超时不超过计时器上限"},
+      {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "src/input.ts:11 import brandString; src/workspace-access.ts:8 import brandString", "purpose": "把模型传入的 session_id 品牌化为 SessionId"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "src/operations.ts:8 import HarnessError; src/service-boundary.ts:8 import HarnessError; src/workspace-access.ts:9 import HarnessError", "purpose": "用 HarnessError 承载模型安全的错误码与拒绝语义"},
+      {"plugin_id": "dsh-session", "mechanism": "E1", "evidence": "src/operations.ts:9-10 import SessionSeq/SessionId", "purpose": "用 SessionSeq 品牌化事件序号、用 SessionId 标识目标会话"},
+      {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "src/workspace-access.ts:14 import type { TurnBoundaryProjection }", "purpose": "读取调用者 Agent 会话的 header 与边界投影类型"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-settings",
+    "name": "@deepseek-ai/dsh-settings",
+    "implementation": "提供 ctx.settings（SettingsForms 服务），把已激活插件条目的 schemastery Config 投影为可编辑表单并按 namespace 读写 profile patch (src/index.ts:222-429)。describe() 计算 value/base/user 三层、维护 revision 并在变化时 emit settings/document-updated，update/replace/mutate 以 JSON 净化 + 分层合并写回，revision 不符抛 SettingsConflictError (src/index.ts:302-423)。redact.ts 按 schema 的 role('secret') 结构式剥离敏感字段并记录已设置槽位，schema.ts 负责 plainConfig/projectForm/volatileForm 投影 (src/redact.ts:106-116, src/schema.ts:10-79)。启动时另把遗留 settings.yaml 一次性导入当前 profile (src/index.ts:241-258)。",
+    "provides": [
+      "ctx.settings (SettingsForms：插件 Config schema → 可编辑表单投影与 profile patch 写回，含 secret 脱敏与 revision 冲突检测)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-config-editor", "mechanism": "E1+E2", "evidence": "src/index.ts:9 import type {}; src/index.ts:224 static inject ['configEditor']; src/index.ts:292 ctx.configEditor.documentPath", "purpose": "通过配置编辑器枚举 profile 条目并对其原始文档执行 edit/写回"},
+      {"plugin_id": "dsh-brand", "mechanism": "E1", "evidence": "src/types.ts:3 import { Branded }; package.json:36 peerDep", "purpose": "用 Branded<'SettingsNamespace'> 品牌化配置命名空间 id"},
+      {"plugin_id": "dsh-util-values", "mechanism": "E1", "evidence": "src/types.ts:4 import { JsonValue }; package.json:54 dep", "purpose": "用 JsonValue 约束线协议视图的可序列化取值"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-bash-local",
+    "name": "@deepseek-ai/dsh-bash-local",
+    "implementation": "实现 shell 能力 seam 的本地 bash 执行器 ctx.shell：resolve() 用配置补齐 workdir/timeout/输出上限并夹取超时，spawnSpec() 组装带 ENV_OVERRIDES 的 subprocess spawn 规格 (src/index.ts:120-174)。execute() 以 bash -c 运行，executeArgv() 负责 deadline/取消分类（'kill' 与 'none' 两臂）、输出读取、stdout/stderr 模型友好合并、kill 与 result 投影 (src/index.ts:187-389)。实际进程经 ctx.subprocess 管理、输出有界并可溢出到 spill 文件，替身未产出进程时以 settled-killed 形态收敛 (src/index.ts:97-107, 156-185, 251-341)。",
+    "provides": [
+      "ctx.shell (本地 bash 执行器实现，经 ctx.subprocess 以 bash -c 运行命令)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-shell", "mechanism": "E1", "evidence": "src/index.ts:15-16 import ShellExecutor 及结果类型; package.json:30 peerDep", "purpose": "继承 ShellExecutor 抽象基类并实现其执行契约"},
+      {"plugin_id": "dsh-subprocess", "mechanism": "E1+E2", "evidence": "src/index.ts:17 import; src/index.ts:98 static inject ['subprocess']; src/index.ts:259 this.ctx.subprocess.spawn", "purpose": "通过子进程服务派生并管理 bash 进程（输出收集、溢出、终止）"},
+      {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "src/index.ts:18 import clampTimeout/deadline/timeoutOf/MAX_TIMER_DELAY_MS; package.json:32 peerDep", "purpose": "实现超时夹取、融合 deadline 与超时原因分类"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-bash-sandbox",
+    "name": "@deepseek-ai/dsh-bash-sandbox",
+    "implementation": "继承 LocalBashExecutor，作为 ctx.shell 的沙箱化 bash 执行器：resolve() 为每次调用盖上完整 sandboxPolicy（缺省取 ctx.sandboxPolicy.resolve()）(src/index.ts:45-87)。execute() 对非 danger-full-access 命令调用 ctx.sandbox.confine(['bash','-c',command]) 得到包装 argv 再交回本地执行路径，并按 per-process facts 分类 denial/runner 失败——runner 崩溃抛 SandboxUnavailableError，其余 provider 拒绝保留本地语义 (src/index.ts:89-133, 154-189)。helpers.ts 复用 dsh-sandbox 的签名与 runner 失败分类 (src/helpers.ts:12-14)。",
+    "provides": [
+      "ctx.shell (沙箱约束版 bash 执行器，经 ctx.sandbox.confine 包裹命令后执行并上报 enforcement/denial 事实)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-bash-local", "mechanism": "E1", "evidence": "src/index.ts:25-26 import LocalBashExecutor 及 Config; src/index.ts:45 class extends LocalBashExecutor; package.json:31 peerDep", "purpose": "复用本地 bash 的执行生命周期、输出与 deadline 机制"},
+      {"plugin_id": "dsh-shell", "mechanism": "E1", "evidence": "src/index.ts:13 import; src/helpers.ts:2 import; package.json:30 peerDep", "purpose": "使用 ShellExecSpec/ShellExecution/ShellRunResult 等 seam 类型"},
+      {"plugin_id": "dsh-sandbox", "mechanism": "E1+E2", "evidence": "src/index.ts:14 import SandboxUnavailableError; src/index.ts:46 inject ['sandbox']; src/index.ts:188 ctx.sandbox.confine; package.json:32 peerDep", "purpose": "通过沙箱 provider 包装命令并复用其 denial/runner 分类"},
+      {"plugin_id": "dsh-sandbox-policy", "mechanism": "E2", "evidence": "src/index.ts:24 import type {}; src/index.ts:46 inject ['sandboxPolicy']; src/index.ts:72 ctx.sandboxPolicy.defaultMode", "purpose": "读取部署默认沙箱模式并解析每次调用的完整策略"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-pwsh-local",
+    "name": "@deepseek-ai/dsh-pwsh-local",
+    "implementation": "实现 shell 能力 seam 的本地 PowerShell 执行器 ctx.shell：以 pwsh -NoLogo -NoProfile -NonInteractive -Command 运行命令作为单个 argv 元素，并前置 UTF-8 编码前言避免老版 PowerShell 控制台码页乱码 (src/index.ts:193-195, 40-49)。executeArgv() 复用与 bash-local 相同的 deadline 分类、输出合并、kill/result 投影与 provider 失败收敛机制 (src/index.ts:245-433)。resolve.ts 以纯函数按「显式配置 > Windows 已知安装位置 > PATH」解析 pwsh 可执行文件 (src/resolve.ts:21-78)。",
+    "provides": [
+      "ctx.shell (本地 PowerShell 执行器实现，经 ctx.subprocess 以 pwsh -Command 运行命令)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-shell", "mechanism": "E1", "evidence": "src/index.ts:21-22 import ShellExecutor 及结果类型; package.json:30 peerDep", "purpose": "继承 ShellExecutor 抽象基类并实现其执行契约"},
+      {"plugin_id": "dsh-subprocess", "mechanism": "E1+E2", "evidence": "src/index.ts:23 import; src/index.ts:124 static inject ['subprocess']; src/index.ts:303 this.ctx.subprocess.spawn", "purpose": "通过子进程服务派生并管理 pwsh 进程（输出收集、溢出、终止）"},
+      {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "src/index.ts:24 import clampTimeout/deadline/timeoutOf/MAX_TIMER_DELAY_MS; package.json:32 peerDep", "purpose": "实现超时夹取、融合 deadline 与超时原因分类"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-pwsh-sandbox",
+    "name": "@deepseek-ai/dsh-pwsh-sandbox",
+    "implementation": "继承 PwshLocalExecutor，作为 ctx.shell 的沙箱化 PowerShell 执行器：resolve() 为每次调用盖上完整 sandboxPolicy (src/index.ts:92-94)。execute() 对受限模式调用 ctx.sandbox.confine(this.argv(spec)) 包装 pwsh argv，并按 confinement facts 分类 denial 与 runner 失败（runner 崩溃抛 SandboxUnavailableError），danger-full-access 直接执行 (src/index.ts:96-140, 161-196)。helpers.ts 镜像 bash-sandbox 的判定方言，含 ENOENT/EACCES 的 runner 归属规则与 fatal/informational 行分类 (src/helpers.ts:42-119)。",
+    "provides": [
+      "ctx.shell (沙箱约束版 PowerShell 执行器，经 ctx.sandbox.confine 包裹 pwsh 调用并上报 enforcement/denial 事实)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-pwsh-local", "mechanism": "E1", "evidence": "src/index.ts:28-29 import PwshLocalExecutor 及 Config; src/index.ts:52 class extends PwshLocalExecutor; package.json:31 peerDep", "purpose": "复用本地 pwsh 的 argv、执行生命周期与输出机制"},
+      {"plugin_id": "dsh-shell", "mechanism": "E1", "evidence": "src/index.ts:16 import; src/helpers.ts:11 import; package.json:30 peerDep", "purpose": "使用 ShellExecSpec/ShellExecution/ShellRunResult 等 seam 类型"},
+      {"plugin_id": "dsh-sandbox", "mechanism": "E1+E2", "evidence": "src/index.ts:17 import SandboxUnavailableError; src/index.ts:53 inject ['sandbox']; src/index.ts:195 ctx.sandbox.confine; package.json:32 peerDep", "purpose": "通过沙箱 provider 包装 pwsh 命令并复用其 denial/runner 分类"},
+      {"plugin_id": "dsh-sandbox-policy", "mechanism": "E2", "evidence": "src/index.ts:27 import type {}; src/index.ts:53 inject ['sandboxPolicy']; src/index.ts:79 ctx.sandboxPolicy.defaultMode", "purpose": "读取部署默认沙箱模式并解析每次调用的完整策略"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-shell-env",
+    "name": "@deepseek-ai/dsh-shell-env",
+    "implementation": "提供与具体 shell 工具无关的 ctx.shellEnv 注册表，管理每次执行注入的受信任 DSH_* 变量 (src/index.ts:93-201)。内置变量（DSH_HOME/DSH_SHELL/DSH_SESSION_ID/DSH_PROFILE/DSH_PROFILE_DIR）由注册表自身持有，插件可经 register() 声明并贡献额外可枚举变量（名称/键唯一、保留键与命名校验、随 fiber 处置）(src/index.ts:72-82, 114-149)。collect() 为一次工具执行生成按名排序的冻结环境快照，list() 供诊断枚举 (src/index.ts:156-201)。",
+    "provides": [
+      "ctx.shellEnv (受信任的 DSH_* 环境变量注册表，供 shell 工具每次执行时收集与插件注册贡献)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-shell", "mechanism": "E1", "evidence": "src/index.ts:13-14 import DSH_ENV_PREFIX/DshEnvironment/DshEnvironmentKey", "purpose": "沿用 shell seam 定义的前缀与受管环境类型"},
+      {"plugin_id": "dsh-home-paths", "mechanism": "E1", "evidence": "src/index.ts:15 import DSH_HOME_ENV/resolveDshHome; package.json:32 peerDep", "purpose": "解析 DSH_HOME 并暴露为内置环境变量"},
+      {"plugin_id": "dsh-tools", "mechanism": "E1", "evidence": "src/index.ts:16 import type { ToolExecution }; package.json:34 peerDep", "purpose": "按一次工具执行上下文解析并贡献环境变量"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-bash",
+    "name": "@deepseek-ai/dsh-tool-bash",
+    "implementation": "向模型注册 bash 工具作为 ctx.shell 的消费者：前台调用等待作业完成，有 ctx.jobs 时把进程注册为 job（run_in_background 立即返回 jobId，超时可按配置提升为后台）(src/index.ts:263-532)。execute 解析 per-call sandbox policy 与 workdir，经 ctx.shellEnv.collect 注入 DSH_* 环境，处理 sandbox_permissions/justification 的升级审批，再把 ShellRunResult 规范化渲染 (src/index.ts:478-528, src/render.ts:28-120)。background.ts 把 ShellProcess 适配为通用 job 的输出源与终态 (src/background.ts:44-129)。",
+    "provides": [
+      "模型工具 bash (前台/后台执行、可选 ctx.jobs 集成与沙箱升级审批)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "src/index.ts:18-19 import defineTool/TOOL_ABORTED; src/index.ts:34 inject ['tools']; src/index.ts:540 ctx.tools.register", "purpose": "注册 bash 工具定义并消费工具运行上下文"},
+      {"plugin_id": "dsh-shell", "mechanism": "E1+E2", "evidence": "src/index.ts:28-29 import DSH_ENV_PREFIX 及 ShellExecRequest; src/index.ts:34 inject ['shell']; src/index.ts:524 ctx.shell.execute; src/render.ts:7 import", "purpose": "经 ctx.shell 能力 seam 执行命令并复用其退出状态解析"},
+      {"plugin_id": "dsh-system-prompt", "mechanism": "E2", "evidence": "src/index.ts:34 inject ['systemPrompt']; src/index.ts:257 ctx.systemPrompt.section", "purpose": "注入 bash 交叉调用指引段落"},
+      {"plugin_id": "dsh-shell-env", "mechanism": "E1+E2", "evidence": "src/index.ts:24 import type {}; src/index.ts:34 inject ['shellEnv']; src/index.ts:489 ctx.shellEnv.collect(exec)", "purpose": "为每次执行收集受信任 DSH_* 环境变量"},
+      {"plugin_id": "dsh-jobs", "mechanism": "E1+E2", "evidence": "src/index.ts:22 import type { JobRegistry }; src/index.ts:544 ctx.inject(['jobs']); src/index.ts:275 registry.start; src/background.ts:12 import", "purpose": "把命令注册为通用后台作业以支持后台执行与超时提升"},
+      {"plugin_id": "dsh-sandbox", "mechanism": "E1", "evidence": "src/index.ts:25-26 import ESCALATION_TARGETS/approveEscalation; src/background.ts:9-10 import; src/render.ts:8-9 import; package.json:34 peerDep", "purpose": "使用沙箱模式、升级目标与 denial/升级提示标记"},
+      {"plugin_id": "dsh-sandbox-policy", "mechanism": "E2", "evidence": "src/index.ts:27 import type { SandboxPolicyService }; src/index.ts:215 ctx.get('sandboxPolicy'); src/index.ts:221 sandboxPolicy.resolve", "purpose": "解析调用会话的完整沙箱执行策略"},
+      {"plugin_id": "dsh-user-approval", "mechanism": "E2", "evidence": "src/index.ts:23 import type {}; src/index.ts:247 ctx.get('approval')", "purpose": "把沙箱升级请求路由到用户审批通道"},
+      {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "src/index.ts:21 import type { Agent }; package.json:30 peerDep", "purpose": "读取调用者 Agent 会话以解析 workdir 与作业归属"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "src/index.ts:20 import HarnessError; package.json:33 peerDep", "purpose": "用 HarnessError/TOOL_ABORTED 表达工具中止"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-bash-persistent",
+    "name": "@deepseek-ai/dsh-tool-bash-persistent",
+    "implementation": "向模型注册基于 PTY 的持久 bash 工具：每个 owner(Agent) 映射一个持久终端会话，命令用随机 nonce 的起止标记包裹后发送，轮询 scrollback 直到读到结束标记/超时/会话退出 (src/index.ts:297-390)。persistentShells() 管理按 owner 的创建/复用/重置与 fiber 处置清理，初始化时先发送 stty -echo 抑制回显 (src/index.ts:223-295)。输出按 maxOutputChars 截断（不切断代理对）并渲染退出码/超时/重置提示；同一 owner 的调用经队列串行化 (src/index.ts:58-221, 401-437)。",
+    "provides": [
+      "模型工具 bash (基于 owner 级 PTY 持久会话的持久 bash，状态跨调用保持)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "src/index.ts:13 import defineTool; src/index.ts:441 inject ['tools']; src/index.ts:413 ctx.tools.register", "purpose": "注册持久 bash 工具定义"},
+      {"plugin_id": "dsh-terminal", "mechanism": "E1+E2", "evidence": "src/index.ts:11 import type { TerminalSessionId }; src/index.ts:441 inject ['terminals']; src/index.ts:257 ctx.terminals.spawn", "purpose": "经 owner 级 PTY 服务创建/发送/读取/终止持久 shell 会话"},
+      {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "src/index.ts:9 import type { Agent }; package.json:29 peerDep", "purpose": "以 Agent 为 owner 隔离持久 shell 并读取其会话 cwd"},
+      {"plugin_id": "dsh-output-retention", "mechanism": "E1", "evidence": "src/index.ts:10 import truncateWithoutSplittingSurrogatePair; package.json:30 peerDep", "purpose": "按字符上限截断输出且不切断代理对"},
+      {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "src/index.ts:12 import deadline/timeoutOf; package.json:32 peerDep", "purpose": "为单条命令建立 deadline 并区分超时原因"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-pwsh",
+    "name": "@deepseek-ai/dsh-tool-pwsh",
+    "implementation": "向模型注册 pwsh 工具作为 ctx.shell 的 PowerShell 方言消费者：前台/后台执行、ctx.jobs 集成、DSH_* 环境注入、per-call sandbox policy 与升级审批、退出状态渲染均镜像 dsh-tool-bash (src/index.ts:212-544)。pwshDescription() 额外描述 Windows 沙箱下 ConstrainedLanguage 与命名管道 EPERM 边界 (src/index.ts:122-147)。background.ts 的进程→job 适配与 render.ts 的结果渲染故事与 bash 工具共用对称契约 (src/index.ts:276-379, 486-493)。",
+    "provides": [
+      "模型工具 pwsh (PowerShell 方言的前台/后台执行、ctx.jobs 集成与沙箱升级审批)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "src/index.ts:27-28 import defineTool/TOOL_ABORTED; src/index.ts:50 inject ['tools']; src/index.ts:593 ctx.tools.register", "purpose": "注册 pwsh 工具定义并消费工具运行上下文"},
+      {"plugin_id": "dsh-shell", "mechanism": "E1+E2", "evidence": "src/index.ts:37-38 import ShellExecRequest 及 parseExitStatus; src/index.ts:50 inject ['shell']; src/index.ts:541 ctx.shell.execute; src/render.ts:13 import", "purpose": "经 ctx.shell 能力 seam 执行命令并复用其退出状态解析"},
+      {"plugin_id": "dsh-system-prompt", "mechanism": "E2", "evidence": "src/index.ts:50 inject ['systemPrompt']; src/index.ts:264 ctx.systemPrompt.section", "purpose": "注入 pwsh 交叉调用与 Windows 退出码指引段落"},
+      {"plugin_id": "dsh-shell-env", "mechanism": "E1+E2", "evidence": "src/index.ts:32 import type {}; src/index.ts:50 inject ['shellEnv']; src/index.ts:511 ctx.shellEnv.collect(exec)", "purpose": "为每次执行收集受信任 DSH_* 环境变量"},
+      {"plugin_id": "dsh-jobs", "mechanism": "E1+E2", "evidence": "src/index.ts:31 import type { JobRegistry }; src/index.ts:597 ctx.inject(['jobs']); src/index.ts:284 registry.start; src/background.ts:12 import", "purpose": "把命令注册为通用后台作业以支持后台执行与超时提升"},
+      {"plugin_id": "dsh-sandbox", "mechanism": "E1", "evidence": "src/index.ts:34-35 import ESCALATION_TARGETS/approveEscalation; src/background.ts:9-10 import; src/render.ts:8-9 import; package.json:34 peerDep", "purpose": "使用沙箱模式、升级目标与 denial/升级提示标记"},
+      {"plugin_id": "dsh-sandbox-policy", "mechanism": "E2", "evidence": "src/index.ts:36 import type { SandboxPolicyService }; src/index.ts:219 ctx.get('sandboxPolicy'); src/index.ts:226 sandboxPolicy.resolve", "purpose": "解析调用会话的完整沙箱执行策略"},
+      {"plugin_id": "dsh-user-approval", "mechanism": "E2", "evidence": "src/index.ts:33 import type {}; src/index.ts:254 ctx.get('approval')", "purpose": "把沙箱升级请求路由到用户审批通道"},
+      {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "src/index.ts:30 import type { Agent }; package.json:31 peerDep", "purpose": "读取调用者 Agent 会话以解析 workdir 与作业归属"},
+      {"plugin_id": "dsh-llm", "mechanism": "E1", "evidence": "src/index.ts:29 import HarnessError; package.json:33 peerDep", "purpose": "用 HarnessError/TOOL_ABORTED 表达工具中止"}
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-pwsh-persistent",
+    "name": "@deepseek-ai/dsh-tool-pwsh-persistent",
+    "implementation": "向模型注册基于 PTY 的持久 pwsh 工具，与 tool-bash-persistent 逐调用对称：按 owner(Agent) 维护持久 PowerShell 会话，用 nonce 标记包裹命令（quoteForPwsh 转义反引号、引号、`$`、换行与 ESC）后发送并轮询 (src/index.ts:81-99, 308-402)。persistentShells() 负责按 owner 的会话创建/复用/重置与 fiber 处置清理；executeCommand 处理超时、abort、会话退出与 stdin_read 的提前返回 (src/index.ts:245-306, 331-401)。输出按上限截断并渲染退出码/重置/超时提示 (src/index.ts:57-243)。",
+    "provides": [
+      "模型工具 pwsh (基于 owner 级 PTY 持久会话的持久 PowerShell，状态跨调用保持)"
+    ],
+    "depends_on": [
+      {"plugin_id": "dsh-tools", "mechanism": "E1+E2", "evidence": "src/index.ts:15 import defineTool; src/index.ts:453 inject ['tools']; src/index.ts:425 ctx.tools.register", "purpose": "注册持久 pwsh 工具定义"},
+      {"plugin_id": "dsh-terminal", "mechanism": "E1+E2", "evidence": "src/index.ts:13 import type { TerminalSessionId }; src/index.ts:453 inject ['terminals']; src/index.ts:279 ctx.terminals.spawn", "purpose": "经 owner 级 PTY 服务创建/发送/读取/终止持久 shell 会话"},
+      {"plugin_id": "dsh-agent", "mechanism": "E1", "evidence": "src/index.ts:11 import type { Agent }; package.json:29 peerDep", "purpose": "以 Agent 为 owner 隔离持久 shell 并读取其会话 cwd"},
+      {"plugin_id": "dsh-output-retention", "mechanism": "E1", "evidence": "src/index.ts:12 import truncateWithoutSplittingSurrogatePair; package.json:30 peerDep", "purpose": "按字符上限截断输出且不切断代理对"},
+      {"plugin_id": "dsh-timeout", "mechanism": "E1", "evidence": "src/index.ts:14 import deadline/timeoutOf; package.json:32 peerDep", "purpose": "为单条命令建立 deadline 并区分超时原因"}
+    ],
+    "dependents": []
+  }
+]

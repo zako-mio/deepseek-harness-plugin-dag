@@ -1,42 +1,40 @@
 # dsh-client-ui-workflow-run
 
 - 包名: `@deepseek-ai/dsh-client-ui-workflow-run`
-- 分组: G27 会话交互UI
+- 分组: G06 客户端 UI 包
 - 拓扑层: Layer 15
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-workflow-run`
 
-## 为什么需要它（设计初衷）
-把持久化顶层 workflow run 重建为独立 Chat 节点的浏览器插件。
-
-来源：
-- https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-workflow-run/README.md
-
 ## 实现逻辑
-持久化工作流生命周期的独立 Chat 节点。workflowRunDefinition（target 'chat'，match tool-workflow/run-start|agent-start|agent-end|run-end）注册进 ConversationEventRegistry；WorkflowRunPanel 以 keyed 'workflow-run' 注册进 conversation.chat.node，渲染 phase/member 状态（running/completed/failed/cancelled/interrupted），inject 注入 openSession 跳转子会话；将 WorkflowRunChatData 合入 ui-conversation 的 ChatNodeDataMap。
+注册 durable workflow-run 会话节点：apply 用 ctx.uiConversation.events.register 挂载 workflowRunDefinition（src/client/index.ts:27），并向 'conversation.chat.node' 注册 key='workflow-run' 的 WorkflowRunPanel，注入 openSession 用于打开成员子会话（src/client/index.ts:29-36）。workflow-definition.ts 从工具 workflow agent start/end 事件折叠出 phase/member 状态并产出 keyed Chat 数据（src/client/workflow-definition.ts:41-60）。
 
 ## Provides
-- conversation.chat.node keyed 'workflow-run' 渲染器(WorkflowRunPanel)
-- ConversationNodeDefinition 'workflow-run'（tool-workflow/* 事件状态机）
-- ChatNodeDataMap 'workflow-run' 合并
+- ConversationNodeDefinition 'workflow-run'（注册进 uiConversation.events）
+- slot conversation.chat.node key='workflow-run' 的 WorkflowRunPanel 渲染
+- ChatNodeDataMap 'workflow-run' 数据契约
 
 ## Depends On (上游依赖)
-- `dsh-client-locale` [编译依赖] - workflowRun 命名空间字典
-  - 证据: `index.ts:4 type-only + index.ts:23 locale.register`
-- `dsh-client-runtime` [编译依赖] - EventDefinition/View 注册表与会话快照类型
-  - 证据: `index.ts:3 ClientContext + workflow-definition.ts:1-4 ConversationNodeDefinition + WorkflowRunPanel.tsx:7 SessionId`
-- `dsh-client-ui-conversation` [编译依赖] - 消费 conversation.chat.node 座位与 ChatNodeDataMap 合并面
-  - 证据: `index.ts:5 type-only + workflow-definition.ts:37-42 declare ChatNodeDataMap merge + package.json:59 peerDependencies`
-- `dsh-client-ui-primitives` [编译依赖] - UI atoms
-  - 证据: `WorkflowRunPanel.tsx:2-5 DisclosureRow,StateDot 等`
-- `dsh-client-ui-slots` [编译依赖] - props 类型与 slot 注册 API
-  - 证据: `WorkflowRunPanel.tsx:6 PropsLocale/PropsRuntime`
-- `dsh-session` [编译依赖] - 会话 id 类型契约
-  - 证据: `workflow-definition.ts:5 SessionId from dsh-session/types + package.json:63`
-- `dsh-session-projection` [运行时依赖] - 会话数据源
-  - 证据: `WorkflowRunPanel.tsx 经 PropsRuntime 读会话快照（workflow-run 数据在 conversation snapshot）`
-- `dsh-tool-workflow` [编译依赖] - tool-workflow 事件负载类型
-  - 证据: `workflow-definition.ts:6-8 ToolWorkflowAgentStartData/AgentEndData + package.json:64`
+- `dsh-api-session-controller` [编译依赖] - 读取会话列表状态与导航目标类型
+  - 证据: `src/client/WorkflowRunPanel.tsx:10 SessionListState/SessionTarget`
+- `dsh-client-locale` [E1+E2] - 注册 workflowRun 字典
+  - 证据: `src/client/index.ts:5 + src/client/index.ts:28 ctx.locale.register`
+- `dsh-client-ui-chat` [编译依赖] - 引入 keyed Chat 节点渲染契约
+  - 证据: `src/client/index.ts:6 + src/client/workflow-definition.ts:4`
+- `dsh-client-ui-conversation` [E1+E2] - 注册会话节点定义并读取 ConversationNodeContext
+  - 证据: `src/client/index.ts:7 import + src/client/index.ts:27 ctx.uiConversation.events.register`
+- `dsh-client-ui-primitives` [编译依赖] - 复用折叠行与状态点原语
+  - 证据: `src/client/WorkflowRunPanel.tsx:9 DisclosureRow/StateDot`
+- `dsh-client-ui-renderer` [编译依赖] - 拉入槽/渲染服务类型合并
+  - 证据: `src/client/index.ts:8 import type`
+- `dsh-client-ui-session` [编译依赖] - 引入会话状态快照与 UI 服务类型
+  - 证据: `src/client/WorkflowRunPanel.tsx:13 + src/client/index.ts:9`
+- `dsh-client-ui-workspace` [E1+E2] - 从工作流面板导航到成员会话
+  - 证据: `src/client/index.ts:10 import type + src/client/index.ts:34 ctx.uiWorkspace.openSession`
+- `dsh-session` [编译依赖] - 成员子会话标识类型
+  - 证据: `src/client/workflow-definition.ts:5 SessionId`
+- `dsh-tool-workflow` [编译依赖] - 解析工具侧工作流成员事件数据
+  - 证据: `src/client/workflow-definition.ts:8 ToolWorkflowAgentStartData/EndData`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）
