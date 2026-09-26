@@ -3,7 +3,8 @@
 """分析 stage-01 数据中 appears in depends_on 但不在 76 集合内的外部 seam 包"""
 import json, os, glob, collections
 
-BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE = os.path.dirname(SCRIPT_DIR)
 CHK = os.path.join(BASE, "07-checkpoint")
 
 # 收集所有 depends_on 引用

@@ -11,7 +11,8 @@ S6 质量门控脚本: 校验 0816-plugin-dag 全部交付物
 """
 import json, os, re, glob, html
 
-BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE = os.path.dirname(SCRIPT_DIR)
 errors = []
 warnings = []
 

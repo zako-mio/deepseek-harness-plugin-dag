@@ -11,7 +11,8 @@ S6b L3 MD 镜像全量生成: 06-md/ 目录 (L1+L2+L3 全覆盖)
 import json, os, sys
 sys.stdout.reconfigure(encoding='utf-8')
 
-BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE = os.path.dirname(SCRIPT_DIR)
 DAG = os.path.join(BASE, "01-dag-data", "webapp-dag.json")
 EXT = os.path.join(BASE, "01-dag-data", "external-seams.json")
 MD = os.path.join(BASE, "06-md")

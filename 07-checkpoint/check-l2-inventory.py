@@ -3,7 +3,8 @@
 """S0 核验: stage-00-l2-inventory.json 的 name/path 与 PACKAGE-MAP.json 交叉检查"""
 import json, os
 
-BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE = os.path.dirname(SCRIPT_DIR)
 MAP = r"D:\Opencode_Download\Mission-file\2026-08\0814-deepseek-harness源码解析\07-checkpoint\PACKAGE-MAP.json"
 INV = os.path.join(BASE, "07-checkpoint", "stage-00-l2-inventory.json")
 

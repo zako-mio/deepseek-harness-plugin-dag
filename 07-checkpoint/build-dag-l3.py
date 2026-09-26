@@ -13,7 +13,8 @@ S2 L3 DAG 建模脚本:
 import json, os, sys
 sys.stdout.reconfigure(encoding='utf-8')
 
-BASE = r"/home/zako-mio/opencode/archive/Mission-file/2026-08/0822-plugin-dag-v0.1.1-rc2"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE = os.path.dirname(SCRIPT_DIR)
 CHK = os.path.join(BASE, "07-checkpoint")
 DAG = os.path.join(BASE, "01-dag-data", "webapp-dag.json")
 SEAMS = os.path.join(BASE, "01-dag-data", "external-seams.json")
