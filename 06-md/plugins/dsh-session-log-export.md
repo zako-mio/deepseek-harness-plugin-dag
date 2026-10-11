@@ -1,8 +1,8 @@
 # dsh-session-log-export
 
 - 包名: `@deepseek-ai/dsh-session-log-export`
-- 分组: G34 会话检索
-- 拓扑层: Layer 17
+- 分组: G32 会话检索
+- 拓扑层: Layer 16
 - 来源层: L2 web-app
 - 源码路径: `packages/session-query/session-log-export`
 

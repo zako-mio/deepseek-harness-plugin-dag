@@ -1,7 +1,7 @@
 # dsh-host-directory-picker-browse
 
 - 包名: `@deepseek-ai/dsh-host-directory-picker-browse`
-- 分组: G20 宿主服务
+- 分组: G19 宿主服务
 - 拓扑层: Layer 0
 - 来源层: L3 其余
 - 源码路径: `packages/host/directory-picker-browse`
@@ -16,4 +16,4 @@
 - 无依赖（基础插件）
 
 ## Dependents (下游被依赖)
-- `dsh-host-directory-picker-auto` - browse 交互的宿主后端条目
+- `dsh-host-directory-picker-auto` - browse 分支要挂载的宿主后端包

@@ -1,8 +1,8 @@
 # dsh-jobs-local
 
 - 包名: `@deepseek-ai/dsh-jobs-local`
-- 分组: G22 作业调度
-- 拓扑层: Layer 5
+- 分组: G21 作业调度
+- 拓扑层: Layer 4
 - 来源层: L1 核心集
 - 源码路径: `packages/jobs/jobs-local`
 
@@ -16,8 +16,6 @@
 ## Depends On (上游依赖)
 - `dsh-agent` [E1+E2] - 把作业 owner 会话解析为活 Agent 实例并挂接其 scope 清理，实现按 owner 归属与生命周期取消
   - 证据: `src/index.ts:15 import type Agent + src/index.ts:359 ctx.get('agents')`
-- `dsh-scope` [编译依赖] - 用 scope 分层存放控制器与订阅，使每 owner 的读与通知相对化
-  - 证据: `src/events.ts:9 import ScopedLayers/scopeOf`
 - `dsh-session` [编译依赖] - 以会话 id 做作业访问隔离鉴权（assertAccess 越权拒绝）
   - 证据: `src/index.ts:17 import type SessionId`
 

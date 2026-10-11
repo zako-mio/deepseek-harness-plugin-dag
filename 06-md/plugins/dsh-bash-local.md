@@ -1,7 +1,7 @@
 # dsh-bash-local
 
 - 包名: `@deepseek-ai/dsh-bash-local`
-- 分组: G36 Shell 执行
+- 分组: G34 Shell 执行
 - 拓扑层: Layer 0
 - 来源层: L3 其余
 - 源码路径: `packages/shell/bash-local`

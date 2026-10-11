@@ -7,32 +7,30 @@
 - 源码路径: `packages/client/ui-sidebar-browser`
 
 ## 实现逻辑
-浏览器半把 `browser` tab 类型注册进 `ctx.sidebarRightTabs`（src/client/index.ts:74），并按是否存在协议版本 1 的桌面 carrier 选择 iframe 或 Electron 页面实现（src/client/index.ts:69-72、97-101）。面板主体经键控槽 `sidebar.right.pane.tab` 注册 BrowserBody，按 sessionId 复用控制器并支持行动作重绑（src/client/index.ts:75-95），标题经 `sidebar.right.pane.tab.title` 注册 BrowserTitle（src/client/index.ts:102-104）；另在 shortcuts 服务可见时注册 `browser.new` 命令（src/client/index.ts:46-66）。node half 为空 apply。
+以「标签类型声明 + 键控槽注册」两段式把 HTTP(S) 浏览器接入右侧边栏：definition.tsx:15-26 声明 kind='browser' 的类型、优先级 builtin 与 guide 入口，client/index.ts:43-104 的 apply 注册 browser.new 快捷键（:46-66）、经 ctx.sidebarRightTabs.register 注册类型（:74），并把 BrowserBody 注入键控 sidebar.right.pane.tab（:82-95）、BrowserTitle 注入 title 槽（:102-104）。运行期按 globalThis.dshDesktop 是否存在分流：Web 走 createIframePage/IframeImpl 的 iframe 载体（:97），Desktop 走 Electron webview 并经 ctx.inject(['workspaces']) 用 browserWorkspace 解析工作区（:98-101）。控制器 BrowserController 统一地址校验、导航状态机与恢复，标签状态由 createBrowserStore 承载（:67、:76-94）。
 
 ## Provides
-- sidebarBrowser locale 命名空间字典
-- sidebarRightTabs 注册 'browser' tab 类型定义（并扩展 SidebarRightTabParamsMap.browser 参数，src/client/index.ts:32-37）
-- sidebar.right.pane.tab 键控条目 key=BROWSER_ID：浏览器面板 body（iframe / Electron webview 两实现）
-- sidebar.right.pane.tab.title 键控条目 key=BROWSER_ID：浏览器标签标题
-- browser.new 快捷键命令（primary+T）
+- sidebarRightTabs 标签类型 browser（HTTP(S) 页签；Web=iframe，Desktop=webview）
+- 槽位贡献 sidebar.right.pane.tab / sidebar.right.pane.tab.title 的 browser 键视图
+- 快捷键命令 browser.new
 
 ## Depends On (上游依赖)
-- `dsh-api-workspace-controller` [E1+E2] - 经 workspace 服务把浏览器页面映射到工作区
-  - 证据: `src/client/electron/workspace.ts:2 import (client) + src/client/index.ts:98 ctx.inject(['workspaces'])`
-- `dsh-client-locale` [E1+E2] - 注册并绑定本 tab 文案
-  - 证据: `src/client/definition.tsx:3 import + src/client/index.ts:45 ctx.locale.bind(namespace)`
-- `dsh-client-shortcuts` [E1+E2] - 注册新建浏览器标签命令并声明其可用性
-  - 证据: `src/client/definition.tsx:2 import (client) + src/client/index.ts:47 ctx.shortcuts.register`
-- `dsh-client-ui-dockkit` [编译依赖] - 复用 dock 标签/布局原语
-  - 证据: `src/client/browser/BrowserController.ts:3 import + src/client/browser/store.ts:3 import`
-- `dsh-client-ui-primitives` [编译依赖] - 复用共享 UI 原语
-  - 证据: `src/client/definition.tsx:4 import + src/client/view/BrowserTitle.tsx:3 import`
-- `dsh-client-ui-renderer` [编译依赖] - 引入 ctx.slots 合并
-  - 证据: `src/client/index.ts:5 type-only import`
-- `dsh-client-ui-session` [编译依赖] - 引入会话标准 props 合并
-  - 证据: `src/client/index.ts:6 type-only import`
-- `dsh-client-ui-sidebar-right` [E1+E2] - 把 tab 类型与 body/title 注册进右侧边栏的两级公共路径
-  - 证据: `src/client/definition.tsx:5 import (client) + src/client/index.ts:74 ctx.sidebarRightTabs.register`
+- `dsh-api-workspace-controller` [E1+E2] - Desktop 侧按工作区解析存储分区与 canonical CWD
+  - 证据: `src/client/electron/workspace.ts:2 import type { WorkspaceSource } from '@deepseek-ai/dsh-api-workspace-controller/client'; src/client/index.ts:98-100 ctx.inject(['workspaces'])`
+- `dsh-client-locale` [E1+E2] - 标签标题、guide 文案与快捷键拒绝原因均由 locale 字典提供
+  - 证据: `src/client/index.ts:4 import type {} from '@deepseek-ai/dsh-client-locale/client'; src/client/index.ts:45 ctx.locale.bind('sidebarBrowser')`
+- `dsh-client-shortcuts` [E1+E2] - 注册 browser.new 命令并绑定各平台默认按键
+  - 证据: `src/client/index.ts:2 import type { ShortcutCommandId }; src/client/index.ts:46-47 ctx.inject(['shortcuts']) + ctx.shortcuts.register`
+- `dsh-client-ui-dockkit` [编译依赖] - 标签身份与停靠面板 id 使用 dockkit 的 TabId 类型
+  - 证据: `src/client/browser/BrowserController.ts:3 import type { TabId } from '@deepseek-ai/dsh-client-ui-dockkit'`
+- `dsh-client-ui-primitives` [编译依赖] - guide 入口图标与工具条控件复用共享原语
+  - 证据: `src/client/definition.tsx:4 import { GuideArtworkBrowser } from '@deepseek-ai/dsh-client-ui-primitives'`
+- `dsh-client-ui-renderer` [E1+E2] - ctx.slots 服务与槽渲染机制来自 renderer
+  - 证据: `src/client/index.ts:5 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'; src/client/index.ts:102-104 ctx.slots 服务由 renderer 提供`
+- `dsh-client-ui-session` [编译依赖] - 拉入 uiSession 的 Context 合并，标签按 sessionId 作用域渲染
+  - 证据: `src/client/index.ts:6 import type {} from '@deepseek-ai/dsh-client-ui-session/client'`
+- `dsh-client-ui-sidebar-right` [E1+E2] - 标签类型与键控槽由 sidebar-right 声明并提供 ctx.sidebarRight/ctx.sidebarRightTabs，browser 只能在其中注册
+  - 证据: `src/client/index.ts:7 import type {} from '@deepseek-ai/dsh-client-ui-sidebar-right/client'; src/client/index.ts:60-62 ctx.sidebarRight.commandTarget/openTabFromTarget`
 
 ## Dependents (下游被依赖)
-- `dsh-client-ui-chat` - 浏览器 tab 类型声明
+- `dsh-client-ui-chat` - 浏览器标签类型

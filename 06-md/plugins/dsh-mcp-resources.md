@@ -1,7 +1,7 @@
 # dsh-mcp-resources
 
 - 包名: `@deepseek-ai/dsh-mcp-resources`
-- 分组: G25 MCP 协议
+- 分组: G24 MCP 协议
 - 拓扑层: Layer 5
 - 来源层: L1 核心集
 - 源码路径: `packages/mcp/mcp-resources`
@@ -16,8 +16,6 @@ McpResourceRuntime 继承 Service 并声明 ctx.mcpResources，以 ScopedLayers/
 ## Depends On (上游依赖)
 - `dsh-llm` [编译依赖] - 把资源结果投影为核心内容块
   - 证据: `src/render.ts:7 type ContentBlock`
-- `dsh-scope` [编译依赖] - 按 Agent 作用域分层保存与合并资源 provider
-  - 证据: `src/index.ts:8 createScope/NamedEntries/ScopedLayers/scopeOf`
 - `dsh-system-prompt` [E1+E2] - 发布资源服务器清单提示段
   - 证据: `src/index.ts:11 type import + src/index.ts:59 ctx.inject(['systemPrompt'])`
 - `dsh-tools` [E1+E2] - 注册并注销三条共享资源工具

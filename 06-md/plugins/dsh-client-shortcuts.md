@@ -7,31 +7,30 @@
 - 源码路径: `packages/client/shortcuts`
 
 ## 实现逻辑
-Host 半把经过校验的键盘配置注入页面全局 `__DSH_SHORTCUTS_CONFIG__` (src/index.ts:15-19)。浏览器半 `ShortcutsService extends Service` 按环境（web/desktop）选择存储适配器与键盘适配器，建立 `ShortcutRegistry`，并暴露 register/registerFixed/observeFixedInput/describeBinding/edit 等命令面 (src/client/index.ts:27-75)。它订阅 locale 变化刷新按键标签，经固定输入监听器链带 consume 语义分发，Desktop 走原生键盘桥 (src/client/index.ts:74, 94-106, 62-63)。
+Host 半只做配置投影：把校验过的快捷键配置以 __DSH_SHORTCUTS_CONFIG__ 注入产品页面（src/index.ts:15-19）。浏览器半 ShortcutsService 提供 ctx.shortcuts：探测运行环境与平台，构建 ShortcutRegistry（目录、固定目录、配置快照），安装 DOM 或桌面原生键盘适配器，并接浏览器/桌面存储做持久化（src/client/index.ts:27-75）；注册、编辑、绑定描述与冲突检测都经该服务（src/client/index.ts:77-158）。
 
 ## Provides
-- ctx.shortcuts (窗口级应用命令注册表、生效键帽目录、编辑与描述绑定能力)
-- 固定快捷键输入观察通道 (observeFixedInput，带 consume 链)
-- windows/desktop/web 多运行时的存储与键盘适配
+- ctx.shortcuts (窗口级应用命令注册表与生效键位目录，含 register/registerFixed/edit/describeBinding)
 
 ## Depends On (上游依赖)
-- `dsh-client-locale` [E1+E2] - 本地化键帽标签并在语言切换时刷新目录
-  - 证据: `src/client/index.ts:4 + src/client/index.ts:28 static inject 'locale' + src/client/index.ts:74 ctx.locale.subscribe`
-- `dsh-client-ui-primitives` [编译依赖] - 复用 UI 原语渲染/呈现键帽
-  - 证据: `src/client/dom.ts:2 + src/client/native.ts:2`
-- `dsh-host-webserver` [运行时依赖] - 把键盘配置注入到服务的页面 index
-  - 证据: `src/index.ts:5 + src/index.ts:16 ctx.on('webserver/index-inject')`
+- `dsh-client-locale` [E1+E2] - 语言切换时刷新键位标签
+  - 证据: `src/client/index.ts:4 import type + src/client/index.ts:28 static inject ['locale'] + src/client/index.ts:74 ctx.locale.subscribe`
+- `dsh-client-ui-primitives` [编译依赖] - 复用基础控件渲染键位与菜单
+  - 证据: `src/client/dom.ts:2 import + src/client/native.ts:2 import`
+- `dsh-host-webserver` [E1+E2] - 向页面注入快捷键配置全局量
+  - 证据: `src/index.ts:5 import type + src/index.ts:16 webserver/index-inject`
 
 ## Dependents (下游被依赖)
 - `dsh-client-ui-approval` - 注册 Enter/Esc 固定审批快捷键
-- `dsh-client-ui-conversation` - 注册输入与停转固定快捷键
-- `dsh-client-ui-layout` - 注册侧栏切换快捷键命令
-- `dsh-client-ui-open-in-app` - 注册 workspace.openLocal 快捷键命令
-- `dsh-client-ui-settings-general` - 注册设置打开命令并展示快捷键目录
-- `dsh-client-ui-shortcuts` - 注册命令/固定命令并读写快捷键目录与配置
-- `dsh-client-ui-sidebar` - 把快捷键目录快照交给侧边栏展示
-- `dsh-client-ui-sidebar-browser` - 注册新建浏览器标签命令并声明其可用性
-- `dsh-client-ui-sidebar-files` - 注册打开文件面板命令
-- `dsh-client-ui-sidebar-right` - 注册右栏快捷键并读取快捷键目录
-- `dsh-client-ui-sidebar-terminal` - 注册 terminal.new 快捷键并读取快捷键目录
-- `dsh-client-ui-workspace` - 注册/读取工作区快捷键命令
+- `dsh-client-ui-conversation` - 注册停止/提交快捷键
+- `dsh-client-ui-layout` - 注册侧栏切换快捷键
+- `dsh-client-ui-open-in-app` - 注册打开工作区快捷键
+- `dsh-client-ui-settings-general` - 注册 settings.open 快捷键命令并把命令目录暴露给外壳显示
+- `dsh-client-ui-shortcuts` - 命令注册、录制、编辑与目录/配置快照全部经 shortcuts 服务，其协议与客户端类型由该包持有
+- `dsh-client-ui-sidebar` - 外壳向侧栏暴露快捷键目录快照以显示键位提示
+- `dsh-client-ui-sidebar-browser` - 注册 browser.new 命令并绑定各平台默认按键
+- `dsh-client-ui-sidebar-files` - 注册 workspace.files 命令及平台默认键
+- `dsh-client-ui-sidebar-right` - 注册侧栏切换/关闭等命令并读取按键目录
+- `dsh-client-ui-sidebar-terminal` - 注册 terminal.new 命令与各平台默认键
+- `dsh-client-ui-workspace` - 工作区与会话动作的快捷键注册
+- `dsh-experimental-inspector` - 检查器面板的开关快捷键注册在客户端快捷键目录上

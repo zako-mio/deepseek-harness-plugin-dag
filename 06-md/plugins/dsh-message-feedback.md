@@ -2,7 +2,7 @@
 
 - 包名: `@deepseek-ai/dsh-message-feedback`
 - 分组: G15 反馈通道
-- 拓扑层: Layer 5
+- 拓扑层: Layer 4
 - 来源层: L2 web-app
 - 源码路径: `packages/feedback/message-feedback`
 
@@ -22,6 +22,6 @@
   - 证据: `src/index.ts:119 inject ['sessionPersistence','sessions'] + src/index.ts:13 import`
 
 ## Dependents (下游被依赖)
-- `dsh-api-remotes` - 装配消息反馈命名空间
+- `dsh-api-remotes` - 把该业务包的 /remote 命名空间装配进 Client
 - `dsh-client-ui-message-feedback` - 消息反馈评分/视图协议类型
-- `dsh-session-telemetry-otel` - 声明 feedback/message-put/delete 事件类型以判定本会话反馈
+- `dsh-session-telemetry-otel` - 在消息反馈提交时授权捕获该前缀

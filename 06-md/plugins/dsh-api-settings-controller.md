@@ -18,4 +18,4 @@ SettingsController 继承 TypertRemoteService，以 namespace 'settings' 注册�
   - 证据: `src/index.ts:14 import type + src/index.ts:217 ctx.get('settings')`
 
 ## Dependents (下游被依赖)
-- `dsh-api-remotes` - 装配 settings/credentials 命名空间
+- `dsh-api-remotes` - 把该业务包的 /remote 命名空间装配进 Client

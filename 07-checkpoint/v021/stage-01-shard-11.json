@@ -1,0 +1,436 @@
+[
+  {
+    "id": "dsh-sdk-jsonrpc-server",
+    "name": "@deepseek-ai/dsh-sdk-jsonrpc-server",
+    "implementation": "以 stdio 上的 JSON-RPC 行传输承载进程外 SDK：apply 构造 JsonRpcLineTransport 与 HarnessSdkJsonRpcServer，把请求分派给 initialize / session/prompt / session/wait / session/working-directory.{get,set} / shutdown 处理器，并在 shutdown 结果写出后 flush、析构根 fiber 并以 0 退出 (src/index.ts:45-100, src/server.ts:324-351)。initialize 校验 reasoningEffort 与 maxTokens，按需挂载 DeepSeek 回退适配器并解析调用配置 (src/server.ts:154-188)；prompt 把编码图片经 attachment 存储落成引用后投递用户消息 (src/server.ts:195-212, src/server.ts:46-59)。服务器构造时订阅 session/event、agent/error、agent/status、session/created、subagent/end，把生命周期转换为 session.event / session.status / subagent.started / subagent.finished 通知 (src/server.ts:102-146)。wait 会等待 agent 空闲与受管子代理排空，并在无后续耐久终态时抛出活失败 (src/server.ts:221-238)；shutdown 摘除订阅、排空子代理、释放适配器与句柄后再返回 (src/server.ts:279-315)。",
+    "provides": [
+      "SDK JSON-RPC 协议面 (stdio 上的 initialize/session.prompt/session.wait/session.working-directory/shutdown 方法与服务端通知)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:35 peerDep + src/server.ts:11 import；src/server.ts:241 ctx.agents.get",
+        "purpose": "创建 SDK 拥有的 agent 会话并在每次投递前校验句柄仍存活"
+      },
+      {
+        "plugin_id": "dsh-attachment",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:36 peerDep + src/server.ts:12 import admitEncodedImages；src/server.ts:49 ctx.get('attachments')",
+        "purpose": "把提示中的编码图片落成持久附件引用"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:37 peerDep + src/server.ts:13 import createUserMessage；src/server.ts:174 ctx.get('llm')",
+        "purpose": "构造用户消息并解析 provider/model/reasoningEffort 调用配置"
+      },
+      {
+        "plugin_id": "dsh-llm-deepseek-api-key",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:38 peerDep + src/server.ts:19 import * as LlmDeepSeek；src/server.ts:171 ctx.plugin(LlmDeepSeek)",
+        "purpose": "provider 无适配器且为 deepseek-official 时按需挂载回退适配器"
+      },
+      {
+        "plugin_id": "dsh-scope",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:39 peerDep + src/server.ts:14 import carrierKeyOf；src/server.ts:129 subagentParentOf(this)",
+        "purpose": "从服务持有的 scoped carrier 还原委派父 agent"
+      },
+      {
+        "plugin_id": "dsh-sdk-protocol",
+        "mechanism": "E1",
+        "evidence": "package.json:40 peerDep + src/index.ts:15 import JsonRpcLineTransport；src/server.ts:20-34 方法载荷类型",
+        "purpose": "复用 JSON-RPC 行传输与请求/通知载荷类型定义"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:41 peerDep + src/server.ts:15 import type SessionId/SessionLogOffset；src/server.ts:102 ctx.on('session/event')",
+        "purpose": "订阅已提交会话事件并读取会话标识类型"
+      },
+      {
+        "plugin_id": "dsh-subagent",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:42 peerDep + src/server.ts:17-18 import SubagentRuntime/SubagentRunEndInfo；src/server.ts:128 ctx.on('subagent/end')、src/server.ts:226 ctx.get('subagents')",
+        "purpose": "报告子代理起止并在关闭时排空受管子代理"
+      },
+      {
+        "plugin_id": "dsh-working-directory",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:43 peerDep + src/server.ts:16 import type {}；src/server.ts:253 ctx.workingDirectory.ensure",
+        "purpose": "实现 SDK 的会话工作目录读取与切换方法"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "package.json:30 dep + src/server.ts:10 import brandString",
+        "purpose": "把裸字符串品牌化为 SessionId"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-session-log-deepseek",
+    "name": "@deepseek-ai/dsh-session-log-deepseek",
+    "implementation": "向官方 DeepSeek 请求注册增量会话日志字段 dsh_session_log：apply 在 deepseekLlmApiExtensions.register 的 prepare 钩子内按水位取待上传事件前缀，逐条累加 JSON 字节数直到超过 maxBytes，产出带 version/sessionFormatVersion/session/afterSeq/throughSeq/events 的信封 (src/index.ts:184-246)。水位由日志中 session-log-deepseek/delivery-accepted 事件的 throughSeq 折叠得出，并用 WeakMap 缓存已扫描偏移与阻塞告警位置，避免重复扫描与重复告警 (src/index.ts:143-177, src/index.ts:61-63)。请求被接受时 accept() 追加投递确认事件，使重启后能保守重发不确定的尾部而不另建存储 (src/index.ts:236-243)。类型层把会话 header/event 收敛为原始 JSON 原语，并通过 declare module 把投递确认事件并入 SessionEventMap (src/types.ts:30-56, src/types.ts:78-89)。",
+    "provides": [
+      "deepseekLlmApiExtensions 注册项 dsh_session_log (官方 DeepSeek 请求携带的增量会话日志字段与投递确认水位)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-deepseek-llm-api-extensions",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:41 peerDep + src/index.ts:12 import type {}；src/index.ts:187 ctx.deepseekLlmApiExtensions.register",
+        "purpose": "注册并参与构建 DeepSeek 请求的扩展字段"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:42 peerDep + src/index.ts:13 import SessionLogOffset/SessionSeq；src/index.ts:192 ctx.sessions.get",
+        "purpose": "按 sessionId 取会话、读日志事件并追加投递确认"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "package.json:35 dep + src/index.ts:11 import brandString",
+        "purpose": "把请求中的字符串 sessionId 品牌化为 SessionId"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "package.json:36 dep + src/index.ts:23 import type JsonValue",
+        "purpose": "约束上传载荷为可序列化 JSON 值"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-session-persistence-jsonl",
+    "name": "@deepseek-ai/dsh-session-persistence-jsonl",
+    "implementation": "实现 SessionPersistence seam 的 JSONL 后端：以「项目目录/会话目录/不可变世代文件」布局存放 header 行与连续事件，create/open 返回句柄，读取统一走 fail-closed 校验与身份核对 (src/index.ts:1-7, src/index.ts:320-425, src/index.ts:1524-1551)。写入端以临时文件 + fsync + link()（而非 rename，避免并发覆写）原子发布，追加失败按先前长度回滚，torn 尾部先截断再耐久重写恢复出的事件 (src/index.ts:1186-1245, src/index.ts:1334-1384, src/storage.ts:319-343)。跨进程写独占交给内核：POSIX 用 flock(session.lock) 且校验 inode 未换、Windows 用命名信号量，竞争映射为 SessionAlreadyOwnedError (src/lease.ts:70-116)。历史格式世代先 prepare 再由写打开 publish，子会话目录事实经 catalog 收集，当前文件校验隔离在 worker 线程，源身份变化即拒绝 (src/index.ts:631-721, src/catalog-migration.ts:31-92, src/migration-verifier.ts:1-60)。句柄把 live 事件按 200ms 窗口缓冲后经同一变更链落盘，并把 session/event、session/flush、session/disposed 接到路由、刷盘与关闭 (src/storage.ts:36-36, src/storage.ts:274-316, src/storage.ts:534-566)。",
+    "provides": [
+      "ctx.sessionPersistence (JSONL 文件后端实现：世代文件存储、句柄读写、内核写锁与历史格式迁移)",
+      "session_projcache 之外的持久化物理层原语 (zstd 帧容器、torn 尾修复、POSIX/Win32 原子发布)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-session-persistence",
+        "mechanism": "E1",
+        "evidence": "package.json:32 peerDep + src/index.ts:22-33 import SessionPersistence 基类与校验器",
+        "purpose": "实现并注册 sessionPersistence seam 的 JSONL provider"
+      },
+      {
+        "plugin_id": "dsh-session-format-catalog",
+        "mechanism": "E1",
+        "evidence": "package.json:38 dep + src/index.ts:11-15 import sessionFormatCatalog；src/generation.ts:10 message-projections",
+        "purpose": "取当前格式世代的编解码器与 header 分类结果"
+      },
+      {
+        "plugin_id": "dsh-session-format",
+        "mechanism": "E1",
+        "evidence": "package.json:37 dep + src/format.ts:23 import parseSessionFormatLogFilename；src/generation.ts:31 import SessionFormatError",
+        "purpose": "使用格式工件/恢复类型与世代文件名编解码"
+      },
+      {
+        "plugin_id": "dsh-session-format-v3-to-v4",
+        "mechanism": "E1",
+        "evidence": "package.json:39 dep + src/catalog-migration.ts:6 import historicalChildCatalogSource；src/format.ts:27 import assertV4RowAdmission",
+        "purpose": "迁移 v3→v4 世代所需的子目录事实与行准入校验"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:31 peerDep + src/index.ts:36-37 import SESSION_FORMAT_VERSION/SessionEvent；src/storage.ts:535 ctx.on('session/event')",
+        "purpose": "读写 SessionHeader/SessionEvent 并按会话 id 路由 live 事件"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "package.json:36 dep + src/storage.ts:13 import errorChain；src/generation.ts:30 import BlockAssembler/expandAssistantStream",
+        "purpose": "错误链格式化与 assistant 流展开以比对恢复后的行"
+      },
+      {
+        "plugin_id": "node-addon-system",
+        "mechanism": "E1",
+        "evidence": "package.json:40 dep + src/lease.ts:34 import tryLockExclusive from '@deepseek-ai/node-addon-system/flock'",
+        "purpose": "取得跨进程 flock 排他写锁"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-session-projection",
+    "name": "@deepseek-ai/dsh-session-projection",
+    "implementation": "定义 session-projection 能力 seam 的 Service Definition 与驱动注册表：ctx.sessionProjections 提供 register / stateOf / snapshot / cachedSnapshot / checkpoint / restoreFloor / viewCheckpoint / restore / hydrate / onChanged (src/index.ts:199-713)。注册单元用 ProjectionDefinition 描述「key + stateSchema + init + 纯同步 apply + 可选 wire.view + stateVersion」，注册即 effect 并按 key 计数共享，最后一个注销者才移除该 key (src/index.ts:48-93, src/index.ts:233-294)。服务构造时只订阅一次 session/created 与 session/event，把每个已提交事件推过全部单元（急切驱动）；只有状态引用变化才重算 client view，且仅当 Object.is 变化时通知变更订阅者 (src/index.ts:207-223, src/index.ts:657-705)。读侧给出一致切面、零 I/O 的 checkpoint 视图、以及「缓存行 + 尾部重放」的冷读与就地水合路径 (src/index.ts:339-353, src/index.ts:449-470, src/index.ts:496-596)。类型出口 SessionProjectionMap/SessionProjectionStateMap 供各域 declare-merge (src/types.ts:17-24)。",
+    "provides": [
+      "ctx.sessionProjections (投影注册表服务：单元注册、一致快照、变更订阅、checkpoint/restore 折叠原语)",
+      "SessionProjectionMap / SessionProjectionStateMap (可合并扩展的客户端投影与宿主折叠状态类型表)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:38 peerDep + src/index.ts:22 import SessionLogOffset/SessionSeq；src/index.ts:209 ctx.on('session/created')、src/index.ts:220 ctx.on('session/event')",
+        "purpose": "订阅会话创建与已提交事件，并按 Session 日志做折叠与补齐"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-session-projection-cache",
+    "name": "@deepseek-ai/dsh-session-projection-cache",
+    "implementation": "把投影单元状态持久化为「每会话一条记录」的 checkpoint 缓存：Service.init 打开 session_projcache 域（per-record 布局、version 7、compatibleVersions [3,4,5,6]、invalidRecords backup-and-skip）并装好写路径 (src/spec.ts:100-107, src/index.ts:117-122)。写侧是 write-behind：会话创建、turn/end、会话销毁三个必写点，外加 writeEveryEvents 计数与 writeIntervalMs 定时两个节流触发；写入前先 flush 会话日志，形成「缓存永不超前于日志」的耐久屏障 (src/index.ts:256-272, src/index.ts:311-362)。读侧提供 cachedSnapshot/cachedPredecessorTitle 的零 I/O 列表视图、hydratePrepared 的就地水合、coldSnapshot 的整日志冷读并 fail-soft 回写 (src/index.ts:161-191, src/index.ts:222-245, src/index.ts:287-306)。记录以 formatVersion/createdAt/cwd/isSeeded/inheritedEventCount 做身份匹配，ver 不匹配的行读取时直接丢弃而非迁移，域层 schema 失败则备份旁置 (src/index.ts:404-469, src/spec.ts:29-58)。",
+    "provides": [
+      "ctx.sessionProjectionCache (投影 checkpoint 的持久缓存服务：列表零 I/O 视图、就地水合、冷读回写)",
+      "session_projcache 域声明 (projectionCacheDomainSpec / checkpointRecord / checkpointIdentity)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2+E3",
+        "evidence": "package.json:37 peerDep + src/index.ts:33 import type ProjectionCheckpoint；src/index.ts:105 static inject 'sessionProjections'；packages/bundle/base/cordis.patch.yml:167-168 先装注册表、:191-192 后装缓存",
+        "purpose": "由注册表提供 checkpoint/restore/viewCheckpoint/hydrate 等折叠原语"
+      },
+      {
+        "plugin_id": "dsh-storage-domain",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:38 peerDep + src/index.ts:34 import type KvTable；src/index.ts:118 ctx.storageDomain.open(projectionCacheDomainSpec)",
+        "purpose": "打开 session_projcache 域并持有 per-record 键值表"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:36 peerDep + src/index.ts:22 import SessionLogOffset；src/index.ts:266 ctx.sessions.flush(session)",
+        "purpose": "以 SessionId/SessionHeader 做身份匹配，并在写缓存前 flush 会话日志"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "package.json:30 dep + src/index.ts:21 import snapshotJsonValue；src/spec.ts:14 import isJsonValue",
+        "purpose": "校验并脱附快照纯 JSON checkpoint 行"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-session-telemetry-otel",
+    "name": "@deepseek-ai/dsh-session-telemetry-otel",
+    "implementation": "实现会话遥测 seam 的 OpenTelemetry 后端：构造时按 mode 分 FEEDBACK_ONLY 与 DISABLED，DISABLED 只对本地反馈告警，FEEDBACK_ONLY 则校验 exporter.url 为 http(s) 与 shutdownTimeoutMillis 上界后创建 SessionLogReporter (src/index.ts:152-202)。捕获是 on-demand 且带历史：仅当事件属于本会话的 feedback/record 或指向本会话的 feedback/message-*，且确为日志中已追加的那一条，才授权 coordinator.captureSession 回放该前缀 (src/index.ts:43-51, src/index.ts:223-232)。feedback/committed 提交面会先 detached 克隆 inspection、用 Session.fromRestore 重建会话，再走同一授权路径 (src/index.ts:233-243)。emit 直接丢弃直投记录，shutdown 用外层 deadline 与 provider.shutdown() 竞争，超时则 stopPending 并拒绝 (src/index.ts:251-275)。",
+    "provides": [
+      "ctx.sessionTelemetry (OpenTelemetry 会话遥测后端实现：反馈授权的日志上报、shutdown 截止期与共享策略)",
+      "SessionTelemetryMode / DEFAULT_TELEMETRY_MODE (FEEDBACK_ONLY 与 DISABLED 的共享策略枚举)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-session-telemetry",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:38 peerDep + src/index.ts:17-24 import SessionTelemetryBackend/SessionTelemetryCoordinator",
+        "purpose": "以基类注册 ctx.sessionTelemetry 并复用协调器与 sink 契约"
+      },
+      {
+        "plugin_id": "dsh-otel",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:41 peerDep + src/index.ts:27 import type LogExporterOptions/SessionLogReporter；src/index.ts:145 static inject 'otel'、src/index.ts:190 ctx.otel.createSessionLogReporter",
+        "purpose": "创建字节受限的 OTel 会话日志上报器"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:37 peerDep + src/index.ts:16 import Session/SessionEvent；src/index.ts:159 与 src/index.ts:223 ctx.on('session/event')",
+        "purpose": "订阅会话事件做反馈授权，并核对事件是否为日志中的那一条"
+      },
+      {
+        "plugin_id": "dsh-command-feedback",
+        "mechanism": "E1",
+        "evidence": "package.json:34 peerDep + src/index.ts:14 import type {}；src/index.ts:46 case 'feedback/record'",
+        "purpose": "识别命令反馈事件类型以判定捕获授权"
+      },
+      {
+        "plugin_id": "dsh-message-feedback",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:35 peerDep + src/index.ts:15 import type {}；src/index.ts:233 ctx.on('feedback/committed')（packages/feedback/message-feedback/src/index.ts:58 声明、:271 触发）",
+        "purpose": "在消息反馈提交时授权捕获该前缀"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "package.json:36 peerDep + src/index.ts:25 import APP_IDENTITY",
+        "purpose": "取产品身份写入 OTel resource 属性"
+      },
+      {
+        "plugin_id": "dsh-anonymous-user-id",
+        "mechanism": "E1",
+        "evidence": "package.json:39 peerDep + src/index.ts:26 import getOrCreateAnonymousUserId；src/index.ts:198 调用写入 'user.id'",
+        "purpose": "写入匿名用户标识资源属性"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-session-title",
+    "name": "@deepseek-ai/dsh-session-title",
+    "implementation": "提供 ctx.sessionTitle：以日志中的 session/title 事件为唯一真相源，get 直接折叠最新标题，rename 接受显式用户标题（归一化后为空则抛 SessionTitleInvalidError）并使其钉住、阻止后续自动生成 (src/index.ts:288-298, src/index.ts:391-427)。服务注册 title 与 titleInput 两个投影单元，前者取最新标题文本，后者折叠首条/计数/末条合格人类消息 (src/index.ts:269-281, src/index.ts:344-360)。自动生成按 provider 的 automatic 模式（first-prompt / all-prompts）在 user/message 上排队，等 request/header 或带主循环标记的 llm/stream 记录到确切路由后才启动，并用每会话 revision + AbortController 实现最新者胜、旧调用被取消 (src/index.ts:506-581, src/index.ts:700-720)。确定性回退标题在无 provider 或 provider 失败时补位，服务注销、provider 注销与会话销毁都会中止在途工作并等待静默 (src/index.ts:798-843, src/index.ts:332-383, src/index.ts:478-503)。",
+    "provides": [
+      "ctx.sessionTitle (日志支撑的会话标题服务：折叠读取、显式重命名、自动生成调度与确定性回退)",
+      "SessionProjectionMap/StateMap 的 title 与 titleInput 单元，以及 SessionTitleProvider 提供方契约"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:43 peerDep + src/index.ts:18 import SessionSeq；src/index.ts:362 ctx.on('session/event')、src/index.ts:409 ctx.sessions.get",
+        "purpose": "把标题写入会话日志并从日志折叠"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:44 peerDep + src/index.ts:19-20 import type ProjectionDefinition；src/index.ts:344 与 src/index.ts:346 ctx.sessionProjections.register",
+        "purpose": "注册 title/titleInput 投影单元并读取其状态"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:42 peerDep + src/index.ts:11-12 import isAgentLoopRequest/GenerateOptions；src/index.ts:374 ctx.on('llm/stream')",
+        "purpose": "识别主循环请求并读取其 provider/model 路由"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "package.json:40 peerDep + src/index.ts:21 import type {}（合并 SessionProjectionMap 的 turnBoundary 声明）",
+        "purpose": "合并 agent 侧投影类型声明"
+      },
+      {
+        "plugin_id": "dsh-agent-loop",
+        "mechanism": "E2",
+        "evidence": "src/index.ts:552 ctx.sessionProjections.stateOf(session, 'turnBoundary')；packages/core/agent-loop/src/index.ts:378 注册该投影",
+        "purpose": "读 turnBoundary 判断主请求是否已开始本回合"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "package.json:41 peerDep + src/index.ts:10 import type Branded；src/types.ts:13 import type Branded",
+        "purpose": "品牌化标题 provider id"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "package.json:47 dep + src/index.ts:13 import assertNever/deepFreeze",
+        "purpose": "闭合联合穷尽检查与冻结快照"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-session-title-first-prompt-llm",
+    "name": "@deepseek-ai/dsh-session-title-first-prompt-llm",
+    "implementation": "注册 id 为 session-title-first-prompt-llm、automatic 为 first-prompt 的标题 provider：apply 先用 resolveConfig 校验 targetWords/targetCjkCharacters 与共享执行控制，再调用 ctx.sessionTitle.register (src/index.ts:65-72, src/index.ts:145-166)。generate 只取请求中第一条人类消息，用语言感知的系统指令与 JSON 数组包装的输入调用 executeSessionTitleLlm，并按模型支持列表选择最小 reasoning effort (src/index.ts:81-94, src/index.ts:151-159, src/index.ts:74-76)。输出解析拒绝 tool-call 与 max-tokens 结束原因，取首个非空行并剥离整行星号强调，再归一化为非空标题 (src/index.ts:107-137)。",
+    "provides": [
+      "sessionTitle provider `session-title-first-prompt-llm` (由首条人类消息驱动 LLM 生成会话标题)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-session-title",
+        "mechanism": "E1+E2+E3",
+        "evidence": "package.json:28 peerDep + src/index.ts:8-12 import normalizeSessionTitle/SessionTitleProviderId；src/index.ts:148 ctx.sessionTitle.register；packages/bundle/base/cordis.patch.yml:55-56 先装服务、:62-63 后装 provider",
+        "purpose": "把本 provider 注册进标题服务并复用标题归一化"
+      },
+      {
+        "plugin_id": "dsh-session-title-llm",
+        "mechanism": "E1",
+        "evidence": "package.json:29 peerDep + src/index.ts:13-20 import executeSessionTitleLlm/resolveSessionTitleLlmConfig；src/index.ts:154 调用",
+        "purpose": "复用共享的标题 LLM 执行与配置校验"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:26 peerDep + src/index.ts:6 import type LlmResolvedModelInfo/ReasoningEffortId；src/index.ts:24 inject 含 'llm'",
+        "purpose": "解析模型信息并选择 reasoning effort"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E2",
+        "evidence": "package.json:27 peerDep + src/index.ts:24 export const inject = ['sessionTitle','llm','sessions']",
+        "purpose": "共享标题执行模块按会话取请求头与投影"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "package.json:33 dep + src/index.ts:7 import assertNever",
+        "purpose": "闭合联合穷尽检查"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-working-directory",
+    "name": "@deepseek-ai/dsh-tool-working-directory",
+    "implementation": "把工作目录读写注册成模型工具：apply 通过 ctx.tools.register(defineTool({...})) 定义 working_directory，参数只有可选 cd，输出为 { cwd } 并渲染为文本 (src/index.ts:19-41)。execute 要求 exec.agent 存在，cd 缺省时调 ctx.workingDirectory.ensure(agent, signal) 读取（目录消失时会恢复），提供时调 set 切换，二者都把 exec.signal 透传以支持取消 (src/index.ts:34-40)。插件声明 inject ['tools','workingDirectory']，只在两个服务都可用时激活 (src/index.ts:13)。",
+    "provides": [
+      "tools 注册项 working_directory (读取或切换当前会话工作目录的模型工具)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:31 peerDep + src/index.ts:7 import defineTool；src/index.ts:20 ctx.tools.register",
+        "purpose": "把工具定义注册进工具注册表"
+      },
+      {
+        "plugin_id": "dsh-working-directory",
+        "mechanism": "E1+E2+E3",
+        "evidence": "package.json:32 peerDep + src/index.ts:8 import type {}；src/index.ts:13 inject 'workingDirectory'、src/index.ts:37-38 ctx.workingDirectory.ensure/set；packages/bundle/base/cordis.patch.yml:161-165 装配顺序",
+        "purpose": "读写会话有效工作目录并在缺失时恢复"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-working-directory",
+    "name": "@deepseek-ai/dsh-working-directory",
+    "implementation": "提供 ctx.workingDirectory 作为每个会话有效目录的唯一所有者：注册 workingDirectory 投影（init 取 header.cwd，apply 消费 working-directory/change 事件），把它作为 systemPrompt 上下文 'working-directory:current' 注入，并在 system-prompt/assemble 瀑布里先 ensure 再回填文本 (src/index.ts:82-110)。get 只读投影值，无记录时回落 defaultDirectory；ensure 校验当前目录、缺失时恢复到原始项目目录并提交，set 校验目标为已存在目录后提交 (src/index.ts:122-170, src/index.ts:176-184)。每次提交都追加 working-directory/change 事件并注入一条 source 为 working-directory 的用户消息通知模型，注入失败只告警不回滚已提交状态 (src/index.ts:186-206)。同一会话的操作通过 pending 链串行化，服务销毁时中止生命周期并等待在途操作静默 (src/index.ts:208-222, src/index.ts:111-114)。",
+    "provides": [
+      "ctx.workingDirectory (会话有效工作目录服务：读取、校验/恢复、切换与提交)",
+      "workingDirectory 投影单元、systemPrompt 上下文 'working-directory:current'，以及 source 为 working-directory 的模型可见变更通知"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-fs",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:32 peerDep + src/index.ts:11 import type {}；src/index.ts:63 static inject 'fs'、src/index.ts:137-138 ctx.fs.resolve/stat",
+        "purpose": "解析路径并校验目录是否存在"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:35 peerDep + src/index.ts:14 import type {}；src/index.ts:82 ctx.sessionProjections.register",
+        "purpose": "注册 workingDirectory 投影并读取当前提交值"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:36 peerDep + src/index.ts:15 import type {}；src/index.ts:90 ctx.systemPrompt.context、src/index.ts:97 ctx.on('system-prompt/assemble')",
+        "purpose": "把当前工作目录注入系统提示上下文"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "package.json:31 peerDep + src/index.ts:10 import type Agent；src/index.ts:140 agent.ctx.fiber.assertActive",
+        "purpose": "对传入的 Agent 及其会话、fiber 生效"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "package.json:33 peerDep + src/index.ts:12 import createUserMessage；src/index.ts:23 声明合并 MessageSourceMap",
+        "purpose": "构造 source 为 working-directory 的模型可见变更通知"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "package.json:34 peerDep + src/index.ts:13 import type Session；src/index.ts:33 声明合并 SessionEventMap 的 working-directory/change",
+        "purpose": "把目录变更作为会话事件写入日志"
+      }
+    ],
+    "dependents": []
+  }
+]

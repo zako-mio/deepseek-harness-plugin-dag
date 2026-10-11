@@ -6,8 +6,8 @@ S4b 交互总览页生成: 04-interactive/index.html
 本脚本是 04-interactive/index.html 的唯一权威生成器（determinism: 同输入 → 同字节）。
 
 组级视图（主 DAG）· 新排布方案：
-  - 一级分区 = EXT / L1 / L2 / L3（组内多数 source_layer 所属；EXT = 73 seam 合为 1 节点）
-  - 二级功能簇 = 固定表 F1..F10（断言恰好覆盖 50 组 + EXT，无遗漏无重复）
+  - 一级分区 = EXT / L1 / L2 / L3（组内多数 source_layer 所属；EXT = 83 seam 合为 1 节点）
+  - 二级功能簇 = 固定表 F1..F10（断言恰好覆盖 48 组 + EXT，无遗漏无重复）
   - cytoscape layout:'preset' —— 坐标全部在 Python 侧算好，渲染零随机
   - 侧栏/簇计数取「簇总数」；拆列簇标题写 (1/2)(2/2)
   - 内容竖向填充率 ≥ 画布(916) 的 80%，且折叠侧栏时 zoom≈1.0 不溢出
@@ -29,7 +29,7 @@ S4b 交互总览页生成: 04-interactive/index.html
 保留既有能力：?drill=Gxx / #Gxx 深链 + hashchange、返回组级按钮、图例（插件/ seam / 边方向/视图）、
 disabled 灰显红边、seam 虚线边、状态栏（模式/节点数/zoom）。
 
-只读 01-dag-data/*.json + 07-checkpoint/v017/disabled-rows.json；只写 04-interactive/index.html。
+只读 01-dag-data/*.json + 07-checkpoint/v021/disabled-rows.json；只写 04-interactive/index.html。
 """
 import json, os, sys, math, collections
 
@@ -39,25 +39,25 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE = os.path.dirname(SCRIPT_DIR)
 DAG_P = os.path.join(BASE, "01-dag-data", "webapp-dag.json")
 EXT_P = os.path.join(BASE, "01-dag-data", "external-seams.json")
-INV_P = os.path.join(BASE, "07-checkpoint", "v017", "disabled-rows.json")
+INV_P = os.path.join(BASE, "07-checkpoint", "v021", "disabled-rows.json")
 OUT = os.path.join(BASE, "04-interactive", "index.html")
 
 # ---------------------------------------------------------------- 固定功能簇契约
 CLUSTERS = [
-    ("F1",  "运行时基座",       "L1", ["G04", "G09", "G45", "G42", "G22"]),
-    ("F2",  "会话与上下文",     "L1", ["G33", "G34", "G07", "G17", "G44", "G15", "G21"]),
-    ("F3",  "智能与协议",       "L1", ["G23", "G25", "G26"]),
-    ("F4",  "工具与执行面",     "L1", ["G36", "G37", "G41", "G47", "G18", "G30", "G38", "G16", "G40", "G10", "G28"]),
-    ("F5",  "宿主与工作区",     "L1", ["G03", "G35", "G49"]),
+    ("F1",  "运行时基座",       "L1", ["G04", "G09", "G27", "G41", "G44"]),
+    ("F2",  "会话与上下文",     "L1", ["G07", "G15", "G17", "G21", "G31", "G33", "G43"]),
+    ("F3",  "智能与协议",       "L1", ["G18", "G20", "G22", "G25", "G35"]),
+    ("F4",  "工具与执行面",     "L1", ["G10", "G16", "G34", "G46", "G47"]),
+    ("F5",  "宿主与工作区",     "L1", ["G03", "G28", "G36", "G38", "G39", "G40"]),
     ("F6",  "客户端 UI",        "L2", ["G06"]),
-    ("F7",  "客户端运行时与宿主接入", "L2", ["G05", "G02", "G08", "G11", "G12", "G14", "G20", "G31", "G50"]),
-    ("F8",  "协议与远程",       "L3", ["G01", "G24", "G32", "G39", "G43"]),
-    ("F9",  "实验与扩展",       "L3", ["G13", "G19", "G27", "G29", "G46", "G48"]),
+    ("F7",  "客户端运行时与宿主接入", "L2", ["G02", "G05", "G08", "G12", "G14", "G19", "G29", "G32", "G48"]),
+    ("F8",  "协议与远程基座",   "L3", ["G01", "G24", "G30", "G37", "G42", "G45"]),
+    ("F9",  "实验与扩展",       "L3", ["G11", "G13", "G23", "G26"]),
     ("F10", "外部基座 seam",    "EXT", []),   # EXT 合成为 1 个节点
 ]
 ZONE_ORDER = ["EXT", "L1", "L2", "L3"]
 
-# 与 04-interactive 生产配色一致（38 色循环，50 组按 gid 升序取色）
+# 与 04-interactive 生产配色一致（38 色循环，48 组按 gid 升序取色）
 PALETTE = ["#4f8cff", "#7b61ff", "#2fb98a", "#e8933b", "#e05563", "#3b9fe0", "#9a7bf0", "#e0a03b",
            "#3bc4a0", "#d0546b", "#6c8df5", "#b48a3c", "#54a0e8", "#8a5cf0", "#3ab7c4", "#e07b54",
            "#5f8de0", "#9b6bd4", "#4aa8a0", "#d06a4a", "#6b9bd4", "#b07bd4", "#4ac48e", "#d48a5b",
@@ -208,7 +208,7 @@ def pick_drill_grid(n, labels, fs):
 
 
 def build_drills(dag, ext_map, seam_ids, nodes, groups, gstat, disabled_ids):
-    """为 50 组 + EXT 各生成一份确定性下钻网格（坐标全在 Python 侧算好）。
+    """为 48 组 + EXT 各生成一份确定性下钻网格（坐标全在 Python 侧算好）。
 
     契约（主 Agent 裁定口径）：
       1. stub 按所属外部组聚合为一个节点：label="<组名> · 入口 N"，
@@ -378,14 +378,15 @@ def build_payload():
     gids_sorted = sorted(groups.keys())
     GROUP_COLOR = {g: PALETTE[i % len(PALETTE)] for i, g in enumerate(gids_sorted)}
 
-    # ---------------- 自检 1: 功能簇表恰好覆盖 50 组 + EXT ----------------
+    # ---------------- 自检 1: 功能簇表恰好覆盖 48 组 + EXT ----------------
     all_gids = set(groups.keys())
     listed = []
     for cid, cname, zone, gl in CLUSTERS:
         listed.extend(gl)
     assert len(listed) == len(set(listed)), "功能簇表存在重复组"
     assert set(listed) == all_gids, f"功能簇表覆盖不符: 缺 {sorted(all_gids-set(listed))} / 多 {sorted(set(listed)-all_gids)}"
-    assert len(all_gids) == 50, f"组数应为 50, 实为 {len(all_gids)}"
+    # 组总数不写死：上面 set 相等已保证精确覆盖；此处仅断言非空
+    assert all_gids, "DAG 未产出任何分组"
     assert sum(1 for c in CLUSTERS if c[3] == []) == 1, "EXT 功能簇应恰好 1 个"
 
     # ---------------- 组统计 ----------------
@@ -458,7 +459,7 @@ def build_payload():
         col["x1"] = round(lefts[i], 2)
         col["x2"] = round(lefts[i] + NODE_W, 2)
 
-    assert set(positions.keys()) == all_gids | {"EXT"}, "坐标未覆盖全部 50 组 + EXT"
+    assert set(positions.keys()) == all_gids | {"EXT"}, "坐标未覆盖全部 48 组 + EXT"
 
     min_gap = 1e9
     ids = list(positions.keys())
@@ -483,7 +484,10 @@ def build_payload():
             if dep in nodes:
                 ext_pairs.add((nodes[dep]["group"], "EXT"))
     edge_pairs = sorted(pair_set | ext_pairs)
-    assert len(edge_pairs) == 264, f"组间边应为 264, 实为 {len(edge_pairs)}"
+    # 组间边数由数据派生，不写死；只断言非空且端点合法
+    assert edge_pairs, "未产出任何组间边"
+    assert all(a in all_gids and (b in all_gids or b == "EXT") for a, b in edge_pairs), \
+        "组间边存在非法端点"
 
     # ---------------- 组级节点元素 ----------------
     grid_nodes = []

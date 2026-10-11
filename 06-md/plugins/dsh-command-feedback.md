@@ -2,7 +2,7 @@
 
 - 包名: `@deepseek-ai/dsh-command-feedback`
 - 分组: G15 反馈通道
-- 拓扑层: Layer 4
+- 拓扑层: Layer 3
 - 来源层: L1 核心集
 - 源码路径: `packages/feedback/command-feedback`
 
@@ -21,7 +21,7 @@
   - 证据: `src/index.ts:86 static inject ['sessions'] + src/index.ts:14 import`
 
 ## Dependents (下游被依赖)
-- `dsh-api-remotes` - 装配命令反馈命名空间
+- `dsh-api-remotes` - 把该业务包的 /remote 命名空间装配进 Client
 - `dsh-client-ui-message-feedback` - 反馈记录与分类的协议类型
 - `dsh-message-feedback` - 复用同一反馈类别常量集
-- `dsh-session-telemetry-otel` - 声明 feedback/record 等事件类型以判定授权事件
+- `dsh-session-telemetry-otel` - 识别命令反馈事件类型以判定捕获授权

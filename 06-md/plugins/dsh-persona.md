@@ -1,8 +1,8 @@
 # dsh-persona
 
 - 包名: `@deepseek-ai/dsh-persona`
-- 分组: G27 Agent 预设
-- 拓扑层: Layer 3
+- 分组: G26 Agent 预设
+- 拓扑层: Layer 1
 - 来源层: L3 其余
 - 源码路径: `packages/preset/persona`
 

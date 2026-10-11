@@ -7,19 +7,22 @@
 - 源码路径: `packages/context/file-reference-local`
 
 ## 实现逻辑
-ctx.fileReferences 的本地文件系统实现 LocalFileReferenceService，继承 dsh-file-reference 的服务基类并以 WorkspaceFileSearch 对 agent 工作目录建立可取消/可复用的模糊索引（src/index.ts:44-127、src/search.ts:84-255）。索引只含路径；目录前缀查询走实时列举，裸模糊查询共享一次有界遍历，且失效时旧索引继续应答、重建在后台进行（src/search.ts:114-130、src/search.ts:159-199）。按 agent 生命周期安装/卸载 system-prompt 的 context:file-reference 段落与搜索缓存，并在 tool/result 时使缓存失效（src/index.ts:66-102）。
+以 ctx.fileReferences 的本地文件系统提供者身份实现文件引用发现：LocalFileReferenceService 继承 dsh-file-reference 的 Service Definition（src/index.ts:45），override 的 list() 先用 ctx.workingDirectory.ensure 解析 agent 的 cwd，cwd 变化时重建 WorkspaceFileSearch 有界模糊索引并按 agent 缓存（src/index.ts:116-129）。构造期对每个已存在与新建 agent 通过 agent.ctx.inject(['systemPrompt','tools']) 注册名为 'context:file-reference' 的提示段，且仅当 read 工具在该 agent 可见时才渲染正文（src/index.ts:67-79）；agent/disposed 回收索引与 prompt fiber，tool/result 使索引失效（src/index.ts:94-103）。配置上限（maxResults/maxEntries/excludedDirectories）在构造期校验（src/index.ts:132-142）。
 
 ## Provides
-- ctx.fileReferences (@file 引用的本地文件系统候选发现实现，供 @ 补全)
-- system-prompt section context:file-reference (@ 引用使用说明段落，仅在 read 工具可用时展示)
+- ctx.fileReferences（本地文件系统文件引用候选发现实现，src/index.ts:45-129）
+- WorkspaceFileSearch 有界模糊索引与默认限额常量（src/search.ts:16-48、src/search.ts:84）
+- 文件引用语法与提示常量再导出（FILE_REFERENCE_PROMPT、activeAtToken、formatFileMention，src/index.ts:31-32）
 
 ## Depends On (上游依赖)
-- `dsh-agent` [E1+E2] - 按 agent 维护搜索索引与提示词 fiber 生命周期，并用 agent 的会话 cwd 作为搜索根
-  - 证据: `src/index.ts:9 import type Agent + src/index.ts:45 static inject ['agents'] + src/index.ts:91 ctx.agents.list + src/index.ts:92-93 ctx.on('agent/created'/'agent/disposed')`
-- `dsh-session` [运行时依赖] - 订阅会话事件流以在工具结果提交后失效文件索引
-  - 证据: `src/index.ts:98 ctx.on('session/event', ...) + src/index.ts:100 ctx.agents.get(session.id)`
-- `dsh-tools` [E1+E2] - 仅在 read 工具存在时展示 @ 提示词，并在工具结果后使工作区索引失效
-  - 证据: `src/index.ts:14 type-only import + src/index.ts:73 agent.ctx.tools.get('read', agent) + src/index.ts:98 ctx.on('session/event') tool-result invalidate`
+- `dsh-agent` [E1+E2] - 按 agent 维度维护搜索缓存与提示 fiber，并在 agent/created、agent/disposed 上挂载与回收
+  - 证据: `src/index.ts:10 import type { Agent } from '@deepseek-ai/dsh-agent' + src/index.ts:46 static inject = ['agents', 'workingDirectory']`
+- `dsh-system-prompt` [运行时依赖] - 向 agent 作用域的系统提示注册文件引用说明段，并复用其 FILE_REFERENCE 中央排序位
+  - 证据: `src/index.ts:70 agent.ctx.inject(['systemPrompt', 'tools'], (scope) => ...) + src/index.ts:71 scope.systemPrompt.section({ name: 'context:file-reference', ... })`
+- `dsh-tools` [运行时依赖] - 查询该 agent 可见的 read 工具，仅在有读取能力时才对模型暴露文件引用提示
+  - 证据: `src/index.ts:74 agent.ctx.tools.get('read', agent) === undefined ? '' : FILE_REFERENCE_PROMPT + src/index.ts:15 import type {} from '@deepseek-ai/dsh-tools'`
+- `dsh-working-directory` [E1+E2] - 取 agent 的工作目录作为索引根，并据此判断缓存是否需要重建
+  - 证据: `src/index.ts:7 import type {} from '@deepseek-ai/dsh-working-directory' + src/index.ts:121 this.ctx.workingDirectory.ensure(agent, signal)`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

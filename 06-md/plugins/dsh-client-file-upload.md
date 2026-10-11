@@ -2,33 +2,29 @@
 
 - 包名: `@deepseek-ai/dsh-client-file-upload`
 - 分组: G05 客户端运行时
-- 拓扑层: Layer 5
+- 拓扑层: Layer 4
 - 来源层: L2 web-app
 - 源码路径: `packages/client/file-upload`
 
 ## 实现逻辑
-Host 侧 `FileUploads extends TypertRemoteService` 承接待上传文件：`upload` 走 base64 编码路径、`uploadStream` 走原始字节流，均委托 `ctx.attachments` 落盘 (src/index.ts:105-131)，并在 Agent 会话作用域下以 receiptId 暂存，`bindPrompt`/`retirePrompt` 随 prompt 生命周期提交或回滚绑定 (src/index.ts:139-181)。它向 Connection 注册 `POST` 流式路由 `handleFileUploadHttp`，校验 content-type 与 sessionId 后把请求体转成 AsyncIterable (src/index.ts:72-80, src/http-route.ts:22-81)，并通过 `session/event` 观察 user/message 来退役已消费 receipt (src/index.ts:241-254)。
+Host 半 FileUploads 继承 TypertRemoteService，把上传字节落到 ctx.attachments，并按接收 Agent 的精确 Session 暂存 receipt（src/index.ts:56-110、src/index.ts:179-210）。它向 ctx.connection.fetch 注册 /api 下的流式原始字节路由，并订阅 session/event 与 session/disposed 在提示被投递或会话销毁时回收 receipt（src/index.ts:71-81、src/index.ts:232-245）。浏览器半 FileUploadRuntime 经生成的 Remote 回退（inject ['remote']）提供按 Session 寻址的后台上传服务 ctx.fileUpload（src/client/index.ts:17-26）。
 
 ## Provides
-- ctx.fileUploads (Host 侧文件上传存储与 Agent 级暂存 receipt 服务)
-- 上传 HTTP 流式路由 (FILE_UPLOAD_PATH，application/octet-stream)
-- CommandFileReceiptResolver 注册 (让命令层解析上传 receipt)
-- ctx.fileUpload (浏览器侧后台上传服务 FileUploadRuntime)
+- ctx.fileUploads (Host 上传存储与按会话暂存的 receipt 服务，含 upload/uploadStream/bindPrompt/retirePrompt)
+- ctx.fileUpload (浏览器端后台上传服务，经 Remote 调用 Host)
 
 ## Depends On (上游依赖)
-- `dsh-agent` [E1+E2] - 以接收 Agent 及其 session 作为上传暂存的作用域与生命周期主体
-  - 证据: `src/index.ts:5 + src/index.ts:58 static inject 'agents' + src/index.ts:199 ctx.agents.get`
-- `dsh-client-connection` [E1+E2] - 在 Connection 的 fetch 注册表上挂原始字节上传路由
-  - 证据: `src/index.ts:7 + src/index.ts:58 inject 'connection' + src/index.ts:73 ctx.connection.fetch.register`
-- `dsh-commands` [运行时依赖] - 让命令 prompt 能解析上传 receipt 为文件引用
-  - 证据: `src/index.ts:8 + src/index.ts:58 inject 'commands' + src/index.ts:69 ctx.commands.registerFileReceiptResolver`
-- `dsh-scope` [编译依赖] - 用 scopeOf 校验操作发生在目标 Agent 自身作用域内
-  - 证据: `src/index.ts:9`
-- `dsh-session` [编译依赖] - 以 SessionId 寻址会话并观察 session/event 退役 receipt
-  - 证据: `src/index.ts:10 + src/client/contract.ts:1 + src/http-route.ts:4`
+- `dsh-agent` [E1+E2] - 以 Agent/Session 归属上传并校验其在落盘后仍存活
+  - 证据: `src/index.ts:5 import + src/index.ts:57 static inject ['agents'] + src/index.ts:195 ctx.agents.get(agent.id)`
+- `dsh-client-connection` [E1+E2] - 在共享 /api 通道注册流式上传路由
+  - 证据: `src/index.ts:7 import type + src/index.ts:72 ctx.connection.fetch.register`
+- `dsh-commands` [E1+E2] - 让命令提交解析 staged 文件 receipt
+  - 证据: `src/index.ts:8 import + src/index.ts:68 ctx.commands.registerFileReceiptResolver`
+- `dsh-session` [E1+E2] - 按会话事件与销毁回收暂存 receipt
+  - 证据: `src/index.ts:9 import + src/index.ts:80 ctx.on('session/event') + src/index.ts:81 ctx.on('session/disposed')`
 
 ## Dependents (下游被依赖)
-- `dsh-api-remotes` - 装配文件上传命名空间
-- `dsh-api-session-controller` - 上传收据解析与 Agent 解析登记
-- `dsh-client-ui-conversation` - 浏览器 Worker 文件上传服务
-- `dsh-experimental-webworker-runtime` - 复用文件上传类型于 Worker 传输层
+- `dsh-api-remotes` - 把该业务包的 /remote 命名空间装配进 Client
+- `dsh-api-session-controller` - 为上传文件注册 Session→Agent 解析器
+- `dsh-client-ui-conversation` - 草稿文件上传走 fileUpload 服务
+- `dsh-experimental-webworker-runtime` - 页面侧文件上传钩子被替换为走 worker 隧道

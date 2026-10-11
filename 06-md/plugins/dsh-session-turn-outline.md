@@ -1,8 +1,8 @@
 # dsh-session-turn-outline
 
 - 包名: `@deepseek-ai/dsh-session-turn-outline`
-- 分组: G33 会话核心
-- 拓扑层: Layer 4
+- 分组: G31 会话核心
+- 拓扑层: Layer 3
 - 来源层: L2 web-app
 - 源码路径: `packages/session/session-turn-outline`
 
@@ -19,4 +19,4 @@
   - 证据: `src/projection.ts:25 import + src/index.ts:20 static inject + src/index.ts:28 ctx.sessionProjections.register`
 
 ## Dependents (下游被依赖)
-- `dsh-client-ui-chat` - 轮次导航轨条目
+- `dsh-client-ui-chat` - 轮次导航大纲

@@ -1,26 +1,29 @@
 # dsh-session-telemetry-otel
 
 - 包名: `@deepseek-ai/dsh-session-telemetry-otel`
-- 分组: G33 会话核心
-- 拓扑层: Layer 3
+- 分组: G31 会话核心
+- 拓扑层: Layer 5
 - 来源层: L1 核心集
 - 源码路径: `packages/session/session-telemetry-otel`
 
 ## 实现逻辑
-OpenTelemetrySessionBackend 继承 SessionTelemetryBackend（注册 ctx.sessionTelemetry），组合 OTel SDK 的 LoggerProvider + BatchLogRecordProcessor + OTLP/HTTP exporter，把协调器交来的记录映射到 logger.emit（src/index.ts:156-267，日志器构造 src/index.ts:204-237）。FEEDBACK_ONLY 模式仅在显式 feedback 提交时经 SessionTelemetryCoordinator 捕获会话历史，DISABLED 不构造 SDK 仅告警（src/index.ts:168-175,242-266）；shutdown() 以自有外部截止时间约束 SDK 完整关闭路径（src/index.ts:294-309）。
+实现会话遥测 seam 的 OpenTelemetry 后端：构造时按 mode 分 FEEDBACK_ONLY 与 DISABLED，DISABLED 只对本地反馈告警，FEEDBACK_ONLY 则校验 exporter.url 为 http(s) 与 shutdownTimeoutMillis 上界后创建 SessionLogReporter (src/index.ts:152-202)。捕获是 on-demand 且带历史：仅当事件属于本会话的 feedback/record 或指向本会话的 feedback/message-*，且确为日志中已追加的那一条，才授权 coordinator.captureSession 回放该前缀 (src/index.ts:43-51, src/index.ts:223-232)。feedback/committed 提交面会先 detached 克隆 inspection、用 Session.fromRestore 重建会话，再走同一授权路径 (src/index.ts:233-243)。emit 直接丢弃直投记录，shutdown 用外层 deadline 与 provider.shutdown() 竞争，超时则 stopPending 并拒绝 (src/index.ts:251-275)。
 
 ## Provides
-- ctx.sessionTelemetry (OpenTelemetry 遥测后端实现，按 feedback 授权捕获会话历史)
+- ctx.sessionTelemetry (OpenTelemetry 会话遥测后端实现：反馈授权的日志上报、shutdown 截止期与共享策略)
+- SessionTelemetryMode / DEFAULT_TELEMETRY_MODE (FEEDBACK_ONLY 与 DISABLED 的共享策略枚举)
 
 ## Depends On (上游依赖)
-- `dsh-command-feedback` [编译依赖] - 声明 feedback/record 等事件类型以判定授权事件
-  - 证据: `src/index.ts:18 type import`
-- `dsh-llm` [编译依赖] - 以 APP_IDENTITY 作为 OTel Resource 的 service.name/version
-  - 证据: `src/index.ts:29 import`
-- `dsh-message-feedback` [编译依赖] - 声明 feedback/message-put/delete 事件类型以判定本会话反馈
-  - 证据: `src/index.ts:19 type import`
-- `dsh-session` [E1+E2] - 监听会话事件以判定 feedback 授权并捕获历史
-  - 证据: `src/index.ts:20 import + src/index.ts:157 static inject (sessions) + src/index.ts:246 ctx.on session/event`
+- `dsh-command-feedback` [编译依赖] - 识别命令反馈事件类型以判定捕获授权
+  - 证据: `package.json:34 peerDep + src/index.ts:14 import type {}；src/index.ts:46 case 'feedback/record'`
+- `dsh-llm` [编译依赖] - 取产品身份写入 OTel resource 属性
+  - 证据: `package.json:36 peerDep + src/index.ts:25 import APP_IDENTITY`
+- `dsh-message-feedback` [E1+E2] - 在消息反馈提交时授权捕获该前缀
+  - 证据: `package.json:35 peerDep + src/index.ts:15 import type {}；src/index.ts:233 ctx.on('feedback/committed')（packages/feedback/message-feedback/src/index.ts:58 声明、:271 触发）`
+- `dsh-otel` [E1+E2] - 创建字节受限的 OTel 会话日志上报器
+  - 证据: `package.json:41 peerDep + src/index.ts:27 import type LogExporterOptions/SessionLogReporter；src/index.ts:145 static inject 'otel'、src/index.ts:190 ctx.otel.createSessionLogReporter`
+- `dsh-session` [E1+E2] - 订阅会话事件做反馈授权，并核对事件是否为日志中的那一条
+  - 证据: `package.json:37 peerDep + src/index.ts:16 import Session/SessionEvent；src/index.ts:159 与 src/index.ts:223 ctx.on('session/event')`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

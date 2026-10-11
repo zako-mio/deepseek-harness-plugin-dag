@@ -26,4 +26,4 @@
   - 证据: `src/client/flow.ts:11 DirectoryFlowOwnerProps + src/client/index.ts:79-80 ctx.uiWorkspace.listDirectory/createDirectory`
 
 ## Dependents (下游被依赖)
-- `dsh-host-directory-picker-auto` - browse 交互的客户端界面条目
+- `dsh-host-directory-picker-auto` - 与 browse 后端配对挂载的客户端界面包

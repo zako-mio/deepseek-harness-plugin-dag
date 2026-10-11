@@ -2,7 +2,7 @@
 
 - 包名: `@deepseek-ai/dsh-client-ui-slots`
 - 源码路径: `packages/client/ui-slots`
-- 被插件引用: 50 次
+- 被插件引用: 57 次
 - 描述: 
 
 ## 被集依赖 (下游)
@@ -22,6 +22,8 @@
 - `dsh-client-ui-message-feedback`
 - `dsh-client-ui-model-selection`
 - `dsh-client-ui-open-in-app`
+- `dsh-client-ui-permission-presets`
+- `dsh-client-ui-plan`
 - `dsh-client-ui-plugin-manager`
 - `dsh-client-ui-reference`
 - `dsh-client-ui-renderer`
@@ -34,6 +36,7 @@
 - `dsh-client-ui-settings-models`
 - `dsh-client-ui-settings-plugin-inventory`
 - `dsh-client-ui-settings-plugins`
+- `dsh-client-ui-settings-session-log`
 - `dsh-client-ui-settings-shell`
 - `dsh-client-ui-settings-subagent`
 - `dsh-client-ui-settings-web-search`
@@ -54,7 +57,11 @@
 - `dsh-client-ui-workspace`
 - `dsh-client-web`
 - `dsh-experimental-client-ui-agent-team`
+- `dsh-experimental-client-ui-claude-code-mods`
+- `dsh-experimental-client-ui-cot-translation`
 - `dsh-experimental-client-ui-voice-input`
+- `dsh-experimental-inspector`
+- `dsh-experimental-session-inspector`
 - `dsh-session-log-export`
 
 ## 依赖机制

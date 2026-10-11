@@ -1,8 +1,8 @@
 # dsh-token-meter
 
 - 包名: `@deepseek-ai/dsh-token-meter`
-- 分组: G23 LLM 适配
-- 拓扑层: Layer 4
+- 分组: G22 LLM 适配
+- 拓扑层: Layer 3
 - 来源层: L1 核心集
 - 源码路径: `packages/llm/token-meter`
 
@@ -26,10 +26,11 @@
   - 证据: `src/index.ts:27 import type {} + src/index.ts:106 static inject sessionProjections + src/index.ts:114 ctx.sessionProjections.register`
 
 ## Dependents (下游被依赖)
-- `dsh-acp` - 向客户端上报上下文占用（usage_update）
-- `dsh-client-ui-chat` - token 计量显示
-- `dsh-client-ui-conversation` - 上下文占用计量显示
-- `dsh-client-ui-subagent` - 引入 token-meter 客户端类型合并（谱系行展示计量）
+- `dsh-acp` - 在有用量与容量事实时发出标准 usage_update
+- `dsh-client-ui-chat` - token 计量展示
+- `dsh-client-ui-conversation` - 上下文占用展示
+- `dsh-client-ui-subagent` - 血统行复用 token-meter 的用量展示类型
 - `dsh-compaction-basic` - 用统一 token 计量器测量表面压力、估算摘要替换体积，并驱动所有保留与收缩定价决策
 - `dsh-compaction-tool-result-pruner` - 为每个被遮蔽节点计价以写入影子价格事件，使纯消费者无需保留逐节点状态即可扣减
+- `dsh-experimental-claude-code-mods` - 类型面需要 token-meter 的投影状态声明以读取会话用量
 - `dsh-spill-policy` - 用 estimateContent 估算文本/内容 token 以决定溢出并计算头尾保留预算

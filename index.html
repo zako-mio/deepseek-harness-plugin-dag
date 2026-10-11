@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DeepSeek Harness 插件级 DAG 依赖链分析 · 主页仪表盘 v0.1.7-rc.2</title>
+<title>DeepSeek Harness 插件级 DAG 依赖链分析 · 主页仪表盘 v0.2.1-alpha.2</title>
 <style>
 :root{--bg:#0f1117;--panel:#161a22;--border:#2a2f3a;--text:#e6e8ee;--dim:#9aa3b2;--accent:#4f8cff;--ok:#2fb98a;--ext:#b48a3c;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -56,30 +56,31 @@ footer{margin-top:36px;padding:16px 32px;border-top:1px solid var(--border);colo
 </head>
 <body>
 <header>
-<h1>DeepSeek Harness 插件级 DAG 依赖链分析 <span class="badge">v0.1.7-rc.2</span></h1>
-<div class="sub">以 cordis 插件为最小分析单元，三硬依据（E1 编译 / E2 运行时 / E3 组合）逐条源码溯源，回答每个插件「实现了什么 / 依赖谁 / 被谁依赖」。<br>2026-09-27 全量重建至 dsh-v0.1.7-rc.2：L1 核心集 + L2 web-app + L3 其余可挂载插件全部完成。</div>
+<h1>DeepSeek Harness 插件级 DAG 依赖链分析 <span class="badge">v0.2.1-alpha.2</span></h1>
+<div class="sub">以 cordis 插件为最小分析单元，三硬依据（E1 编译 / E2 运行时 / E3 组合）逐条源码溯源，回答每个插件「实现了什么 / 依赖谁 / 被谁依赖」。<br>2026-10-11 全量重建至 dsh-v0.2.1-alpha.2：L1 核心集 + L2 web-app + L3 其余可挂载插件全部完成。</div>
 </header>
 <main>
 <h2>核心统计</h2>
 <div class="stats" id="statbar">
-<div class="stat"><b>239</b><span>插件节点</span><small>L1 90 · L2 82 · L3 67</small></div>
-<div class="stat"><b>73</b><span>外部 seam 基座</span><small>抽象基座 / 工具库 / 测试支撑</small></div>
-<div class="stat"><b>1077</b><span>节点间依赖边</span><small>另 536 条 seam 边</small></div>
-<div class="stat"><b>19</b><span>拓扑层</span><small>最长路径分层</small></div>
-<div class="stat"><b>50</b><span>分组</span><small>按 packages 域划分</small></div>
-<div class="stat"><b>312</b><span>HTML 插件页</span><small>239 插件 + 73 seam</small></div>
+<div class="stat"><b>248</b><span>插件节点</span><small>L1 91 · L2 84 · L3 73</small></div>
+<div class="stat"><b>83</b><span>外部 seam 基座</span><small>抽象基座 / 工具库 / 测试支撑</small></div>
+<div class="stat"><b>1167</b><span>节点间依赖边</span><small>另 584 条 seam 边</small></div>
+<div class="stat"><b>17</b><span>拓扑层</span><small>最长路径分层</small></div>
+<div class="stat"><b>48</b><span>分组</span><small>按 packages 域划分</small></div>
+<div class="stat"><b>331</b><span>HTML 插件页</span><small>248 插件 + 83 seam</small></div>
 </div>
 <h2>主入口</h2>
 <div class="bigcards">
 <a class="bigcard" href="04-interactive/index.html"><h3>交互 DAG 总览 <span class="arrow">→</span></h3><p>cytoscape 本地渲染：组级 51 节点（50 组 + EXT），点击下钻组内插件 DAG，支持 <code>?drill=Gxx</code> / <code>#Gxx</code> 深链；disabled 插件灰显红边。</p><span class="ex">04-interactive/index.html</span></a>
-<a class="bigcard" href="03-groups/index.html"><h3>分组索引 <span class="arrow">→</span></h3><p>50 组按装配来源分为 3 区、9 个功能簇；每组含插件列表、层跨度与来源徽标。</p><span class="ex">03-groups/index.html</span></a>
-<a class="bigcard" href="02-plugin-pages/dsh-session.html"><h3>插件页 <span class="arrow">→</span></h3><p>每节点一页（共 312 页：239 插件 + 73 seam）：插件信息 + 实现逻辑 + provides + 依赖/被依赖 + DAG 链式导航 + 源码引用。</p><span class="ex">示例 → 02-plugin-pages/dsh-session.html</span></a>
+<a class="bigcard" href="03-groups/index.html"><h3>分组索引 <span class="arrow">→</span></h3><p>48 组按装配来源分为 3 区、9 个功能簇；每组含插件列表、层跨度与来源徽标。</p><span class="ex">03-groups/index.html</span></a>
+<a class="bigcard" href="02-plugin-pages/dsh-session.html"><h3>插件页 <span class="arrow">→</span></h3><p>每节点一页（共 331 页：248 插件 + 83 seam）：插件信息 + 实现逻辑 + provides + 依赖/被依赖 + DAG 链式导航 + 源码引用。</p><span class="ex">示例 → 02-plugin-pages/dsh-session.html</span></a>
 </div>
 <h2>次级入口</h2>
 <div class="links">
 <a href="08-special-modules/">特殊模块<span class="cnt">8 页</span></a>
 <a class="ai" href="06-md/00-index.md">AI 检索 MD 镜像<span class="cnt">Markdown</span></a>
 <a href="report.html">任务报告</a>
+<a class="ai" href="017rc2-021alpha2-DIFF-REPORT.md">RC 差异报告<span class="cnt">017rc2-021alpha2 · MD</span></a>
 <a class="ai" href="RC2-0.1.7-DIFF-REPORT.md">RC 差异报告<span class="cnt">RC2-0.1.7 · MD</span></a>
 <a class="ai" href="RC7-RC8-DIFF-REPORT.md">RC 差异报告<span class="cnt">RC7-RC8 · MD</span></a>
 <a class="ai" href="RC8-RC2-DIFF-REPORT.md">RC 差异报告<span class="cnt">RC8-RC2 · MD</span></a>
@@ -98,25 +99,25 @@ footer{margin-top:36px;padding:16px 32px;border-top:1px solid var(--border);colo
 </div>
 <h2>分区总览</h2>
 <div class="regbox">
-<div class="regcard"><div class="rt"><span class="dot" style="background:#4f8cff"></span><a href="03-groups/index.html#L1">L1 核心集</a></div><div class="rc"><b>29 组</b> / <b>112 插件</b>（组内成员合计）</div><div class="rnote">插件自身 source_layer 计为 L1 90</div><div class="clchips">
+<div class="regcard"><div class="rt"><span class="dot" style="background:#4f8cff"></span><a href="03-groups/index.html#L1">L1 核心集</a></div><div class="rc"><b>28 组</b> / <b>106 插件</b>（组内成员合计）</div><div class="rnote">插件自身 source_layer 计为 L1 91</div><div class="clchips">
 <a href="03-groups/index.html#F1" style="background:#4f8cff22;color:#4f8cff">F1 运行时基座 (5)</a>
 <a href="03-groups/index.html#F2" style="background:#4f8cff22;color:#4f8cff">F2 会话与上下文 (7)</a>
-<a href="03-groups/index.html#F3" style="background:#4f8cff22;color:#4f8cff">F3 智能与协议 (3)</a>
-<a href="03-groups/index.html#F4" style="background:#4f8cff22;color:#4f8cff">F4 工具与执行面 (11)</a>
-<a href="03-groups/index.html#F5" style="background:#4f8cff22;color:#4f8cff">F5 宿主与工作区 (3)</a>
+<a href="03-groups/index.html#F3" style="background:#4f8cff22;color:#4f8cff">F3 智能与协议 (5)</a>
+<a href="03-groups/index.html#F4" style="background:#4f8cff22;color:#4f8cff">F4 工具与执行面 (5)</a>
+<a href="03-groups/index.html#F5" style="background:#4f8cff22;color:#4f8cff">F5 宿主与工作区 (6)</a>
 </div></div>
-<div class="regcard"><div class="rt"><span class="dot" style="background:#9a7bf0"></span><a href="03-groups/index.html#L2">L2 web-app</a></div><div class="rc"><b>10 组</b> / <b>89 插件</b>（组内成员合计）</div><div class="rnote">插件自身 source_layer 计为 L2 82</div><div class="clchips">
+<div class="regcard"><div class="rt"><span class="dot" style="background:#9a7bf0"></span><a href="03-groups/index.html#L2">L2 web-app</a></div><div class="rc"><b>10 组</b> / <b>93 插件</b>（组内成员合计）</div><div class="rnote">插件自身 source_layer 计为 L2 84</div><div class="clchips">
 <a href="03-groups/index.html#F6" style="background:#9a7bf022;color:#9a7bf0">F6 客户端 UI (1)</a>
 <a href="03-groups/index.html#F7" style="background:#9a7bf022;color:#9a7bf0">F7 客户端运行时与宿主接入 (9)</a>
 </div></div>
-<div class="regcard"><div class="rt"><span class="dot" style="background:#2fb98a"></span><a href="03-groups/index.html#L3">L3 其余可挂载</a></div><div class="rc"><b>11 组</b> / <b>38 插件</b>（组内成员合计）</div><div class="rnote">插件自身 source_layer 计为 L3 67</div><div class="clchips">
-<a href="03-groups/index.html#F8" style="background:#2fb98a22;color:#2fb98a">F8 协议与远程 (5)</a>
-<a href="03-groups/index.html#F9" style="background:#2fb98a22;color:#2fb98a">F9 实验与扩展 (6)</a>
+<div class="regcard"><div class="rt"><span class="dot" style="background:#2fb98a"></span><a href="03-groups/index.html#L3">L3 其余可挂载</a></div><div class="rc"><b>10 组</b> / <b>49 插件</b>（组内成员合计）</div><div class="rnote">插件自身 source_layer 计为 L3 73</div><div class="clchips">
+<a href="03-groups/index.html#F8" style="background:#2fb98a22;color:#2fb98a">F8 协议与远程基座 (6)</a>
+<a href="03-groups/index.html#F9" style="background:#2fb98a22;color:#2fb98a">F9 实验与扩展 (4)</a>
 </div></div>
 </div>
 <h2>方法说明</h2>
-<div class="method"><ul><li><b>E1 编译依赖</b>：package.json peerDependencies / import 语句。</li><li><b>E2 运行时依赖</b>：ctx 服务注入 / ctx.get / 事件订阅。</li><li><b>E3 组合依赖</b>：cordis.patch.yml 装配位置。</li><li>拓扑分层采用<b>最长路径</b>（被依赖方先于依赖方，Layer 0 基础 → Layer 18 最外层）；type-only 类型导入边标注但不参与分层（TS 类型环合法），1 条运行时反馈边标 soft，19 个装配行 disabled 灰显。</li></ul></div>
+<div class="method"><ul><li><b>E1 编译依赖</b>：package.json peerDependencies / import 语句。</li><li><b>E2 运行时依赖</b>：ctx 服务注入 / ctx.get / 事件订阅。</li><li><b>E3 组合依赖</b>：cordis.patch.yml 装配位置。</li><li>拓扑分层采用<b>最长路径</b>（被依赖方先于依赖方，Layer 0 基础 → Layer 16 最外层）；type-only 类型导入边标注但不参与分层（TS 类型环合法），1 条运行时反馈边标 soft，19 个装配行 disabled 灰显。</li></ul></div>
 </main>
-<footer>DeepSeek Harness 插件级 DAG 依赖链分析 · v0.1.7-rc.2 · 2026-09-27 全量重建 · 统计数字由 gen-root-index.py 从 webapp-dag.json / external-seams.json 派生</footer>
+<footer>DeepSeek Harness 插件级 DAG 依赖链分析 · v0.2.1-alpha.2 · 2026-10-11 全量重建 · 统计数字由 gen-root-index.py 从 webapp-dag.json / external-seams.json 派生</footer>
 </body>
 </html>

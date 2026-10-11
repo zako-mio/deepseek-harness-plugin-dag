@@ -7,34 +7,35 @@
 - 源码路径: `packages/client/ui-trajectory`
 
 ## 实现逻辑
-注册 trajectory 会话视图标签与轨迹 Definition：apply 为每个 SessionBinding 构造 trajectory 的 ObservableSnapshot 源并 ctx.uiSession.provide hooks 'trajectory'（src/client/index.ts:49-78），依次注册 assistant/compaction/message/request-header/tool 五类 Definition（src/client/index.ts:69-74），最后向 'conversation.view' 注册 id='trajectory' 的 TrajectoryView 并声明子槽 conversation.trajectory.images（src/client/index.ts:79-112）。视图组件用 client-store 引擎与 ui-primitives 渲染虚拟行、表格与时间线。
+为会话贡献 trajectory 视图页与配套事件定义：client/index.ts:69-74 依次注册 message/request-header/assistant/tool/compaction 五组 ConversationNodeDefinition 并注册视图快照构建，:75-78 用 ctx.uiSession.provide 暴露 trajectory hook（resolve 时按 binding 建 WeakMap 缓存的 ObservableSnapshot），:79-112 把 TrajectoryView 注册进 conversation.view 槽（id 'trajectory'、order 10），并声明子槽 conversation.trajectory.images、注入 loadOlder/loadImage/setActualDuration 等回调。快照数据来自 ctx.uiConversation.binding(...).target('trajectory')（:53-58），assistant 定义复用 dsh-llm 的 assistantStreamFirstTokenTime 与 dsh-compaction/dsh-agent/dsh-tools 的类型做事件投影。
 
 ## Provides
-- slot conversation.view id='trajectory' 的轨迹视图与子槽 conversation.trajectory.images
-- conversation 节点 Definitions（assistant-stream/compaction/message/request-header/tool）注册进 uiConversation.events
-- uiSession hooks 'trajectory'（TrajectorySnapshot 观察源）
+- conversation.view 的 'trajectory' 视图页
+- ctx.uiSession 的 trajectory hook 提供（按会话绑定发布快照）
+- 槽位 conversation.trajectory.images
+- 五组 ConversationNodeDefinition（message/request-header/assistant/tool/compaction）
 
 ## Depends On (上游依赖)
-- `dsh-agent` [编译依赖] - 引入 agent 类型用于消息定义
-  - 证据: `src/client/trajectory-message-definitions.ts:6 import type`
-- `dsh-api-session-controller` [E1+E2] - 读取会话 binding 与分页 loadOlder
-  - 证据: `src/client/index.ts:7 import + src/client/index.ts:89 ctx.sessions.binding`
-- `dsh-client-locale` [E1+E2] - 注册 trajectory 字典
-  - 证据: `src/client/index.ts:11 + src/client/index.ts:62 ctx.locale.register`
-- `dsh-client-ui-conversation` [E1+E2] - 读取 trajectory target 并注册 conversation view Definition
-  - 证据: `src/client/index.ts:14 import + src/client/index.ts:53 ctx.uiConversation.binding`
-- `dsh-client-ui-primitives` [编译依赖] - 复用表格、时间线等展示原语
-  - 证据: `src/client/TrajectoryTable.tsx:25 + TrajectoryTimeline.tsx:7`
-- `dsh-client-ui-renderer` [编译依赖] - 拉入槽/渲染服务类型合并
-  - 证据: `src/client/index.ts:15 import type`
-- `dsh-client-ui-session` [E1+E2] - 向会话 UI 提供 trajectory hook
-  - 证据: `src/client/index.ts:16 import type + src/client/index.ts:75 ctx.uiSession.provide`
-- `dsh-llm` [编译依赖] - 投影 assistant 流事件与 LLM 类型
-  - 证据: `src/client/trajectory-assistant-definition.ts:7-8 + src/client/trajectory-event-projection.ts:3`
+- `dsh-agent` [编译依赖] - 消息节点读取 agent 侧事件类型
+  - 证据: `src/client/trajectory-message-definitions.ts:6 import type ... from '@deepseek-ai/dsh-agent/types'`
+- `dsh-api-session-controller` [E1+E2] - 取会话绑定以读取快照并翻页加载更早历史
+  - 证据: `src/client/index.ts:7 import type { SessionBinding } from '@deepseek-ai/dsh-api-session-controller/client'; src/client/index.ts:89 ctx.sessions.binding(sessionId)?.session`
+- `dsh-client-locale` [E1+E2] - 视图页标签与表头文案本地化
+  - 证据: `src/client/index.ts:11 import type {} from '@deepseek-ai/dsh-client-locale/client'; src/client/index.ts:62 ctx.locale.register(NS, { zh, en })`
+- `dsh-client-ui-conversation` [E1+E2] - 会话视图槽、事件定义注册表与 trajectory 目标快照均由 ui-conversation 提供
+  - 证据: `src/client/index.ts:14 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'; src/client/index.ts:93 ctx.uiConversation.binding(sessionId).target('trajectory')`
+- `dsh-client-ui-primitives` [编译依赖] - 表格、时间轴与工具条控件复用共享原语
+  - 证据: `src/client/TrajectoryTable.tsx:25 import ... from '@deepseek-ai/dsh-client-ui-primitives'`
+- `dsh-client-ui-renderer` [E1+E2] - ctx.slots 服务由 renderer 提供
+  - 证据: `src/client/index.ts:15 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'`
+- `dsh-client-ui-session` [E1+E2] - 把 trajectory hook 发布为会话标准 props 的一部分
+  - 证据: `src/client/index.ts:16 import type {} from '@deepseek-ai/dsh-client-ui-session/client'; src/client/index.ts:75-77 ctx.uiSession.provide`
+- `dsh-llm` [编译依赖] - assistant 节点按 LLM 流块与首 token 时刻投影
+  - 证据: `src/client/trajectory-assistant-definition.ts:7-8 import type { StreamChunk } from '@deepseek-ai/dsh-llm' + assistantStreamFirstTokenTime from '@deepseek-ai/dsh-llm/assistant-stream'`
 - `dsh-session` [编译依赖] - 会话标识类型
-  - 证据: `src/client/index.ts:9 SessionId`
-- `dsh-tools` [编译依赖] - 工具类型用于工具轨迹定义
-  - 证据: `src/client/trajectory-tool-definition.ts:6 import type`
+  - 证据: `src/client/index.ts:9 import type { SessionId } from '@deepseek-ai/dsh-session/types'`
+- `dsh-tools` [编译依赖] - 工具节点按工具结果元数据投影
+  - 证据: `src/client/trajectory-tool-definition.ts:6 import type ... from '@deepseek-ai/dsh-tools/types'`
 
 ## Dependents (下游被依赖)
 - `dsh-client-ui-attachment` - 占据轨迹视图图片槽

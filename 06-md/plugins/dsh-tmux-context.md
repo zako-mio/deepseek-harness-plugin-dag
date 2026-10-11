@@ -2,7 +2,7 @@
 
 - 包名: `@deepseek-ai/dsh-tmux-context`
 - 分组: G08 上下文注入
-- 拓扑层: Layer 5
+- 拓扑层: Layer 4
 - 来源层: L3 其余
 - 源码路径: `packages/context/tmux-context`
 

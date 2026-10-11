@@ -2,23 +2,22 @@
 
 - 包名: `@deepseek-ai/dsh-authorization`
 - 分组: G10 凭据与授权
-- 拓扑层: Layer 2
+- 拓扑层: Layer 1
 - 来源层: L1 核心集
 - 源码路径: `packages/credentials/authorization`
 
 ## 实现逻辑
-定义 `ctx.authorization` 能力 seam：`AuthorizationService` 继承 cordis `Service` 并 `static inject=['credentials']`（src/index.ts:189-198），以 `registerFlow()` 按 `CredentialKey` 注册「凭据获取流程」且一个 key 只允许一个 flow（src/index.ts:209-225）。`begin()` 用 `running` Map 保证同一 key 单飞、校验 method 合法性，并把流程屏蔽在一个中立会话（notify/commit/prompt）后执行（src/index.ts:283-323）。seam 只在流程于本次尝试内确实提交了凭据记录后才报 `authorized`（`observed.committed` + `describeRecord`，src/index.ts:392-453），并以容错扇出广播 `authorization/settled`（src/index.ts:338-358）。`invariant.ts` 独立校验 settled 后 key 不再 in-flight（src/invariant.ts:24-37），`types.ts` 给出不含 cordis/service 依赖的 wire 安全类型（src/types.ts:1-91）。
+以 Cordis Service 形式实现 `ctx.authorization` 授权 seam：维护 CredentialKey 到 AuthorizationFlow 的注册表与 CredentialKey 到在飞尝试的表，registerFlow() 用 ctx.effect 保证卸载时注销并取消在飞尝试 (src/index.ts:209-225)。begin() 先做 key/方法/并发校验，再运行 flow，并强制「本次尝试内必须真的提交过凭据记录」的契约——未观察到提交或记录被删除都抛 NOT_COMMITTED (src/index.ts:283-323, src/index.ts:435-446)。提交经 ctx.credentials.modifyRecord 完成，并通过监听 credentials/record-updated 确认提交发生在本尝试之内 (src/index.ts:386-400)。结束后以 contained-dispatch 方式扇出 authorization/settled 事件，监听器异常只记日志、不改变调用方结果 (src/index.ts:337-351)。
 
 ## Provides
-- ctx.authorization (凭据授权 seam：注册/列出/取消/执行凭据获取流程，按 key 单飞)
-- 事件 authorization/settled (一次授权尝试终态广播，含 failed)
+- ctx.authorization (凭据获取流的注册、单次授权尝试编排与取消的 seam)
+- authorization/settled 事件 (emit 模式，报告每次尝试终态，含 failed)
+- AuthorizationError / AuthorizationDeclinedError 错误分类
 
 ## Depends On (上游依赖)
-- `dsh-invariants` [E1+E2] - 注册 single-flight 释放不变式，检测 settled 后 key 残留 in-flight
-  - 证据: `src/invariant.ts:7 import InvariantInstaller + src/invariant.ts:14 inject ['invariants'] + src/invariant.ts:45 register`
-- `dsh-llm` [编译依赖] - AuthorizationError 复用 HarnessError 稳定错误分类
-  - 证据: `src/index.ts:31 import HarnessError`
+- `dsh-llm` [编译依赖] - 授权错误继承 HarnessError，复用统一的错误分类与展示
+  - 证据: `src/index.ts:31 import { HarnessError } from '@deepseek-ai/dsh-llm' + package.json:36 peerDep`
 
 ## Dependents (下游被依赖)
-- `dsh-deepseek-account-platform` - 把浏览器 PKCE 登录注册为授权流程并驱动一次尝试
-- `dsh-llm-pi-ai` - 把 pi-ai 的登录会话翻译成 harness 中立的通知/提问流程
+- `dsh-deepseek-account-platform` - 登录流程以 authorization flow 形式注册，取消与单飞语义由该 seam 保证
+- `dsh-llm-pi-ai` - 为 pi-ai 提供方注册交互式登录流程

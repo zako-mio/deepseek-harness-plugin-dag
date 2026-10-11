@@ -1,7 +1,7 @@
 # dsh-subprocess-ssh
 
 - 包名: `@deepseek-ai/dsh-subprocess-ssh`
-- 分组: G39 SSH 远程执行
+- 分组: G37 SSH 远程执行
 - 拓扑层: Layer 1
 - 来源层: L3 其余
 - 源码路径: `packages/ssh/subprocess-ssh`

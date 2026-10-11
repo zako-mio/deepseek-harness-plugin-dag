@@ -1,7 +1,7 @@
 # dsh-lsp-stdio
 
 - 包名: `@deepseek-ai/dsh-lsp-stdio`
-- 分组: G24 LSP 集成
+- 分组: G23 LSP 集成
 - 拓扑层: Layer 0
 - 来源层: L3 其余
 - 源码路径: `packages/lsp/lsp-stdio`

@@ -1,7 +1,7 @@
 # dsh-agent-preset
 
 - 包名: `@deepseek-ai/dsh-agent-preset`
-- 分组: G27 Agent 预设
+- 分组: G26 Agent 预设
 - 拓扑层: Layer 6
 - 来源层: L3 其余
 - 源码路径: `packages/preset/agent-preset`

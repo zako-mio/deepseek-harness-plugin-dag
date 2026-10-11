@@ -1,10 +1,10 @@
 # dsh-skill-badge
 
 - 包名: `@deepseek-ai/dsh-skill-badge`
-- 分组: G37 技能
-- 拓扑层: Layer 3
-- 来源层: L1 核心集
-- 源码路径: `packages/skill/skill-badge`
+- 分组: G13 实验特性
+- 拓扑层: Layer 1
+- 来源层: L3 其余
+- 源码路径: `packages/experimental/skill-badge`
 
 ## 实现逻辑
 内置技能提供者插件：构造单个 dsh-badge 技能候选（bundled 来源、BUNDLED_SKILL_RANK 优先级、资源基目录指向 ../assets/），list 返回静态候选、get 读取 assets/dsh-badge.md 正文 (src/index.ts:25-50)。apply 时经 ctx.skills.registerProvider 注册名为 'dsh-badge' 的 provider (src/index.ts:57-60)。

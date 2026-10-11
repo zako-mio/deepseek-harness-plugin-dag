@@ -1,8 +1,8 @@
 # dsh-fs-ssh
 
 - 包名: `@deepseek-ai/dsh-fs-ssh`
-- 分组: G39 SSH 远程执行
-- 拓扑层: Layer 5
+- 分组: G37 SSH 远程执行
+- 拓扑层: Layer 4
 - 来源层: L3 其余
 - 源码路径: `packages/ssh/fs-ssh`
 

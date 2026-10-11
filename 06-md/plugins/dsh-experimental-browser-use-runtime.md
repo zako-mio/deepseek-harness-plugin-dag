@@ -11,4 +11,4 @@
 - `dsh-experimental-browser-use-stagehand-native`
 
 ## 依赖机制
-编译依赖
+编译依赖、运行时依赖

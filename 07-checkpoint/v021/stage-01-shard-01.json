@@ -1,0 +1,898 @@
+[
+  {
+    "id": "dsh-acp",
+    "name": "@deepseek-ai/dsh-acp",
+    "implementation": "以 Cordis 函数插件挂载一个 automation-only 的 Agent Client Protocol 服务端：apply 先捕获注入的 agents/llm/sessionPersistence/sessions(src/index.ts:62,100)，再用 @agentclientprotocol/sdk 的 ndJsonStream 把 process.stdin/stdout 接成 JSON-RPC 通道(src/index.ts:378-395)，并把 session/new|resume|list|close|setConfigOption|prompt|cancel 映射为 AcpSession 生命周期(src/index.ts:200-374)。AcpSession 通过 ctx.agents.create/resume 组合或恢复 Agent 并装载 ACP 声明的 MCP server(src/session.ts:129-172, src/mcp.ts:26-33)，把已提交的 session 事件翻译成标准 ACP update(src/updates.ts:16-102)，并把 approval/request 转成一次性的 requestPermission 请求(src/index.ts:159-177)。",
+    "provides": [
+      "ACP 协议服务端能力(JSON-RPC over stdio 的 automation-only Agent Client Protocol 桥，src/index.ts:97-441)",
+      "标准 ACP 方法集 session/new|list|resume|close|setConfigOption|prompt|cancel(src/index.ts:382-394)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:36 peerDep + src/session.ts:13 import + src/index.ts:62 inject 'agents' + src/session.ts:131 ctx.agents.create",
+        "purpose": "创建/恢复被 ACP 驱动的 Agent，并订阅 agent/* 事件维护会话记录"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:38 peerDep + src/content.ts:8 import + src/index.ts:62 inject 'llm' + src/session.ts:130 ctx.llm",
+        "purpose": "构造模型选择控制并探测当前路由的图像输入能力"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:40 peerDep + src/session.ts:15 import + src/index.ts:233 ctx.sessions.flush",
+        "purpose": "以 Session 身份承载事件流并在 session/new 后落盘会话"
+      },
+      {
+        "plugin_id": "dsh-session-persistence",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:41 peerDep + src/index.ts:50 import + src/index.ts:62 inject 'sessionPersistence' + src/index.ts:100 ctx.sessionPersistence",
+        "purpose": "为 session/resume 与 session/list 提供持久化会话的 stat/list 读取"
+      },
+      {
+        "plugin_id": "dsh-attachment",
+        "mechanism": "E1",
+        "evidence": "package.json:37 peerDep + src/content.ts:5-6 import ImageAttachmentRef/SaveImageAttachment",
+        "purpose": "把 ACP 内联图像落成持久附件引用"
+      },
+      {
+        "plugin_id": "dsh-mcp-client",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:39 peerDep + src/mcp.ts:8 import * as McpClient + src/mcp.ts:32 agentCtx.plugin(McpClient, config)",
+        "purpose": "把 ACP newSession/resumeSession 声明的 MCP server 挂载到 Agent 作用域"
+      },
+      {
+        "plugin_id": "dsh-user-approval",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:43 peerDep + src/index.ts:52 import type {} + src/index.ts:159 ctx.on('approval/request')",
+        "purpose": "把权限请求转成 ACP requestPermission 并只回一次性决定"
+      },
+      {
+        "plugin_id": "dsh-token-meter",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:42 peerDep(optional) + src/updates.ts:6 import type {} + src/updates.ts:95 ctx.get('tokenMeter')",
+        "purpose": "在有用量与容量事实时发出标准 usage_update"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "package.json:31 dependencies + src/index.ts:19 import brandString",
+        "purpose": "把外部传入的会话标识品牌化为 SessionId"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-api-gateway",
+    "name": "@deepseek-ai/dsh-api-gateway",
+    "implementation": "实现 Typert Remote 的双面传输。Host 侧 TypertGatewayService 注册为 ctx.typertGateway(src/index.ts:199-228)，在 connection 上拦截 /api RPC(src/index.ts:233-239)，并把 /api/remote.mux 的 WebSocket 升级路由挂到 webServer(src/index.ts:240-277, src/stream-protocol.ts:6)。派发时按严格描述符或 SRC 标记解析 endpoint 与参数，经 lookup/context provider 解析后以绑定了 invocation 的 Service 视图调用业务方法(src/index.ts:700-938)。Client 侧 ClientRemoteService 注册 ctx.remote，按生成描述符挂载 remote.<namespace> 并监管可重连的逻辑流(src/client/index.ts:126-200)。",
+    "provides": [
+      "ctx.typertGateway(Host 侧 Typert Remote 派发服务：invoke/stream/registerRemoteEvents，src/index.ts:194-323)",
+      "ctx.remote(Client 侧类型化 Remote 命名空间服务与 $stream/$host，src/client/index.ts:102-116,126-131)",
+      "WebSocket 多路复用路由 /api/remote.mux 与升级处理(src/stream-protocol.ts:6 + src/index.ts:251-262)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-client-connection",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:66 peerDep + src/index.ts:10-14 import OperatorPeer + src/client/index.ts:11-13 import ConnectionHandle + src/index.ts:233 ctx.inject(['connection'])",
+        "purpose": "复用连接层的 RPC 拦截、Peer 身份与断线重连生命周期"
+      },
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:62 dependencies + src/index.ts:21-32 import RemoteError/remoteMethods + src/index.ts:329 ctx.typert.local",
+        "purpose": "Remote 描述符、错误词汇与 lookup/context provider 契约"
+      },
+      {
+        "plugin_id": "dsh-typert-registry",
+        "mechanism": "E2",
+        "evidence": "package.json:39 dsh.client.inject + src/index.ts:200 static inject = ['typert'] + src/index.ts:329 ctx.typert",
+        "purpose": "Client 面注入 Typert registry，使生成描述符可在页内解析"
+      },
+      {
+        "plugin_id": "dsh-deque",
+        "mechanism": "E1",
+        "evidence": "package.json:58 dependencies + src/index.ts:15 import Deque",
+        "purpose": "为转发事件与流式帧提供有界队列缓冲"
+      },
+      {
+        "plugin_id": "dsh-timeout",
+        "mechanism": "E1",
+        "evidence": "package.json:59 dependencies + src/index.ts:17 import MAX_TIMER_DELAY_MS",
+        "purpose": "约束 WebSocket 心跳间隔的配置上界"
+      },
+      {
+        "plugin_id": "dsh-host-webserver",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:72 devDependencies + src/index.ts:16 import type WebUpgradeRoute + src/index.ts:262 webCtx.webServer.registerUpgrade",
+        "purpose": "注册 Remote 流的 WebSocket 升级路由"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "src/stream-protocol.ts:3 import type { Branded }",
+        "purpose": "品牌化跨线缆的不透明 id(clientId/eventId 等)"
+      },
+      {
+        "plugin_id": "dsh-util-crypto",
+        "mechanism": "E1",
+        "evidence": "src/client/stream-client.ts:11 import randomUUID + src/client/remote-events.ts:15 import hash 工具",
+        "purpose": "Client 面生成流请求标识与订阅键"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-api-remotes",
+    "name": "@deepseek-ai/dsh-api-remotes",
+    "implementation": "作为应用级 BFF 装配包分两面工作。Host 面 apply 用 ctx.typertGateway.registerRemoteEvents 注册唯一的转发事件源(src/index.ts:40-45)，按 remote-events.ts 的允许表把 emit 事件推入队列、把 waterfall 事件桥接为待决调用(src/index.ts:48-81,134-158)。Client 面 apply 依次 ctx.remote.$mount 各业务包的 /remote 贡献，任一失败即逆序回滚(src/client/index.ts:178-200)。",
+    "provides": [
+      "转发 Host 事件源(经 ctx.typertGateway.registerRemoteEvents 注册唯一允许表，src/index.ts:37-45 + src/remote-events.ts:20-48)",
+      "ctx.remote 的 Client 命名空间装配(逐个 $mount 生成的 /remote 贡献，src/client/index.ts:171-200)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-api-gateway",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:35 dsh.client.inject + src/index.ts:11 import TypertRemoteEventSource + src/index.ts:37 inject 'typertGateway' + src/index.ts:42 ctx.typertGateway.registerRemoteEvents + src/client/index.ts:30 import ClientRemote",
+        "purpose": "注册转发事件源并挂载 Client Remote 命名空间"
+      },
+      {
+        "plugin_id": "dsh-scope",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:58 peerDep + src/index.ts:13 import carrierKeyOf + src/index.ts:62 carrierKeyOf(this)",
+        "purpose": "从 waterfall 监听器的 this 载体识别所属 Agent"
+      },
+      {
+        "plugin_id": "dsh-deque",
+        "mechanism": "E1",
+        "evidence": "package.json:53 dependencies + src/index.ts:12 import Deque",
+        "purpose": "为转发事件提供拉取式队列缓冲"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "package.json:54 dependencies + src/index.ts:14 import isJsonValue + src/index.ts:163 调用点",
+        "purpose": "校验被转发事件的运行时参数是无损 JSON 数据"
+      },
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1",
+        "evidence": "src/remote-events.ts:14 import TypertForwardableEventEntry + src/types.ts:17-18 declare module 事件选择座",
+        "purpose": "约束转发允许表类型并填充 Remote 事件选择座"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:5 import type { Agent }(仅类型)",
+        "purpose": "声明 waterfall 事件必须直携的 Agent 载体类型"
+      },
+      {
+        "plugin_id": "dsh-client-product-analytics",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:4-5 import productAnalyticsRemote(值导入)",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-agent-preset-registry",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:6 import agentPresetsRemote(值导入)",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-user-questions",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:7 import userQuestionsRemote(值导入)",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-commands",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:8 import commandsRemote(值导入)",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-api-account-controller",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:9 import accountRemote(值导入)",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-api-settings-controller",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:10 import settingsControllerRemote(值导入)",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-office-to-pdf",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:11 import officeToPdfRemote(值导入)",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-goal",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:12 import goalsRemote(值导入)",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-schedule",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:13 import scheduleRemote(值导入)",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:14 import llmRemote(值导入)",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-cordis-host-runner",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:15 import dynamicRemote(值导入)",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-plugin-manager",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:16 import pluginManagerRemote(值导入)",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-client-ui-plugin-manager",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:17 import pluginRegistryProbeRemote(值导入)",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-host-plugin-inventory",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:18 import pluginInventoryRemote(值导入)+ :41 types 导出",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-message-feedback",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:19 import messageFeedbackRemote(值导入)",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-permission-presets",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:20 import permissionPresetsRemote(值导入)",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-command-feedback",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:21 import sessionFeedbackRemote(值导入)",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-client-file-upload",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:22 import fileUploadsRemote(值导入)",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-session-reference",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:23 import sessionReferencesRemote(值导入)",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-subagent",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:24 import subagentsRemote(值导入)",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-api-session-controller",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:25 import sessionRemote(值导入)+ :31 types 再导出",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-api-job-controller",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:26 import jobRemote(值导入)",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-api-workspace-controller",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:27 import workspaceRemote(值导入)",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-api-terminal-controller",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:28 import terminalRemote(值导入)",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-api-workspace-files",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:29 import workspaceFilesRemote(值导入)",
+        "purpose": "把该业务包的 /remote 命名空间装配进 Client"
+      },
+      {
+        "plugin_id": "dsh-deepseek-account",
+        "mechanism": "E1",
+        "evidence": "src/remote-events.ts:10 import type {} from types(仅类型，注册账号事件签名)",
+        "purpose": "为 deepseek-account/* 转发事件提供 Events 声明"
+      },
+      {
+        "plugin_id": "dsh-credentials",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:77,138 import type {} from types(仅类型)",
+        "purpose": "导出凭据状态词汇给 Client 贡献使用"
+      },
+      {
+        "plugin_id": "dsh-file-reference",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:151 import type { FileReferenceCandidate }(仅类型)",
+        "purpose": "导出文件引用候选词汇"
+      },
+      {
+        "plugin_id": "dsh-settings",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:81,141-143 import type {} from types(仅类型)",
+        "purpose": "导出设置命名空间视图词汇"
+      },
+      {
+        "plugin_id": "dsh-user-approval",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:82 import type {} from types + src/index.ts:29 import type {}",
+        "purpose": "为 approval/request 转发事件提供 Events 声明"
+      },
+      {
+        "plugin_id": "dsh-client-connection",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:91-96 import type { ConnectionHandle, ... }(仅类型)",
+        "purpose": "再导出承载层的 Client 类型，使业务包只命名本装配包"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-api-session-controller",
+    "name": "@deepseek-ai/dsh-api-session-controller",
+    "implementation": "实现 Host 侧 Session 业务 API：SessionController 继承 TypertRemoteService 并以 namespace 'session' 注册 ctx.sessionController(src/index.ts:105,143)，静态注入 agents/sessions/sessionProjections/sessionQuery/workspaceRegistry 等服务(src/index.ts:106-118)。它把 list/search/create/rename/fork/prompt/cancel/page/follow/control/projections 等 Remote 方法委托给 agent/commands/history/control/list 子控制器(src/index.ts:259-560)，并由子插件提供文件引用、媒体引用、技能目录与归档门控(src/index.ts:167-173)。同时订阅 session/agent 生命周期事件向外广播 api-session/* 增量(src/index.ts:175-206)。",
+    "provides": [
+      "ctx.sessionController(Host Session 业务 API 与 ctx.remote.session 命名空间所有者，src/index.ts:72-105)",
+      "ctx.remote.session 远程方法集 list/search/create/rename/fork/prompt/cancel/page/follow/control/projections 等(src/index.ts:259-560)",
+      "Host 事件 api-session/added|removed|status|error|activity(src/index.ts:175-206)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:80 peerDep + src/agent.ts:5 import + src/index.ts:106 inject 'agents' + src/index.ts:196 ctx.agents.get",
+        "purpose": "激活/恢复 Session 的 Agent 并读取其状态"
+      },
+      {
+        "plugin_id": "dsh-agent-default-model",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:81 peerDep + src/agent.ts:9 import + src/index.ts:107 inject 'agentDefaultModel' + src/index.ts:310 ctx.agentDefaultModel.saveSelection",
+        "purpose": "读写默认模型选择"
+      },
+      {
+        "plugin_id": "dsh-agent-preset-registry",
+        "mechanism": "E1",
+        "evidence": "package.json:82 peerDep + src/agent.ts:10 import + src/list.ts:6 import",
+        "purpose": "解析 Session 行展示所需的 Agent 预设元数据"
+      },
+      {
+        "plugin_id": "dsh-api-gateway",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:83 peerDep + src/client/scope.ts:4 import '@deepseek-ai/dsh-api-gateway/client' + src/client/sessions/manager.ts:15 同源导入",
+        "purpose": "Client 面通过 Gateway 的 ctx.remote 调用本命名空间"
+      },
+      {
+        "plugin_id": "dsh-attachment",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:84 peerDep + src/commands.ts:8 import AttachmentError + src/index.ts:109 inject 'attachments' + src/media-references.ts:69 ctx.attachments",
+        "purpose": "校验与读取会话附件"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "package.json:72 dependencies + src/commands.ts:6 import brandString",
+        "purpose": "把外部标识品牌化为 SessionId 等不透明 id"
+      },
+      {
+        "plugin_id": "dsh-client-connection",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:85 peerDep + src/media-references.ts:10 import + src/media-references.ts:67 inject 'connection'",
+        "purpose": "媒体引用 HTTP 端点复用连接层的请求鉴权"
+      },
+      {
+        "plugin_id": "dsh-client-file-upload",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:86 peerDep + src/commands.ts:12-13 import + src/index.ts:148 ctx.fileUploads.registerAgentResolver",
+        "purpose": "为上传文件注册 Session→Agent 解析器"
+      },
+      {
+        "plugin_id": "dsh-client-store",
+        "mechanism": "E1",
+        "evidence": "src/client/contract/events.ts:2 import + src/client/contract/session.ts:14 import(仅类型)",
+        "purpose": "Client 契约声明所依赖的响应式 store 类型"
+      },
+      {
+        "plugin_id": "dsh-commands",
+        "mechanism": "E1",
+        "evidence": "package.json:87 peerDep + src/client/sessions/remotes.ts:9 import '@deepseek-ai/dsh-commands/types'",
+        "purpose": "复用命令目录词汇与 Client 契约"
+      },
+      {
+        "plugin_id": "dsh-credentials",
+        "mechanism": "E1",
+        "evidence": "package.json:88 peerDep + src/catalog.ts:4 import credentialRef",
+        "purpose": "判断某 provider 是否已配置 API key"
+      },
+      {
+        "plugin_id": "dsh-deque",
+        "mechanism": "E1",
+        "evidence": "package.json:73 dependencies + src/control.ts:4 import + src/history.ts:4 import",
+        "purpose": "为控制帧与历史分页提供有界队列"
+      },
+      {
+        "plugin_id": "dsh-file-reference",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:89 peerDep + src/file-references.ts:5-6 import + src/file-references.ts:18 inject ['fileReferences','typert']",
+        "purpose": "把 Agent 作用域的文件引用发现暴露为 Remote"
+      },
+      {
+        "plugin_id": "dsh-fs",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:90 peerDep + src/index.ts:6 import + src/index.ts:108 inject 'fs' + src/media-references.ts:64 ctx.fs",
+        "purpose": "以组合文件系统提供者校验并读取宿主路径"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:91 peerDep + src/agent.ts:11 import + src/index.ts:112 inject 'llm' + src/catalog.ts:24 ctx.llm",
+        "purpose": "构建模型目录与推理档选项"
+      },
+      {
+        "plugin_id": "dsh-native-command",
+        "mechanism": "E1",
+        "evidence": "package.json:92 peerDep + src/index.ts:11 import nativeFileManager 等 + src/types.ts:2 import",
+        "purpose": "在宿主桌面打开/揭示工作区路径"
+      },
+      {
+        "plugin_id": "dsh-scope",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:93 peerDep + src/skill-catalog.ts:8 import + src/skill-catalog.ts:21 inject 含 typert/workingDirectory",
+        "purpose": "按作用域键读取会话可见技能目录"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:94 peerDep + src/index.ts:12 import + src/index.ts:113 inject 'sessions' + src/index.ts:241 ctx.sessions.get",
+        "purpose": "读写 Session 事件日志与当前附着状态"
+      },
+      {
+        "plugin_id": "dsh-session-persistence",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:95 peerDep(optional) + src/agent.ts:13 import + src/index.ts:13 import + src/index.ts:425 ctx.get('sessionPersistence')",
+        "purpose": "冷读持久化会话头与迁移状态"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:96 peerDep + src/model-selection-projection.ts:5 import + src/index.ts:114 inject 'sessionProjections'",
+        "purpose": "定义并读取会话投影(含模型选择投影)"
+      },
+      {
+        "plugin_id": "dsh-session-projection-cache",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:97 peerDep(optional) + src/index.ts:14 import + src/index.ts:522 ctx.get('sessionProjectionCache')",
+        "purpose": "迁移待完成时返回缓存投影提示"
+      },
+      {
+        "plugin_id": "dsh-session-query",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:98 peerDep + src/history.ts:18 import + src/index.ts:115 inject 'sessionQuery' + src/index.ts:525 ctx.sessionQuery.observeSession",
+        "purpose": "浏览/搜索会话并观察投影"
+      },
+      {
+        "plugin_id": "dsh-session-title",
+        "mechanism": "E1",
+        "evidence": "package.json:99 peerDep + src/commands.ts:22 import + src/client/sessions/manager.ts:23 import '/client'",
+        "purpose": "重命名会话时生成/校验标题"
+      },
+      {
+        "plugin_id": "dsh-settings",
+        "mechanism": "E1",
+        "evidence": "package.json:100 peerDep(optional) + src/catalog.ts:5 import type {}",
+        "purpose": "读取模型目录相关设置声明"
+      },
+      {
+        "plugin_id": "dsh-skill",
+        "mechanism": "E1",
+        "evidence": "package.json:101 peerDep + src/skill-catalog.ts:6 import isUserInvocable",
+        "purpose": "筛选用户可调用的技能"
+      },
+      {
+        "plugin_id": "dsh-subagent",
+        "mechanism": "E1",
+        "evidence": "package.json:102 peerDep + src/history.ts:19 import + src/client/contract/sessions.ts:8 import '/client'",
+        "purpose": "在会话谱系与快照中标注子 Agent 后代"
+      },
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:103 peerDep + src/index.ts:16 import Remote/TypertRemoteService + src/index.ts:116 inject 'typert'",
+        "purpose": "声明 Remote 命名空间与方法装饰器"
+      },
+      {
+        "plugin_id": "dsh-typert-registry",
+        "mechanism": "E2",
+        "evidence": "package.json:104 peerDep + src/agent.ts:16 import '@deepseek-ai/dsh-typert-registry'",
+        "purpose": "把本服务的 Remote 定义注册进 Typert registry"
+      },
+      {
+        "plugin_id": "dsh-util-crypto",
+        "mechanism": "E1",
+        "evidence": "src/client/sessions/session.ts:5 import 哈希/随机工具",
+        "purpose": "Client 面为消息与请求生成稳定标识"
+      },
+      {
+        "plugin_id": "dsh-util-time",
+        "mechanism": "E1",
+        "evidence": "package.json:105 peerDep + src/commands.ts:23 import",
+        "purpose": "格式化会话时间戳"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "package.json:106 peerDep + src/assistant-stream.ts:6 import JsonValue + src/types.ts:12 import",
+        "purpose": "约束可跨线缆的 JSON 值与结构化比较"
+      },
+      {
+        "plugin_id": "dsh-util-workspace-path",
+        "mechanism": "E1",
+        "evidence": "package.json:107 peerDep + src/client/sessions/service.ts:5 import",
+        "purpose": "Client 面展示与归一工作区路径"
+      },
+      {
+        "plugin_id": "dsh-workspace",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:108 peerDep + src/commands.ts:26 import + src/index.ts:117 inject 'workspaceRegistry' + src/archived-session-gate.ts:44 ctx.workspaceRegistry",
+        "purpose": "按工作区登记会话并实现归档准入"
+      },
+      {
+        "plugin_id": "dsh-working-directory",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:109 peerDep + src/skill-catalog.ts:7 import + src/skill-catalog.ts:21 inject 'workingDirectory'",
+        "purpose": "解析会话当前工作目录"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-api-terminal-controller",
+    "name": "@deepseek-ai/dsh-api-terminal-controller",
+    "implementation": "实现 Session 拥有的交互式终端：TerminalController 继承 TypertRemoteService 并以 namespace 'terminal' 注册 ctx.terminalController(src/index.ts:76-103)，按 Session 维护终端/待分配/清理映射并在销毁时聚合清理(src/index.ts:61-73,104-109,287-314)。Remote 方法 environment/shells/list/create/follow/write/resize/rename/close/retain 提供分配、附着、输入、尺寸、重命名与关闭(src/index.ts:118-285)，底层用 subprocess.spawnTerminal 起 PTY(src/index.ts:342-378)。终端自身用 @xterm/headless 做屏幕恢复、TerminalRetention 做窗口持有与空闲回收(src/terminal.ts:1-15, src/retention.ts:1-14)。",
+    "provides": [
+      "ctx.terminalController(Session 拥有的交互式终端与 ctx.remote.terminal 命名空间所有者，src/index.ts:19-24,76-103)",
+      "ctx.remote.terminal 远程方法集 environment/shells/list/create/follow/write/resize/rename/close/retain(src/index.ts:118-285)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-subprocess",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:66 peerDep + src/terminal.ts:5 import SubprocessTerminalHandle + src/index.ts:77 inject 'subprocess' + src/index.ts:349 subprocess.spawnTerminal",
+        "purpose": "起 PTY、查询 shell 可用性并持有终端活动观测"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "package.json:71 devDependencies + src/index.ts:4 import type { Agent }(仅类型)",
+        "purpose": "以 Agent 作为 Session 所有者参数与执行环境选择器"
+      },
+      {
+        "plugin_id": "dsh-api-gateway",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:43,46 dsh.client.inject/external + src/client/index.ts:5 import '@deepseek-ai/dsh-api-gateway/client' + src/client/index.ts:235 inject ['remote','remote.terminal']",
+        "purpose": "Client 面经 Gateway 的 ctx.remote 暴露终端命名空间"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "src/types.ts:2 import Branded(仅类型)",
+        "purpose": "品牌化终端与附着标识"
+      },
+      {
+        "plugin_id": "dsh-client-store",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:7 import + src/client/model.ts:4 import(仅类型)",
+        "purpose": "Client 面终端模型使用响应式 store"
+      },
+      {
+        "plugin_id": "dsh-deque",
+        "mechanism": "E1",
+        "evidence": "package.json:57 dependencies + src/stream.ts:2 import Deque",
+        "purpose": "为终端输出帧提供有界队列"
+      },
+      {
+        "plugin_id": "dsh-lazy-require",
+        "mechanism": "E1",
+        "evidence": "package.json:58 dependencies + src/terminal.ts:6 import createLazyRequire",
+        "purpose": "按需加载 @xterm/headless 与 serialize 附加件"
+      },
+      {
+        "plugin_id": "dsh-sandbox-policy",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:6 import type {} + src/index.ts:77 inject 'sandboxPolicy' + src/index.ts:335 agent.ctx.get('sandboxPolicy')",
+        "purpose": "按 Session 沙箱策略选择执行提供者"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "package.json:79 devDependencies + src/index.ts:5 import type { SessionId } + src/client/bindings.ts:2 import",
+        "purpose": "以 SessionId 作为终端所有者键"
+      },
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:59 dependencies + src/index.ts:8 import Remote/TypertRemoteService + src/index.ts:77 inject 'typert'",
+        "purpose": "声明 Remote 命名空间与方法装饰器"
+      },
+      {
+        "plugin_id": "dsh-util-crypto",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:8 import + src/client/model.ts:3 import(仅类型)",
+        "purpose": "Client 面生成终端请求标识"
+      },
+      {
+        "plugin_id": "dsh-working-directory",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:84 devDependencies + src/index.ts:7 import type {} + src/index.ts:77 inject 'workingDirectory' + src/index.ts:344 workingDirectory.ensure",
+        "purpose": "解析终端进程的当前目录"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-api-workspace-controller",
+    "name": "@deepseek-ai/dsh-api-workspace-controller",
+    "implementation": "实现 Host 侧 Workspace 业务 API：WorkspaceController 继承 TypertRemoteService 并以 namespace 'workspace' 注册 ctx.workspaceController(src/index.ts:51,67-78)，静态注入 typert/workspaceRegistry(src/index.ts:52)。Remote 方法 create/initializeDefault/rename/delete/insertBefore/insertSessionBefore/archiveSession/unarchiveSession/pinSession/unpinSession 委托 WorkspaceCommands(src/index.ts:85-187)，follow 由 WorkspaceFeed 产出可重连基线与增量(src/index.ts:194-197, src/feed.ts:1-20)。构造时还挂载 DirectoryPickerController 子插件，使无拾取后端的主机不注册该命名空间(src/index.ts:73-77, src/directory-picker.ts:1-8)。",
+    "provides": [
+      "ctx.workspaceController(Host Workspace 业务 API 与 ctx.remote.workspace 命名空间所有者，src/index.ts:43-51)",
+      "ctx.remote.workspace 远程方法集 create/initializeDefault/rename/delete/insertBefore/insertSessionBefore/archiveSession/unarchiveSession/pinSession/unpinSession/follow(src/index.ts:85-197)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-api-gateway",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:47,50 dsh.client.external/inject + src/client/model.ts:5 import '@deepseek-ai/dsh-api-gateway/client' + src/client/index.ts:41 inject ['remote','remote.workspace']",
+        "purpose": "Client 面经 Gateway 的 ctx.remote 暴露工作区命名空间"
+      },
+      {
+        "plugin_id": "dsh-client-connection",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:80 peerDep + package.json:51 dsh.client.inject",
+        "purpose": "Client 面工作区服务依赖承载层的连接生命周期"
+      },
+      {
+        "plugin_id": "dsh-client-store",
+        "mechanism": "E1",
+        "evidence": "src/client/model.ts:3 import(仅类型)",
+        "purpose": "Client 面工作区模型使用响应式 store"
+      },
+      {
+        "plugin_id": "dsh-deque",
+        "mechanism": "E1",
+        "evidence": "package.json:72 dependencies + src/feed.ts:4 import Deque",
+        "purpose": "为工作区增量帧提供有界队列"
+      },
+      {
+        "plugin_id": "dsh-host-directory-picker",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:81 peerDep + src/directory-picker.ts:8,14 import + src/directory-picker.ts:42 inject ['directoryPicker']",
+        "purpose": "把抽象目录拾取 seam 接成可服务或待决的 Remote 命名空间"
+      },
+      {
+        "plugin_id": "dsh-native-command",
+        "mechanism": "E1",
+        "evidence": "package.json:73 dependencies + src/default-directory.ts:5 import",
+        "purpose": "解析宿主系统 Documents 目录作为首用默认工作区"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "package.json:82 peerDep + src/types.ts:8 import '@deepseek-ai/dsh-session/types' + src/client/service.ts:4 import",
+        "purpose": "在工作区视图中标注会话归属"
+      },
+      {
+        "plugin_id": "dsh-storage-domain",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:83 peerDep + src/feed.ts:5 import DomainChanged + src/feed.ts:61 ctx.on('domain/changed')",
+        "purpose": "订阅持久域变更以产出工作区增量"
+      },
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:84 peerDep + src/index.ts:5 import Remote/TypertRemoteService + src/index.ts:52 inject 'typert'",
+        "purpose": "声明 Remote 命名空间与方法装饰器"
+      },
+      {
+        "plugin_id": "dsh-workspace",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:85 peerDep + src/feed.ts:6 import Workspace/workspaceView + src/index.ts:52 inject 'workspaceRegistry' + src/index.ts:100 ctx.workspaceRegistry.initializeDefault",
+        "purpose": "读写权威工作区实体与登记顺序"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-config-editor",
+    "name": "@deepseek-ai/dsh-config-editor",
+    "implementation": "以 Cordis Service 形式提供 ctx.configEditor(src/index.ts:14-19,26-31)，静态注入 loader/profileContext(src/index.ts:27)。entries() 只挑出 include 树中 id 唯一的条目(src/index.ts:39-44)，configuration() 用 loadProfileDirectory/composeEntries 分离继承值与显式覆盖值(src/index.ts:49-80)。edit() 在 profile package.json 文件锁下重读补丁、经 internal/config waterfall 与 resolveConfig 校验后原子改写 YAML 补丁并 reconcile，失败则回滚(src/index.ts:87-150)；存在 hmr 时整个编辑经 hmr.runExclusive 串行化(src/index.ts:152-153)。",
+    "provides": [
+      "ctx.configEditor(profile 配置持久化编辑服务：entries/configuration/edit，src/index.ts:14-31)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "cordis-plugin-loader",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:31 peerDep + src/index.ts:8 import type Entry + src/index.ts:27 inject 'loader' + src/index.ts:40 this.ownerContext.loader.entries()",
+        "purpose": "枚举并校验可编辑的 Loader 条目"
+      },
+      {
+        "plugin_id": "cordis-plugin-include",
+        "mechanism": "E1",
+        "evidence": "package.json:33 peerDep + src/index.ts:6 import entryListSchema/PatchOptions",
+        "purpose": "解析 profile 补丁条目表并识别 include 归属"
+      },
+      {
+        "plugin_id": "dsh-hmr",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:32 peerDep(optional) + src/index.ts:9 import type {} + src/index.ts:152-153 this.ownerContext.get('hmr')/hmr.runExclusive",
+        "purpose": "把配置写入与热重载串行化，避免并发替换"
+      },
+      {
+        "plugin_id": "dsh-atomic-write",
+        "mechanism": "E1",
+        "evidence": "package.json:37 dependencies + src/index.ts:11 import withFileLock/writeFileAtomic + src/index.ts:142 writeFileAtomic",
+        "purpose": "以文件锁与原子写安全落盘 profile 补丁"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-hmr",
+    "name": "@deepseek-ai/dsh-hmr",
+    "implementation": "实现协调式模块与配置热重载：Hmr 服务以 @Inject 声明 loader/timer 并以 'hmr' 注册(src/index.ts:208-210,301-302)，要求 loader.internal 暴露 Node 模块加载缓存(src/index.ts:304-309)。它把模块变更与 profile 补丁/清单变更统一排入 runExclusive 队列(src/index.ts:262-299)，用 chokidar 监视 root 并把变更分类为 externals(整体重启)/include 刷新/可替换模块(src/index.ts:361-424,470-520)。替换时重新 import 入口模块、删除并重注册受影响插件 fiber，失败则回滚模块缓存与旧插件(src/index.ts:624-722)，成功后 emit hmr/reload(src/index.ts:728)。",
+    "provides": [
+      "ctx.hmr(模块与 profile 配置热重载服务，含 runExclusive/watchConfig，src/index.ts:21-25,207-299)",
+      "事件 hmr/change 与 hmr/reload(src/index.ts:27-38,410,728)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "cordis-plugin-loader",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:33 peerDep + src/index.ts:6 import type ModuleLoader/ModuleJob + src/index.ts:208 @Inject('loader') + src/index.ts:304 this.ctx.loader.internal",
+        "purpose": "读取模块加载缓存、重新 import 并重注册插件条目"
+      },
+      {
+        "plugin_id": "cordis-plugin-include",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:34 peerDep + src/index.ts:7 import type Include + src/index.ts:407-417 include.refresh()",
+        "purpose": "对 include 树做局部刷新而非整体重启"
+      },
+      {
+        "plugin_id": "cordis-plugin-timer",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:31 peerDep + src/index.ts:15 import type {} + src/index.ts:209 @Inject('timer') + src/index.ts:382 ctx.debounce",
+        "purpose": "提供变更合并所需的 debounce 定时能力"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-plugin-manager",
+    "name": "@deepseek-ai/dsh-plugin-manager",
+    "implementation": "实现当前 profile 的插件与 bundle 管理：PluginManager 继承 TypertRemoteService 注册 ctx.pluginManager 并注入 loader/profileContext(src/index.ts:178-179,207-211)，通过 @Remote 暴露 listVersionExemptions/setVersionExemption/listPlugins/listBundles/registries/inspect/setPluginEnabled/setBundleEnabled/installBundle/waitForInstall/cancelInstall/removeBundle(src/index.ts:233-673)。所有变更经 withFileLock 与 diskState 比对后 emit plugin-manager/changed(src/index.ts:824-848)，安装用 pnpm 在 profile 目录执行并流式发出 plugin-manager/install-log(src/index.ts:709-729)。另有独立函数插件 tools.ts 注册 Agent 工具 plugin_manager，先做 danger-full-access 升级审批再调用同一服务(src/tools.ts:13-92)。",
+    "provides": [
+      "ctx.pluginManager(当前 profile 插件/包管理服务与 ctx.remote.pluginManager 命名空间所有者，src/index.ts:170-178,207-227)",
+      "Agent 工具 plugin_manager(list/set/install/remove/版本豁免，src/tools.ts:13-92)",
+      "事件 plugin-manager/changed|install-log|install-state(src/types.ts:258-271)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "cordis-plugin-loader",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:69 peerDep + src/index.ts:9 import type EntryOptions + src/index.ts:179 inject 'loader' + src/index.ts:262 this.ctx.loader.entries()",
+        "purpose": "枚举 Loader 条目以决定哪些插件行可写"
+      },
+      {
+        "plugin_id": "cordis-plugin-include",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:10 import type PatchOptions",
+        "purpose": "读写 profile 补丁的条目与插入语义"
+      },
+      {
+        "plugin_id": "dsh-host-plugin-inventory",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:70 peerDep + src/index.ts:13 import pluginEntryId/readPluginInventory + src/types.ts:4-6 import types + src/index.ts:260 readPluginInventory(this.ctx)",
+        "purpose": "读取运行时插件清单并生成可寻址 entryId"
+      },
+      {
+        "plugin_id": "dsh-subprocess",
+        "mechanism": "E1",
+        "evidence": "package.json:71 peerDep + src/github-connection.ts:5 import + src/operations.ts:14 import",
+        "purpose": "执行 pnpm 与 GitHub 连接检查子进程"
+      },
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1",
+        "evidence": "package.json:72 peerDep + src/index.ts:12 import TypertRemoteService/Remote",
+        "purpose": "声明 Remote 命名空间与方法装饰器"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:73 peerDep + src/tools.ts:9 import defineTool + src/tools.ts:13 inject ['tools','pluginManager','sandboxPolicy'] + src/tools.ts:19 ctx.tools.register",
+        "purpose": "向 Agent 暴露 plugin_manager 工具"
+      },
+      {
+        "plugin_id": "dsh-hmr",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:74 peerDep(optional) + src/index.ts:21 import type {} + src/index.ts:805-807 this.ownerContext.get('hmr')/hmr.runExclusive",
+        "purpose": "在线 profile 立即应用变更，否则标记需重启"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "package.json:75 peerDep + src/types.ts:2 import Branded",
+        "purpose": "品牌化插件 entry 标识"
+      },
+      {
+        "plugin_id": "dsh-sandbox-policy",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:76 peerDep + src/tools.ts:5 import type {} + src/tools.ts:13 inject 'sandboxPolicy' + src/tools.ts:38 ctx.sandboxPolicy.resolve",
+        "purpose": "解析当前会话沙箱档以判定所需升级"
+      },
+      {
+        "plugin_id": "dsh-sandbox",
+        "mechanism": "E1",
+        "evidence": "package.json:77 peerDep + src/tools.ts:7 import approveEscalation + src/tools.ts:39 调用点",
+        "purpose": "为危险级管理操作请求用户升级审批"
+      },
+      {
+        "plugin_id": "dsh-user-approval",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:78 peerDep(optional) + src/tools.ts:6 import type {} + src/tools.ts:42 ctx.get('approval')",
+        "purpose": "把升级请求接到审批通道"
+      },
+      {
+        "plugin_id": "dsh-atomic-write",
+        "mechanism": "E1",
+        "evidence": "package.json:60 dependencies + src/index.ts:7 import withFileLock/writeFileAtomic + src/index.ts:829 withFileLock",
+        "purpose": "以文件锁与原子写安全改写 profile 文件"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "package.json:65 dependencies + src/tools.ts:2 import assertNever",
+        "purpose": "对工具 action 做穷尽性判别"
+      },
+      {
+        "plugin_id": "dsh-package-manifest",
+        "mechanism": "E1",
+        "evidence": "src/types.ts:3 import '@deepseek-ai/dsh-package-manifest'(仅类型)",
+        "purpose": "复用包清单元数据类型"
+      }
+    ],
+    "dependents": []
+  }
+]

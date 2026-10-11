@@ -2,7 +2,7 @@
 
 - 包名: `@deepseek-ai/dsh-compaction-tool-result-pruner`
 - 分组: G07 上下文压缩
-- 拓扑层: Layer 5
+- 拓扑层: Layer 4
 - 来源层: L1 核心集
 - 源码路径: `packages/compaction/compaction-tool-result-pruner`
 

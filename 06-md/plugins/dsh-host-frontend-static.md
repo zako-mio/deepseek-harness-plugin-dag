@@ -1,8 +1,8 @@
 # dsh-host-frontend-static
 
 - 包名: `@deepseek-ai/dsh-host-frontend-static`
-- 分组: G20 宿主服务
-- 拓扑层: Layer 3
+- 分组: G19 宿主服务
+- 拓扑层: Layer 2
 - 来源层: L3 其余
 - 源码路径: `packages/host/frontend-static`
 

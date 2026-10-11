@@ -1,47 +1,45 @@
 # dsh-agent-preset-registry
 
 - 包名: `@deepseek-ai/dsh-agent-preset-registry`
-- 分组: G27 Agent 预设
+- 分组: G26 Agent 预设
 - 拓扑层: Layer 5
 - 来源层: L2 web-app
 - 源码路径: `packages/preset/agent-preset-registry`
 
 ## 实现逻辑
-AgentPresetRegistry 为 TypertRemoteService，构造时注册 agentPreset 投影并监听 session/event 转发 agent-preset/selected（src/index.ts:63-71、src/session.ts:35-44）。register() 立即激活定义，activate() 在独立 scope 内用 mountPreset 挂载 Loader 子树，失败则记录 broken 并 dispose scope（src/index.ts:80-118、src/mount.ts:258-272）。mount()/bind() 以 bindScopeParent 把 Agent scope 绑到保留的 standing revision，用引用计数 collect 回收，composeFrom 让子 Agent 继承父的精确版次（src/index.ts:208-284）。auditRows 与 leakedServices 审计行可用性与根域服务泄漏（src/mount.ts:86-212）；invariant.ts 在 internal/service 与 system-prompt/assemble 复核隔离与绑定（src/invariant.ts:33-59）。
+以 default 导出的 AgentPresetRegistry（extends TypertRemoteService，static inject=['loader','sessionProjections']）把 YAML 声明的 preset 变成可在隔离 scope 中挂载的 Cordis 插件树：register() 先做 entryListProblem 校验，再经 createScope + mountPreset 装配并保留该修订（generations/引用计数）；子树入口列表由 dsh-app-boot 的 prepareProfileEntries 按 profile 兼容策略准备，但该包属装配框架、不计入 DAG 边 (src/index.ts:81-122、src/mount.ts:204-215、src/mount.ts:209)。PresetTree 覆写 write() 为空以免内存树落盘，挂载后 auditRows 逐行审计失败与缺服务行，leakedServices 若发现子树向 root realm 泄漏服务即拒绝挂载 (src/mount.ts:9-24、src/mount.ts:211-214)。Agent 通过 bind/join 把自身 scope 的父级绑定到修订，recompose/select 只在会话尚未开始首轮时切换并写入 agent-preset/selected 事件；配套的 agentPreset 投影从 header 初始化、由该事件推进 (src/index.ts:250-274、src/index.ts:346-362、src/session.ts:35-44)。对外以 @Remote 暴露 list/read/select，并给出 compositionInventory 与 inspectCompositions 供 UI 与隔离诊断读取 (src/index.ts:194-230、src/index.ts:164-172、src/index.ts:382-392)。
 
 ## Provides
-- ctx.agentPresets (Agent 预设注册表：激活/绑定/选择与 composition 读取，src/index.ts:51-365)
-- sessionProjections `agentPreset` 投影（会话实际运行的预设定，src/index.ts:66、src/session.ts:35-44）
-- Remote 方法 list/read/select（客户端花名册读取与选择，src/index.ts:170-206、:318-334）
+- ctx.agentPresets (AgentPresetRegistry：声明式 preset 的注册、挂载、修订保留、选择与绑定)
+- session projection 'agentPreset' (会话实际运行的 preset，从创建 header 初始化并由选择事件推进)
+- 事件 'agent-preset/selected'(sessionId, agentPreset) (会话已提交新 preset 的持久化通知)
+- Typert Remote 方法 list/read/select (远端读取名册、声明 YAML 与提交选择)
+- display 出口 presetDisplayText/isBuiltInPreset (内置 preset 走 locale 字典、用户自定义元数据不翻译)
 
 ## Depends On (上游依赖)
-- `cordis-plugin-include` [编译依赖] - 以 Loader dialect 序列化预设声明的 entry 列表供查看
-  - 证据: `src/index.ts:6 import entryListSchema`
-- `cordis-plugin-loader` [E1+E2] - 挂载、审计并定位预设的 Loader entry 树
-  - 证据: `src/index.ts:52 inject 'loader' + src/composition-inventory.ts:3 EntryTree/isJsExpr + src/mount.ts:3 EntryTree + src/index.ts:137 this.owner.loader.await()`
-- `dsh-agent` [编译依赖] - 绑定并读取活动 Agent 的预设版次
-  - 证据: `src/index.ts:8 type import Agent + src/index.ts:325 agent.ctx、src/index.ts:326 agent.session`
-- `dsh-invariants` [E1+E2] - 注册预设隔离与 Agent 绑定不变式
-  - 证据: `src/invariant.ts:7 type InvariantInstaller + src/invariant.ts:68 ctx.invariants.register`
-- `dsh-scope` [编译依赖] - 建立 Agent scope 与 preset standing scope 的父子绑定关系
-  - 证据: `src/index.ts:5 bindScopeParent/createScope/scopeOf + src/mount.ts:6 scopeOf/scopeParentOf`
-- `dsh-session` [编译依赖] - 把预设选择写入会话日志
-  - 证据: `src/types.ts:2 type SessionId + src/index.ts:326 agent.session.append('agent-preset/selected')`
-- `dsh-session-projection` [E1+E2] - 注册 agentPreset 投影并读取 turnBoundary 判定空会话
-  - 证据: `src/index.ts:66 ctx.sessionProjections.register + src/session.ts:17 type ProjectionDefinition + src/index.ts:321 stateOf`
-- `dsh-settings` [运行时依赖] - 关闭 settings 自动持久化以自管 selectedDefault
-  - 证据: `src/index.ts:10 type import + src/index.ts:67 ctx.inject(['settings'], ...) settings.configure({ auto: false })`
-- `dsh-system-prompt` [E1+E2] - 在模型组装水线校验 Agent 已加入某预设
-  - 证据: `src/invariant.ts:10 type import + src/invariant.ts:48 ctx.on('system-prompt/assemble')`
-- `dsh-tools` [E1+E2] - 预设重绑后通知工具目录变更
-  - 证据: `src/index.ts:11 type import + src/index.ts:308 this.owner.emit('tools/change')`
+- `cordis-plugin-include` [编译依赖] - 以 Loader 自身的 entry-list YAML 方言导出声明，使 !!js 条件按声明原样呈现
+  - 证据: `package.json:51 peerDep + src/index.ts:6 import entryListSchema`
+- `cordis-plugin-loader` [编译依赖] - 复用 Loader 的入口树与入口类型来装配并审计 preset 子树
+  - 证据: `package.json:52 peerDep + src/index.ts:3 与 src/mount.ts:3 import EntryTree/EntryOptions、src/definition.ts:2 type import、src/composition-inventory.ts:3 import isJsExpr`
+- `dsh-agent` [编译依赖] - 把 preset 选择与绑定作用到具体 Agent 的上下文与会话
+  - 证据: `package.json:53 peerDep + src/index.ts:8 type import Agent；src/index.ts:347 select(agent: Agent)`
+- `dsh-session` [E1+E2] - 把 preset 选择声明为会话日志事件并实际追加，满足「模型可见即已记录」
+  - 证据: `package.json:55 peerDep + src/types.ts:2 type import SessionId、src/session.ts:20 declare module '@deepseek-ai/dsh-session/types'；src/index.ts:354 session.append('agent-preset/selected')`
+- `dsh-session-projection` [E1+E2] - 注册 agentPreset 投影并读取 turnBoundary 以判定会话是否已开始
+  - 证据: `package.json:56 peerDep + src/session.ts:17 type import ProjectionDefinition；src/index.ts:53 inject 'sessionProjections'、src/index.ts:67 register、src/index.ts:349 stateOf('turnBoundary')`
+- `dsh-settings` [运行时依赖] - 把 preset 定义排除在自动设置持久化之外
+  - 证据: `package.json:57 peerDep + src/index.ts:10 type import；src/index.ts:68 ctx.inject(['settings']) → child.settings.configure({auto:false})`
+- `dsh-system-prompt` [编译依赖] - 编译期契约对齐：preset 子树装配的提示词插件共用同一 systemPrompt 基线；仅声明式依赖
+  - 证据: `package.json:58 peerDep + packages/preset/agent-preset-registry/tsconfig.json:42 项目引用（源码无直接 import）`
+- `dsh-tools` [E1+E2] - preset 重新挂载后通知工具目录变更
+  - 证据: `package.json:59 peerDep + src/index.ts:11 type import、packages/preset/agent-preset-registry/tsconfig.json:45 项目引用；src/index.ts:336 owner.emit('tools/change')`
 
 ## Dependents (下游被依赖)
 - `dsh-agent-preset` - 把本行声明的预设定义提交给注册表激活
-- `dsh-api-remotes` - 装配 agent preset registry 命名空间
-- `dsh-api-session-controller` - 解析并挂载 Agent 预设
-- `dsh-client-ui-agent-preset` - 消费 preset 组合类型与 display 文案
-- `dsh-client-ui-settings-plugin-inventory` - 复用共享的预设显示名折叠逻辑
+- `dsh-api-remotes` - 把该业务包的 /remote 命名空间装配进 Client
+- `dsh-api-session-controller` - 解析 Session 行展示所需的 Agent 预设元数据
+- `dsh-client-ui-agent-preset` - 读取 preset 名册与展示信息
+- `dsh-client-ui-settings-plugin-inventory` - 预置显示名解析复用 registry 的 display 折叠，避免在本包另建一份映射
 - `dsh-host-plugin-inventory` - 读取 agent preset 组合清单并投影其行
-- `dsh-plugin-package-inventory-deepseek` - 查询 agent 的 standing preset 挂载树以纳入预设内活跃插件包
-- `dsh-subagent` - 让子代理加入父的 preset 组合
+- `dsh-plugin-package-inventory-deepseek` - 可选地把请求 agent 的 preset 组合模块并入插件包清单
+- `dsh-subagent` - 子代理机会式继承父级预设组合（ctx.get('agentPresets')）

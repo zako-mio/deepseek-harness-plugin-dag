@@ -1,7 +1,7 @@
 # dsh-storage-sqlite
 
 - 包名: `@deepseek-ai/dsh-storage-sqlite`
-- 分组: G40 存储
+- 分组: G38 存储
 - 拓扑层: Layer 1
 - 来源层: L3 其余
 - 源码路径: `packages/storage/storage-sqlite`

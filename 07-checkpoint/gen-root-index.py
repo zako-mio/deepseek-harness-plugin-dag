@@ -24,29 +24,30 @@ SEAM_JSON = os.path.join(BASE, "01-dag-data", "external-seams.json")
 SM_DIR = os.path.join(BASE, "08-special-modules")
 GROUPS_INDEX = os.path.join(BASE, "03-groups", "index.html")
 
-VERSION = "v0.1.7-rc.2"
-REBUILD_DATE = "2026-09-27"
+VERSION = "v0.2.1-alpha.2"
+REBUILD_DATE = "2026-10-11"
 
 REGION = {
-    "L1": {"name": "L1 核心集", "color": "#4f8cff", "size": 90},
-    "L2": {"name": "L2 web-app", "color": "#9a7bf0", "size": 82},
-    "L3": {"name": "L3 其余可挂载", "color": "#2fb98a", "size": 67},
+    "L1": {"name": "L1 核心集", "color": "#4f8cff", "size": 91},
+    "L2": {"name": "L2 web-app", "color": "#9a7bf0", "size": 84},
+    "L3": {"name": "L3 其余可挂载", "color": "#2fb98a", "size": 73},
 }
-REGION_GROUPS_EXPECTED = {"L1": 29, "L2": 10, "L3": 11}
+REGION_GROUPS_EXPECTED = {"L1": 28, "L2": 10, "L3": 10}
 
 CLUSTERS = [
-    ("F1", "运行时基座", "L1", ["G04", "G09", "G45", "G42", "G22"]),
-    ("F2", "会话与上下文", "L1", ["G33", "G34", "G07", "G17", "G44", "G15", "G21"]),
-    ("F3", "智能与协议", "L1", ["G23", "G25", "G26"]),
-    ("F4", "工具与执行面", "L1", ["G36", "G37", "G41", "G47", "G18", "G30", "G38", "G16", "G40", "G10", "G28"]),
-    ("F5", "宿主与工作区", "L1", ["G03", "G35", "G49"]),
+    ("F1", "运行时基座", "L1", ["G04", "G09", "G27", "G41", "G44"]),
+    ("F2", "会话与上下文", "L1", ["G07", "G15", "G17", "G21", "G31", "G33", "G43"]),
+    ("F3", "智能与协议", "L1", ["G18", "G20", "G22", "G25", "G35"]),
+    ("F4", "工具与执行面", "L1", ["G10", "G16", "G34", "G46", "G47"]),
+    ("F5", "宿主与工作区", "L1", ["G03", "G28", "G36", "G38", "G39", "G40"]),
     ("F6", "客户端 UI", "L2", ["G06"]),
-    ("F7", "客户端运行时与宿主接入", "L2", ["G05", "G02", "G08", "G11", "G12", "G14", "G20", "G31", "G50"]),
-    ("F8", "协议与远程", "L3", ["G01", "G24", "G32", "G39", "G43"]),
-    ("F9", "实验与扩展", "L3", ["G13", "G19", "G27", "G29", "G46", "G48"]),
+    ("F7", "客户端运行时与宿主接入", "L2", ["G02", "G05", "G08", "G12", "G14", "G19", "G29", "G32", "G48"]),
+    ("F8", "协议与远程基座", "L3", ["G01", "G24", "G30", "G37", "G42", "G45"]),
+    ("F9", "实验与扩展", "L3", ["G11", "G13", "G23", "G26"]),
 ]
 
 RC_REPORTS = [
+    "017rc2-021alpha2-DIFF-REPORT.md",
     "RC2-0.1.7-DIFF-REPORT.md",
     "RC7-RC8-DIFF-REPORT.md",
     "RC8-RC2-DIFF-REPORT.md",
@@ -65,8 +66,8 @@ def load():
 
 def assert_cluster_coverage(group_ids):
     flat = [g for _, _, _, gs in CLUSTERS for g in gs]
-    ok = (len(flat) == len(set(flat)) == 50 and set(flat) == set(group_ids))
-    print(f"[ASSERT] 9 簇展开覆盖恰好 50 组: 展开 {len(flat)} / 唯一 {len(set(flat))} / "
+    ok = (len(flat) == len(set(flat)) == 48 and set(flat) == set(group_ids))
+    print(f"[ASSERT] 9 簇展开覆盖恰好 48 组: 展开 {len(flat)} / 唯一 {len(set(flat))} / "
           f"库内 {len(group_ids)} -> {'PASS' if ok else 'FAIL'}")
     return ok
 

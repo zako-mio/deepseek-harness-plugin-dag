@@ -2,24 +2,24 @@
 
 - 包名: `@deepseek-ai/dsh-workspace-changes`
 - 分组: G11 交付物
-- 拓扑层: Layer 0
+- 拓扑层: Layer 5
 - 来源层: L2 web-app
 - 源码路径: `packages/deliverables/workspace-changes`
 
 ## 实现逻辑
-汇总每个顶层 turn 改动的文件：以 git 工作树快照（turn 起止）为主，叠加文件工具编辑的整文件捕获，非 git 环境退化为仅文件工具编辑（src/index.ts:1-10、120-129）。`apply()` 通过 `session/event`、`agent/turn-stopping`、`tools/pre-execute` 驱动每 Session 的 `TurnRecorder`（src/index.ts:143-164），并把 `workspaceChanges` 服务 provide 到 ctx，按 SessionId+seq 提供 `summary()` 与按需计算的 `diff()`（src/index.ts:114-118、src/types.ts:78-97）。变更摘要由 `workspace/changes` Session 事件宣告，摘要本体留在 Host 侧（src/types.ts:99-108）。
+观察每个顶层 turn 的 git 工作树快照（turn/start 与 turn/end），并对 git 不覆盖的路径在文件工具编辑前后做整文件捕获，汇总成 workspace/changes 会话事件与 workspaceChanges 服务 (src/index.ts:1-10, src/index.ts:95-183)。git 可执行文件在插件生命周期内只解析一次，macOS 上把 /usr/bin/git 的 Xcode stub 视为不可用；子代理会话被排除 (src/index.ts:72-86, src/index.ts:59-62)。服务经 ctx.provide('workspaceChanges', ...) 暴露 summary/diff，按 sessionId+seq 提供摘要与按需逐文件前后对比，会话销毁即遗忘 (src/index.ts:106-120, src/types.ts:78-97)。变更目标在 fs/write-intent、fs/edit-intent、tools/pre-execute 上以 prepend 监听捕获 (src/index.ts:158-182)。
 
 ## Provides
-- ctx.workspaceChanges (按 Session/seq 提供每 turn 变更摘要与文件前后对比)
-- Session 事件 workspace/changes
+- ctx.workspaceChanges (按 turn 的变更摘要与逐文件前后对比服务)
+- SessionEventMap 扩展: workspace/changes
 
 ## Depends On (上游依赖)
-- `dsh-agent` [编译依赖] - 在 turn 停止时收口快照
-  - 证据: `src/index.ts:14 import type {} from '@deepseek-ai/dsh-agent' + src/index.ts:153 agent/turn-stopping`
-- `dsh-session` [编译依赖] - 按 Session 生命周期观察事件与释放记录器
-  - 证据: `src/index.ts:15 import type { Session, SessionId } + src/recorder.ts:5 import + src/index.ts:143 session/event`
-- `dsh-tools` [编译依赖] - 在工具执行前捕获文件编辑以覆盖 git 未跟踪路径
-  - 证据: `src/index.ts:17 import type {} from '@deepseek-ai/dsh-tools' + src/index.ts:156 tools/pre-execute`
+- `dsh-agent` [E1+E2] - turn 收尾钩子用于在 turn 结束前把捕获结果落定
+  - 证据: `src/index.ts:14 import type {} from '@deepseek-ai/dsh-agent' + src/index.ts:155 ctx.on('agent/turn-stopping', async ({ agent, turn }) => ...) + package.json:40 peerDep`
+- `dsh-session` [E1+E2] - turn/tool 事件流、会话销毁与 SessionEventMap 扩展都在 session seam 上
+  - 证据: `src/index.ts:15 import type { Session, SessionId } from '@deepseek-ai/dsh-session' + src/index.ts:145 ctx.on('session/event', ...) + src/index.ts:154 ctx.on('session/disposed', ...) + src/recorder.ts:5 import from '@deepseek-ai/dsh-session' + src/types.ts:2 import type { SessionId } + package.json:41 peerDep`
+- `dsh-tools` [E1+E2] - 以工具预执行为界把执行信封与会话 recorder 绑定，捕获工具产生的文件改动
+  - 证据: `src/index.ts:17 import type {} from '@deepseek-ai/dsh-tools' + src/index.ts:174 ctx.on('tools/pre-execute', ...) + package.json:43 peerDep`
 
 ## Dependents (下游被依赖)
-- `dsh-client-ui-deliverables` - 工作区变更记录/差异类型
+- `dsh-client-ui-deliverables` - 读取工作区变更与差异

@@ -1,26 +1,28 @@
 # dsh-plugin-package-inventory-deepseek
 
 - 包名: `@deepseek-ai/dsh-plugin-package-inventory-deepseek`
-- 分组: G23 LLM 适配
+- 分组: G22 LLM 适配
 - 拓扑层: Layer 6
 - 来源层: L1 核心集
 - 源码路径: `packages/llm/plugin-package-inventory-deepseek`
 
 ## 实现逻辑
-在官方 DeepSeek 请求上贡献 dsh_plugin_packages 字段：收集 Loader 活跃且非结构化的条目，并按请求 agent 的 standing preset 追加其预设树条目 (src/index.ts:157-185, 138-149)。PackageIdentityResolver 为每个条目解析其 owning package 的 name/version 身份——bare 包按锚点定位 manifest，相对/绝对模块则向上查找最近 manifest，并对非包松散模块返回匿名 (src/index.ts:101-135, 54-98)。去重、按确定性文本序排序后经 ctx.deepseekLlmApiExtensions.register 注册字段的 prepare 逻辑 (src/index.ts:176-204)。
+为官方 DeepSeek 请求贡献 dsh_plugin_packages 字段：apply() 在启用时把该字段的 provider 注册进 ctx.deepseekLlmApiExtensions，prepare 时现场收集活跃插件包 (src/index.ts:199-213)。collectActivePluginPackages 从 loader 条目树取处于 ACTIVE 且非 group、非 disabled 的条目，并在给出 sessionId 时并入该 agent 的 preset 组合模块 (src/index.ts:137-146, src/index.ts:154-192)。PackageIdentityResolver 以裸包名经 pluginPackages 或 require 解析路径、否则向上寻找最近的 package.json，读取 name/version 并按进程缓存，无法解析的条目只告警一次且不进入清单 (src/index.ts:55-133, src/index.ts:176-188)。最终按 name/version 做确定性文本排序并去重，得到与宿主 ICU/locale 无关的线上值 (src/index.ts:148-151, src/index.ts:174-191)。
 
 ## Provides
-- dsh_plugin_packages 请求字段贡献 (向 ctx.deepseekLlmApiExtensions 注册，携带当前活跃插件包的 name/version 清单)
+- DeepSeek 请求扩展字段 dsh_plugin_packages（当前活跃插件包清单，version: 1）
 
 ## Depends On (上游依赖)
-- `dsh-agent` [E1+E2] - 按请求会话定位 agent，以追加其 standing preset 的活跃条目
-  - 证据: `src/index.ts:16 import type {} + src/index.ts:29 inject agents + src/index.ts:165 ctx.agents.get`
-- `dsh-agent-preset-registry` [E1+E2] - 查询 agent 的 standing preset 挂载树以纳入预设内活跃插件包
-  - 证据: `src/index.ts:19 import type {} + src/index.ts:169 dynamic import standingMountFor + src/index.ts:164 ctx.get('agentPresets')`
-- `dsh-deepseek-llm-api-extensions` [E1+E2] - 把插件包清单作为独立顶层字段注册进 DeepSeek 请求扩展注册表
-  - 证据: `src/index.ts:17 import type {} + src/index.ts:29 inject deepseekLlmApiExtensions + src/index.ts:196 ctx.deepseekLlmApiExtensions.register`
-- `dsh-session` [编译依赖] - 以 SessionId 类型标识请求所属会话
-  - 证据: `src/index.ts:18 import type SessionId`
+- `cordis-plugin-loader` [E1+E2] - 活跃插件包身份只能从 loader 条目树与 fiber 状态取得
+  - 证据: `src/index.ts:15 import type { EntryTree } + src/index.ts:29 inject ['loader'] + src/index.ts:161 ctx.loader`
+- `dsh-agent` [E1+E2] - 按请求 session 定位所属 agent，进而读取其 preset 组合
+  - 证据: `src/index.ts:16 import type {} from '@deepseek-ai/dsh-agent' + src/index.ts:164 ctx.agents.get(...)`
+- `dsh-agent-preset-registry` [E1+E2] - 可选地把请求 agent 的 preset 组合模块并入插件包清单
+  - 证据: `src/index.ts:19 import type {} + src/index.ts:162 ctx.get('agentPresets')`
+- `dsh-deepseek-llm-api-extensions` [E1+E2] - 字段必须注册进扩展注册表才会并入官方 DeepSeek 请求
+  - 证据: `src/index.ts:17 import type {} + src/index.ts:205 ctx.deepseekLlmApiExtensions.register('dsh_plugin_packages')`
+- `dsh-session` [编译依赖] - 请求携带的 sessionId 类型由会话 seam 定义
+  - 证据: `src/index.ts:18 import type { SessionId } + package.json:44 peerDep`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

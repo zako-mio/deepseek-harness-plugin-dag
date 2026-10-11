@@ -1,7 +1,7 @@
 # dsh-storage-json
 
 - 包名: `@deepseek-ai/dsh-storage-json`
-- 分组: G40 存储
+- 分组: G38 存储
 - 拓扑层: Layer 1
 - 来源层: L1 核心集
 - 源码路径: `packages/storage/storage-json`

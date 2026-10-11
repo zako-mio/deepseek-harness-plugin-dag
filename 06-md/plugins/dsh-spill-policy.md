@@ -1,7 +1,7 @@
 # dsh-spill-policy
 
 - 包名: `@deepseek-ai/dsh-spill-policy`
-- 分组: G38 溢出存储
+- 分组: G36 溢出存储
 - 拓扑层: Layer 5
 - 来源层: L1 核心集
 - 源码路径: `packages/spill/spill-policy`
@@ -22,4 +22,4 @@
   - 证据: `package.json:39 peerDep + src/index.ts:14 import type + src/index.ts:33 inject['tools'] + src/index.ts:133,152 events`
 
 ## Dependents (下游被依赖)
-- `dsh-client-ui-tool` - 渲染输出溢出/截断提示 notice
+- `dsh-client-ui-tool` - 被 spill 的截断结果在卡片上显示统一提示

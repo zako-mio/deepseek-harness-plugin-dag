@@ -7,104 +7,106 @@
 - 源码路径: `packages/api/remotes`
 
 ## 实现逻辑
-Host 侧 apply() 把 remoteEventSource(ctx) 注册进 ctx.typertGateway.registerRemoteEvents，并用 ctx.effect 绑定其生命周期 (src/index.ts:40-45)。remoteEventSource 按 API_REMOTE_FORWARDED_EVENTS 白名单逐条挂 Cordis 监听：emit 型把参数经 assertJsonArgs 校验后入队，waterfall 型先校验请求携带的 Agent 与 carrierKeyOf(this) 一致，再经 forwardWaterfall 把 settle 交给 Gateway 关联 (src/index.ts:48-81, 134-158)。该白名单是唯一真相源，被 Host 转发循环与消费端 ctx.remote.$on 键面共同读取 (src/remote-events.ts:20-48)。client/index.ts 作为平台无关装配点，导入全部 Remote 命名空间并导出其类型面 (src/client/index.ts:3-100)。
+作为应用级 BFF 装配包分两面工作。Host 面 apply 用 ctx.typertGateway.registerRemoteEvents 注册唯一的转发事件源(src/index.ts:40-45)，按 remote-events.ts 的允许表把 emit 事件推入队列、把 waterfall 事件桥接为待决调用(src/index.ts:48-81,134-158)。Client 面 apply 依次 ctx.remote.$mount 各业务包的 /remote 贡献，任一失败即逆序回滚(src/client/index.ts:178-200)。
 
 ## Provides
-- ctx.remote 的命名空间装配（应用级远程 BFF 入口）
-- API_REMOTE_FORWARDED_EVENTS 转发事件白名单（emit/waterfall 模式）与对应的 Host 事件源
+- 转发 Host 事件源(经 ctx.typertGateway.registerRemoteEvents 注册唯一允许表，src/index.ts:37-45 + src/remote-events.ts:20-48)
+- ctx.remote 的 Client 命名空间装配(逐个 $mount 生成的 /remote 贡献，src/client/index.ts:171-200)
 
 ## Depends On (上游依赖)
-- `dsh-agent` [编译依赖] - waterfall 请求携带的 Agent 类型
-  - 证据: `src/index.ts:5 import type Agent`
-- `dsh-agent-preset-registry` [编译依赖] - 装配 agent preset registry 命名空间
-  - 证据: `src/client/index.ts:4 import remote + src/client/index.ts:75 import types`
-- `dsh-api-account-controller` [编译依赖] - 装配 account 命名空间
-  - 证据: `src/client/index.ts:6 import remote`
-- `dsh-api-gateway` [E1+E2] - 注册转发事件源并使用客户端 Remote 载体
-  - 证据: `src/index.ts:6 import type + src/index.ts:42 ctx.typertGateway.registerRemoteEvents`
-- `dsh-api-job-controller` [编译依赖] - 装配 job 命名空间
-  - 证据: `src/client/index.ts:23 import remote`
-- `dsh-api-session-controller` [编译依赖] - 装配 session 命名空间与事件类型声明
-  - 证据: `src/client/index.ts:22 import remote + src/remote-events.ts:9 import remote-events`
-- `dsh-api-settings-controller` [编译依赖] - 装配 settings/credentials 命名空间
-  - 证据: `src/client/index.ts:7 import remote`
-- `dsh-api-terminal-controller` [编译依赖] - 装配 terminal 命名空间
-  - 证据: `src/client/index.ts:25 import remote`
-- `dsh-api-workspace-controller` [编译依赖] - 装配 workspace 命名空间
-  - 证据: `src/client/index.ts:24 import remote`
-- `dsh-api-workspace-files` [编译依赖] - 装配 workspaceFiles 命名空间
-  - 证据: `src/client/index.ts:26 import remote`
-- `dsh-client-connection` [编译依赖] - 客户端连接类型再导出
-  - 证据: `src/client/index.ts:88 import types`
-- `dsh-client-file-upload` [编译依赖] - 装配文件上传命名空间
-  - 证据: `src/client/index.ts:19 import remote + src/client/index.ts:51 import remote`
-- `dsh-client-ui-plugin-manager` [编译依赖] - 装配插件管理 UI 探针命名空间
-  - 证据: `src/client/index.ts:14 import remote + src/client/index.ts:37 import remote`
-- `dsh-command-feedback` [编译依赖] - 装配命令反馈命名空间
-  - 证据: `src/client/index.ts:18 import remote + src/client/index.ts:50 import remote`
-- `dsh-commands` [编译依赖] - 装配 commands 命名空间与事件签名
-  - 证据: `src/client/index.ts:5 import remote + src/client/index.ts:71 import types`
-- `dsh-cordis-host-runner` [编译依赖] - 装配动态包运行器命名空间
-  - 证据: `src/client/index.ts:12 import remote + src/client/index.ts:94 import remote`
-- `dsh-goal` [编译依赖] - 装配 goal 命名空间
-  - 证据: `src/client/index.ts:9 import remote + src/client/index.ts:43 import remote`
-- `dsh-host-plugin-inventory` [编译依赖] - 装配插件清单命名空间
-  - 证据: `src/client/index.ts:15 import remote + src/client/index.ts:38 import types`
-- `dsh-llm` [编译依赖] - 装配 llm 命名空间
-  - 证据: `src/client/index.ts:11 import remote + src/client/index.ts:74 import types`
-- `dsh-message-feedback` [编译依赖] - 装配消息反馈命名空间
-  - 证据: `src/client/index.ts:16 import remote + src/client/index.ts:48 import remote`
-- `dsh-office-to-pdf` [编译依赖] - 装配 office-to-pdf 命名空间
-  - 证据: `src/client/index.ts:8 import remote + src/client/index.ts:45 import remote`
-- `dsh-permission-presets` [编译依赖] - 装配权限预设命名空间与事件
-  - 证据: `src/client/index.ts:17 import remote + src/remote-events.ts:11 import types`
-- `dsh-plugin-manager` [编译依赖] - 装配插件管理命名空间与事件
-  - 证据: `src/client/index.ts:13 import remote + src/remote-events.ts:12 import types`
-- `dsh-schedule` [编译依赖] - 装配 schedule 命名空间
-  - 证据: `src/client/index.ts:10 import remote + src/client/index.ts:44 import remote`
-- `dsh-scope` [E1+E2] - 从 waterfall 的 this 提取 carrier Agent 作用域
-  - 证据: `src/index.ts:13 import carrierKeyOf + package.json peerDependencies dsh-scope`
-- `dsh-session-reference` [编译依赖] - 装配会话引用命名空间
-  - 证据: `src/client/index.ts:20 import remote + src/client/index.ts:52 import remote`
-- `dsh-settings` [编译依赖] - 设置事件类型声明
-  - 证据: `src/index.ts:28 import types`
-- `dsh-subagent` [编译依赖] - 装配 subagent 命名空间与客户端类型
-  - 证据: `src/client/index.ts:21 import remote + src/client/index.ts:53 import remote`
-- `dsh-user-approval` [编译依赖] - 审批 waterfall 事件签名
-  - 证据: `src/index.ts:29 import type {}`
-- `dsh-user-questions` [编译依赖] - 用户提问 waterfall 事件签名
-  - 证据: `src/index.ts:30 import type {}`
+- `dsh-agent` [编译依赖] - 声明 waterfall 事件必须直携的 Agent 载体类型
+  - 证据: `src/index.ts:5 import type { Agent }(仅类型)`
+- `dsh-agent-preset-registry` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:6 import agentPresetsRemote(值导入)`
+- `dsh-api-account-controller` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:9 import accountRemote(值导入)`
+- `dsh-api-gateway` [E1+E2] - 注册转发事件源并挂载 Client Remote 命名空间
+  - 证据: `package.json:35 dsh.client.inject + src/index.ts:11 import TypertRemoteEventSource + src/index.ts:37 inject 'typertGateway' + src/index.ts:42 ctx.typertGateway.registerRemoteEvents + src/client/index.ts:30 import ClientRemote`
+- `dsh-api-job-controller` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:26 import jobRemote(值导入)`
+- `dsh-api-session-controller` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:25 import sessionRemote(值导入)+ :31 types 再导出`
+- `dsh-api-settings-controller` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:10 import settingsControllerRemote(值导入)`
+- `dsh-api-terminal-controller` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:28 import terminalRemote(值导入)`
+- `dsh-api-workspace-controller` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:27 import workspaceRemote(值导入)`
+- `dsh-api-workspace-files` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:29 import workspaceFilesRemote(值导入)`
+- `dsh-client-connection` [编译依赖] - 再导出承载层的 Client 类型，使业务包只命名本装配包
+  - 证据: `src/client/index.ts:91-96 import type { ConnectionHandle, ... }(仅类型)`
+- `dsh-client-file-upload` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:22 import fileUploadsRemote(值导入)`
+- `dsh-client-product-analytics` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:4-5 import productAnalyticsRemote(值导入)`
+- `dsh-client-ui-plugin-manager` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:17 import pluginRegistryProbeRemote(值导入)`
+- `dsh-command-feedback` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:21 import sessionFeedbackRemote(值导入)`
+- `dsh-commands` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:8 import commandsRemote(值导入)`
+- `dsh-cordis-host-runner` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:15 import dynamicRemote(值导入)`
+- `dsh-goal` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:12 import goalsRemote(值导入)`
+- `dsh-host-plugin-inventory` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:18 import pluginInventoryRemote(值导入)+ :41 types 导出`
+- `dsh-llm` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:14 import llmRemote(值导入)`
+- `dsh-message-feedback` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:19 import messageFeedbackRemote(值导入)`
+- `dsh-office-to-pdf` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:11 import officeToPdfRemote(值导入)`
+- `dsh-permission-presets` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:20 import permissionPresetsRemote(值导入)`
+- `dsh-plugin-manager` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:16 import pluginManagerRemote(值导入)`
+- `dsh-schedule` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:13 import scheduleRemote(值导入)`
+- `dsh-session-reference` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:23 import sessionReferencesRemote(值导入)`
+- `dsh-settings` [编译依赖] - 导出设置命名空间视图词汇
+  - 证据: `src/client/index.ts:81,141-143 import type {} from types(仅类型)`
+- `dsh-subagent` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:24 import subagentsRemote(值导入)`
+- `dsh-user-approval` [编译依赖] - 为 approval/request 转发事件提供 Events 声明
+  - 证据: `src/client/index.ts:82 import type {} from types + src/index.ts:29 import type {}`
+- `dsh-user-questions` [编译依赖] - 把该业务包的 /remote 命名空间装配进 Client
+  - 证据: `src/client/index.ts:7 import userQuestionsRemote(值导入)`
 
 ## Dependents (下游被依赖)
-- `dsh-client-ui-agent-preset` - 读取 preset 名册并订阅设置文档变更
+- `dsh-client-ui-agent-preset` - 订阅设置文档更新并做 Remote 调用
 - `dsh-client-ui-approval` - 订阅审批请求瀑布
-- `dsh-client-ui-chat` - 引入 ctx.remote 与转发事件声明
-- `dsh-client-ui-commands` - 拉取 Host 命令目录并订阅变更
-- `dsh-client-ui-cordis` - 经 Remote 命名空间同步宿主侧 cordis 事件与库存
-- `dsh-client-ui-deliverables` - 引入 ctx.remote 与事件声明
+- `dsh-client-ui-chat` - Remote 调用与转发事件面
+- `dsh-client-ui-commands` - 拉取命令目录并执行命令
+- `dsh-client-ui-cordis` - 经 Remote 组装体调用 Host 侧 stop/remove/inventory，并订阅转发过来的 cordis/* 事件
+- `dsh-client-ui-deliverables` - Remote 会话与文件访问调用
 - `dsh-client-ui-directory-picker-browse` - 目录列举结果类型
-- `dsh-client-ui-goal` - 目标 Remote 读取与 CAS 改动
+- `dsh-client-ui-goal` - 调用 goals Remote 并订阅激活变更
 - `dsh-client-ui-message-feedback` - 调用 messageFeedback/sessionFeedback Remote 记录反馈
-- `dsh-client-ui-model-selection` - 读模型目录 Remote 与转发事件
-- `dsh-client-ui-open-in-app` - ctx.remote 与 Remote 结果类型
-- `dsh-client-ui-permission-presets` - 写 defaultPreset 与读 Session 投影
-- `dsh-client-ui-plan` - ctx.remote 与 Remote 转发事件面
-- `dsh-client-ui-plugin-manager` - 调用 pluginManager 等 Remote 并订阅 Host 事件
+- `dsh-client-ui-model-selection` - 拉取模型目录并提交选择
+- `dsh-client-ui-open-in-app` - 查询可用应用并执行原生打开
+- `dsh-client-ui-permission-presets` - 拉取权限目录并读写设置文档
+- `dsh-client-ui-plan` - 执行 /plan off 命令
+- `dsh-client-ui-plugin-manager` - Remote 调用与转发事件面
 - `dsh-client-ui-reference` - 文件与会话候选的 Remote 查询
-- `dsh-client-ui-schedule` - ctx.remote 与 Remote 事件面
+- `dsh-client-ui-schedule` - 目录与任务详情的一切读写都经 Remote 命名空间，并订阅其推送失效事件
 - `dsh-client-ui-session` - ctx.remote 声明合并
 - `dsh-client-ui-settings` - 读配置 describe 与写 settings 命名空间
-- `dsh-client-ui-settings-account` - 调用 account/session Remote 与订阅转发事件
-- `dsh-client-ui-settings-general` - 判断 loopback 以决定是否注册本地设置文档动作
-- `dsh-client-ui-settings-models` - 订阅 Host 推送的设置/凭据/适配器失效事件
-- `dsh-client-ui-settings-plugin-inventory` - 获取 Host 插件清单快照
-- `dsh-client-ui-settings-subagent` - 订阅 Host 推送的适配器/设置失效事件
-- `dsh-client-ui-settings-web-search` - 订阅 Host 推送的凭据失效事件以刷新密钥态
-- `dsh-client-ui-sidebar-documentpreview` - 经 remote 面读取工作区文件字节与分页文本
-- `dsh-client-ui-sidebar-files` - 经 remote 面列目录/订阅文件变更
-- `dsh-client-ui-skill` - 调用 skills/list 与订阅 agent-preset/selected
-- `dsh-client-ui-tool` - 提供 Host home 事实用于 POSIX ~ 显示
-- `dsh-client-ui-user-questions` - 订阅 Host 的 user-questions/request waterfall
-- `dsh-client-ui-workspace` - Host 目录选择器与 $host 事实
-- `dsh-cordis-client-runner` - 跨平面调用宿主半运行、获取客户端代码与上报失败
-- `dsh-experimental-client-ui-voice-input` - 在 Client 注册实验 Remote 贡献
+- `dsh-client-ui-settings-account` - 账户流、登录、登出、bonus 读/ack 全部经 Remote 账户命名空间
+- `dsh-client-ui-settings-general` - 用 Remote 的 $host 事实判断是否 loopback，从而决定是否提供本地文档动作
+- `dsh-client-ui-settings-models` - provider 目录、凭据与模型发现全部经 Remote 命名空间，并订阅四类推送失效
+- `dsh-client-ui-settings-plugin-inventory` - Host 清单快照只经 Remote 的 pluginInventory 命名空间读取
+- `dsh-client-ui-settings-subagent` - 模型目录读取与三类推送失效订阅都经 Remote 事件面
+- `dsh-client-ui-settings-web-search` - 凭据状态读取与凭据引用更新事件都经 Remote 的 credentials 命名空间
+- `dsh-client-ui-sidebar-documentpreview` - 分页文本与字节读取走 Remote 载体
+- `dsh-client-ui-sidebar-files` - 目录列表与文件变更监听走 Remote 命名空间
+- `dsh-client-ui-skill` - skill 目录与 skills/list 调用来自 Remote 的 skills 命名空间
+- `dsh-client-ui-tool` - Host 家目录事实用于路径摘要显示
+- `dsh-client-ui-user-questions` - 转发问答请求与答复走 Remote Events 瀑布
+- `dsh-client-ui-workspace` - 目录选择器与 Host 事实经 Remote 提供
+- `dsh-cordis-client-runner` - 经 Remote 命名空间与 Host 侧做双向调用：同步 inspect manifest、解析查询、运行 Host 半、取客户端源码、结算用户运行与上报渲染/门面失败
+- `dsh-experimental-client-ui-claude-code-mods` - Remote contribution 的挂载与 remote 服务由 api-remotes 提供
+- `dsh-experimental-client-ui-cot-translation` - Remote 命名空间的挂载与调用由 api-remotes 提供
+- `dsh-experimental-client-ui-voice-input` - Remote contribution 的挂载由 api-remotes 提供

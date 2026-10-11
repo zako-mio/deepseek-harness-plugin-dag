@@ -1,7 +1,7 @@
 # cordis-plugin-timer
 
 - 包名: `@deepseek-ai/cordis-plugin-timer`
-- 分组: G46 框架 vendor
+- 分组: G45 框架 vendor
 - 拓扑层: Layer 0
 - 来源层: L1 核心集
 - 源码路径: `vendor/timer`
@@ -16,4 +16,4 @@
 - 无依赖（基础插件）
 
 ## Dependents (下游被依赖)
-- `dsh-hmr` - 提供 ctx.debounce，把同一批文件变更合并成一次重载事务
+- `dsh-hmr` - 提供变更合并所需的 debounce 定时能力

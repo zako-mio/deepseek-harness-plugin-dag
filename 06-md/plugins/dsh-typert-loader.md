@@ -1,7 +1,7 @@
 # dsh-typert-loader
 
 - 包名: `@deepseek-ai/dsh-typert-loader`
-- 分组: G45 类型契约
+- 分组: G44 类型契约
 - 拓扑层: Layer 1
 - 来源层: L1 核心集
 - 源码路径: `packages/typert/loader`

@@ -1,0 +1,487 @@
+[
+  {
+    "id": "dsh-tool-lsp",
+    "name": "@deepseek-ai/dsh-tool-lsp",
+    "implementation": "函数式插件（具名导出 name/inject/Config/apply，无 default 导出）：在 ctx.tools 上注册唯一的只读工具 `lsp`，把 goToDefinition/findReferences/goToImplementation/hover 四种操作作为枚举暴露给模型 (src/index.ts:108-231、src/render.ts:15)。参数校验把模型的一基 UTF-16 行列坐标换算为 seam 的零基位置，操作名与坐标非法即报错 (src/render.ts:46-59、src/render.ts:62-72)。执行时要求会话工作区（无则抛 LSP_WORKSPACE_REQUIRED），经 ctx.lsp.query 查询后按文件分组渲染为一基 path:line:character，并对 locations 与 hover 分别做条数截断与整体字符截断 (src/index.ts:182-193、src/render.ts:85-128)。另在 ctx.systemPrompt 注册 tool:lsp 指引节，声明式地把 LSP 定位为 search/read 之外的精确导航补充 (src/index.ts:52-53、src/index.ts:102-106)；maxLocations/maxResultChars/timeoutMs 在加载期强校验，误配即失败 (src/index.ts:65-69、src/index.ts:233-244)。",
+    "provides": [
+      "tools.lsp (模型可见的只读代码导航工具：四种 LSP 操作、一基 UTF-16 光标坐标、有界结果渲染)",
+      "systemPrompt 章节 tool:lsp (把 LSP 定位为文本匹配含糊或改动前需要精确符号关系时的补充手段)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:35 peerDep + src/index.ts:16 import defineTool；src/index.ts:46 inject 'tools'、src/index.ts:108 ctx.tools.register",
+        "purpose": "定义并注册 lsp 工具到工具注册表，复用其 schema/render/presentCall 契约"
+      },
+      {
+        "plugin_id": "dsh-lsp",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:32 peerDep + src/index.ts:17 import LspError、src/index.ts:18 type import、src/render.ts:10 type import；src/index.ts:46 inject 'lsp'、src/index.ts:188 ctx.lsp.query",
+        "purpose": "消费语言服务器能力 seam 完成实际查询并复用其错误类型"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E2",
+        "evidence": "package.json:33 peerDep + src/index.ts:46 inject 'systemPrompt'；src/index.ts:102 ctx.systemPrompt.section",
+        "purpose": "注册 tool:lsp 指引节，使工具策略进入稳定系统提示词"
+      },
+      {
+        "plugin_id": "dsh-working-directory",
+        "mechanism": "E2",
+        "evidence": "package.json:36 peerDep + src/index.ts:13 type import；src/index.ts:46 inject 'workingDirectory'、src/index.ts:184 ctx.workingDirectory.ensure",
+        "purpose": "取得会话工作区根作为查询作用域，缺失即拒绝查询而不回退"
+      },
+      {
+        "plugin_id": "dsh-timeout",
+        "mechanism": "E1",
+        "evidence": "package.json:34 peerDep + src/index.ts:19 import MAX_TIMER_DELAY_MS",
+        "purpose": "为 timeoutMs 配置上限与工具调用超时预算提供计时上限常量"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "package.json:39 dependencies + src/index.ts:20 import assertNever",
+        "purpose": "对工具输出与查询结果的封闭联合做穷尽性断言"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "package.json:31 peerDep + packages/lsp/tool-lsp/tsconfig.json:21 项目引用（源码无直接 import）",
+        "purpose": "编译期契约对齐：工具结果经 dsh-tools 呈现时与 llm 内容类型同一基线；仅声明式依赖"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-plan-mode",
+    "name": "@deepseek-ai/dsh-plan-mode",
+    "implementation": "以 default 导出的 PlanModeController（extends Service，static inject=['tools','systemPrompt','sessionProjections']）实现 ctx.planMode，把 plan mode 当作「按 agent 记录的协作状态」：注册 key='plan' 的 session projection，从 command/run → command/done → plan/mode → request/header 事件折叠出 active/wanted/activeAtLastHeader，并对外只暴露 {active,pending} 的 wire 视图 (src/index.ts:136-168、src/index.ts:226)。在 agent/pre-step 上把待生效选择追加为 plan/mode 事件（仅当该 pre-step 被接受），并在必要时追加一条「用户已切换模式」的旁白消息，从而保证同一 turn 内请求装配一致 (src/index.ts:196-213、src/index.ts:448-474)。进入/退出有两条路径：ctx.inject(['commands']) 下注册的 /plan [off|message] 斜杠命令，以及常驻注册的 exit_plan_mode 工具——后者经 ctx.get('userQuestions') 发起 plan-review 提问，用户驳回时结束本 turn 而保持计划模式 (src/index.ts:229-275、src/index.ts:277-372)。plan:policy 提示词节按投影/待生效状态决定是否注入部署方指引，非计划模式注入空串 (src/index.ts:216-224)。",
+    "provides": [
+      "ctx.planMode (PlanModeController：按 agent 的计划模式状态、切换入口与状态读取的唯一所有者)",
+      "session projection 'plan' (stateVersion 3 的折叠单元与 {active,pending} wire 视图)",
+      "session 事件 'plan/mode' (log-only、整值替换的计划模式事实，驱动投影与恢复/分叉)",
+      "tools.exit_plan_mode (模型可见的退出计划模式工具，非计划模式下仍常驻以稳定工具目录)",
+      "commands.plan (/plan [off|message] 斜杠命令，含附件与 steering 消息)",
+      "systemPrompt 章节 plan:policy (仅在计划模式生效时注入的部署方指引)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:39 peerDep + src/index.ts:28 type import Agent/PreStepDecision；src/index.ts:196 ctx.on('agent/pre-step')、src/index.ts:259 agent.steer",
+        "purpose": "在 agent 的 pre-step 边界提交计划模式选择并注入旁白消息"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:45 peerDep + src/index.ts:32 import defineTool；src/index.ts:176 inject 'tools'、src/index.ts:277 ctx.tools.register",
+        "purpose": "注册常驻的 exit_plan_mode 工具，保持跨模式工具目录不变"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E2",
+        "evidence": "package.json:44 peerDep + src/index.ts:176 inject 'systemPrompt'；src/index.ts:216 ctx.systemPrompt.section",
+        "purpose": "注册 plan:policy 提示词节，按状态决定是否输出部署方指引"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:43 peerDep + src/index.ts:35-36 type import ProjectionDefinition；src/index.ts:176 inject 'sessionProjections'、src/index.ts:226 register、src/index.ts:380 与 src/index.ts:391 stateOf",
+        "purpose": "注册 plan 投影并读取 plan/turnBoundary 折叠状态以判定是否处于开放 turn"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:42 peerDep + src/index.ts:31 type import Session/UserMessage；src/index.ts:440 与 src/index.ts:456 session.append('plan/mode')",
+        "purpose": "把模式切换写入会话日志，使恢复与分叉重建同一状态"
+      },
+      {
+        "plugin_id": "dsh-user-questions",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:46 peerDep + src/index.ts:33 import UserQuestionError/AskUserQuestionAnswer；src/index.ts:307 ctx.get('userQuestions')、src/index.ts:313 interaction.ask",
+        "purpose": "exit_plan_mode 经用户问答通道发起计划评审，并区分「被驳回」与失败"
+      },
+      {
+        "plugin_id": "dsh-commands",
+        "mechanism": "E1+E2+E3",
+        "evidence": "package.json:40 peerDep(optional, package.json:49-53) + src/index.ts:34 type import、src/types.ts:11 type import CommandId；src/index.ts:229 ctx.inject(['commands'])；packages/bundle/base/cordis.patch.yml:312-313 与 :327-328 同 bundle 装配",
+        "purpose": "注册 /plan 斜杠命令；命令子插件仅在命令注册表被组合时激活"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "package.json:41 peerDep + src/index.ts:29 import createUserMessage、src/index.ts:30 type import ContextFormed；src/index.ts:469 createUserMessage",
+        "purpose": "构造模式切换旁白消息并声明 plan-mode 消息来源映射"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "package.json:55 dependencies + src/index.ts:25 import brandString；src/index.ts:231 brandString<CommandDefinitionId>",
+        "purpose": "为命令定义 id 生成品牌化标识，避免裸字符串跨边界"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-agent-preset-registry",
+    "name": "@deepseek-ai/dsh-agent-preset-registry",
+    "implementation": "以 default 导出的 AgentPresetRegistry（extends TypertRemoteService，static inject=['loader','sessionProjections']）把 YAML 声明的 preset 变成可在隔离 scope 中挂载的 Cordis 插件树：register() 先做 entryListProblem 校验，再经 createScope + mountPreset 装配并保留该修订（generations/引用计数）；子树入口列表由 dsh-app-boot 的 prepareProfileEntries 按 profile 兼容策略准备，但该包属装配框架、不计入 DAG 边 (src/index.ts:81-122、src/mount.ts:204-215、src/mount.ts:209)。PresetTree 覆写 write() 为空以免内存树落盘，挂载后 auditRows 逐行审计失败与缺服务行，leakedServices 若发现子树向 root realm 泄漏服务即拒绝挂载 (src/mount.ts:9-24、src/mount.ts:211-214)。Agent 通过 bind/join 把自身 scope 的父级绑定到修订，recompose/select 只在会话尚未开始首轮时切换并写入 agent-preset/selected 事件；配套的 agentPreset 投影从 header 初始化、由该事件推进 (src/index.ts:250-274、src/index.ts:346-362、src/session.ts:35-44)。对外以 @Remote 暴露 list/read/select，并给出 compositionInventory 与 inspectCompositions 供 UI 与隔离诊断读取 (src/index.ts:194-230、src/index.ts:164-172、src/index.ts:382-392)。",
+    "provides": [
+      "ctx.agentPresets (AgentPresetRegistry：声明式 preset 的注册、挂载、修订保留、选择与绑定)",
+      "session projection 'agentPreset' (会话实际运行的 preset，从创建 header 初始化并由选择事件推进)",
+      "事件 'agent-preset/selected'(sessionId, agentPreset) (会话已提交新 preset 的持久化通知)",
+      "Typert Remote 方法 list/read/select (远端读取名册、声明 YAML 与提交选择)",
+      "display 出口 presetDisplayText/isBuiltInPreset (内置 preset 走 locale 字典、用户自定义元数据不翻译)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1",
+        "evidence": "package.json:60 peerDep + src/index.ts:4 import Remote/RemoteError/TypertRemoteService；src/index.ts:52 extends TypertRemoteService",
+        "purpose": "以 Typert Remote 服务形式把名册与选择方法暴露给远端客户端"
+      },
+      {
+        "plugin_id": "dsh-scope",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:54 peerDep + src/index.ts:5 import bindScopeParent/createScope/scopeOf/scopeParentOf/Scope；src/index.ts:105 createScope、src/index.ts:251-267 bind/join、src/mount.ts:205 scopeOf",
+        "purpose": "为每个 preset 修订建立隔离 scope，并把 agent scope 的父级绑定到该修订"
+      },
+      {
+        "plugin_id": "cordis-plugin-include",
+        "mechanism": "E1",
+        "evidence": "package.json:51 peerDep + src/index.ts:6 import entryListSchema",
+        "purpose": "以 Loader 自身的 entry-list YAML 方言导出声明，使 !!js 条件按声明原样呈现"
+      },
+      {
+        "plugin_id": "cordis-plugin-loader",
+        "mechanism": "E1",
+        "evidence": "package.json:52 peerDep + src/index.ts:3 与 src/mount.ts:3 import EntryTree/EntryOptions、src/definition.ts:2 type import、src/composition-inventory.ts:3 import isJsExpr",
+        "purpose": "复用 Loader 的入口树与入口类型来装配并审计 preset 子树"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "package.json:53 peerDep + src/index.ts:8 type import Agent；src/index.ts:347 select(agent: Agent)",
+        "purpose": "把 preset 选择与绑定作用到具体 Agent 的上下文与会话"
+      },
+      {
+        "plugin_id": "dsh-settings",
+        "mechanism": "E2",
+        "evidence": "package.json:57 peerDep + src/index.ts:10 type import；src/index.ts:68 ctx.inject(['settings']) → child.settings.configure({auto:false})",
+        "purpose": "把 preset 定义排除在自动设置持久化之外"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:59 peerDep + src/index.ts:11 type import、packages/preset/agent-preset-registry/tsconfig.json:45 项目引用；src/index.ts:336 owner.emit('tools/change')",
+        "purpose": "preset 重新挂载后通知工具目录变更"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:55 peerDep + src/types.ts:2 type import SessionId、src/session.ts:20 declare module '@deepseek-ai/dsh-session/types'；src/index.ts:354 session.append('agent-preset/selected')",
+        "purpose": "把 preset 选择声明为会话日志事件并实际追加，满足「模型可见即已记录」"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:56 peerDep + src/session.ts:17 type import ProjectionDefinition；src/index.ts:53 inject 'sessionProjections'、src/index.ts:67 register、src/index.ts:349 stateOf('turnBoundary')",
+        "purpose": "注册 agentPreset 投影并读取 turnBoundary 以判定会话是否已开始"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E1",
+        "evidence": "package.json:58 peerDep + packages/preset/agent-preset-registry/tsconfig.json:42 项目引用（源码无直接 import）",
+        "purpose": "编译期契约对齐：preset 子树装配的提示词插件共用同一 systemPrompt 基线；仅声明式依赖"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-ptc-runtime-node",
+    "name": "@deepseek-ai/dsh-ptc-runtime-node",
+    "implementation": "以 default 导出的 NodePtcRuntime（extends PtcRuntime，注册为 ctx.ptcRuntime；static inject=['fs','subprocess','sandbox','sandboxPolicy']）实现 PTC 执行 seam 的 Node 进程后端，语言为 typescript、隔离级别为 process (src/index.ts:55-71)。resolve() 补齐 cwd 与沙箱策略并按配置上下限钳制时间预算，run() 校验绑定后为每次执行登记一个 AbortController 以便 dispose 时终止 (src/index.ts:111-144)。执行时先把程序用 stripTypeScriptTypes 剥成纯 JS 装入 async function 包装，再经 ctx.subprocess.resolveExecutable/spawn 启动受管子进程，控制通道走长度前缀 JSON 帧（JsonChannel），绑定调用以 id 关联并受 maxPendingCalls/maxMessageBytes 限制 (src/index.ts:209-227、src/index.ts:240、src/channel.ts:51-121)。输出经 OutputLedger 与进程侧 LogBuffer 双层按字节计账，超限统一归约为 output-limit 失败；子进程侧 bootstrap 捕获 console 与 stdout/stderr 写入、以 null-prototype 命名空间对象桥接宿主绑定、并只把无损 JSON 值送回 (src/index.ts:152-197、src/output-ledger.ts:12-65、src/bootstrap.ts:110-148、src/bootstrap.ts:313-357)。",
+    "provides": [
+      "ctx.ptcRuntime (PTC 执行能力 seam 的 Node 进程 provider：resolve/run 一个模型编写的 TypeScript 程序)",
+      "子进程私有入口 ./process (process.js/process.ts：经继承控制通道运行程序，不加载任何 Harness 服务)",
+      "有界输出账本与失败归约词表 (logs/value 或 exception/invalid-output/output-limit/worker-exit/sandbox-unavailable)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-ptc-runtime",
+        "mechanism": "E1",
+        "evidence": "package.json:35 peerDep + src/index.ts:6 import PtcRuntime、src/index.ts:7 type import PtcRunRequest/PtcRunSpec 等；src/index.ts:55 extends PtcRuntime",
+        "purpose": "落实 PTC 执行 seam 的服务定义（language/isolation/resolve/run 抽象）"
+      },
+      {
+        "plugin_id": "dsh-fs",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:38 peerDep + src/index.ts:13 type import、src/launch.ts:4 type import FileSystem；src/index.ts:56 inject 'fs'、src/launch.ts:43-58 fs.processPathFromHostPath",
+        "purpose": "把宿主侧 bootstrap 资源路径映射到子进程执行世界"
+      },
+      {
+        "plugin_id": "dsh-subprocess",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:39 peerDep + src/index.ts:11 type import SubprocessHandle/SubprocessOutcome、src/process-entry.ts:2 import openInheritedControlChannel；src/index.ts:56 inject 'subprocess'、src/index.ts:220 resolveExecutable、src/index.ts:240 spawn",
+        "purpose": "启动受管子进程并取得 control/stdout/stderr 管道与退出结果"
+      },
+      {
+        "plugin_id": "dsh-sandbox",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:40 peerDep + src/index.ts:9 import SandboxUnavailableError/classifyRunnerFailure/isRunnerSpawnFailure、src/index.ts:10 type import ConfinedArgv/SandboxExecutionPolicy/SandboxMode；src/index.ts:56 inject 'sandbox'、src/index.ts:228 ctx.sandbox.confine、src/index.ts:281 classifyRunnerFailure",
+        "purpose": "按文件策略包裹 argv，并把 runner 拒绝/启动失败与普通退出区分开"
+      },
+      {
+        "plugin_id": "dsh-sandbox-policy",
+        "mechanism": "E2",
+        "evidence": "package.json:41 peerDep + src/index.ts:12 type import；src/index.ts:56 inject 'sandboxPolicy'、src/index.ts:100 sandboxMode、src/index.ts:113 sandboxPolicy.resolve",
+        "purpose": "取得部署默认文件策略与每会话模式，作为程序直接文件访问的执行策略"
+      },
+      {
+        "plugin_id": "dsh-timeout",
+        "mechanism": "E1",
+        "evidence": "package.json:37 peerDep + src/index.ts:8 import MAX_TIMER_DELAY_MS/clampTimeout；src/index.ts:119 clampTimeout、src/index.ts:85-87 上限校验",
+        "purpose": "按配置上下限钳制单次执行的时间预算并约束 timer 可表示范围"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "package.json:44 dependencies + src/index.ts:14 import snapshotJsonValue、src/launch.ts:5 import assertNever",
+        "purpose": "对宿主绑定返回值做无损 JSON 快照，并对封闭联合做穷尽断言"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "package.json:36 peerDep + packages/ptc-runtime/ptc-runtime-node/tsconfig.json:12 项目引用（源码无直接 import）",
+        "purpose": "编译期会话作用域契约对齐（PTC 运行于会话边界内）；仅声明式依赖"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-sandbox-local",
+    "name": "@deepseek-ai/dsh-sandbox-local",
+    "implementation": "以 default 导出的 LocalSandboxProvider（extends SandboxProvider，注册为 ctx.sandbox）实现本地进程沙箱 provider：先按平台选 runner 链（linux: bwrap→landlock、darwin: seatbelt、win32: windows-acl），单候选直接选定、多候选才用功能性探测仲裁，链为空或全部不可用即抛 SandboxUnavailableError 失败关闭 (src/index.ts:160-167、src/index.ts:503-551)。confine() 把调用方 argv 包进所选 runner 的 profile 参数，并随结果附带 enforcement、denialSignatures 与结构化 runner 失败规则（含 Landlock 的 exit 125 与 windows-acl 的 exit 127） (src/index.ts:325-344、src/index.ts:207-242)。profile 构造集中在本包的 profiles.ts：bwrap 用 ro-bind/tmpfs、landlock 用 grantArgs 白名单、seatbelt 用 SBPL 文本且可写根取自 dsh-sandbox 的 writableRoots 以避免与 fs 围栏漂移 (src/profiles.ts:16-57)。windows-acl 档额外拥有写授权：每工作区一份常驻 AclWriteGrant 复用缓存、每会话随机私有临时目录一份可撤销授权，provider dispose 时撤销临时授权并删除临时目录 (src/index.ts:403-454、src/index.ts:465-494)。",
+    "provides": [
+      "ctx.sandbox (本地进程沙箱 provider：平台 runner 链、功能性探测、fail-closed 的 argv 包裹与失败分类事实)",
+      "每平台 runner 的 denialSignatures 与 RunnerFailureRule 词表 (供调用方区分「命令没跑」与「命令被拒」)",
+      "Windows 受限令牌档的写授权生命周期 (每工作区常驻 ACE + 每会话随机私有临时目录的可撤销 ACE)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-sandbox",
+        "mechanism": "E1",
+        "evidence": "package.json:32 peerDep + src/index.ts:37 import SandboxProvider/SandboxUnavailableError/canonicalPath、src/index.ts:38 type import ConfinedArgv/RunnerFailureRule/SandboxEnforcement/SandboxPolicy、src/profiles.ts:8 import writableRoots；src/index.ts:252 extends SandboxProvider",
+        "purpose": "实现沙箱能力 seam 的 provider 角色，复用策略/枚举/writableRoots 与 fail-closed 错误类型"
+      },
+      {
+        "plugin_id": "dsh-sandbox-windows-acl",
+        "mechanism": "E1",
+        "evidence": "package.json:36 dependencies + src/index.ts:40 import AclWriteGrant/assertTempRootOutsideWorkspace/registerAclDiagnosisSkill/tempWriteSid/workspaceWriteSid",
+        "purpose": "提供 Windows 受限令牌运行器的写 SID 派生、ACL 授权对象与诊断技能注册"
+      },
+      {
+        "plugin_id": "node-addon-system",
+        "mechanism": "E1",
+        "evidence": "package.json:38 dependencies + src/index.ts:34 import LAUNCHER_BIN/LAUNCHER_FAILURE_EXIT/launcherPath/probe、src/profiles.ts:7 import grantArgs",
+        "purpose": "解析 Landlock launcher 路径、做功能探测并构造授权参数"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "package.json:37 dependencies + src/index.ts:41 import assertNever",
+        "purpose": "对 runner 判别联合做穷尽断言"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "package.json:33 peerDep + src/index.ts:39 type import SessionId、packages/sandbox/sandbox-local/tsconfig.json:33 项目引用；src/index.ts:403 materializeAclGrant(sessionId, workspaceRoot)",
+        "purpose": "以 SessionId 作为每会话私有临时目录写授权的键，隔离同工作区的不同会话"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "package.json:31 peerDep + packages/sandbox/sandbox-local/tsconfig.json:24 项目引用（源码无直接 import）",
+        "purpose": "编译期依赖基线对齐（沙箱 provider 与工具/llm 层共用同一工作区依赖图）；仅声明式依赖"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-sandbox-policy",
+    "name": "@deepseek-ai/dsh-sandbox-policy",
+    "implementation": "以 default 导出的 SandboxPolicyService（extends Service，注册为 ctx.sandboxPolicy，static inject=['sessionProjections']）作为沙箱策略的唯一归属：持有部署默认 mode 与 agentless 回退 workspaceRoot，resolve() 按「显式 mode 覆盖 > 会话最后一条 sandbox/mode > 部署默认」定模式，并按「会话 header.cwd > 配置回退根」定工作区根，同时带上 sessionId (src/index.ts:110-131、src/index.ts:164-171)。会话级覆盖本身以日志为存储：sandboxMode 投影只折叠最后一条 sandbox/mode 事件，setSandboxMode 是唯一写入路径（append 一条事件），因此覆盖可重放、跨会话互不可见 (src/index.ts:133-139、src/session-mode.ts:53-55)。同时经 ctx.inject(['systemPrompt']) 注册 sandbox:policy 上下文节，把解析后的策略渲染成模型可见的一句话说明——只描述策略、不盘点能力 (src/index.ts:42-56、src/index.ts:141-152)。工作区根在构造期即解析为绝对路径，非绝对路径直接报错 (src/index.ts:36-39、src/index.ts:131)。",
+    "provides": [
+      "ctx.sandboxPolicy (每调用沙箱策略解析：部署默认 + 会话覆盖 + 工作区根 + sessionId)",
+      "session projection 'sandboxMode' (最后一条 sandbox/mode 覆盖，init 为 null，stateVersion 1)",
+      "session 事件 'sandbox/mode' (log-only 的覆盖写入词汇，唯一写入路径 setSandboxMode)",
+      "systemPrompt 上下文节 sandbox:policy (把解析后的文件策略写入缓存安全的运行时上下文)",
+      "导出 SANDBOX_MODES / setSandboxMode (模式词表与覆盖写入 API，供 UI 与 enforcing 工具复用)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:35 peerDep + src/index.ts:30 type import；src/index.ts:119 inject 'sessionProjections'、src/index.ts:133 register、src/index.ts:179 stateOf(session,'sandboxMode')",
+        "purpose": "注册并读取 sandboxMode 投影单元，作为会话级覆盖的唯一读取口"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:32 peerDep + src/index.ts:29 type import Session、src/session-mode.ts:21 type import；src/session-mode.ts:54 session.append('sandbox/mode')、src/index.ts:168 session?.header.cwd",
+        "purpose": "把模式覆盖写入会话日志，并从会话 header 取不可变 cwd 作为 workspace-write 边界"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E2",
+        "evidence": "package.json:33 peerDep + src/index.ts:31 type import；src/index.ts:141 ctx.inject(['systemPrompt'])、src/index.ts:142 ctx.systemPrompt.context",
+        "purpose": "注册 sandbox:policy 上下文节，使模型看到当前文件策略"
+      },
+      {
+        "plugin_id": "dsh-sandbox",
+        "mechanism": "E1",
+        "evidence": "package.json:31 peerDep + src/index.ts:28 type import SandboxExecutionPolicy/SandboxMode、src/session-mode.ts:22 type import SandboxMode",
+        "purpose": "复用沙箱 seam 的模式与策略类型，保证与 enforcing provider 同一词汇"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "package.json:30 peerDep + src/index.ts:27 type import（src/index.ts:146 context.agent?.session）",
+        "purpose": "提示词上下文按 agent 取会话，从而解析该 agent 的策略"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-schedule",
+    "name": "@deepseek-ai/dsh-schedule",
+    "implementation": "以 default 导出的 ScheduleService（extends TypertRemoteService，注册为 ctx.schedule，static inject=['agents','sessions','storageDomain','sessionController','sessionPersistence']）把提醒做成 Host 级持久化任务：构造期打开 schedule storage domain（严格 schema，键与 record.id 不一致即拒绝打开），建立 ScheduleRuntime，并把 create/list/catalog/delete/update/history 全部串进一条 FIFO 队列以串行化管理与投递 (src/index.ts:99-165、src/storage.ts:37-60)。规则与时间算术集中在 domain.ts：六种规则（after/at/every/daily/weekly/cron）各自校验并算出唯一 UTC 目标，日历规则用 Temporal 以「gap 跳过、overlap 取较早」解析，cron 按 Vixie 的 DOM_STAR/DOW_STAR 语义匹配并做 400 年搜索地平线 (src/domain.ts:791-823、src/domain.ts:909-955、src/domain.ts:969-983、src/domain.ts:1049-1113)。runtime.ts 用单个 timer 扫描到期任务，经 sessionController.resolveAgent 恢复原会话、以 followup 投递、等 sessions.flush 确认后才把状态/目标/回执写回，失败只记录不自动重试 (src/runtime.ts:85-165)。归档准入经 workspace 事件读取存储行：会话仍有活跃提醒则拒绝归档，归档停止则删除这些行 (src/index.ts:188-206、src/index.ts:430-461)。",
+    "provides": [
+      "ctx.schedule (ScheduleService：Host 级持久化提醒的创建/列举/目录/删除/更新/投递历史，读取与删除都不激活会话)",
+      "Typert Remote 方法 list/catalog/history/delete/update (浏览器与 Agent 共用同一服务)",
+      "storage domain 'schedule' v1 的 tasks 表 (scheduleTaskSchema 严格校验并拒绝打开损坏域)",
+      "规则与视图出口 scheduleView/renderReminderFraming/renderRecurringReminderBatchFraming (模型可见提醒文本的稳定框架)",
+      "事件 'schedule/changed' (持久化任务集变更通知，供客户端重取目录)",
+      "session 事件 'schedule/change' v1 与 LegacyScheduleRecord 词表 (历史提醒保持可读，不隐式迁移)",
+      "workspace 归档准入族 SessionActivityKindMap['schedule'] (有活跃提醒的会话拒绝归档)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:53 peerDep + src/index.ts:8 type import SessionId、src/storage.ts:3 import SessionId、src/types.ts:6 与 src/types.ts:9 type import、src/domain.ts:7 import SessionLogOffset；src/index.ts:166 ctx.on('session/created')、src/index.ts:173 session.ownEvents()",
+        "purpose": "以 SessionId 绑定任务原始会话，并在会话创建时读取历史 schedule 事件给出告警"
+      },
+      {
+        "plugin_id": "dsh-storage-domain",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:56 peerDep + src/index.ts:6 type import Domain、src/storage.ts:5 import defineDomain/domainTable；src/index.ts:100 inject 'storageDomain'、src/index.ts:125 ctx.storageDomain.open(scheduleDomain)",
+        "purpose": "以 schema 校验的 domain/table 持久化任务，损坏即拒绝打开"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E2",
+        "evidence": "package.json:55 peerDep + src/index.ts:349 this.owner.sessionProjections.stateOf(agent.session,'turnBoundary')",
+        "purpose": "切换 preset 前用 turnBoundary 投影判定会话是否已开始首轮"
+      },
+      {
+        "plugin_id": "dsh-subagent",
+        "mechanism": "E1",
+        "evidence": "package.json:57 peerDep + src/index.ts:7 import delegationDepthOf；src/index.ts:412 delegationDepthOf(agent) === 0",
+        "purpose": "拒绝把提醒绑定到委派子会话（投递永远到不了），与委派深度上限共用同一记账"
+      },
+      {
+        "plugin_id": "dsh-workspace",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:60 peerDep + src/index.ts:9 type import SessionActivity、src/types.ts:11 type import、src/types.ts:352 declare module SessionActivityKindMap；src/index.ts:189 ctx.on('workspace/session-activity')、src/index.ts:199 ctx.on('workspace/session-stop')",
+        "purpose": "参与工作区归档准入：有活跃提醒的会话拒绝归档，归档停止则删除其任务行"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:52 peerDep + src/runtime.ts:2 import createUserMessage、src/runtime.ts:3 type import ContextFormed、src/storage.ts:4 import MessageId、src/types.ts:7 type import；src/runtime.ts:119 createUserMessage、src/runtime.ts:4-8 declare module MessageSourceMap",
+        "purpose": "以 schedule 来源构造投递消息，并用 MessageId 记录投递回执身份"
+      },
+      {
+        "plugin_id": "dsh-api-session-controller",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:50 peerDep + src/runtime.ts:10 type import；src/index.ts:100 inject 'sessionController'、src/runtime.ts:101 ctx.sessionController.resolveAgent(sessionId)",
+        "purpose": "到期时经既有控制器恢复原会话的 Agent，保证 preset 组合与并发激活只有一个所有者"
+      },
+      {
+        "plugin_id": "dsh-session-persistence",
+        "mechanism": "E2",
+        "evidence": "package.json:54 peerDep + src/index.ts:100 inject 'sessionPersistence'（装载顺序要求，见 src/index.ts:94-98）；src/runtime.ts:124 ctx.sessions.flush",
+        "purpose": "投递只有在持久化后端注册了 flush 监听后才算已提交"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:49 peerDep + packages/schedule/schedule/tsconfig.json:30 项目引用；src/index.ts:411 ctx.agents.get(sessionId)",
+        "purpose": "按会话查活跃 Agent 以判定委派深度，决定是否拒绝绑定"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "package.json:51 peerDep + src/types.ts:8 import Branded；src/types.ts:14 ScheduleId = Branded<'ScheduleId'>",
+        "purpose": "把跨边界的任务 id 品牌化，避免裸字符串"
+      },
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1",
+        "evidence": "package.json:59 peerDep + src/index.ts:5 import TypertRemoteService/Remote；src/index.ts:99 extends TypertRemoteService",
+        "purpose": "把管理方法以 Typert Remote 暴露给 Web 客户端"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1",
+        "evidence": "package.json:58 peerDep + packages/schedule/schedule/tsconfig.json:33 项目引用（源码无直接 import）",
+        "purpose": "编译期契约对齐：提醒工具的 schema/错误码词汇与本包导出的类型共用同一基线；仅声明式依赖"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-schedule",
+    "name": "@deepseek-ai/dsh-tool-schedule",
+    "implementation": "函数式插件（具名导出 name/inject/apply，无 default 导出）：apply 经 ctx.inject(['schedule']) 在解析到 Schedule 服务的 scope 内注册四个模型工具 schedule_create/schedule_list/schedule_delete/schedule_update，因此由 preset 决定哪些 agent 拿到它们 (src/index.ts:29、src/index.ts:435-437、src/index.ts:444-581)。每个工具先做「调用者必须存在、且不得是委派子 agent」的前置拒绝，再把输入收敛成规范词表：六种 timing 视图 schema、九种稳定错误码与 update 的 not-found/ended/conflict 结果 (src/index.ts:31-181、src/index.ts:227-230)。参数层校验开放根无法表达的约束（恰好一个 timing 选择子、title/prompt 非空且不超 120 字、every_seconds 下限），错误一律翻译成稳定 code，内部存储失败则归约为 internal_error 而不泄漏细节 (src/index.ts:248-292、src/index.ts:294-345、src/index.ts:211-218)。执行体全部走 ctx.schedule 并保持会话作用域：create 用 agent.session.id，update 先 list 出 expected 再比较更新，未命中时查 catalog 区分已结束与不存在 (src/index.ts:466-479、src/index.ts:546-578)。",
+    "provides": [
+      "tools.schedule_create / schedule_list / schedule_delete / schedule_update (四个模型可见的提醒管理工具，注册在解析到 schedule 服务的 scope)",
+      "工具输出 schema 词表 (六种 timing 视图 + 九种稳定错误码 + delete/update 的非变更结果)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-schedule",
+        "mechanism": "E1+E2+E3",
+        "evidence": "package.json:32 peerDep + src/index.ts:15-17 import MAX_TITLE_LENGTH/MIN_EVERY_INTERVAL_SECONDS/REQUIRED_TITLE_MESSAGE/ScheduleId/ScheduleInputError/scheduleView、src/index.ts:18-21 type import；src/index.ts:436 ctx.inject(['schedule'])、src/index.ts:475 与 :522 与 :557 ctx.schedule.*；packages/bundle/web-app/presets/standard.patch.yml:35-36 装配位置",
+        "purpose": "复用提醒服务的规范词表与视图，并把工具注册在能解析到该服务的 scope（由 preset 装配决定）"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:34 peerDep + src/index.ts:13 import defineTool、src/index.ts:14 type import GenericCallView；src/index.ts:29 inject 'tools'、src/index.ts:445 ctx.tools.register",
+        "purpose": "以 defineTool 定义四个工具并注册进工具注册表"
+      },
+      {
+        "plugin_id": "dsh-subagent",
+        "mechanism": "E1",
+        "evidence": "package.json:33 peerDep + src/index.ts:12 import delegationDepthOf；src/index.ts:228 delegationDepthOf(agent) === 0",
+        "purpose": "在 dispatch 前拒绝委派子 agent 使用提醒工具，而不只依赖 preset 的工具过滤"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "package.json:31 peerDep + src/index.ts:11 type import ContentBlock；src/index.ts:199-203 renderValue 返回 ContentBlock[]",
+        "purpose": "工具结果渲染函数返回 llm 内容块，保证输出形状与其它工具一致"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:10 type import Agent + package.json:38 devDependencies（peer 未声明）",
+        "purpose": "以 Agent 类型标注调用者参数；仅编译期类型依赖，运行期经 exec.agent 取得"
+      }
+    ],
+    "dependents": []
+  }
+]

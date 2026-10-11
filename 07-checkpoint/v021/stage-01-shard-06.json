@@ -1,0 +1,1109 @@
+[
+  {
+    "id": "dsh-authorization",
+    "name": "@deepseek-ai/dsh-authorization",
+    "implementation": "以 Cordis Service 形式实现 `ctx.authorization` 授权 seam：维护 CredentialKey 到 AuthorizationFlow 的注册表与 CredentialKey 到在飞尝试的表，registerFlow() 用 ctx.effect 保证卸载时注销并取消在飞尝试 (src/index.ts:209-225)。begin() 先做 key/方法/并发校验，再运行 flow，并强制「本次尝试内必须真的提交过凭据记录」的契约——未观察到提交或记录被删除都抛 NOT_COMMITTED (src/index.ts:283-323, src/index.ts:435-446)。提交经 ctx.credentials.modifyRecord 完成，并通过监听 credentials/record-updated 确认提交发生在本尝试之内 (src/index.ts:386-400)。结束后以 contained-dispatch 方式扇出 authorization/settled 事件，监听器异常只记日志、不改变调用方结果 (src/index.ts:337-351)。",
+    "provides": [
+      "ctx.authorization (凭据获取流的注册、单次授权尝试编排与取消的 seam)",
+      "authorization/settled 事件 (emit 模式，报告每次尝试终态，含 failed)",
+      "AuthorizationError / AuthorizationDeclinedError 错误分类"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-credentials",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:30 import type { CredentialKey, CredentialRecord } + src/index.ts:191 static inject = ['credentials'] + src/index.ts:400 ctx.credentials.modifyRecord + src/types.ts:8 import type { CredentialKey } + package.json:35 peerDep",
+        "purpose": "凭据记录的实际读写由 credentials seam 承担，本插件只确认提交结果并保证单写者"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:31 import { HarnessError } from '@deepseek-ai/dsh-llm' + package.json:36 peerDep",
+        "purpose": "授权错误继承 HarnessError，复用统一的错误分类与展示"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-credentials-local",
+    "name": "@deepseek-ai/dsh-credentials-local",
+    "implementation": "CredentialProvider 的文件型实现：把 $DSH_HOME/.credentials.yaml 作为唯一可写层，与继承进程环境、项目 .env、用户 .env 按信任度分层（继承环境只读且优先，其余为读回退）(src/index.ts:1-35, src/index.ts:620-642)。文档是 version:1 的 refs/records 两段结构，解析遇到未知版本、未知字段、不可寻址的键一律拒绝而非跳过，并保留旧扁平布局的一次性迁移 (src/index.ts:188-227, src/index.ts:242-266)。写入走跨进程文件锁 + 原子写，读-改-写前先 reconcileFromDisk() 合并外部改动，以 0600/0700 落盘并在每次读取时校验属主之外无权限位 (src/index.ts:677-710, src/index.ts:759-778, src/index.ts:127-146)。用 chokidar 监听文档变化热发布，外部编辑经 notifyUpdated/notifyRecordUpdated 广播给 seam，整份快照每次整体替换 (src/index.ts:569-618, src/index.ts:855-894)。",
+    "provides": [
+      "credentials 的文件型提供者 (.credentials.yaml 的 refs/records 读写、热重载、跨进程写锁、分层解析)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-credentials",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:47 import { CredentialProvider, credentialRef, parseCredentialKey } + package.json:31 peerDep",
+        "purpose": "继承 CredentialProvider 抽象基类，实现 seam 约定的 resolve/set/record 方法族"
+      },
+      {
+        "plugin_id": "dsh-atomic-write",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:44 import { withFileLock, writeFileAtomic } + package.json:30 peerDep",
+        "purpose": "凭据文档的原子替换与跨进程写锁复用统一实现"
+      },
+      {
+        "plugin_id": "dsh-home-paths",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:45 import { canonicalizeWatchPath, resolveDshHome } + package.json:33 peerDep",
+        "purpose": "解析 harness home 并规范化被监听路径"
+      },
+      {
+        "plugin_id": "dsh-launch-environment",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:46 import { launchEnvironmentOf } + src/index.ts:555 launchEnvironmentOf(this.ctx).getFrom(ref, ['process']) + package.json:32 peerDep",
+        "purpose": "读取继承环境与 .env 层，实现「继承环境优先、写被遮蔽即报错」的分层语义"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-deepseek-account-platform",
+    "name": "@deepseek-ai/dsh-deepseek-account-platform",
+    "implementation": "DeepSeekAccount 的平台实现：用 PKCE 授权码流在本机注册 /oauth/callback 路由，state 以 timingSafeEqual 定长校验，拿到 code 后换 token 并以 grant 记录提交给 credentials (src/index.ts:522-612, src/index.ts:539-558)。构造时向 authorization 注册 key 为 deepseek-account-platform/default 的 flow，并监听 credentials/record-updated 失效详情缓存 (src/index.ts:138-151)。profile/balance/未通知奖励经 zod 校验的平台 HTTP 端点读取，401 或业务码 40003 视为凭据过期，删记录并发 deepseek-account/session-expired (src/index.ts:296-315, src/index.ts:329-344, src/protocol.ts:166-234)。登出先删本地记录再后台按指数退避重试撤销 token，撤销失败不恢复本地凭据 (src/index.ts:463-482, src/logout.ts:21-36)。",
+    "provides": [
+      "ctx.deepseekAccount 的平台实现 (浏览器 PKCE 登录、profile/balance/bonus 查询、登出撤销)",
+      "authorization flow: deepseek-account-platform/default",
+      "deepseek-account/session-expired 与 deepseek-account/signed-out 事件"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-deepseek-account",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:10 import { DeepSeekAccount, ... } from '@deepseek-ai/dsh-deepseek-account' + src/details.ts:3 import type + package.json:36 peerDep",
+        "purpose": "继承 DeepSeekAccount 服务基类并提供其平台实现"
+      },
+      {
+        "plugin_id": "dsh-credentials",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:11 import { credentialKey } + src/index.ts:85 static inject = ['credentials', 'authorization'] + src/index.ts:168 ctx.credentials.readRecord + src/index.ts:336 ctx.credentials.deleteRecord + package.json:38 peerDep",
+        "purpose": "grant 记录的持久化与删除、设备身份记录读写都由 credentials seam 承担"
+      },
+      {
+        "plugin_id": "dsh-authorization",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:12 import type { AuthorizationSession } + src/index.ts:138 ctx.authorization.registerFlow + src/index.ts:426 ctx.authorization.begin + package.json:37 peerDep",
+        "purpose": "登录流程以 authorization flow 形式注册，取消与单飞语义由该 seam 保证"
+      },
+      {
+        "plugin_id": "dsh-host-webserver",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:4 import type {} from '@deepseek-ai/dsh-host-webserver' + src/index.ts:523 ctx.get('webServer') + src/index.ts:539 webServer.register({ kind: 'exact', path: '/oauth/callback' }) + package.json:39 peerDep",
+        "purpose": "浏览器回调需要宿主 HTTP 服务器上的一个精确路由"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-present",
+    "name": "@deepseek-ai/dsh-tool-present",
+    "implementation": "函数式插件，向 tools 注册模型工具 present：逐个校验路径非空、存在且为普通文件后返回交付清单 (src/index.ts:34-99)。execute 要求调用方有 Agent Session 与打开的 turn（读 sessionProjections.stateOf(..., 'turnBoundary')），相对路径经 ctx.workingDirectory.ensure 解析，文件判定用 ctx.fs.lstat/resolve/stat 并把结果规范化为进程路径 (src/index.ts:77-97)。成功结果在 tools/result 事件里由插件 append deliverables/presented 会话事件，使「声明了哪些交付物」进入会话日志，而文件内容仍留在原路径 (src/index.ts:100-108, src/types.ts:12-16)。",
+    "provides": [
+      "present 工具 (声明最终交付文件，产出 deliverables/presented 会话事件)",
+      "SessionEventMap 扩展: deliverables/presented"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:6 import { defineTool, type ToolExecution } + src/index.ts:27 export const inject = ['tools', 'fs', 'sessionProjections', 'workingDirectory'] + src/index.ts:39 ctx.tools.register + src/index.ts:100 ctx.on('tools/result') + package.json:44 peerDep",
+        "purpose": "工具注册、执行信封与 tools/result 扩展点都由 tools seam 提供"
+      },
+      {
+        "plugin_id": "dsh-fs",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:5 import { FsError } from '@deepseek-ai/dsh-fs' + src/index.ts:87 ctx.fs.lstat + src/index.ts:89 ctx.fs.resolve + src/index.ts:90 ctx.fs.stat + src/index.ts:93 ctx.fs.processPath + package.json:40 peerDep",
+        "purpose": "判定交付路径存在且为普通文件、并把目标规范化为进程路径"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:8 import type {} from '@deepseek-ai/dsh-session-projection' + src/index.ts:79 ctx.sessionProjections.stateOf(exec.agent.session, 'turnBoundary') + package.json:43 peerDep",
+        "purpose": "读取 turnBoundary 投影以确认存在打开的 turn 并取得 turn 号"
+      },
+      {
+        "plugin_id": "dsh-working-directory",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:2 import type {} from '@deepseek-ai/dsh-working-directory' + src/index.ts:82 ctx.workingDirectory.ensure(exec.agent, exec.signal) + package.json:45 peerDep",
+        "purpose": "把相对交付路径解析到会话工作目录"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:9 import type { Session } from '@deepseek-ai/dsh-session' + src/index.ts:105 session.append('deliverables/presented', {...}) + src/types.ts:12 declare module '@deepseek-ai/dsh-session/types' + package.json:42 peerDep",
+        "purpose": "把交付声明写入会话日志，并扩展 SessionEventMap"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:7 import type {} from '@deepseek-ai/dsh-agent' + src/index.ts:78 exec.agent === undefined 检查 + package.json:39 peerDep",
+        "purpose": "工具执行信封的 agent 载体类型来自 agent 包"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/types.ts:2 import type { ToolCallId } from '@deepseek-ai/dsh-llm/brand' + package.json:41 peerDep",
+        "purpose": "会话事件里的 callId 使用 llm 的 branded ToolCallId 类型"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-workspace-changes",
+    "name": "@deepseek-ai/dsh-workspace-changes",
+    "implementation": "观察每个顶层 turn 的 git 工作树快照（turn/start 与 turn/end），并对 git 不覆盖的路径在文件工具编辑前后做整文件捕获，汇总成 workspace/changes 会话事件与 workspaceChanges 服务 (src/index.ts:1-10, src/index.ts:95-183)。git 可执行文件在插件生命周期内只解析一次，macOS 上把 /usr/bin/git 的 Xcode stub 视为不可用；子代理会话被排除 (src/index.ts:72-86, src/index.ts:59-62)。服务经 ctx.provide('workspaceChanges', ...) 暴露 summary/diff，按 sessionId+seq 提供摘要与按需逐文件前后对比，会话销毁即遗忘 (src/index.ts:106-120, src/types.ts:78-97)。变更目标在 fs/write-intent、fs/edit-intent、tools/pre-execute 上以 prepend 监听捕获 (src/index.ts:158-182)。",
+    "provides": [
+      "ctx.workspaceChanges (按 turn 的变更摘要与逐文件前后对比服务)",
+      "SessionEventMap 扩展: workspace/changes"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-subprocess",
+        "mechanism": "E1+E2",
+        "evidence": "src/git.ts:4 import from '@deepseek-ai/dsh-subprocess' + src/index.ts:31 export const inject = ['subprocess', 'fs'] + src/index.ts:75 ctx.subprocess.resolveExecutable('git', undefined, signal) + src/index.ts:128 new GitRunner(ctx.subprocess, ...) + package.json:42 peerDep",
+        "purpose": "git 可执行文件解析、命令执行与 macOS 探针都走 subprocess seam"
+      },
+      {
+        "plugin_id": "dsh-fs",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:18 import type { FsTarget } from '@deepseek-ai/dsh-fs' + src/index.ts:161 recorder.capture(ctx.fs.processPath(target)) + src/index.ts:164 ctx.on('fs/write-intent') + src/index.ts:169 ctx.on('fs/edit-intent') + package.json:44 peerDep",
+        "purpose": "文件写入意图事件与路径规范化来自 fs seam"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:14 import type {} from '@deepseek-ai/dsh-agent' + src/index.ts:155 ctx.on('agent/turn-stopping', async ({ agent, turn }) => ...) + package.json:40 peerDep",
+        "purpose": "turn 收尾钩子用于在 turn 结束前把捕获结果落定"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:15 import type { Session, SessionId } from '@deepseek-ai/dsh-session' + src/index.ts:145 ctx.on('session/event', ...) + src/index.ts:154 ctx.on('session/disposed', ...) + src/recorder.ts:5 import from '@deepseek-ai/dsh-session' + src/types.ts:2 import type { SessionId } + package.json:41 peerDep",
+        "purpose": "turn/tool 事件流、会话销毁与 SessionEventMap 扩展都在 session seam 上"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:17 import type {} from '@deepseek-ai/dsh-tools' + src/index.ts:174 ctx.on('tools/pre-execute', ...) + package.json:43 peerDep",
+        "purpose": "以工具预执行为界把执行信封与会话 recorder 绑定，捕获工具产生的文件改动"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-auto-review",
+    "name": "@deepseek-ai/dsh-experimental-auto-review",
+    "implementation": "在 tools/pre-execute 前置挂一个 LLM 授权闸门：仅当会话处于 Auto 权限预设时，把待执行调用连同会话全部动作历史冻结成五段（策略+环境+项目指令+过滤历史+待执行动作）快照，交 ctx.llm.stream 以 temperature 0 判定风险与允许/拒绝 (src/index.ts:615-636, src/index.ts:362-520)。审查输出被严格解析为 {risk, decision[, reason]} 封闭协议，且要求零或多个 reasoning 块后恰好一个 text 块并以 stop 收尾，任何偏差都算审查失败而非放行 (src/index.ts:558-612)。拒绝时若审批策略为 never 则直接 deny，否则把决定交回用户询问 (ask) (src/index.ts:675-719)。注册 Auto 预设，并在卸载时把仍处于 Auto 的会话降级为 danger-full-access、中止在飞审查 (src/index.ts:721-736)。",
+    "provides": [
+      "Auto 权限预设的 LLM 审查闸门 (tools/pre-execute 前置判定，deny/ask)",
+      "AUTO_REVIEW_DENIED 结构化拒绝错误 (AutoReviewDeniedError)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:15-23 import { BlockAssembler, type GenerateOptions, ... } from '@deepseek-ai/dsh-llm' + src/index.ts:127 export const inject = ['approval', 'llm', 'permissionPresets', 'sessions', 'tools', 'workingDirectory'] + src/index.ts:635 ctx.llm.stream(options) + package.json:35 peerDep",
+        "purpose": "审查请求经 llm seam 以会话当前 provider/model 路由发出，流式结果由 BlockAssembler 解析"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:29-33 import { RUN_CODE_NAME, type PreToolDecision, type ToolExecution } + src/index.ts:684 ctx.on('tools/pre-execute', ...) + package.json:38 peerDep",
+        "purpose": "以工具预执行为唯一拦截点，决定放行/拒绝/询问，并排除 run_code 外层传输"
+      },
+      {
+        "plugin_id": "dsh-permission-presets",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:25 import { AUTO_PRESET } from '@deepseek-ai/dsh-permission-presets' + src/index.ts:689 permissionPresets.current(agent.session) !== AUTO_PRESET + src/index.ts:721 permissionPresets.registerAuto(...) + package.json:36 peerDep",
+        "purpose": "Auto 预设的定义与注册、以及卸载时的会话降级都由该 seam 拥有"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:26 import type { SessionEvent } from '@deepseek-ai/dsh-session' + src/index.ts:369 session.snapshotEvents() + src/index.ts:728 ctx.sessions.list() + package.json:37 peerDep",
+        "purpose": "审查输入取自会话日志与 surface 节点，卸载时遍历所有会话"
+      },
+      {
+        "plugin_id": "dsh-user-approval",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:28 import type {} from '@deepseek-ai/dsh-user-approval' + src/index.ts:708 ctx.approval.overrideOf(agent.session) === 'never' + src/index.ts:127 inject 'approval' + package.json:73 devDep",
+        "purpose": "按当前审批策略决定拒绝是终局还是转交用户询问"
+      },
+      {
+        "plugin_id": "dsh-working-directory",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:11 import type {} from '@deepseek-ai/dsh-working-directory' + src/index.ts:621 ctx.workingDirectory.ensure(agent, signal) + package.json:40 peerDep",
+        "purpose": "审查快照的 ENVIRONMENT 段需要会话工作目录"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:13 import type { Agent } from '@deepseek-ai/dsh-agent' + package.json:33 peerDep",
+        "purpose": "审查绑定与 agent 作用域类型来自 agent 包"
+      },
+      {
+        "plugin_id": "dsh-agent-instructions",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:14 import type {} from '@deepseek-ai/dsh-agent-instructions' + src/index.ts:186 source.kind === 'agent-instructions' 判定 + package.json:34 peerDep",
+        "purpose": "识别项目指令来源，把其内容作为 constraint 段而非指令段"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:24 import { deepFreeze } from '@deepseek-ai/dsh-util-values' + package.json:43 dependencies",
+        "purpose": "冻结审查快照，保证审查期间输入不可变"
+      },
+      {
+        "plugin_id": "dsh-subagent",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:27 import type {} from '@deepseek-ai/dsh-subagent' + package.json:66 devDep",
+        "purpose": "类型面需要 subagent 的 Context 声明以读取 in-process 子代理的父会话信息"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-browser-use-chrome-devtools-mcp",
+    "name": "@deepseek-ai/dsh-experimental-browser-use-chrome-devtools-mcp",
+    "implementation": "函数式插件，把上游 chrome-devtools-mcp 作为每会话一个 MCP 进程挂载：解析包内 CLI 入口，按 mode 拼装 attach（--ws-endpoint 或 --browser-url）或启动（--isolated/--headless/--executable-path）参数，并固定 --no-usage-statistics (src/index.ts:26-42)。配置直接复用运行时包的 BrowserMcpConfig 类型与校验，激活前先 validateBrowserMcpConfig 拒绝非法组合，实际启动交给 mountSessionMcp（会话作用域、attach 模式标记独占）(src/index.ts:18, src/index.ts:27, src/index.ts:36-42)。",
+    "provides": [
+      "chrome-devtools-mcp 的会话作用域 MCP 浏览器提供者 (工具目录经 mountSessionMcp 注入)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-experimental-browser-use-runtime",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:5 import { BrowserMcpConfig, mountSessionMcp, validateBrowserMcpConfig } from '@deepseek-ai/dsh-experimental-browser-use-runtime/mcp' + package.json:32 dependency",
+        "purpose": "MCP 会话挂载、配置模式与校验逻辑由运行时包统一实现，本插件只做参数拼装"
+      },
+      {
+        "plugin_id": "dsh-browser-use",
+        "mechanism": "E2",
+        "evidence": "src/index.ts:12 export const inject = ['browserUse', 'agents', 'tools', 'systemPrompt', 'workingDirectory'] + package.json:37 peerDep",
+        "purpose": "浏览器使用 seam 的会话作用域挂载点"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E2",
+        "evidence": "src/index.ts:12 inject 'agents' + package.json:38 peerDep",
+        "purpose": "每个存活 Session 一个 MCP 进程，需要 agents 注册表"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E2",
+        "evidence": "src/index.ts:12 inject 'tools' + package.json:39 peerDep",
+        "purpose": "上游工具目录要注册进会话的工具表"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E2",
+        "evidence": "src/index.ts:12 inject 'systemPrompt' + package.json:40 peerDep",
+        "purpose": "提示词就绪检查依赖 systemPrompt 服务"
+      },
+      {
+        "plugin_id": "dsh-working-directory",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:6 import type {} from '@deepseek-ai/dsh-working-directory' + src/index.ts:12 inject 'workingDirectory' + package.json:41 peerDep",
+        "purpose": "MCP 进程的启动目录由会话工作目录决定"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-browser-use-playwright-mcp",
+    "name": "@deepseek-ai/dsh-experimental-browser-use-playwright-mcp",
+    "implementation": "函数式插件，把 @playwright/mcp 的 CLI 作为每会话一个 MCP 进程挂载：固定 --browser chromium，attach 用 --cdp-endpoint，启动用 --isolated/--headless/--executable-path (src/index.ts:27-50)。启动前清空进程环境里全部 PLAYWRIGHT_MCP_* 变量，避免上游环境选项覆盖已配置的浏览器模式或引入无关 profile (src/index.ts:31-34)。配置与挂载同样复用运行时包的 BrowserMcpConfig / mountSessionMcp，attach 模式标记为独占 (src/index.ts:19, src/index.ts:28, src/index.ts:43-50)。",
+    "provides": [
+      "playwright-mcp 的会话作用域 MCP 浏览器提供者 (工具目录经 mountSessionMcp 注入)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-experimental-browser-use-runtime",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:6 import { BrowserMcpConfig, mountSessionMcp, validateBrowserMcpConfig } from '@deepseek-ai/dsh-experimental-browser-use-runtime/mcp' + package.json:32 dependency",
+        "purpose": "MCP 会话挂载、配置模式与校验逻辑由运行时包统一实现"
+      },
+      {
+        "plugin_id": "dsh-browser-use",
+        "mechanism": "E2",
+        "evidence": "src/index.ts:13 export const inject = ['browserUse', 'agents', 'tools', 'systemPrompt', 'workingDirectory'] + package.json:37 peerDep",
+        "purpose": "浏览器使用 seam 的会话作用域挂载点"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E2",
+        "evidence": "src/index.ts:13 inject 'agents' + package.json:38 peerDep",
+        "purpose": "每个存活 Session 一个 MCP 进程，需要 agents 注册表"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E2",
+        "evidence": "src/index.ts:13 inject 'tools' + package.json:39 peerDep",
+        "purpose": "上游工具目录要注册进会话的工具表"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E2",
+        "evidence": "src/index.ts:13 inject 'systemPrompt' + package.json:40 peerDep",
+        "purpose": "提示词就绪检查依赖 systemPrompt 服务"
+      },
+      {
+        "plugin_id": "dsh-working-directory",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:7 import type {} from '@deepseek-ai/dsh-working-directory' + src/index.ts:13 inject 'workingDirectory' + package.json:41 peerDep",
+        "purpose": "MCP 进程的启动目录由会话工作目录决定"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-claude-code-mods",
+    "name": "@deepseek-ai/dsh-experimental-claude-code-mods",
+    "implementation": "以 TypertRemoteService 实现 ctx.claudeCodeMods 桥接服务：用 ModsEngine 加载以 defineMod 包装的 Claude Code mod（register(on, options)），并维护 mod 注册表、工具名别名表与表面（band）表 (src/index.ts:201-285, src/define-mod.ts:45-64)。桥把 harness 扩展点翻译成 mod 事件：agent/created→session.start、agent/pre-step→prompt.submit 与 turn.start（可改写提示文本或丢弃提示）、tools/execute→tool.call（可 deny 或替换结果，并拒绝改路由/改参数）、turn/end→turn.complete、agent/disposed→session.end (src/index.ts:304-482)。$ 宿主操作面把 mods API 映射到 harness 服务：fs、subprocess、storageDomain、sessionProjections、commands、tools、userQuestions 等，缺失服务按名报错 (src/host-ops.ts:1-9, src/host-ops.ts:174-501)。",
+    "provides": [
+      "ctx.claudeCodeMods (Claude Code mod 加载、事件桥接、工具/命令注册、Remote band 服务)",
+      "defineMod / ModPlugin 插件包装与 MODS_API_VERSION、DEFAULT_TOOL_ALIASES、KNOWN_EVENTS 等 mod API 面",
+      "Remote: watchBand / pressBand (会话提示框上方 band 的流与按键)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:17 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol' + src/index.ts:219 super(ctx, 'claudeCodeMods', { namespace: 'claudeCodeMods' }) + package.json:70 peerDep",
+        "purpose": "band 的 Remote 流式方法与客户端生成物都建立在 typert 协议之上"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:16 import type { Agent, PreStepDecision } + src/index.ts:232 ctx.get('agents')?.get(SessionId(sessionId)) + src/index.ts:304 ctx.on('agent/created') + src/index.ts:340 ctx.on('agent/pre-step') + package.json:59 peerDep",
+        "purpose": "mod 事件以 Agent 生命周期与 pre-step 为触发点，绑定对象是 Agent"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:22-23 import { validateJsonSchemaValue, type PostToolDecision, ... } from '@deepseek-ai/dsh-tools' + src/host-ops.ts:359 ctx.get('tools') + src/index.ts:382 ctx.on('tools/execute') + src/index.ts:436 ctx.on('tools/post-execute') + package.json:69 peerDep",
+        "purpose": "mod 的工具注册与 tool.call 拦截都通过 tools seam"
+      },
+      {
+        "plugin_id": "dsh-fs",
+        "mechanism": "E1+E2",
+        "evidence": "src/host-ops.ts:18 import type { FileSystem, FsTarget } from '@deepseek-ai/dsh-fs' + src/host-ops.ts:198 ctx.get('fs') + package.json:61 peerDep",
+        "purpose": "$.fs 读写的 mods API 由 fs seam 承担"
+      },
+      {
+        "plugin_id": "dsh-subprocess",
+        "mechanism": "E1+E2",
+        "evidence": "src/host-ops.ts:14 import type {} from '@deepseek-ai/dsh-subprocess' + src/host-ops.ts:501 ctx.get('subprocess') + package.json:68 peerDep",
+        "purpose": "$.process.run 的进程执行由 subprocess seam 承担"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "src/host-ops.ts:15-16 import type {} + import type { SessionProjectionStateMap } + src/host-ops.ts:230 ctx.get('sessionProjections')?.stateOf(session, key) + package.json:65 peerDep",
+        "purpose": "$.session 的用量等派生事实读取会话投影状态"
+      },
+      {
+        "plugin_id": "dsh-commands",
+        "mechanism": "E1+E2",
+        "evidence": "src/host-ops.ts:17 import type { CommandDefinition } from '@deepseek-ai/dsh-commands' + src/host-ops.ts:307 ctx.get('commands') + package.json:60 peerDep",
+        "purpose": "mod 注册的斜杠命令与 command.run 事件由 commands seam 提供"
+      },
+      {
+        "plugin_id": "dsh-storage-domain",
+        "mechanism": "E1+E2",
+        "evidence": "src/host-ops.ts:26-27 import { defineDomain, domainTable } + src/host-ops.ts:174 ctx.get('storageDomain') + package.json:66 peerDep",
+        "purpose": "$.store 的 per-plugin JSON 存储落在一个 storage domain 上"
+      },
+      {
+        "plugin_id": "dsh-working-directory",
+        "mechanism": "E1+E2",
+        "evidence": "src/host-ops.ts:23 import type { WorkingDirectoryService } + src/index.ts:212 static inject = ['workingDirectory'] + src/index.ts:311 ctx.workingDirectory.ensure(agent, abandon) + package.json:72 peerDep",
+        "purpose": "session.start 需要先确定会话工作目录"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/host-ops.ts:19-20 import { createUserMessage, ToolCallId } + import type { ContentBlock, Message } from '@deepseek-ai/dsh-llm' + package.json:62 peerDep",
+        "purpose": "$.session 的消息构造与 callId 品牌类型来自 llm 包"
+      },
+      {
+        "plugin_id": "dsh-scope",
+        "mechanism": "E1",
+        "evidence": "src/host-ops.ts:21 import { scopeOf } from '@deepseek-ai/dsh-scope' + package.json:63 peerDep",
+        "purpose": "在 Agent 作用域内查询工具定义需要 scopeOf"
+      },
+      {
+        "plugin_id": "dsh-token-meter",
+        "mechanism": "E1",
+        "evidence": "src/host-ops.ts:25 import type {} from '@deepseek-ai/dsh-token-meter' + package.json:67 peerDep",
+        "purpose": "类型面需要 token-meter 的投影状态声明以读取会话用量"
+      },
+      {
+        "plugin_id": "dsh-user-questions",
+        "mechanism": "E1+E2",
+        "evidence": "src/host-ops.ts:30 import type { AskUserQuestionOption } from '@deepseek-ai/dsh-user-questions' + src/host-ops.ts:256 ctx.get('userQuestions') + src/index.ts:313 ctx.get('userQuestions') !== undefined + package.json:71 peerDep",
+        "purpose": "$.ui.ask 与 session.start 的 isInteractive 判定依赖用户提问服务"
+      },
+      {
+        "plugin_id": "dsh-util-crypto",
+        "mechanism": "E1",
+        "evidence": "src/host-ops.ts:31 import { randomUUID } from '@deepseek-ai/dsh-util-crypto' + package.json:52 dependencies",
+        "purpose": "为 mod 注册的调用与消息生成稳定 id"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:29 import type { JsonValue } from '@deepseek-ai/dsh-util-values' + src/chain.ts:10 import from '@deepseek-ai/dsh-util-values' + package.json:53 dependencies",
+        "purpose": "mod 事件载荷的 lossless-JSON 语义与工具函数复用该包"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:19 import { SessionId } from '@deepseek-ai/dsh-session' + src/index.ts:449 ctx.on('session/event', ...) + src/index.ts:321 ctx.on('agent/disposed') 中的 session 记账 + package.json:64 peerDep",
+        "purpose": "turn.complete 由会话事件折叠得到，mod 状态按会话 id 归属"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-client-ui-claude-code-mods",
+    "name": "@deepseek-ai/dsh-experimental-client-ui-claude-code-mods",
+    "implementation": "浏览器侧插件：把桥接服务的 Remote contribution 挂到 ctx.remote.$mount，并在 conversation.input.dock 槽位注册 band 组件 (src/client/mount.ts:117-131, src/client/mount.ts:95-108)。每个会话持有一个 BandStore，用 ctx.remote.claudeCodeMods.watchBand 流持续喂快照，pressBand 回传按钮点击并把结果写回 store；流结束即释放，下次订阅重开 (src/client/mount.ts:55-75, src/client/mount.ts:102-106)。Band.tsx 递归渲染 mod 序列化的 Text/Button/Box 节点，按钮点击映射为 actionId 的 press，失败时显示本地化提示，hotkey 只作提示 (src/client/Band.tsx:70-129)。Host 侧入口为空实现，仅用于浏览器插件发现 (src/index.ts:1-4)。",
+    "provides": [
+      "conversation.input.dock 槽位的 mods band UI",
+      "claude-code-mods 本地化命名空间 (LocaleNamespaceMap 扩展)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-experimental-claude-code-mods",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/index.ts:4 import modsRemote from '@deepseek-ai/dsh-experimental-claude-code-mods/remote' + src/client/mount.ts:58 ctx.remote.claudeCodeMods.watchBand(sessionId, controller.signal) + src/client/Band.tsx:3 import type { SurfaceSnapshot } + package.json:60 peerDep",
+        "purpose": "band 数据与按键回传都来自桥接服务的 Remote 命名空间"
+      },
+      {
+        "plugin_id": "dsh-api-remotes",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/mount.ts:4 import type {} from '@deepseek-ai/dsh-api-remotes/client' + src/client/mount.ts:118 ctx.remote.$mount(contribution) + package.json:52 peerDep",
+        "purpose": "Remote contribution 的挂载与 remote 服务由 api-remotes 提供"
+      },
+      {
+        "plugin_id": "dsh-client-locale",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/mount.ts:6 import type {} from '@deepseek-ai/dsh-client-locale/client' + src/client/mount.ts:78 ctx.locale.register(NS, { zh, en }) + package.json:54 peerDep",
+        "purpose": "band 文案走客户端字典而非硬编码"
+      },
+      {
+        "plugin_id": "dsh-client-ui-slots",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/Band.tsx:2 import type { HostObservable, PropsLocale, PropsRuntime } + src/client/mount.ts:95 ctx.slots.inject('conversation.input.dock', ...) + package.json:59 peerDep",
+        "purpose": "band 作为 conversation.input.dock 的槽位贡献"
+      },
+      {
+        "plugin_id": "dsh-api-session-controller",
+        "mechanism": "E1",
+        "evidence": "src/client/mount.ts:5 import type {} from '@deepseek-ai/dsh-api-session-controller/client' + package.json:53 peerDep",
+        "purpose": "客户端类型面需要会话控制器声明以取得会话身份"
+      },
+      {
+        "plugin_id": "dsh-client-ui-conversation",
+        "mechanism": "E1",
+        "evidence": "src/client/mount.ts:7 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client' + package.json:55 peerDep",
+        "purpose": "类型面需要会话 UI 声明以定位输入区槽位"
+      },
+      {
+        "plugin_id": "dsh-client-ui-primitives",
+        "mechanism": "E1",
+        "evidence": "package.json:56 peerDep",
+        "purpose": "客户端基元组件的声明依赖，保证组合中存在同一份实现"
+      },
+      {
+        "plugin_id": "dsh-client-ui-renderer",
+        "mechanism": "E1",
+        "evidence": "src/client/mount.ts:8 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client' + package.json:57 peerDep",
+        "purpose": "槽位渲染由 renderer 承担，类型面需要其声明"
+      },
+      {
+        "plugin_id": "dsh-client-ui-session",
+        "mechanism": "E1",
+        "evidence": "package.json:58 peerDep",
+        "purpose": "客户端会话 UI 的声明依赖，保证组合中存在同一份实现"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/client/mount.ts:11 import type { SessionId } from '@deepseek-ai/dsh-session/types' + package.json:61 peerDep",
+        "purpose": "band 按 SessionId 归属与缓存"
+      },
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1",
+        "evidence": "src/client/mount.ts:12 import type { TypertRemoteContribution } from '@deepseek-ai/dsh-typert-protocol' + package.json:62 peerDep",
+        "purpose": "挂载物类型与 Remote 协议定义来自 typert 协议包"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-client-ui-cot-translation",
+    "name": "@deepseek-ai/dsh-experimental-client-ui-cot-translation",
+    "implementation": "Host 侧 TypertRemoteService ctx.cotTranslation 暴露两个 Remote：limits 返回已接受偏好、可用提供者与单次请求字符上限；translate 先按当前偏好校验 provider/targetLanguage，再调 ctx.translator.translate，遇 TRANSLATION_SESSION_INACTIVE 时经 ctx.sessionController.resolveAgent 激活会话后重试一次，失败一律收敛为不含原文的 RemoteError (src/index.ts:46-101)。偏好由 schemastery volatile 字段承载，并用 settings.configure({ auto: false }) 让部署值成为权威 (src/index.ts:31-39)。浏览器侧把 Remote 挂到 conversation.chat.reasoning.body 与 plugins.bundle.config 槽位，用 client-store 快照保存偏好/上限/可用提供者，并在设置、LLM 适配器、凭据等更新事件与 connection/reset 上失效重读 (src/client/mount.ts:22-111)。translation.ts 把推理文本按空行与字符上限切段，串行请求、按生命周期控制器取消并缓存已译片段 (src/client/translation.ts:20-113)。",
+    "provides": [
+      "ctx.cotTranslation Remote 服务 (limits/translate：展示中推理文本的机器翻译)",
+      "conversation.chat.reasoning.body 与 plugins.bundle.config 槽位 UI (译文展示与偏好表单)",
+      "RemoteError 分类: cotTranslation/failed"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:5 import { Remote, RemoteError, TypertRemoteService } + src/index.ts:30 static inject = ['translator', 'typert', 'sessionController'] + package.json:59 peerDep",
+        "purpose": "Remote 方法声明与服务命名空间机制由 typert 协议提供"
+      },
+      {
+        "plugin_id": "dsh-experimental-translator",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:8-9 import { TranslationError } + import type { TranslationRequest, TranslationSpec } + src/index.ts:49 ctx.translator.availableProviders(signal) + src/index.ts:69 ctx.translator.translate(spec, signal) + package.json:61 peerDep",
+        "purpose": "实际翻译能力、提供者枚举与请求上限都由 translator seam 拥有"
+      },
+      {
+        "plugin_id": "dsh-settings",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:6 import type {} from '@deepseek-ai/dsh-settings' + src/index.ts:38 child.settings.configure({ auto: false }, ctx.fiber) + package.json:60 peerDep",
+        "purpose": "翻译偏好是设置文档的一部分，并声明部署值为权威"
+      },
+      {
+        "plugin_id": "dsh-api-session-controller",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:7 import type {} from '@deepseek-ai/dsh-api-session-controller' + src/index.ts:74 ctx.sessionController.resolveAgent(spec.sessionId) + package.json:63 peerDep",
+        "purpose": "未激活会话需要先走 GUI 激活流程才能翻译"
+      },
+      {
+        "plugin_id": "dsh-client-ui-plugin-manager",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/mount.ts:9 import type {} from '@deepseek-ai/dsh-client-ui-plugin-manager/client' + src/client/mount.ts:81 ctx.configForms.get<CotTranslationPreferences>('cot-translation') + src/client/TranslationSettings.tsx:2 import type {} + package.json:79 devDep",
+        "purpose": "偏好表单注册进 bundle 配置页，表单作用域由 configForms 服务提供"
+      },
+      {
+        "plugin_id": "dsh-api-remotes",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/mount.ts:4 import type {} from '@deepseek-ai/dsh-api-remotes/client' + src/client/mount.ts:125 ctx.remote.$mount(contribution) + src/client/mount.ts:96 ctx.remote.cotTranslation.translate + package.json:74 devDep",
+        "purpose": "Remote 命名空间的挂载与调用由 api-remotes 提供"
+      },
+      {
+        "plugin_id": "dsh-client-locale",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/mount.ts:5 import type {} from '@deepseek-ai/dsh-client-locale/client' + src/client/mount.ts:83 ctx.locale.register(NS, { en, zh }) + package.json:75 devDep",
+        "purpose": "译文区与表单文案走客户端字典"
+      },
+      {
+        "plugin_id": "dsh-client-store",
+        "mechanism": "E1",
+        "evidence": "src/client/mount.ts:12 import { createSnapshotStore } + src/client/preferences-form.ts:4 import from '@deepseek-ai/dsh-client-store' + package.json:76 devDep",
+        "purpose": "偏好、上限与提供者列表以可订阅快照存放"
+      },
+      {
+        "plugin_id": "dsh-client-ui-chat",
+        "mechanism": "E1",
+        "evidence": "src/client/mount.ts:6 import type {} from '@deepseek-ai/dsh-client-ui-chat/client' + src/client/TranslationBody.tsx:5 import from '@deepseek-ai/dsh-client-ui-chat/client' + package.json:78 devDep",
+        "purpose": "译文挂在推理正文槽位，需要 chat 侧的槽位与类型声明"
+      },
+      {
+        "plugin_id": "dsh-client-ui-primitives",
+        "mechanism": "E1",
+        "evidence": "src/client/TranslationBody.tsx:3 import { Button, IconLoadingOutlineRegular } + src/client/TranslationSettings.tsx:5 import + package.json:80 devDep",
+        "purpose": "译文按钮与表单控件使用客户端基元组件"
+      },
+      {
+        "plugin_id": "dsh-client-ui-renderer",
+        "mechanism": "E1",
+        "evidence": "src/client/mount.ts:7 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client' + package.json:81 devDep",
+        "purpose": "槽位渲染由 renderer 承担，类型面需要其声明"
+      },
+      {
+        "plugin_id": "dsh-client-ui-settings",
+        "mechanism": "E1",
+        "evidence": "src/client/mount.ts:8 import type {} from '@deepseek-ai/dsh-client-ui-settings/client' + package.json:82 devDep",
+        "purpose": "设置页面的槽位与类型声明来自 settings UI 包"
+      },
+      {
+        "plugin_id": "dsh-client-ui-slots",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/TranslationBody.tsx:6 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots' + src/client/mount.ts:101 ctx.slots.inject('conversation.chat.reasoning.body', ...) + package.json:83 devDep",
+        "purpose": "两个 UI 贡献都注册在客户端槽位系统上"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/client/mount.ts:3 import type { SessionId } from '@deepseek-ai/dsh-session/types' + package.json:62 peerDep",
+        "purpose": "翻译请求携带会话身份，会话未激活时才需要激活"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-client-ui-voice-input",
+    "name": "@deepseek-ai/dsh-experimental-client-ui-voice-input",
+    "implementation": "浏览器侧插件把语音 Remote 挂到 ctx.remote.$mount，并在 conversation.input.activity、plugins.bundle.config、plugins.bundle.activation 三个槽位分别注册输入按钮、准备卡片与设置引导 (src/client/mount.ts:20-68)。录音由 client/audio.ts 的 Recording 统一持有，插件卸载时全部释放，麦克风设备选择存于 client-store (src/client/mount.ts:22-35)。readiness.ts 用一个可重连的 Remote 流镜像 Host 的语音目录与连接状态，传输失败只写 error 字段而不改写 Host 就绪状态 (src/client/readiness.ts:20-39)。Host 侧入口为空实现，仅作浏览器插件发现 (src/index.ts:1-3)。",
+    "provides": [
+      "conversation.input.activity / plugins.bundle.config / plugins.bundle.activation 槽位的语音输入 UI",
+      "麦克风设备选择与录音生命周期 (client-store + Recording)",
+      "语音目录就绪镜像 (speech.follow 流)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-experimental-api-speech-to-text",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/index.ts:3 import speechRemote from '@deepseek-ai/dsh-experimental-api-speech-to-text/remote' + src/client/mount.ts:36 ctx.remote.speech.transcribe(request, signal) + src/client/mount.ts:4 import type {} from '.../remote' + package.json:49 peerDep",
+        "purpose": "转写、配置与准备流程经该 Remote 命名空间进入 Host"
+      },
+      {
+        "plugin_id": "dsh-experimental-speech-to-text",
+        "mechanism": "E1",
+        "evidence": "src/client/PreparationCard.tsx:5 import type { SpeechPreparationState, ... } from '@deepseek-ai/dsh-experimental-speech-to-text/types' + src/client/VoiceInput.tsx:6 import type + package.json:50 peerDep",
+        "purpose": "UI 展示的准备状态与提供者视图类型来自语音 seam 的类型面"
+      },
+      {
+        "plugin_id": "dsh-client-ui-plugin-manager",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/mount.ts:13 import type {} from '@deepseek-ai/dsh-client-ui-plugin-manager/client' + src/client/mount.ts:28 ctx.pluginNavigation.openBundle('@deepseek-ai/dsh-experimental-voice-input-bundle') + package.json:53 peerDep",
+        "purpose": "「打开设置」跳转到 bundle 配置页，依赖插件导航服务"
+      },
+      {
+        "plugin_id": "dsh-client-ui-slots",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/MicrophonePicker.tsx:3 import type { InjectFace, PropsLocale } + src/client/mount.ts:45 ctx.slots.inject('conversation.input.activity', ...) + package.json:46 peerDep",
+        "purpose": "三个 UI 贡献都注册在客户端槽位系统上"
+      },
+      {
+        "plugin_id": "dsh-api-remotes",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/mount.ts:3 import type {} from '@deepseek-ai/dsh-api-remotes/client' + src/client/mount.ts:64 ctx.remote.$mount(contribution) + package.json:39 peerDep",
+        "purpose": "Remote contribution 的挂载由 api-remotes 提供"
+      },
+      {
+        "plugin_id": "dsh-client-locale",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/mount.ts:5 import type {} from '@deepseek-ai/dsh-client-locale/client' + src/client/mount.ts:21 ctx.locale.register(NS, { zh, en }) + package.json:41 peerDep",
+        "purpose": "录音与准备流程的全部文案走客户端字典"
+      },
+      {
+        "plugin_id": "dsh-client-store",
+        "mechanism": "E1",
+        "evidence": "src/client/microphone-device.ts:2 import { createSnapshotStore, type SnapshotStore } + src/client/readiness.ts:4 import from '@deepseek-ai/dsh-client-store' + package.json:52 peerDep",
+        "purpose": "麦克风设备选择与就绪状态以可订阅快照存放"
+      },
+      {
+        "plugin_id": "dsh-api-gateway",
+        "mechanism": "E1",
+        "evidence": "src/client/readiness.ts:3 import { RemoteStreamCarrierError } from '@deepseek-ai/dsh-api-gateway/client' + package.json:51 peerDep",
+        "purpose": "Remote 流载体失败的错误类型来自网关包"
+      },
+      {
+        "plugin_id": "dsh-client-ui-conversation",
+        "mechanism": "E1",
+        "evidence": "src/client/VoiceInput.tsx:4 import type { TokenSpan } from '@deepseek-ai/dsh-client-ui-conversation/client' + src/client/mount.ts:7 import type {} + package.json:42 peerDep",
+        "purpose": "输入区活动槽位与转写文本插入会话输入框需要会话 UI 的类型面"
+      },
+      {
+        "plugin_id": "dsh-client-ui-primitives",
+        "mechanism": "E1",
+        "evidence": "src/client/PreparationCard.tsx:3 import from '@deepseek-ai/dsh-client-ui-primitives' + src/client/VoiceInput.tsx:15 import + package.json:43 peerDep",
+        "purpose": "麦克风按钮、波形与卡片使用客户端基元组件"
+      },
+      {
+        "plugin_id": "dsh-client-ui-renderer",
+        "mechanism": "E1",
+        "evidence": "src/client/mount.ts:6 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client' + package.json:44 peerDep",
+        "purpose": "槽位渲染由 renderer 承担，类型面需要其声明"
+      },
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1",
+        "evidence": "src/client/mount.ts:8 import type { TypertRemoteContribution } + src/client/VoiceInput.tsx:7 import from '@deepseek-ai/dsh-typert-protocol' + package.json:48 peerDep",
+        "purpose": "Remote 挂载物与错误类型来自 typert 协议包"
+      },
+      {
+        "plugin_id": "dsh-api-session-controller",
+        "mechanism": "E1",
+        "evidence": "package.json:40 peerDep",
+        "purpose": "客户端会话控制器的声明依赖，保证组合中存在同一份实现"
+      },
+      {
+        "plugin_id": "dsh-client-ui-session",
+        "mechanism": "E1",
+        "evidence": "package.json:45 peerDep",
+        "purpose": "客户端会话 UI 的声明依赖，保证组合中存在同一份实现"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "package.json:47 peerDep",
+        "purpose": "转写结果归属会话，类型面需要会话包声明"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-inspector",
+    "name": "@deepseek-ai/dsh-experimental-inspector",
+    "implementation": "双面插件。Host 面在 ctx.effect 里启动 Inspector Worker，ctx.provide('inspector', createInspectorService(...)) 暴露服务，把 Client bootstrap 注入 index 表、注册 /inspector/devtools 静态资源与 /inspector/devtools/cdp 的 WebSocket 升级代理（先经 connection 鉴权）(src/host/plugin.ts:49-163)。Client 面同样 provide 'inspector'，从 __DSH_INSPECTOR__ 或 bootstrap 路由读取端点后建立到 Worker 的源，并把底部检查器页面注册进 slots/shortcuts/locale (src/client/plugin.ts:50-151)。两侧共享同一套桥接协议编解码与 Cordis 拓扑读取实现 (src/shared/**)，使宿主与浏览器可以互相观测；enable 状态与各项字节/条数上限全部由 Config 校验 (src/index.ts:74-107)。",
+    "provides": [
+      "ctx.inspector (跨 realm 观测发布与 Cordis 拓扑只读查询，Host 与 Client 两面)",
+      "CDP/DevTools 前端资源与 WebSocket 代理路由 (/inspector/devtools 与 /inspector/devtools/cdp)",
+      "底部检查器 UI 与 shell.bottom 槽位、快捷键贡献"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-host-webserver",
+        "mechanism": "E1+E2",
+        "evidence": "src/host/plugin.ts:8 import type { IndexInjection } from '@deepseek-ai/dsh-host-webserver' + src/host/plugin.ts:75 ctx.webServer.register({ kind: 'prefix', path: DEVTOOLS_PATH, ... }) + src/host/plugin.ts:111 ctx.webServer.registerUpgrade + src/index.ts:63 export const inject = ['webServer', 'connection'] + package.json:62 peerDep",
+        "purpose": "DevTools 前端资源与 CDP 代理需要宿主 HTTP 服务器的路由与升级钩子"
+      },
+      {
+        "plugin_id": "dsh-client-connection",
+        "mechanism": "E1+E2",
+        "evidence": "src/host/plugin.ts:9 import type {} from '@deepseek-ai/dsh-client-connection' + src/host/plugin.ts:64 ctx.connection.fetch.register({ path: INSPECTOR_BOOTSTRAP_PATH, ... }) + src/host/plugin.ts:82 ctx.connection.authorizeIndex(req, res) + src/client/plugin.ts:4 import type {} + package.json:61 peerDep",
+        "purpose": "bootstrap 端点与 DevTools 路由都要经连接层的鉴权与路由表"
+      },
+      {
+        "plugin_id": "dsh-client-modules",
+        "mechanism": "E1",
+        "evidence": "package.json:60 peerDep",
+        "purpose": "浏览器端模块装载的声明依赖，保证组合中存在同一份实现"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "src/shared/identity.ts:3 import type { Branded } from '@deepseek-ai/dsh-brand' + package.json:50 dependencies",
+        "purpose": "跨 realm 的观测 id 使用 branded 类型而非裸字符串"
+      },
+      {
+        "plugin_id": "dsh-util-crypto",
+        "mechanism": "E1",
+        "evidence": "src/client/cdp/sources.ts:3 import { bytesToBase64 } + src/client/inspection/realm.ts:3 import + src/shared/cordis/object-registry.ts:3 import + package.json:51 dependencies",
+        "purpose": "CDP 对象与源码在桥接传输中的摘要/编码工具"
+      },
+      {
+        "plugin_id": "dsh-client-shortcuts",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/bottom/keyboard.ts:2 import type { ShortcutCatalogEntry } from '@deepseek-ai/dsh-client-shortcuts/client' + src/client/bottom/page.tsx:71 ctx.shortcuts.register({...}) + src/client/bottom/page.tsx:94 ctx.shortcuts.catalog.getSnapshot() + package.json:72 devDep",
+        "purpose": "检查器面板的开关快捷键注册在客户端快捷键目录上"
+      },
+      {
+        "plugin_id": "dsh-client-store",
+        "mechanism": "E1",
+        "evidence": "src/client/bottom/page.tsx:5 import from '@deepseek-ai/dsh-client-store' + package.json:73 devDep",
+        "purpose": "面板可见性等客户端状态以快照存放"
+      },
+      {
+        "plugin_id": "dsh-client-ui-primitives",
+        "mechanism": "E1",
+        "evidence": "src/client/bottom/page.tsx:6 import { Button, IconCloseOutlineRegular, Tooltip } + package.json:75 devDep",
+        "purpose": "检查器面板的按钮与提示使用客户端基元组件"
+      },
+      {
+        "plugin_id": "dsh-client-ui-slots",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/bottom/page.tsx:7 import type {} + src/client/bottom/page.tsx:63 ctx.slots.inject('shell.bottom', ...) + src/client/bottom/page.tsx:90 ctx.slots.register + package.json:74 devDep",
+        "purpose": "检查器面板作为 shell.bottom 槽位贡献"
+      },
+      {
+        "plugin_id": "dsh-client-ui-layout",
+        "mechanism": "E1",
+        "evidence": "src/client/bottom/page.tsx:9 import type {} from '@deepseek-ai/dsh-client-ui-layout/client' + package.json:71 devDep",
+        "purpose": "面板的布局约束与类型声明来自布局包"
+      },
+      {
+        "plugin_id": "dsh-client-ui-renderer",
+        "mechanism": "E1",
+        "evidence": "src/client/bottom/page.tsx:10 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client' + package.json:69 devDep",
+        "purpose": "槽位渲染由 renderer 承担，类型面需要其声明"
+      },
+      {
+        "plugin_id": "dsh-client-locale",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/bottom/page.tsx:11 import type {} from '@deepseek-ai/dsh-client-locale/client' + src/client/bottom/page.tsx:61 ctx.locale.register('inspectorPanel', { zh, en }) + package.json:76 devDep",
+        "purpose": "检查器面板文案走客户端字典"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-ptc-runtime-python",
+    "name": "@deepseek-ai/dsh-experimental-ptc-runtime-python",
+    "implementation": "PtcRuntime 的 Python 后端：每次运行起一个全新 python3 子进程，用 fd 3 上的 JSON-lines 帧承载绑定调用，把 stdout/stderr 留给程序自身输出，并以 RLIMIT_CPU/RLIMIT_AS、墙钟上限与输出预算约束单次运行 (src/index.ts:1-11, src/index.ts:744-771)。所有上限都是经 schemastery 校验的 Config，加载期即拒绝不可满足的组合（浮点 cpuSeconds、超 MAX_TIMER_DELAY_MS 的墙钟、超过 fd-3 帧解析上限的字节预算、非 CPython 3.10+ 的解释器等）(src/index.ts:746-754, src/index.ts:788-896, src/index.ts:447-480)。沙箱模式取 ctx.sandboxPolicy.defaultMode，实际限制经 ctx.sandbox.confine 施加；run() 要求已解析的 sandbox 策略 (src/index.ts:759, src/index.ts:982-1030)。包同时拥有无版本号的 fd-3 线协议本身，并把编解码与恶意帧校验再导出，供所有消费方共用一套词汇 (src/index.ts:32-42, src/protocol.ts)。",
+    "provides": [
+      "ctx.ptcRuntime 的 Python 后端 (PtcRuntime 实现：CPython 子进程、fd-3 绑定协议、rlimit 与超时预算、进程组回收)",
+      "fd-3 线协议编解码与校验再导出 (checkDoneValue/encodeJsonPlain/validateChildFrame 等)",
+      "hostFrameParseCeiling / resolvePythonBin / readProcessStart 等宿主侧可测工具函数"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-ptc-runtime",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:21-22 import { PtcRuntime, DUNDER_MEMBER, PORTABLE_RESERVED_WORDS, ... } + src/index.ts:744 export class PythonPtcRuntime extends PtcRuntime + package.json:27 peerDep",
+        "purpose": "继承 PTC 运行时 seam 并以其身份注册 ptcRuntime 后端，语言无关的保留字/全局名约定也来自该包"
+      },
+      {
+        "plugin_id": "dsh-sandbox",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:25-26 import { SandboxUnavailableError, classifyRunnerFailure, isRunnerSpawnFailure } + import type { ConfinedArgv, SandboxMode } + src/index.ts:1030 this.ctx.sandbox.confine(argv, { ...policy, mode: policy.mode }, controller.signal) + package.json:31 peerDep",
+        "purpose": "子进程的沙箱限制与失败分类由 sandbox seam 施加和解释"
+      },
+      {
+        "plugin_id": "dsh-sandbox-policy",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:27 import type {} from '@deepseek-ai/dsh-sandbox-policy' + src/index.ts:745 static inject = ['sandbox', 'sandboxPolicy'] + src/index.ts:759 this.ctx.sandboxPolicy.defaultMode + src/index.ts:982 this.ctx.sandboxPolicy.resolve() + package.json:32 peerDep",
+        "purpose": "运行时默认沙箱模式与每次运行的策略解析都来自该 seam"
+      },
+      {
+        "plugin_id": "dsh-timeout",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:24 import { MAX_TIMER_DELAY_MS } from '@deepseek-ai/dsh-timeout' + package.json:28 peerDep",
+        "purpose": "用统一的最大定时器上限校验墙钟与宽限期配置"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:23 import { snapshotJsonValue } from '@deepseek-ai/dsh-util-values' + package.json:30 peerDep",
+        "purpose": "绑定调用参数与返回值按 lossless-JSON 语义快照后过线"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-session-inspector",
+    "name": "@deepseek-ai/dsh-experimental-session-inspector",
+    "implementation": "纯客户端插件：注册一个会话作用域的右侧栏 tab（sidebarRightTabs + sidebar.right.pane.tab 槽位），并在其上注册 session-inspector-log 视图 (src/client/views/index.ts:22-79)。视图数据源复用既有模型——聊天侧用 ChatNodeModel 包装 uiConversation 绑定，日志侧用 SessionLogModel 包装会话事件源，按 SessionBinding 缓存并支持定位、跳转与「加载更早」 (src/client/views/index.ts:32-77)。插件的本地化字典在 apply 里注册，Host 侧入口为空实现，仅用于浏览器插件发现 (src/client/index.ts:16-19, src/index.ts:1-4)。",
+    "provides": [
+      "sidebarRightTabs 的 session-inspector-log tab 与 sidebar.right.pane.tab 槽位视图",
+      "会话检查器模型 (ChatNodeModel / SessionLogModel 及聊天节点定位与揭示)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-client-ui-slots",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/views/InspectorDetails.tsx:4 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots' + src/client/views/index.ts:33 ctx.slots.inject('sidebar.right.pane.tab', ...) + package.json:75 devDep",
+        "purpose": "检查器页面作为右侧栏 tab 槽位贡献"
+      },
+      {
+        "plugin_id": "dsh-client-ui-sidebar-right",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/index.ts:5 import type {} from '@deepseek-ai/dsh-client-ui-sidebar-right/client' + src/client/views/index.ts:28 ctx.sidebarRightTabs.register({ id, kind: 'session-inspector-log', ... }) + package.json:64 devDep",
+        "purpose": "tab 的注册与右侧栏容器由该包提供"
+      },
+      {
+        "plugin_id": "dsh-client-locale",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/index.ts:4 import type {} from '@deepseek-ai/dsh-client-locale/client' + src/client/views/index.ts:26 ctx.locale.bind(NS) + src/client/index.ts:17 ctx.locale.register(NS, { en, zh }) + package.json:72 devDep",
+        "purpose": "tab 标题与描述走客户端字典"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/views/chat-node/model.ts:8 import type { SessionId } from '@deepseek-ai/dsh-session/types' + src/client/views/index.ts:36 ctx.sessions.binding(sessionId) + package.json:66 devDep",
+        "purpose": "视图以会话绑定为单位取得事件源"
+      },
+      {
+        "plugin_id": "dsh-client-ui-conversation",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/views/InspectorTable.tsx:5 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client' + src/client/views/index.ts:40 ctx.uiConversation.binding(binding) + package.json:73 devDep",
+        "purpose": "聊天侧节点与分组来自会话 UI 的绑定与快照"
+      },
+      {
+        "plugin_id": "dsh-client-ui-session",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/views/index.ts:6 import type {} from '@deepseek-ai/dsh-client-ui-session/client' + src/client/views/index.ts:43 ctx.uiSession.adapter.current.getSnapshot() + package.json:65 devDep",
+        "purpose": "判断当前展示的会话以决定能否把检查器结果揭示到主聊天区"
+      },
+      {
+        "plugin_id": "dsh-api-session-controller",
+        "mechanism": "E1",
+        "evidence": "src/client/views/index.ts:7 import type { SessionBinding } from '@deepseek-ai/dsh-api-session-controller/client' + src/client/views/session-log/chat-target.ts:3 import type {} + package.json:60 devDep",
+        "purpose": "会话绑定类型与事件源由会话控制器提供"
+      },
+      {
+        "plugin_id": "dsh-client-store",
+        "mechanism": "E1",
+        "evidence": "src/client/views/InspectorTable.tsx:6 import from '@deepseek-ai/dsh-client-store' + src/client/views/objects.ts:4 import + package.json:61 devDep",
+        "purpose": "表格与对象行的可订阅快照"
+      },
+      {
+        "plugin_id": "dsh-client-ui-chat",
+        "mechanism": "E1",
+        "evidence": "src/client/views/chat-node/model.ts:3 import type {} from '@deepseek-ai/dsh-client-ui-chat/client' + src/client/views/chat-node/reveal-target.ts:4 import type {} + package.json:62 devDep",
+        "purpose": "聊天节点模型与揭示目标解析建立在 chat 侧类型面之上"
+      },
+      {
+        "plugin_id": "dsh-client-ui-primitives",
+        "mechanism": "E1",
+        "evidence": "src/client/views/InspectorTable.tsx:8 import { Tooltip } + src/client/views/TypeFilter.tsx:5 import + package.json:63 devDep",
+        "purpose": "表格与筛选器使用客户端基元组件"
+      },
+      {
+        "plugin_id": "dsh-client-ui-renderer",
+        "mechanism": "E1",
+        "evidence": "src/client/views/index.ts:4 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client' + package.json:74 devDep",
+        "purpose": "槽位渲染由 renderer 承担，类型面需要其声明"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/client/views/session-log/chat-target.ts:4 import type { StreamChunk } from '@deepseek-ai/dsh-llm' + src/client/views/session-log/model.ts:5 import from '@deepseek-ai/dsh-llm/assistant-stream' + package.json:67 devDep",
+        "purpose": "会话日志行需要按 llm 的流式块与消息类型解释"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-speech-to-text-sensevoice",
+    "name": "@deepseek-ai/dsh-experimental-speech-to-text-sensevoice",
+    "implementation": "函数式插件，向 speechToText 注册一个本地 SenseVoice 提供者：提供者信息含 id、host-local 位置、语言列表、下载源与磁盘/内存/耗时估算，准备与转写都委托给 SenseVoiceWorker (src/index.ts:20-41)。激活期只校验路径必须是绝对路径、modelOrigin(s) 必须是合法 URL，不做任何下载或模型加载；注册后 worker.inspect() 只检查磁盘缓存 (src/index.ts:20-35)。全部部署可变项（数据根、模型目录、精度、线程数、VAD 阈值、各类超时、音频/响应字节上限等）都由 Config 在激活期校验 (src/config.ts:56-81)。",
+    "provides": [
+      "ctx.speechToText 的 SenseVoice 本地提供者 (providerId 注册、准备/下载、转写)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-experimental-speech-to-text",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:4 import type {} from '@deepseek-ai/dsh-experimental-speech-to-text' + src/index.ts:13 export const inject = ['speechToText', 'subprocess'] + src/index.ts:28 ctx.speechToText.register({...}) + src/download-error.ts:2 import type from '.../types' + package.json:45 peerDep",
+        "purpose": "语音识别 seam 提供提供者注册点与转写输入/结果类型"
+      },
+      {
+        "plugin_id": "dsh-subprocess",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:5 import type {} from '@deepseek-ai/dsh-subprocess' + src/recognizer.ts:5 import from '@deepseek-ai/dsh-subprocess' + src/recognizer.ts:262 ctx.subprocess 使用 + package.json:46 peerDep",
+        "purpose": "私有推理 worker 作为受管子进程运行，超时与终止走 subprocess seam"
+      },
+      {
+        "plugin_id": "dsh-timeout",
+        "mechanism": "E1",
+        "evidence": "src/config.ts:3 import { MAX_TIMER_DELAY_MS } from '@deepseek-ai/dsh-timeout' + src/download-error.ts:3 import + package.json:39 dependencies",
+        "purpose": "用统一的最大定时器上限校验各项超时配置"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-tool-agent-team",
+    "name": "@deepseek-ai/dsh-experimental-tool-agent-team",
+    "implementation": "函数式插件，在 Team 成员的 Agent 作用域内一次性注册完整工具集：spawn_teammate、send_message、list_agents、wait_agent、interrupt_agent 与 team_task_create/list/get/update（含 CAS 语义），每个工具都声明规范化输出 schema 并只允许对应角色调用 (src/index.ts:163-391)。同时向该作用域注入 team:policy 系统提示段，说明写作用域重叠只是建议而非锁、任务就绪不会唤醒 owner 等协作规则 (src/index.ts:168-172, src/index.ts:31-37)。wait_agent 先同步读取是否存在活跃 peer，无活跃 peer 时立即返回 noProgress，避免空等 (src/index.ts:252-275)。安装按 agent/created 与 agent/disposed 增量维护，卸载时逆序释放所有注册 (src/index.ts:401-422)。",
+    "provides": [
+      "Agent 作用域的 Team 工具集 (spawn_teammate/send_message/list_agents/wait_agent/interrupt_agent 与 team_task_*)",
+      "team:policy 系统提示段"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-experimental-agent-team",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:6-7 import { TeamTaskId } + import type { TeamMemberView } from '@deepseek-ai/dsh-experimental-agent-team' + src/index.ts:191 ctx.agentTeams.spawnTeammate(agent, {...}) + src/index.ts:14 inject 'agentTeams' + package.json:38 peerDep",
+        "purpose": "成员与共享任务的全部状态机与语义由 Agent Teams 运行时拥有，工具只是模型面"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:5 import type { Agent } from '@deepseek-ai/dsh-agent' + src/index.ts:412 ctx.agents.list() + src/index.ts:413 ctx.on('agent/created') + src/index.ts:14 inject 'agents' + package.json:35 peerDep",
+        "purpose": "工具按 Agent 作用域安装，并随 Agent 生命周期增删"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:8-9 import { defineTool } + import type { InferValue, ValueSchemaSpec } + src/index.ts:174 scoped.tools.register(defineTool({...})) + src/index.ts:14 inject 'tools' + package.json:39 peerDep",
+        "purpose": "工具定义、输出 schema 校验与作用域注册由 tools seam 提供"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E2",
+        "evidence": "src/index.ts:14 inject 'systemPrompt' + src/index.ts:168 scoped.systemPrompt.section({ name: 'team:policy', order: scoped.systemPrompt.getSectionOrder('TEAM_POLICY'), text: POLICY }) + package.json:37 peerDep",
+        "purpose": "协作策略以系统提示段形式随工具一起注入该作用域"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "package.json:36 peerDep",
+        "purpose": "Team 成员与会话一一对应，声明依赖保证组合中存在同一份会话实现"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-tool-worktree",
+    "name": "@deepseek-ai/dsh-experimental-tool-worktree",
+    "implementation": "函数式插件，注册模型工具 create_worktree：从本地 commit/branch/tag（默认 HEAD）创建新分支与 git worktree，并把当前会话的工作目录切到新 checkout，未提交文件留在原 checkout (src/index.ts:16-43)。工具输出声明 path/branch/baseCommit/repositoryRoot 四个必填字段，并给出 generic 卡片的展示声明；执行体只做调用方检查后把工作交给 ctx.worktrees.create(agent, args, signal) (src/index.ts:24-41)。",
+    "provides": [
+      "create_worktree 工具 (经 ctx.worktrees 创建 git worktree 并切换会话工作目录)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-experimental-worktree",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:4 import type {} from '@deepseek-ai/dsh-experimental-worktree' + src/index.ts:10 export const inject = ['tools', 'worktrees'] + src/index.ts:39 ctx.worktrees.create(exec.agent, args, exec.signal) + package.json:37 peerDep + package.json:66 dependencies",
+        "purpose": "worktree 创建、命名与工作目录切换语义全部由 worktree 运行时拥有"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:5 import { defineTool } from '@deepseek-ai/dsh-tools' + src/index.ts:17 ctx.tools.register(defineTool({...})) + package.json:36 peerDep",
+        "purpose": "工具定义与注册由 tools seam 提供"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-experimental-webworker-runtime",
+    "name": "@deepseek-ai/dsh-experimental-webworker-runtime",
+    "implementation": "浏览器专用宿主运行时：createWorkerHost/startWorkerHost 在一个 dedicated Web Worker 内装配完整 harness Cordis 树——挂载内存 VFS 镜像与数据叠加层、校验镜像 lowering 版本、建立 WorkerModuleLoader 与 Node 兼容层，然后经镜像内的 dsh-app-boot 启动 profile，把 connection 与 typertGateway 接到 postMessage 隧道上 (src/worker-host.ts:169-302, src/worker-host.ts:355-367)。隧道负责把页面的 fetch/流请求转成树内请求，并在启动前排队、启动后服务、失败时以 503 拒绝 (src/worker-host.ts:273-286)。浏览器半边（pre-Cordis glue，不是 client plugin）安装 __DSH_TRANSPORT__/__DSH_FILE_UPLOAD__ 全局并按表执行 boot 注入，以 __DSH_BOOT_READY__ 作启动屏障 (src/client/index.ts:145-175)。包同时导出 Node 内置模块/外部包代理、模块转换与加载、内存 VFS 与 tar/gzip、shell 解释器等兼容层 (src/index.ts:5-52)。",
+    "provides": [
+      "createWorkerHost / startWorkerHost (Web Worker 内运行完整 harness Cordis 树的装配入口)",
+      "浏览器侧 connectWorkerHost / chooseWorkerHostSource (postMessage 隧道、boot 注入表执行、__DSH_TRANSPORT__ 与 __DSH_FILE_UPLOAD__ 全局)",
+      "Node 兼容层：node:* 内置模块与外部包代理、模块加载与转换、内存 VFS、tar/gzip、shell 解释器"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-util-crypto",
+        "mechanism": "E1",
+        "evidence": "src/node/builtin_modules/implemented/crypto.ts:8 import { randomUUID as mintUUID } from '@deepseek-ai/dsh-util-crypto' + src/node/globals/crypto.ts:8 import + package.json:31 dependencies",
+        "purpose": "worker 内的 node:crypto 兼容实现复用统一的 UUID/哈希工具"
+      },
+      {
+        "plugin_id": "dsh-client-web",
+        "mechanism": "E1",
+        "evidence": "src/client/apply-injections.ts:2 export { applyIndexInjections } from '@deepseek-ai/dsh-client-web/injections' + package.json:38 dependencies",
+        "purpose": "boot 注入表（__ModuleLoader__、__DSH_BOOT__、主题引导）的执行器由 client-web 提供"
+      },
+      {
+        "plugin_id": "dsh-client-connection",
+        "mechanism": "E1+E2",
+        "evidence": "src/worker-host.ts:27 import type { HostConnectionHandle } from '@deepseek-ai/dsh-client-connection' + src/worker-host.ts:263 ctx.get('connection') + src/worker-host.ts:269 connection.createSharedFetchHandler('/api') + package.json:43 peerDep",
+        "purpose": "树内 HTTP 请求的统一入口与共享 fetch handler 来自连接层"
+      },
+      {
+        "plugin_id": "dsh-host-webserver",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/client.ts:9 import type { IndexInjection } from '@deepseek-ai/dsh-host-webserver' + src/worker-host.ts:446 ctx.get('webServer') + src/worker-host.ts:450 webServer.collectIndexInjections() + package.json:45 peerDep",
+        "purpose": "页面 boot 所需的 index 注入表由树内 webserver 收集"
+      },
+      {
+        "plugin_id": "dsh-api-gateway",
+        "mechanism": "E1+E2",
+        "evidence": "src/worker-host.ts:26 import type { TypertGateway } from '@deepseek-ai/dsh-api-gateway' + src/worker-host.ts:265 ctx.get('typertGateway') + src/worker-host.ts:278 typertGateway.wireStream.open(...) + package.json:50 devDep",
+        "purpose": "隧道上的流式请求由网关的 wireStream 承载"
+      },
+      {
+        "plugin_id": "dsh-client-file-upload",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:12 import type { ClientFileUploadHooks } from '@deepseek-ai/dsh-client-file-upload/types' + src/client/index.ts:165 globalThis.__DSH_FILE_UPLOAD__ 赋值 + package.json:54 devDep",
+        "purpose": "页面侧文件上传钩子被替换为走 worker 隧道"
+      },
+      {
+        "plugin_id": "dsh-client-modules",
+        "mechanism": "E1",
+        "evidence": "package.json:44 peerDep",
+        "purpose": "浏览器模块装载的声明依赖，保证组合中存在同一份实现"
+      }
+    ],
+    "dependents": []
+  }
+]

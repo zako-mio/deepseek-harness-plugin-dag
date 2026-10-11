@@ -1,8 +1,8 @@
 # dsh-terminal
 
 - 包名: `@deepseek-ai/dsh-terminal`
-- 分组: G43 终端
-- 拓扑层: Layer 5
+- 分组: G42 终端
+- 拓扑层: Layer 4
 - 来源层: L3 其余
 - 源码路径: `packages/terminal/terminal`
 
@@ -17,7 +17,7 @@ owner 作用域的持久 PTY 注册表：TerminalSessionService 注册 ctx.termi
   - 证据: `package.json:30 peerDep + src/index.ts:8 import Agent + src/index.ts:319 ctx.get('agents')`
 
 ## Dependents (下游被依赖)
-- `dsh-terminal-bash` - 向 PTY seam 注册 backend 并复用其类型与 TerminalError
-- `dsh-tool-bash-persistent` - 经 owner 级 PTY 服务创建/发送/读取/终止持久 shell 会话
-- `dsh-tool-pwsh-persistent` - 经 owner 级 PTY 服务创建/发送/读取/终止持久 shell 会话
-- `dsh-tool-terminal` - 调用 ctx.terminals 的会话操作
+- `dsh-terminal-bash` - 实现 TerminalBackend 契约并通过 ctx.terminals.registerBackend 把本地后端登记进终端注册表
+- `dsh-tool-bash-persistent` - 持久会话的 spawn、发送、读取与 kill 全部由终端 seam 提供
+- `dsh-tool-pwsh-persistent` - 持久会话的 spawn/发送/读取/kill 由终端 seam 提供
+- `dsh-tool-terminal` - 声明并调用 terminals 服务完成 spawn/startSend/read/signal/kill/list 全部 owner 隔离的 PTY 操作

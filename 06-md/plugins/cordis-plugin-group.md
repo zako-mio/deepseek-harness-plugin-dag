@@ -1,7 +1,7 @@
 # cordis-plugin-group
 
 - 包名: `@deepseek-ai/cordis-plugin-group`
-- 分组: G46 框架 vendor
+- 分组: G45 框架 vendor
 - 拓扑层: Layer 1
 - 来源层: L3 其余
 - 源码路径: `vendor/group`

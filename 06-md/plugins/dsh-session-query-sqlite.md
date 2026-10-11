@@ -1,8 +1,8 @@
 # dsh-session-query-sqlite
 
 - 包名: `@deepseek-ai/dsh-session-query-sqlite`
-- 分组: G34 会话检索
-- 拓扑层: Layer 3
+- 分组: G32 会话检索
+- 拓扑层: Layer 2
 - 来源层: L1 核心集
 - 源码路径: `packages/session-query/session-query-sqlite`
 

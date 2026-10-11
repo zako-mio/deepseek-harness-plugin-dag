@@ -1,7 +1,7 @@
 # dsh-host-plugin-inventory
 
 - 包名: `@deepseek-ai/dsh-host-plugin-inventory`
-- 分组: G20 宿主服务
+- 分组: G19 宿主服务
 - 拓扑层: Layer 6
 - 来源层: L2 web-app
 - 源码路径: `packages/host/plugin-inventory`
@@ -17,5 +17,5 @@
   - 证据: `package.json:51 peerDep + src/index.ts:6 type import; src/index.ts:97 ctx.get('agentPresets')、:100 compositionInventory`
 
 ## Dependents (下游被依赖)
-- `dsh-api-remotes` - 装配插件清单命名空间
-- `dsh-plugin-manager` - 读取运行时插件清单与 entryId 映射，供 listPlugins 对齐
+- `dsh-api-remotes` - 把该业务包的 /remote 命名空间装配进 Client
+- `dsh-plugin-manager` - 读取运行时插件清单并生成可寻址 entryId

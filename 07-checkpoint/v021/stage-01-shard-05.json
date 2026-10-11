@@ -1,0 +1,480 @@
+[
+  {
+    "id": "dsh-agent-instructions",
+    "name": "@deepseek-ai/dsh-agent-instructions",
+    "implementation": "以「一次性基线 + 逐次增量对账」两段逻辑实现 AGENTS.md/CLAUDE.md 工作区指令注入。apply() 在 agent/pre-step 里调 compose()：先经 ctx.workingDirectory.ensure 取 cwd、findProjectRoot 定位项目根，再用 loadBaselineInstructionSet 读取 harness home、agents home 与祖先目录的指令文件（src/index.ts:127-154）；随后 reconcileInstructionContext 按文件元数据版本与 trimmed 内容摘要做候选组去重、生成 set/replace/remove 变更，渲染成 source.kind='agent-instructions' 的 user 消息折叠进本步批次（src/state.ts:251-455、src/index.ts:234-243）。tools/result 监听把 read/write/edit 触碰到的 file_path 记为待刷新项，按 step/end 边界串行排队（src/index.ts:362-378、src/index.ts:315-332）。ctx.fs 缺失时整体降级为空操作（src/index.ts:121-122）。",
+    "provides": [
+      "工作区指令注入能力：agent-instructions 消息源类型与基线/增量渲染（src/state.ts:51-55、src/render.ts:414-434）",
+      "指令文件发现与读取 API：discoverBaselineInstructionFiles/loadBaselineInstructions/findProjectRoot（src/files.ts:232、src/files.ts:378、src/files.ts:456）",
+      "配置归一化与基线身份 API：resolveConfig/workspaceBaselineIdentity（src/config.ts:67、src/config.ts:88）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:15 import type { Agent, PreStepDecision } + src/index.ts:334 ctx.on('agent/pre-step', ...) + src/index.ts:247 agent.inbox.nextStep",
+        "purpose": "在工作区指令投影里读写 agent 的 inbox 与 pre-step 决策，指令才能折进本步消息批次"
+      },
+      {
+        "plugin_id": "dsh-fs",
+        "mechanism": "E1+E2",
+        "evidence": "src/files.ts:10 import type { FileSystem, FsInfo, FsTarget, FsVersion } + src/index.ts:121 ctx.get('fs')",
+        "purpose": "通过可选文件系统 seam 读取指令文件元数据与内容；无 provider 时插件成为空操作"
+      },
+      {
+        "plugin_id": "dsh-home-paths",
+        "mechanism": "E1",
+        "evidence": "src/config.ts:9 import { resolveAgentsHome, resolveDshHome } + src/config.ts:118 resolveDshHome(config.dshHome)",
+        "purpose": "解析 harness home 与共享 agents 根，作为 user-global 指令的候选根"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:16 import { createUserMessage } + src/state.ts:8 import { createUserMessage } + src/state.ts:86 createUserMessage({",
+        "purpose": "构造承载指令文本的 user 角色消息，并扩展 MessageSourceMap 声明 agent-instructions 源"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:17 import type { Session, UserMessage } from '@deepseek-ai/dsh-session' + src/state.ts:10 import type { Session, UserMessage }",
+        "purpose": "读取会话表面节点与事件，判断已渲染基线是否仍可见"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:18 import type {} from '@deepseek-ai/dsh-session-projection' + src/index.ts:306 ctx.sessionProjections.stateOf(session, 'turnBoundary')",
+        "purpose": "读取 turnBoundary 投影判断当前是否处于开放 step，决定触碰项是即时投影还是延迟排队"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:19 import type { ToolExecution, ToolExecutionResult, ToolExecutionToken } + src/index.ts:362 ctx.on('tools/result', ...)",
+        "purpose": "订阅工具结果事件，从 read/write/edit 的参数中提取被触碰文件路径以触发指令刷新"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/files.ts:12 import { assertNever } + src/files.ts:99 assertNever(directory, 'user-global directory')",
+        "purpose": "闭合联合穷尽断言，保证 user-global 目录分支不被遗漏"
+      },
+      {
+        "plugin_id": "dsh-working-directory",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:12 import type {} from '@deepseek-ai/dsh-working-directory' + src/index.ts:127 ctx.workingDirectory.ensure(agent, signal)",
+        "purpose": "解析每个 agent 的当前工作目录，作为指令发现与相对作用域键的基准"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-file-reference-local",
+    "name": "@deepseek-ai/dsh-file-reference-local",
+    "implementation": "以 ctx.fileReferences 的本地文件系统提供者身份实现文件引用发现：LocalFileReferenceService 继承 dsh-file-reference 的 Service Definition（src/index.ts:45），override 的 list() 先用 ctx.workingDirectory.ensure 解析 agent 的 cwd，cwd 变化时重建 WorkspaceFileSearch 有界模糊索引并按 agent 缓存（src/index.ts:116-129）。构造期对每个已存在与新建 agent 通过 agent.ctx.inject(['systemPrompt','tools']) 注册名为 'context:file-reference' 的提示段，且仅当 read 工具在该 agent 可见时才渲染正文（src/index.ts:67-79）；agent/disposed 回收索引与 prompt fiber，tool/result 使索引失效（src/index.ts:94-103）。配置上限（maxResults/maxEntries/excludedDirectories）在构造期校验（src/index.ts:132-142）。",
+    "provides": [
+      "ctx.fileReferences（本地文件系统文件引用候选发现实现，src/index.ts:45-129）",
+      "WorkspaceFileSearch 有界模糊索引与默认限额常量（src/search.ts:16-48、src/search.ts:84）",
+      "文件引用语法与提示常量再导出（FILE_REFERENCE_PROMPT、activeAtToken、formatFileMention，src/index.ts:31-32）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:10 import type { Agent } from '@deepseek-ai/dsh-agent' + src/index.ts:46 static inject = ['agents', 'workingDirectory']",
+        "purpose": "按 agent 维度维护搜索缓存与提示 fiber，并在 agent/created、agent/disposed 上挂载与回收"
+      },
+      {
+        "plugin_id": "dsh-file-reference",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:11 import FileReferenceService, { FILE_REFERENCE_PROMPT, type FileReferenceCandidate } + src/search.ts:11 import ... from '@deepseek-ai/dsh-file-reference'",
+        "purpose": "继承其 Service Definition 提供 ctx.fileReferences 的本地实现，并复用候选类型与提示文本"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E2",
+        "evidence": "src/index.ts:70 agent.ctx.inject(['systemPrompt', 'tools'], (scope) => ...) + src/index.ts:71 scope.systemPrompt.section({ name: 'context:file-reference', ... })",
+        "purpose": "向 agent 作用域的系统提示注册文件引用说明段，并复用其 FILE_REFERENCE 中央排序位"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E2",
+        "evidence": "src/index.ts:74 agent.ctx.tools.get('read', agent) === undefined ? '' : FILE_REFERENCE_PROMPT + src/index.ts:15 import type {} from '@deepseek-ai/dsh-tools'",
+        "purpose": "查询该 agent 可见的 read 工具，仅在有读取能力时才对模型暴露文件引用提示"
+      },
+      {
+        "plugin_id": "dsh-working-directory",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:7 import type {} from '@deepseek-ai/dsh-working-directory' + src/index.ts:121 this.ctx.workingDirectory.ensure(agent, signal)",
+        "purpose": "取 agent 的工作目录作为索引根，并据此判断缓存是否需要重建"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-time-context",
+    "name": "@deepseek-ai/dsh-time-context",
+    "implementation": "以 pre-step 监听器实现每步时间上下文注入。apply() 先注册 timeContext 会话投影，跟踪最近模型可见消息时间、最近一次耐久注入时间与本轮注入时间（src/index.ts:157-183）；随后以 prepend 方式挂 agent/pre-step 瀑布，先 await next() 取回决策，再按 refreshIntervalMs（默认 600000）节流，命中时追加一条 source.kind='time-context' 的 user 消息（src/index.ts:185-225）。时区来源是本轮 user-rpc 消息的 clientTimeZone：唯一时区直接采用，混合或缺失则渲染要求模型澄清的策略行（src/request-zone.ts:48-80）；时间戳按 ISO 形 + 长偏移 + IANA 名格式化（src/timestamp.ts:31-37）。",
+    "provides": [
+      "sessionProjections 'timeContext' 投影状态（最近消息时间/最近注入时间，src/index.ts:157-183）",
+      "每步耐久时间读数注入：turn/step 时间戳与距上次可见消息的耗时（src/index.ts:100-115）",
+      "浏览器时区推导与策略文本（deriveBrowserTimeZoneContext/renderBrowserTimeZoneContext，src/request-zone.ts:48、src/request-zone.ts:66）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:11 import type { Agent, PreStepDecision } + src/index.ts:53 export const inject = ['agents', 'sessionProjections'] + src/index.ts:185 ctx.on('agent/pre-step', ...)",
+        "purpose": "通过 agents 服务在 pre-step 瀑布上注入时间上下文，并复用其 PreStepDecision 契约"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:12 import { createUserMessage } + src/index.ts:20 import type { UserMessage } + src/index.ts:14-18 declare module '@deepseek-ai/dsh-llm' MessageSourceMap 'time-context'",
+        "purpose": "构造时间快照 user 消息，并声明 time-context 消息源参与上下文形成"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:21 import { SessionSeq } from '@deepseek-ai/dsh-session' + src/index.ts:91 agent.session.eventAt(SessionSeq(seq))",
+        "purpose": "按序号回溯会话事件，定位本轮 turn/start 以收集本轮已进入的 user 消息"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:22 import type {} from '@deepseek-ai/dsh-session-projection' + src/index.ts:157 ctx.sessionProjections.register({ key: 'timeContext', stateVersion: 2, ... })",
+        "purpose": "注册并读取可重放的时间读数投影，使节流与耗时基准在恢复会话后仍然成立"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/request-zone.ts:4 import { assertNever } + src/request-zone.ts:79 return assertNever(context, 'BrowserTimeZoneContext')",
+        "purpose": "对闭合的浏览器时区联合做穷尽断言，避免新增分支被静默漏掉"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-agent",
+    "name": "@deepseek-ai/dsh-agent",
+    "implementation": "提供 Agent 能力 seam 与事件词汇。AgentRegistry（ctx.agents）以 Map 维护活跃 agent 条目，用 AsyncLocalStorage 承载进程内 initiator 作用域，并通过 setFactory 把「创建/恢复」委派给由 loop 插件实现的 AgentFactory（src/index.ts:245-283、src/index.ts:358-374、src/index.ts:391-416）。register/enter/announce 组成可回滚的发布事务：enter 校验 agent.id 与 session.id 一致、以 scopeTarget(agent, agent) 作为事件载体，announce 串行派发 agent/created 并在 detach 请求时配对 agent/disposed（src/index.ts:459-494、src/index.ts:537-559）。dispatch.ts 的 agentEvents 把 agent 主体与作用域载体融合，使事件 subject 与 scope key 不可能漂移（src/dispatch.ts:107-149）；archive-admission 用 workspace/session-activity 与 workspace/session-stop 回答「该 Session 是否仍在 turn 中」并支持归档时取消（src/archive-admission.ts:26-38）。",
+    "provides": [
+      "ctx.agents（活跃 agent 注册表与 initiator 作用域，src/index.ts:245-283）",
+      "agent 事件词汇：agent/created、agent/disposed、agent/status、agent/inbox/inserted|claimed|discarded、agent/pre-step、agent/request、agent/request-error、agent/assistant-stream、agent/turn-stopping、agent/error（src/runtime-types.ts:246-393）",
+      "AgentFactory 接口（agent 创建/恢复的工厂 seam，src/index.ts:171-203）",
+      "sessionProjections 'turnBoundary' 投影键声明（src/projection.ts:4-9）",
+      "agent 作用域事件分发助手 agentCarrier/agentEvents/emitAgentEvent/assembleContextFor（src/dispatch.ts:94、src/dispatch.ts:107、src/dispatch.ts:158、src/dispatch.ts:174）",
+      "会话活动类型扩展点 SessionActivityKindMap 与 Inbox 契约（src/types.ts:21-27、src/runtime-types.ts:48-107）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/types.ts:7 import type ... from '@deepseek-ai/dsh-llm/types' + src/model-selection.ts:14 import ... from '@deepseek-ai/dsh-llm'",
+        "purpose": "复用 LLM 的消息、工具调用与模型选择类型，使 agent 选项与请求配置对齐"
+      },
+      {
+        "plugin_id": "dsh-scope",
+        "mechanism": "E1+E2",
+        "evidence": "src/dispatch.ts:10 import { scopeTarget } + src/index.ts:464 const carrier = scopeTarget(agent, agent)",
+        "purpose": "为每个 agent 建立作用域载体，使 agent 事件与工具/提示注册按 agent 作用域过滤"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:14 import type { SessionEvent, SessionId, SessionLogOffset } + src/index.ts:461 if (id !== agent.session.id) throw new Error(...)",
+        "purpose": "共享 agent/session 同一身份，并在注册边界校验会话事件与序号类型"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1",
+        "evidence": "src/projection.ts:2 import type {} from '@deepseek-ai/dsh-session-projection' + src/projection.ts:4 declare module '@deepseek-ai/dsh-session-projection/types'",
+        "purpose": "在投影状态表中声明 turnBoundary 键，供指令注入等消费者读取步边界事实"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E1",
+        "evidence": "src/dispatch.ts:12 import type { AssembleContext } + src/dispatch.ts:174 export function assembleContextFor(agent, signal)",
+        "purpose": "组装提示时同时带上 agent 与 scope，避免 agent 作用域贡献被静默遗漏"
+      },
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1",
+        "evidence": "src/types.ts:11 import type ... from '@deepseek-ai/dsh-typert-protocol' + src/index.ts:258 typeCtx.typert.lookups.register('agent', { wire: 'agentId', ... })",
+        "purpose": "注册 agent 的类型化 wire lookup 与 host context，使跨边界引用按 agentId 解析"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/types.ts:12 import ... from '@deepseek-ai/dsh-util-values'",
+        "purpose": "复用品牌化 id 与不可变值工具，保证跨边界不透明标识不是裸 string"
+      },
+      {
+        "plugin_id": "dsh-workspace",
+        "mechanism": "E1+E2",
+        "evidence": "src/archive-admission.ts:12 import type { SessionActivity } from '@deepseek-ai/dsh-workspace' + src/archive-admission.ts:27 ctx.on('workspace/session-activity', ...)",
+        "purpose": "回答 Workspace 归档准入的 turn 家族活动，并在归档时按用户停下的方式取消该 turn"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-agent-loop",
+    "name": "@deepseek-ai/dsh-agent-loop",
+    "implementation": "以 AgentLoop 服务实现 AgentFactory 与具体驱动。构造期注册 turnBoundary 与 inbox 两个会话投影、把自身登记为 agents 工厂、注册 provider/model 提示变量，并按配置启动/恢复声明式 agent（src/index.ts:377-390、src/index.ts:392-421）。createAgent/resume 走 prepare→setupAndPublish 的可回滚事务：先取会话写入句柄，再在未发布状态运行 setup 与其同步 commit，最后 enter+announce 两个注册表，逆序 teardown 收敛到 quiescence（src/index.ts:497-676、src/index.ts:750-816）。ReactLoopAgent 驱动 turn/step 边界：preStep 组装系统提示并跑 agent/pre-step 瀑布（src/agent.ts:267-288），step 内渲染提示、投影 runtime-context、流式消费 assistant 输出并在失败时走 agent/request-error（src/agent.ts:400-561）；工具调用交给 executeToolCalls 按 executionMode 做串行屏障或有界并行池调度，结果始终按模型顺序提交（src/tool-calls.ts:60-102、src/tool-calls.ts:122-247）。",
+    "provides": [
+      "ctx.agentLoop（具体 agent 驱动与 AgentFactory 实现，src/index.ts:341-342、src/index.ts:365-366）",
+      "sessionProjections 'turnBoundary' 与 'inbox' 投影定义（src/index.ts:57-95、src/inbox.ts:27-65）",
+      "agent-loop/config-start-failed 事件（声明式 agent 启动失败上报，src/index.ts:239-250）",
+      "可配置 agent 身份注入键 CONFIGURED_AGENT_IDENTITIES_KEY 与 DEFAULT_MAX_PARALLEL_TOOL_CALLS（src/index.ts:277、src/constants.ts:6）",
+      "工具调用调度器 executeToolCalls 与 durable inbox 实现 ReactLoopInbox（src/tool-calls.ts:60、src/inbox.ts:74）",
+      "运行时上下文投影 SystemPromptProjection/RuntimeContextProjection 与 assistant 流式帧累积器（src/runtime-context.ts:65、src/runtime-context.ts:114、src/assistant-stream.ts:18）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:14 import type { Agent, AgentFactory, AgentHandle } from '@deepseek-ai/dsh-agent' + src/index.ts:388 ctx.effect(() => ctx.agents.setFactory(this), ...)",
+        "purpose": "实现 AgentFactory 并向 agents 注册表登记，同时复用其 agent 事件与 inbox 契约驱动生命周期"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:13 import { brandString } from '@deepseek-ai/dsh-brand' + src/index.ts:395 brandString<SessionId>(`${id}-session-${randomUUID()}`)",
+        "purpose": "为配置驱动的 agent 生成品牌化 SessionId，保证跨边界标识不是裸 string"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1+E2",
+        "evidence": "src/agent.ts:19 import type { GenerateOptions, LlmCallConfig } + src/agent.ts:453 this.loopCtx.llm.stream(request)",
+        "purpose": "调用模型流式接口、构造 assistant/tool-result 消息并复用 LlmError 与失败分类"
+      },
+      {
+        "plugin_id": "dsh-scope",
+        "mechanism": "E1+E2",
+        "evidence": "src/agent.ts:29 import { createScope } from '@deepseek-ai/dsh-scope' + src/agent.ts:130 this.scope = createScope(loopCtx, this)",
+        "purpose": "为每个 agent 建立独立作用域，使工具与提示注册随 agent 生命周期收放"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:26 import { interruptedTurnClosers, SessionPreparation, SessionSeq } + src/index.ts:689 SessionPreparation.create(this.runtime.ctx.sessions.prepare(id, { meta }))",
+        "purpose": "创建/准备/进入会话、追加 turn/step/assistant/tool 事件，并对中断 turn 做语义修复"
+      },
+      {
+        "plugin_id": "dsh-session-persistence",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:32 import { SessionPersistenceNotFoundError } + src/index.ts:718 const handle = await persistence.create(session.header, { ... })",
+        "purpose": "为会话提供耐久写入句柄，并区分「确实不存在」与损坏/后端失败以决定是否回退首次创建"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:31 import type { ProjectionDefinition } + src/index.ts:378 ctx.sessionProjections.register(turnBoundaryProjectionDefinition)",
+        "purpose": "注册 turnBoundary 与 inbox 投影，使步边界与待处理输入可从会话日志重放"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E1+E2",
+        "evidence": "src/agent.ts:32 import { joinContextSections, renderContextSections, renderPrompt } + src/index.ts:389 ctx.systemPrompt.variable('provider', context => context.agent?.options.provider)",
+        "purpose": "组装每步系统提示与运行时上下文快照，并注册 provider/model 提示变量"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "src/tool-calls.ts:17 import { TOOL_RUNTIME_SCHEDULER, ... } from '@deepseek-ai/dsh-tools' + src/tool-calls.ts:170 await ctx.tools[TOOL_RUNTIME_SCHEDULER].prepare(call.exec)",
+        "purpose": "经内部调度器符号准备/派发/收尾工具调用，并按 executionMode 决定串行或并行"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/agent.ts:27 import { assertNever, deepFreeze } from '@deepseek-ai/dsh-util-values' + src/tool-calls.ts:18 import { assertNever }",
+        "purpose": "对闭合联合做穷尽断言并冻结请求消息，保证派生请求不可被下游改写"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-agent-tool-presentation",
+    "name": "@deepseek-ai/dsh-agent-tool-presentation",
+    "implementation": "以「一行 preset 声明」实现 agent 平面的工具呈现选择。apply() 在 native 模式下直接调用 ctx.tools.presentAs('native') 并按效果自身即 disposer 的方式展开（src/index.ts:63-66）；ptc 模式则先 ctx.inject(['ptcRuntime']) 等待宿主平面的 PTC 运行时，就绪后在子作用域调用 presentAs(config.mode)（src/index.ts:69-71）。因为 presentAs 是按调用作用域登记的，同一进程内 PTC preset 可与 native preset 并存；若部署未组合运行时，该行在挂载期即失败并被 preset 注册表点名为不可用行，而不是拖到首个提示才暴露（src/index.ts:54-71）。Config.mode 为必填，避免「组了这一行却没生效」的静默情况（src/index.ts:38-52）。",
+    "provides": [
+      "工具呈现模式声明行（native/ptc，按 preset 的常驻作用域对覆盖到的每个 agent 生效，src/index.ts:59-71）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:23 import type { ToolPresentationMode } from '@deepseek-ai/dsh-tools' + src/index.ts:64 ctx.tools.presentAs('native')",
+        "purpose": "复用工具注册表的按作用域呈现选择 API，把该 preset 的工具形态声明下推给覆盖的 agent"
+      },
+      {
+        "plugin_id": "dsh-ptc-runtime",
+        "mechanism": "E2",
+        "evidence": "src/index.ts:69 ctx.inject(['ptcRuntime'], (runtimeCtx: Context) => { runtimeCtx.tools.presentAs(config.mode) })",
+        "purpose": "PTC 模式需要宿主平面的 TypeScript PTC 运行时；按模式等待使缺失组合在挂载期响亮失败而非首次提示时"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-session",
+    "name": "@deepseek-ai/dsh-session",
+    "implementation": "以事件溯源实现会话存储与派生历史。Session 类持有 append-only 事件日志与单一增量 SurfaceManager（src/index.ts:522-530、src/index.ts:626-634），append 提交后由 commit() 广播 session/event，derived API（deriveMessages/requestHeader/requestContext/toolHistory）全部从同一日志折叠而来（src/index.ts:876、src/index.ts:912-1013）。SessionStore（ctx.sessions）提供 create/prepare/enter/announce 的可回滚发布事务（src/index.ts:1110-1121、src/index.ts:1209-1264）、按精确前缀的 fork（src/index.ts:1379-1397）以及经 carrier 派发的 session/flush 耐久检查点（src/index.ts:1318-1335）。持久化刻意不在本包内，由订阅 session/event 并在 session/flush 上落盘的插件承担（src/index.ts:1-7、src/index.ts:1042-1048）。",
+    "provides": [
+      "ctx.sessions（事件溯源会话存储 SessionStore，src/index.ts:1049-1057、src/index.ts:1076-1087）",
+      "会话事件词汇：session/created、session/disposed、session/event、session/flush（src/index.ts:43-83）",
+      "Session 类与派生历史 API：surface/deriveMessages/requestHeader/toolHistory/eventAt（src/index.ts:522-530、src/index.ts:912-1013）",
+      "会话格式版本与准备/修复工具：SESSION_FORMAT_VERSION、SessionPreparation、interruptedTurnClosers、ToolCallRecovery（src/index.ts:16、src/index.ts:29-32）",
+      "typert 的 session wire lookup 注册（src/index.ts:1078-1086）",
+      "插件私有记录的追加与识别 API：appendPluginRecord/pluginRecordOf（src/index.ts:492、src/index.ts:508）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:11 import { brandString } from '@deepseek-ai/dsh-brand' + src/index.ts:1145 brandString<SessionId>(`session-${++this.counter}`)",
+        "purpose": "生成品牌化 SessionId，使会话身份在跨包边界上不是裸 string"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:15 import type { Message } from '@deepseek-ai/dsh-llm' + src/index.ts:984 deriveMessages(): Message[]",
+        "purpose": "把事件日志折叠成 LLM 请求所需的消息历史与工具历史类型"
+      },
+      {
+        "plugin_id": "dsh-scope",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:13 import { scopeOf, scopeTarget } from '@deepseek-ai/dsh-scope' + src/index.ts:1211 const carrier = scopeTarget(session, scopeOf(this.ctx))",
+        "purpose": "为会话事件建立作用域载体，使 agent 作用域监听者只收到自己会话的事件"
+      },
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:17 import type { TypertLookup } from '@deepseek-ai/dsh-typert-protocol' + src/index.ts:1079 typeCtx.typert.lookups.register('session', { wire: 'sessionId', ... })",
+        "purpose": "注册 session 的类型化 wire lookup，并声明 TypertLookupMap 的 session 条目"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:12 import { assertNever, deepFreeze, snapshotJsonValue } from '@deepseek-ai/dsh-util-values' + src/index.ts:12 deepFreeze",
+        "purpose": "校验并冻结事件数据，保证耐久日志是可无损 JSON 往返的不可变记录"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-system-prompt",
+    "name": "@deepseek-ai/dsh-system-prompt",
+    "implementation": "以分层注册表实现系统提示组装。SystemPrompt 服务（ctx.systemPrompt）用 ScopedLayers 维护全局与各作用域分层的 sections/contexts/variables/toolProviders 及 runtimeContextSuppressors（src/index.ts:391-422、src/index.ts:435-438）；section()/context()/tools()/variable()/suppressRuntimeContext() 都经 ctx.effect 登记并返回精确 disposer（src/index.ts:474-566）。assemble() 沿作用域链合并（近作用域覆盖全局）、按中央 SECTION_ORDERS 排序、对工具 schema 做 canonical 排序与 toolOrder 校验，再跑 system-prompt/assemble 瀑布，最后把生效的 complete section 收敛为唯一提示段（src/index.ts:610-684）。refreshContext() 只重算被接受的运行时上下文，支持 required 与抑制语义（src/index.ts:578-598）。",
+    "provides": [
+      "ctx.systemPrompt（系统提示组装注册表，src/index.ts:13-16、src/index.ts:425-438）",
+      "system-prompt/assemble 瀑布与 system-prompt/change 通知（src/index.ts:19-38、src/index.ts:437）",
+      "中央区段/上下文排序表与查询方法：SECTION_ORDERS/CONTEXT_ORDERS、getSectionOrder/getContextOrder（src/index.ts:131-178、src/index.ts:490-501）",
+      "渲染助手：renderPrompt/renderContextSnapshot/joinContextSections/renderContextSections（src/index.ts:286、src/index.ts:298、src/index.ts:310、src/index.ts:326）",
+      "部署人设段名常量与 toolOrder 保留标记（PERSONA_PREFIX_SECTION/PERSONA_SUFFIX_SECTION/TOOL_ORDER_REST，src/index.ts:186-198）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:11 import type { ContextSnapshotSection, ToolSchema } from '@deepseek-ai/dsh-llm' + src/index.ts:638 result.schemas.map(({ name, description, parameters, deferLoading }): ToolSchema => ...)",
+        "purpose": "复用 LLM 的工具 schema 与上下文快照类型，使组装结果可直接作为模型输入"
+      },
+      {
+        "plugin_id": "dsh-scope",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:9 import { AnonymousEntries, NamedEntries, ScopedLayers, scopeTarget } from '@deepseek-ai/dsh-scope' + src/index.ts:673 this.ctx.waterfall(",
+        "purpose": "提供分层注册与按 scope 过滤的瀑布派发，使 agent/preset 作用域贡献可覆盖全局且只影响自身"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tools",
+    "name": "@deepseek-ai/dsh-tools",
+    "implementation": "以作用域分层注册表实现工具 seam 与执行流水线。ToolRuntime（ctx.tools）用 ScopedLayers 维护工具定义、限制与 guard（src/index.ts:735-778、src/index.ts:834-837），register/restrict/guard/presentAs 均返回精确 disposer（src/index.ts:1069、src/index.ts:1103、src/index.ts:1142、src/index.ts:983）。同一次可见性解析（view）同时喂给提示 schema 提供者、查找与分发，保证模型所见与可调用集合一致（src/index.ts:1017-1050、src/index.ts:1184-1236）。执行按 pre-execute 瀑布 → 审批解析 → tools/execute 瀑布 → post-execute 瀑布推进，含调用方取消信号融合、结果归一化与冻结快照（src/index.ts:1375-1397、src/index.ts:1510-1513、src/index.ts:1610-1613）。ptc 模式经 createRunCodeTool 生成唯一 run_code 传输与语言化 SDK 段，并由 TOOL_RUNTIME_SCHEDULER 符号向 agent-loop 暴露分阶段调度（src/index.ts:481、src/ptc.ts:30）。",
+    "provides": [
+      "ctx.tools（工具注册表与执行流水线，src/index.ts:138-141、src/index.ts:808-822）",
+      "工具事件词汇：tools/pre-execute、tools/execute、tools/post-execute、tools/ptc-dispatch-log、tools/result、tools/change（src/index.ts:143-210）",
+      "工具定义与 schema 构造助手：defineTool/validateArgs/parameterSchemaSpecToJsonSchema（src/schema.ts:449、src/schema.ts:478、src/schema.ts:554）",
+      "内部调度器符号 TOOL_RUNTIME_SCHEDULER 与工具呈现选择 presentAs（src/index.ts:481、src/index.ts:983）",
+      "工具 UI 呈现视图类型：ToolCallView/ToolResultView（src/presentation.ts:46、src/presentation.ts:140）",
+      "工具错误类型与中止码：ToolNotFoundError/ToolOutputError/TOOL_ABORTED/TOOL_ABORTED_BEFORE_DISPATCH（src/index.ts:484、src/index.ts:487、src/index.ts:511、src/index.ts:530）",
+      "JSON Schema 校验能力：assertSupportedJsonSchema/validateJsonSchemaValue（src/json-schema.ts:385、src/json-schema.ts:654）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:14 import type { Agent } from '@deepseek-ai/dsh-agent' + src/index.ts:1403 const agent = exec.agent",
+        "purpose": "把调用方 agent 作为工具执行的主体，用于作用域解析、审批路由与 PTC 工作目录归属"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "src/ptc.ts:9 import { brandString } from '@deepseek-ai/dsh-brand'",
+        "purpose": "为 PTC 子调用生成品牌化标识，避免跨边界出现裸 string 身份"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:12 import type { ToolCallId, ContentBlock, ToolSchema } + src/index.ts:13 import { HarnessError }",
+        "purpose": "复用模型可见的内容块/工具 schema 类型与统一错误基类，保证工具结果可直接入请求历史"
+      },
+      {
+        "plugin_id": "dsh-ptc-runtime",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:18 import type { PtcRuntime } from '@deepseek-ai/dsh-ptc-runtime' + src/index.ts:965 peekRuntime: () => this.ctx.get('ptcRuntime')",
+        "purpose": "PTC 模式下把 run_code 的执行交给宿主平面的 PTC 运行时，并按其 language 选择 SDK 渲染器"
+      },
+      {
+        "plugin_id": "dsh-sandbox",
+        "mechanism": "E1",
+        "evidence": "src/ptc.ts:20 import { approveEscalation, ESCALATION_TARGETS, validateEscalationArgs } from '@deepseek-ai/dsh-sandbox'",
+        "purpose": "复用沙箱升级目标与参数校验，使 PTC 程序的 sandbox_permissions 申请走既有升级通道"
+      },
+      {
+        "plugin_id": "dsh-sandbox-policy",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:19 import type {} from '@deepseek-ai/dsh-sandbox-policy' + src/index.ts:958 const policy = this.ctx.get('sandboxPolicy')",
+        "purpose": "解析调用方 session 的沙箱策略并下传给受限 PTC 运行时；缺失时响亮失败"
+      },
+      {
+        "plugin_id": "dsh-scope",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:10 import { AnonymousEntries, NamedEntries, ScopedLayers, scopeOf, scopeTarget } from '@deepseek-ai/dsh-scope' + src/index.ts:985 if (scopeOf(ctx) === undefined) throw new Error(...) + src/index.ts:1510 scopeTarget(this, exec.agent)",
+        "purpose": "提供工具可见性、限制与呈现模式的作用域分层，使 agent/preset 可各自收窄工具集合"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:15 import type { UserMessage } from '@deepseek-ai/dsh-session' + src/index.ts:426 deferContext(context: UserMessage): void",
+        "purpose": "承载工具延迟到下一步的上下文消息类型，使工具可声明下一步才可见的输入"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:17 import type { PromptSection, ToolProviderResult } from '@deepseek-ai/dsh-system-prompt' + src/index.ts:855 ctx.systemPrompt.tools(context => this.wireSchemas(context.scope))",
+        "purpose": "把可见工具 schema 与 ptc-only/SDK 提示段注册进系统提示组装"
+      },
+      {
+        "plugin_id": "dsh-user-approval",
+        "mechanism": "E1+E2",
+        "evidence": "src/ptc.ts:22 import type { ApprovalService } from '@deepseek-ai/dsh-user-approval' + src/index.ts:1737 const approval = this.ctx.get('approval')",
+        "purpose": "把 pre-execute 的 ask 决策路由到人工审批通道；无通道时按契约降级为拒绝"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:16 import { assertNever, deepFreeze, snapshotJsonValue, type JsonValue } from '@deepseek-ai/dsh-util-values' + src/index.ts:561 function snapshotToolValue(toolName",
+        "purpose": "对工具返回值做 JSON 值快照与深冻结，保证结果可无损落盘且不被下游改写"
+      },
+      {
+        "plugin_id": "dsh-working-directory",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:7 import type {} from '@deepseek-ai/dsh-working-directory' + src/index.ts:951 const directories = this.ctx.get('workingDirectory')",
+        "purpose": "为 Agent 所属的 run_code 解析工作目录；缺失时报错而不是静默使用进程目录"
+      }
+    ],
+    "dependents": []
+  }
+]

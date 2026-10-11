@@ -1,0 +1,406 @@
+[
+  {
+    "id": "dsh-subprocess-local",
+    "name": "@deepseek-ai/dsh-subprocess-local",
+    "implementation": "以 LocalSubprocessRuntime extends SubprocessRuntime 的方式实现 ctx.subprocess 的本地 provider：构造函数用 ctx.effect 挂 process 'exit' 同步兜底终止，正常销毁时先 SIGTERM 再按 graceMs 升级 SIGKILL，并等待整个受管进程范围退出而非仅直接子进程 (src/index.ts:59-85, src/index.ts:107-138)。spawn() 先 validateSubprocessSpec，再按平台探测结果在 linux-scope / windows-job / fallback 三种收容模式中择一，绑定 stdio 处置、spill 采集与取消/超时生命周期 (src/index.ts:182-232, src/spawn.ts:267-446)。spawnTerminal() 通过懒加载的 node-pty 分配 PTY，并在 Linux 下把终端套进 scope 所有者；fallback 路径用 detached PGID + taskkill 做弱收容 (src/index.ts:264-335, src/spawn.ts:454-492)。resolveExecutable 按 PATH/PATHEXT 逐候选 stat + X_OK 校验，失败抛 SubprocessExecutableNotFoundError (src/index.ts:140-180)。",
+    "provides": [
+      "ctx.subprocess (子进程 seam 的本地实现：平台选择的托管进程范围收容、stdio 处置与 spill 采集、PTY 终端分配、可执行文件解析)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-subprocess",
+        "mechanism": "E1",
+        "evidence": "package.json:45 peerDep + src/index.ts:20 import (SubprocessRuntime, SubprocessExecutableNotFoundError)",
+        "purpose": "继承 seam 抽象基类以注册 ctx.subprocess 服务，并复用 SubprocessSpawnSpec / SubprocessHandle / scrubbedParentEnv 等契约类型与工具函数"
+      },
+      {
+        "plugin_id": "dsh-timeout",
+        "mechanism": "E1",
+        "evidence": "package.json:46 peerDep + src/spawn.ts:15 import { MAX_TIMER_DELAY_MS }",
+        "purpose": "用统一的计时器上限常量校验 spec.graceMs，避免超出 Node 定时器可表示范围"
+      },
+      {
+        "plugin_id": "dsh-lazy-require",
+        "mechanism": "E1",
+        "evidence": "package.json:50 dependency + src/index.ts:19 import { createLazyRequire }",
+        "purpose": "把 node-pty 等原生模块推迟到真正需要时再 require，避免非终端路径的加载成本与平台差异"
+      },
+      {
+        "plugin_id": "dsh-win32-process",
+        "mechanism": "E1",
+        "evidence": "package.json:51 dependency + src/windows-job.ts:12 import from '@deepseek-ai/dsh-win32-process'",
+        "purpose": "Windows 上以 Job Object 实现进程树收容与进程检查，替代 POSIX 进程组语义"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-otel",
+    "name": "@deepseek-ai/dsh-otel",
+    "implementation": "OTel extends Service 以 'otel' 名注册 ctx.otel，本身不建队列/身份/连接，只暴露两个工厂方法 createEventReporter 与 createSessionLogReporter，每个通道各自独立 (src/index.ts:13-31)。普通事件通道用 SDK BatchLogRecordProcessor 做按条数批量，并把导出包在 got 实现的可取消 HTTP 传输上，shutdown 时销毁自有 agent (src/event-log.ts:40-93, src/event-transport.ts:16-56)。Session 日志通道自实现 SessionLogProcessor：入队前用 JsonLogsSerializer 实测字节，超 maxRequestBytes 整条拒绝而非截断，按字节/条数上限分批且同一时刻只允许一个在途请求 (src/session-log.ts:72-181)。传输层通过 createOtlpHttpExportDelegate + JsonLogsSerializer 构造显式 OTLP JSON exporter，不继承其它 collector 的 header/TLS 身份 (src/transport.ts:26-29, src/transport.ts:45-60)。",
+    "provides": [
+      "ctx.otel (独立 OTLP 日志通道工厂：普通事件按条数批量上报 + Session 日志按字节上限批量上报，两者队列与传输互不共享)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "package.json:41 peerDep + src/session-log.ts:2 import type { SessionEvent, SessionId }",
+        "purpose": "Session 日志记录以 Session 事件信封与 SessionId 作为内容与身份载体（sessionId 与 content 由 reporter 强制赋值）"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-terminal-bash",
+    "name": "@deepseek-ai/dsh-terminal-bash",
+    "implementation": "apply() 解析并校验配置后，把 BashTerminalBackend 注册进 ctx.terminals 的 backendType（默认 'shell'）槽位，从而以终端 seam 的 provider 身份提供持久 PTY shell (src/index.ts:234-239, src/config.ts:93-110)。spawn() 先经 ensureSandboxModeFence 在 owner 的 internal/dispatch 上挂沙箱模式变更围栏（有活动终端时拒绝改 mode），再用 ctx.sandboxPolicy.resolve 取策略、非 full-access 时经 ctx.get('sandbox').confine 包裹 argv，最后走 ctx.subprocess.spawnTerminal 并按方言做启动就绪握手 (src/index.ts:38-63, src/index.ts:101-110, src/index.ts:202-231)。LocalPtySession 用 @xterm/headless 维护有界滚动缓冲，靠 CONTROLLED_PROMPT 标记 + 前台进程组采样判定 stdin_read/inferred_idle/session_exit (src/session.ts:278-305, src/session.ts:549-608)。",
+    "provides": [
+      "ctx.terminals (注册 `shell` 类型的本地持久 PTY 后端：按 session 打开交互式 bash/pwsh 并给出有界输出与就绪判定)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-terminal",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:31 peerDep + src/index.ts:11-12 import (TerminalBackend, TerminalBackendCleanupError) + src/index.ts:41 ctx.terminals",
+        "purpose": "实现 TerminalBackend 契约并通过 ctx.terminals.registerBackend 把本地后端登记进终端注册表"
+      },
+      {
+        "plugin_id": "dsh-subprocess",
+        "mechanism": "E2",
+        "evidence": "package.json:35 peerDep + src/index.ts:13 import type + src/index.ts:193 ctx.subprocess.spawnTerminal(spec)",
+        "purpose": "通过 subprocess seam 的终端原语实际分配 PTY，而不直接依赖 node-pty"
+      },
+      {
+        "plugin_id": "dsh-sandbox",
+        "mechanism": "E2",
+        "evidence": "package.json:32 peerDep + src/index.ts:14 import type { SandboxExecutionPolicy } + src/index.ts:106 ctx.get('sandbox')",
+        "purpose": "非 danger-full-access 模式下用 sandbox provider 的 confine() 把 shell argv 包进沙箱包装器"
+      },
+      {
+        "plugin_id": "dsh-sandbox-policy",
+        "mechanism": "E2",
+        "evidence": "package.json:33 peerDep + src/index.ts:42 ctx.sandboxPolicy + src/index.ts:205 resolve({ session })",
+        "purpose": "解析调用方 Session 当前生效的执行策略（mode 与围栏配置）作为启动 shell 的输入"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E2",
+        "evidence": "package.json:37 peerDep + src/index.ts:16 import type {} + src/index.ts:43 ctx.sessionProjections (stateOf 于 src/index.ts:56)",
+        "purpose": "读取 sandboxMode 投影的折叠状态，作为围栏比较的当前模式依据"
+      },
+      {
+        "plugin_id": "dsh-working-directory",
+        "mechanism": "E2",
+        "evidence": "package.json:38 peerDep + src/index.ts:7 import type {} + src/index.ts:211 ctx.workingDirectory.ensure(owner, signal)",
+        "purpose": "在调用方未显式给 cwd 时解析并确保该 Agent 的工作目录"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "package.json:34 peerDep + src/index.ts:10 import type { Session, SessionEvent }",
+        "purpose": "围栏监听 session/event 时需要 Session 与 SessionEvent 的类型面（判断 sandbox/mode 事件）"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "package.json:30 peerDep + src/index.ts:9 import type { Agent }",
+        "purpose": "后端以 Agent 为 owner 单位持有会话与围栏状态（sandboxModeFences 以 Agent 为键）"
+      },
+      {
+        "plugin_id": "dsh-pwsh-local",
+        "mechanism": "E1",
+        "evidence": "package.json:42 dependency + src/config.ts:4 import { resolvePwshPath } + src/index.ts:17 import { ENCODING_PREAMBLE }",
+        "purpose": "pwsh 方言下解析 shell 可执行路径，并在启动时写入 UTF-8 编码前导"
+      },
+      {
+        "plugin_id": "dsh-lazy-require",
+        "mechanism": "E1",
+        "evidence": "package.json:41 dependency + src/session.ts:5 import { createLazyRequire }",
+        "purpose": "把 @xterm/headless 终端模拟器推迟到构造会话时再加载"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-todo",
+    "name": "@deepseek-ai/dsh-tool-todo",
+    "implementation": "apply() 在 ctx.sessionProjections 注册 'todos' 投影单元（init 为 null，apply 时 todo/write 整体替换、turn/start 清空，stateVersion 2），并在 ctx.tools 注册模型面向的 todo_write 工具 (src/index.ts:117-134, src/index.ts:135-211)。工具参数是 COMPLETE 任务清单，execute 先经 toTodoList 做 trim 非空、去重、以及非并行部署下至多一个 in_progress 的校验，再 append('todo/write', { todos }) 到调用方 Agent 的 session，非 Agent 调用直接拒绝 (src/index.ts:80-100, src/index.ts:192-208)。描述文案只在 active-status 子句上按 allowParallelInProgress 切换 (src/index.ts:45-67)。类型侧在 types.ts 里声明 todo/write 事件与 todos 投影键，client.ts 与 index.ts 都只是同一真相源的命名空间再导出 (src/types.ts:28-46, src/client.ts:10)。",
+    "provides": [
+      "ctx.tools (注册 `todo_write` 模型工具：整表替换式待办清单写入)",
+      "ctx.sessionProjections (注册 `todos` 投影单元：最新 todo/write 快照，turn/start 后清空)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E2",
+        "evidence": "package.json:42 peerDep + src/index.ts:12 import { defineTool } + src/index.ts:135 ctx.tools.register",
+        "purpose": "用 defineTool 定义 schema/输出渲染并把 todo_write 登记进工具注册表"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E2",
+        "evidence": "package.json:41 peerDep + src/index.ts:15 import type {} + src/index.ts:123 ctx.sessionProjections.register",
+        "purpose": "注册 todos 投影单元，使 UI/客户端能从 session 事件流折叠出当前待办列表"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "package.json:40 peerDep + src/types.ts:28-33 declare module '@deepseek-ai/dsh-session/types' 增补 'todo/write' + src/index.ts:199 exec.agent.session.append",
+        "purpose": "把待办快照作为 session 事件写入事件溯源日志（日志即唯一真相源）"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "package.json:39 peerDep (Agent 会话身份类型面；src/index.ts:194 以 exec.agent 判定归属)",
+        "purpose": "待办清单是 per-agent-session 状态，需要 Agent 身份来定位归属会话"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "cordis-plugin-loader",
+    "name": "@deepseek-ai/cordis-plugin-loader",
+    "implementation": "Loader extends EntryTree 以 'loader' 名注册 ctx.loader，持有 entry 树（Entry/EntryGroup）、隔离 realm 与模块加载器，负责按配置导入插件并管理其 fiber 生命周期 (src/index.ts:77-102, src/config/tree.ts:7-20, src/config/entry.ts:43-59)。构造时挂三个全局钩子：internal/config 上对非树载体 entry 的配置做 !!js 表达式插值，internal/update 上把运行时配置 simplify 后回写配置树，internal/plugin 上依据 entry 归属与 fiber 状态判定自卸载并置 disabled (src/index.ts:104-127, src/index.ts:129-166, src/config/utils.ts:5-22)。配置变更的等价判定走 equalExceptVolatile，只把 schema 声明的 volatile 字段视为相等，不执行表达式或校验器 (src/config/diff.ts:43-45)。internal.ts 按 loader 自身拥有的 module-job API 形状（v1/v2）分类 Node 内部 ESM loader，供 HMR 使用 (src/internal.ts:131-143)。",
+    "provides": [
+      "ctx.loader (插件加载器服务：entry 树与分组、隔离 realm、配置插值与持久化回写、fiber 生命周期与自卸载判定)",
+      "Entry / EntryGroup / Realm / EntryTree 等可复用加载器 API (src/index.ts:10-21 再导出)"
+    ],
+    "depends_on": [],
+    "dependents": []
+  },
+  {
+    "id": "dsh-web-search-deepseek",
+    "name": "@deepseek-ai/dsh-web-search-deepseek",
+    "implementation": "apply() 把 DeepSeekSearchProvider 注册进 ctx.web 的搜索 provider 槽位，provider 的选项由 thunk 每次操作现取，避免一次搜索跨两个配置段落 (src/index.ts:140-144, src/provider.ts:196-203)。resolveOptions 组装凭据与端点：账号令牌优先（仅当最新 request context 的 provider 为 deepseek-account 时向 ctx.get('deepseekAccount') 解析），否则回落 credentials 服务或启动环境里的 DEEPSEEK_API_KEY，端点独立于 $DEEPSEEK_BASE_URL 而走 DEEPSEEK_SEARCH_BASE_URL (src/index.ts:99-137)。search() 以 Anthropic 兼容 Messages API + 原生 web_search_20250305 工具发一次模型调用，把 web_search_tool_result 的条目与 text 块 citations 里的 cited_text 按 url 合并成 sources，无结果块则报 WEB_PROVIDER_ERROR (src/provider.ts:213-292, src/provider.ts:126-137, src/provider.ts:150-179)。分发前的脱敏请求会先 append 成 web/deepseek-search-llm-request 事件 (src/provider.ts:79-84, src/index.ts:130-135)。",
+    "provides": [
+      "ctx.web (注册 id 为 `deepseek-official` 的 WebSearchProvider：经 DeepSeek Anthropic 兼容 Messages API 的原生 web_search 实现检索)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-web",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:35 peerDep + src/index.ts:18 import type {} + src/provider.ts:9 import { WebError } + src/index.ts:141 ctx.web.registerSearchProvider",
+        "purpose": "实现 WebSearchProvider 契约、复用 WebError 错误词汇，并注册进搜索 provider 注册表"
+      },
+      {
+        "plugin_id": "dsh-credentials",
+        "mechanism": "E2",
+        "evidence": "package.json:31 peerDep + src/index.ts:14 import { credentialRef } + src/index.ts:117 ctx.get('credentials').resolve",
+        "purpose": "把 apiKeyEnv 规范化为凭据引用并按操作解析密钥，避免密钥进入配置文件"
+      },
+      {
+        "plugin_id": "dsh-deepseek-account",
+        "mechanism": "E2",
+        "evidence": "package.json:32 peerDep (optional) + src/index.ts:15 import type {} + src/index.ts:113 ctx.get('deepseekAccount')?.resolveToken(endpoint)",
+        "purpose": "当发起搜索的会话走 DeepSeek 账号路由时，用账号令牌替代 API key 认证"
+      },
+      {
+        "plugin_id": "dsh-launch-environment",
+        "mechanism": "E2",
+        "evidence": "package.json:33 peerDep + src/index.ts:16 import { launchEnvironmentOf } + src/index.ts:119 launchEnvironmentOf(ctx).get(apiKeyEnv)",
+        "purpose": "在 credentials seam 缺席时把启动环境当作完整凭据面，并读取搜索专用端点环境变量"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E2",
+        "evidence": "package.json:30 peerDep + src/index.ts:13 import type {} + src/index.ts:111 ctx.get('agents')?.currentInitiator()",
+        "purpose": "从当前发起者会话读取 request context 的 provider，决定是否走账号令牌路径；并作为事件记录归属"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "package.json:34 peerDep + src/index.ts:17 import type {} + src/provider.ts:79-84 declare module '@deepseek-ai/dsh-session/types' 增补 web/deepseek-search-llm-request",
+        "purpose": "把分发前的脱敏请求作为 session 事件留痕，使模型可见的辅助输入不会逃逸日志"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-workflow",
+    "name": "@deepseek-ai/dsh-tool-workflow",
+    "implementation": "apply() 先在 ctx.systemPrompt 注册 tool:<toolName> 用法段（把“仅显式要求时使用”的调用策略作为工具自带提示而非 persona 文本），再在 ctx.tools 注册 workflow 工具 (src/index.ts:315-328)。execute 前台分支调用 ctx.workflowEngine.start 并 await run.result，非 completed 的 stopReason 一律映射成工具错误，finally 里必定 dispose 并收尾记录 (src/index.ts:430-479)。后台分支经 ctx.get('jobs').start 把运行注册为 kind 'workflow' 的 job，脚本在 starter 内启动、结算即 job 结算，返回值随 job result 回传 (src/index.ts:262-313)。两个观察者：createWorkflowRecorder 把 workflow/agent-start|agent-end 落成 tool-workflow/* 持久事件，createWorkflowRecordMirror 把 workflow/phase|log 与成员事件镜像进 job 输出环 (src/index.ts:93-151, src/record.ts:37-63)。",
+    "provides": [
+      "ctx.tools (注册 `workflow` 模型工具：运行 JS 编排脚本 fan-out 子 agent 并返回脚本最终值)",
+      "ctx.systemPrompt (注册 `tool:workflow` 用法段，声明仅显式要求编排时才使用)",
+      "Session 事件 tool-workflow/run-start|agent-start|agent-end|run-end (顶层 workflow 运行的持久留痕)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-workflow",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:42 peerDep + src/index.ts:26 import type { WorkflowResult, WorkflowRun } + src/index.ts:433 ctx.workflowEngine.start",
+        "purpose": "把脚本解析/执行/上限/取消全部留在 workflowEngine seam 之后，工具只持有模型可见 schema 与运行生命周期"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E2",
+        "evidence": "package.json:41 peerDep + src/index.ts:17-18 import { defineTool } + src/index.ts:328 ctx.tools.register",
+        "purpose": "用 defineTool 声明参数与 oneOf 输出 schema，并把工具登记进注册表"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E2",
+        "evidence": "package.json:40 peerDep + src/index.ts:323 ctx.systemPrompt.section(...) (order 取自 src/index.ts:325 getSectionOrder)",
+        "purpose": "把工具用法策略作为独立 prompt 段落注册，随工具存在而生效"
+      },
+      {
+        "plugin_id": "dsh-jobs",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:37 peerDep + src/index.ts:21 import type { JobId, JobOutcome } + src/index.ts:269 ctx.get('jobs') / src/index.ts:274 jobs.start",
+        "purpose": "run_in_background 分支把运行登记为受控 job，复用 job 的输出环、完成通知与 kill 取消路径"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "package.json:39 peerDep + src/index.ts:22 import type { Session, SessionEventMap } + src/types.ts:8 import type { SessionId }",
+        "purpose": "把顶层 workflow 运行与成员生命周期写成调用方 session 的持久事件"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "package.json:36 peerDep + src/index.ts:19 import type { Agent }",
+        "purpose": "工具以调用方 Agent 为 parent 归置子 agent 与 job owner，非 Agent 调用直接拒绝"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "package.json:38 peerDep + src/index.ts:20 import type { ContentBlock }",
+        "purpose": "结果渲染卡片类型需要 llm 的内容块词汇"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:23 import type { JsonValue } from '@deepseek-ai/dsh-util-values' (package.json:34-46 未声明该依赖)",
+        "purpose": "工具返回值按 JsonValue 约束与序列化渲染"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-workflow-ptc",
+    "name": "@deepseek-ai/dsh-workflow-ptc",
+    "implementation": "PtcWorkflowEngine extends WorkflowEngine 并 static inject ['subagents','ptcRuntime','sandboxPolicy','workingDirectory']，构造时要求 ctx.ptcRuntime.language 为 typescript，否则直接拒绝启动 (src/index.ts:103-122)。start() 先 validateMeta 校验调用方数据形状（未知字段、缺失/错型 name/description、phases 结构），再用宿主侧 vm.Script 只解析不执行地预检脚本体，并把并发/总量/单次条目/同步超时等上限解析进 WorkerLimits (src/index.ts:134-154, src/meta.ts:76-81, src/index.ts:55-65)。执行交给 PtcWorkflowRun：它在共享沙箱 Node PTC 进程里以 data:URL 导入 guest 源码运行脚本，自身负责子 agent 所有权、取消时中止并回收子 agent、以及等待受管进程与全部子启动/销毁后结算 (src/host.ts:113-145, src/host.ts:26-27, src/host.ts:151-156)。进度经 observer 回调发出 workflow/phase|log|agent-start|agent-end，结束发 workflow/end（只带结果数据，值留在 holder）(src/index.ts:169-186)。返回值从 vm realm 物化成纯 JSON，非 JSON 值（bigint/函数/环/稀疏数组/奇异原型）按路径报错 (src/realm.ts:62-72)。",
+    "provides": [
+      "ctx.workflowEngine (在共享沙箱 Node PTC 运行时里执行 workflow 脚本的引擎实现)",
+      "workflow/start|phase|log|agent-start|agent-end|end 事件 (运行生命周期与进度广播)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-workflow",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:36 peerDep + src/index.ts:15 import WorkflowEngine, { WorkflowError } + src/index.ts:169-172 this.emitWorkflowEvent(...)",
+        "purpose": "继承 WorkflowEngine seam 基类并按其契约发出 workflow/* 事件、复用 WorkflowError 与 WorkflowRun 类型"
+      },
+      {
+        "plugin_id": "dsh-ptc-runtime",
+        "mechanism": "E2",
+        "evidence": "package.json:37 peerDep + src/index.ts:11 import type {} + src/index.ts:118 ctx.ptcRuntime.language (运行时经 src/index.ts:161 runCtx.ptcRuntime 注入 host)",
+        "purpose": "借共享沙箱 PTC 运行时提供进程隔离、JSON 通道与取消，脚本因此没有 fs/network/timer 能力"
+      },
+      {
+        "plugin_id": "dsh-subagent",
+        "mechanism": "E2",
+        "evidence": "package.json:34 peerDep + src/host.ts:8 import type SubagentRuntime + src/index.ts:76 ctx.subagents.getProvider(provider)",
+        "purpose": "agent() 钩子通过 subagents seam 的 provider 启动/销毁子 agent，并把结果映射成 ChildResult"
+      },
+      {
+        "plugin_id": "dsh-sandbox-policy",
+        "mechanism": "E2",
+        "evidence": "package.json:39 peerDep + src/index.ts:12 import type {} + src/index.ts:167 ctx.sandboxPolicy.resolve({ session: request.parent.session })",
+        "purpose": "按调用方 Session 解析执行策略，作为 PTC 子进程的文件策略输入"
+      },
+      {
+        "plugin_id": "dsh-working-directory",
+        "mechanism": "E2",
+        "evidence": "package.json:40 peerDep + src/index.ts:13 import type {} + src/host.ts:142 ctx.workingDirectory.ensure(parent, signal)",
+        "purpose": "为运行解析父 Agent 的工作目录，作为沙箱进程 cwd 依据"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1",
+        "evidence": "package.json:35 peerDep + src/host.ts:10-11 import { assertObjectJsonSchema } + src/runtime.ts:12 import { JsonSchemaError }",
+        "purpose": "校验脚本传入的 structured-output schema 属于受支持的 object-rooted JSON Schema 子集"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "package.json:31 peerDep + src/host.ts:3 import type { Agent }",
+        "purpose": "运行以父 Agent 为归属，子 agent 与工作目录均挂在该 Agent 上"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "package.json:33 peerDep + src/host.ts:7 import { SessionId } + src/runtime.ts:11 import type { SessionId }",
+        "purpose": "子 agent 的会话身份（childId）按 SessionId 品牌传递与校验"
+      },
+      {
+        "plugin_id": "dsh-sandbox",
+        "mechanism": "E1",
+        "evidence": "package.json:38 peerDep + src/host.ts:6 import type { SandboxExecutionPolicy }",
+        "purpose": "执行策略类型来自 sandbox seam，用于约束 PTC 进程的文件访问"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "package.json:32 peerDep + src/types.ts:7 import type { ContentBlock } + src/runtime.ts:10 import type { ContentBlock }",
+        "purpose": "无 schema 的 agent() 结果需要把子 agent 的 llm 内容块压平成文本"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "package.json:43 dependency + src/runtime.ts:9 import { brandString }",
+        "purpose": "把 guest 传来的 childId 字符串在宿主侧重新品牌化为 SessionId"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "package.json:44 dependency + src/host.ts:12 import { snapshotJsonValue }",
+        "purpose": "把 PTC 绑定边界上的值做无损 JSON 快照，保证跨进程传输不丢形状"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-workspace",
+    "name": "@deepseek-ai/dsh-workspace",
+    "implementation": "WorkspaceRegistry extends Service 以 'workspaceRegistry' 名注册，static inject ['storageDomain','sessionPersistence']；Service.init 里打开 workspace 域（v2：workspaces 表 + global 单例）、恢复未完成的两次写标记、校验已存状态，未初始化时先建 header 索引再跑一次性 history bootstrap，最后索引在线 session 并重建实体缓存 (src/index.ts:170-218, src/spec.ts:76-84)。对外提供 create/initializeDefault/list/insertBefore/delete 与 archiveSession/unarchiveSession/pinSession/unpinSession 等耐久操作，全部经 enqueueOperation 串到同一条写链上，check-then-write 不可交错 (src/index.ts:236-242, src/index.ts:363-385, src/index.ts:397-464)。归档前用 waterfall 'workspace/session-activity' 询问各 provider 是否仍有活动（非空即拒），带 stopActivity 时先落盘再 parallel 'workspace/session-stop' 广播停止请求，失败只记日志不回滚归档 (src/index.ts:371-383, src/index.ts:480-491)。实体写入统一走 table.update 单写路径，在同一链槽内 stamp updatedAt 并剪除已失效的候选 session，无变化则用哨兵中止以免重写介质 (src/entity.ts:202-220)。",
+    "provides": [
+      "ctx.workspaceRegistry (持久 workspace 注册表：目录归属与稳定顺序、归档/置顶全局集合、会话成员校验)",
+      "workspace/session-activity 与 workspace/session-stop 事件 (归档前的活动查询 waterfall 与停止广播 parallel 的扩展点)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-storage-domain",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:34 peerDep + src/index.ts:13 import type { DomainGlobal, KvTable } + src/spec.ts:11 import { defineDomain, domainTable } + src/index.ts:198 ctx.storageDomain.open(workspaceDomainSpec)",
+        "purpose": "用 defineDomain 声明 workspace 域并借 storageDomain 打开表与 global 状态，取得原子写与 schema 校验边界"
+      },
+      {
+        "plugin_id": "dsh-session-persistence",
+        "mechanism": "E2",
+        "evidence": "package.json:33 peerDep + src/index.ts:12 import type {} + src/index.ts:171 static inject ['storageDomain','sessionPersistence']",
+        "purpose": "启动等待持久化服务就绪并从中列举/读取 session header，用于一次性 history bootstrap 与成员校验（该依赖是强制的，缺席不得被误当成空历史）"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:32 peerDep + src/index.ts:11 import type { SessionHeader, SessionId } + src/index.ts:260 ctx.get('sessions')",
+        "purpose": "以 SessionHeader 的 canonical cwd 判定 workspace 成员资格，并在 create/initializeDefault 时用在线 session store 判断是否为空历史"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "package.json:37 dependency + src/spec.ts:9 import { brandString } + src/types.ts:8 import type { Branded }",
+        "purpose": "WorkspaceId 与 SessionId 的品牌化，使 id 在类型层不可与普通字符串混用"
+      },
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1",
+        "evidence": "package.json:36 peerDep + src/types.ts:10 import type {} + src/types.ts:18-23 declare module 增补 'workspace/not-found'",
+        "purpose": "把 workspace 的远程错误细节登记进 typert 协议，供 RPC 层生成结构化错误"
+      }
+    ],
+    "dependents": []
+  }
+]

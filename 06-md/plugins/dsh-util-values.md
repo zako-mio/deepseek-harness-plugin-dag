@@ -2,7 +2,7 @@
 
 - 包名: `@deepseek-ai/dsh-util-values`
 - 源码路径: `packages/util/values`
-- 被插件引用: 55 次
+- 被插件引用: 58 次
 - 描述: 
 
 ## 被集依赖 (下游)
@@ -23,6 +23,7 @@
 - `dsh-client-ui-session`
 - `dsh-client-ui-settings`
 - `dsh-client-ui-settings-models`
+- `dsh-client-ui-trajectory`
 - `dsh-client-ui-workspace`
 - `dsh-compaction-basic`
 - `dsh-compaction-image-offload`
@@ -31,6 +32,7 @@
 - `dsh-cordis-host-runner`
 - `dsh-experimental-auto-review`
 - `dsh-experimental-browser-use-stagehand-native`
+- `dsh-experimental-claude-code-mods`
 - `dsh-experimental-ptc-runtime-python`
 - `dsh-llm`
 - `dsh-llm-pi-ai`
@@ -45,6 +47,8 @@
 - `dsh-session-projection-cache`
 - `dsh-session-reference`
 - `dsh-session-title`
+- `dsh-session-title-all-prompts-llm`
+- `dsh-session-title-first-prompt-llm`
 - `dsh-settings`
 - `dsh-skill`
 - `dsh-subagent`
@@ -54,7 +58,6 @@
 - `dsh-tool-fs-search`
 - `dsh-tool-lsp`
 - `dsh-tool-ralph`
-- `dsh-tool-subagent`
 - `dsh-tool-subagent-control`
 - `dsh-tool-web`
 - `dsh-tool-workflow`

@@ -2,7 +2,7 @@
 
 - 包名: `@deepseek-ai/dsh-office-to-pdf`
 - 分组: G12 文档处理
-- 拓扑层: Layer 6
+- 拓扑层: Layer 5
 - 来源层: L2 web-app
 - 源码路径: `packages/document/office-to-pdf`
 
@@ -18,5 +18,5 @@
   - 证据: `src/types.ts:2 import WorkspaceFileBytes + src/index.ts:9 import + src/index.ts:187 ctx.get('workspaceFiles')`
 
 ## Dependents (下游被依赖)
-- `dsh-api-remotes` - 装配 office-to-pdf 命名空间
-- `dsh-client-ui-sidebar-documentpreview` - office 文档转 PDF 渲染
+- `dsh-api-remotes` - 把该业务包的 /remote 命名空间装配进 Client
+- `dsh-client-ui-sidebar-documentpreview` - Office 文档经 Host 转换服务生成 PDF 后再预览

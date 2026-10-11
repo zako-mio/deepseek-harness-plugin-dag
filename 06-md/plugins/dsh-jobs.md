@@ -2,7 +2,7 @@
 
 - 包名: `@deepseek-ai/dsh-jobs`
 - 源码路径: `packages/jobs/jobs`
-- 被插件引用: 11 次
+- 被插件引用: 9 次
 - 描述: 
 
 ## 被集依赖 (下游)
@@ -10,11 +10,9 @@
 - `dsh-client-ui-jobs`
 - `dsh-client-ui-workspace`
 - `dsh-jobs-local`
-- `dsh-subagent`
 - `dsh-tool-bash`
 - `dsh-tool-jobs`
 - `dsh-tool-pwsh`
-- `dsh-tool-subagent`
 - `dsh-tool-terminal`
 - `dsh-tool-workflow`
 

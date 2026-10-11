@@ -7,14 +7,14 @@
 - 源码路径: `packages/core/agent-tool-presentation`
 
 ## 实现逻辑
-函数插件（named export `name`/`inject`/`Config`/`apply`，无默认导出）。`apply` 依据 Config 的 mode 在挂载 scope 上调用 `ctx.tools.presentAs('native')`；对 `ptc`/`both` 模式先 `ctx.inject(['ptcRuntime'], ...)` 等待 PTC 运行时再声明呈现，未装配运行时的行在挂载期显式失败 (src/index.ts:59-72)。该行按组合（preset 常驻 scope）而非按会话声明工具呈现模式 (src/index.ts:1-19,27-35)。
+以「一行 preset 声明」实现 agent 平面的工具呈现选择。apply() 在 native 模式下直接调用 ctx.tools.presentAs('native') 并按效果自身即 disposer 的方式展开（src/index.ts:63-66）；ptc 模式则先 ctx.inject(['ptcRuntime']) 等待宿主平面的 PTC 运行时，就绪后在子作用域调用 presentAs(config.mode)（src/index.ts:69-71）。因为 presentAs 是按调用作用域登记的，同一进程内 PTC preset 可与 native preset 并存；若部署未组合运行时，该行在挂载期即失败并被 preset 注册表点名为不可用行，而不是拖到首个提示才暴露（src/index.ts:54-71）。Config.mode 为必填，避免「组了这一行却没生效」的静默情况（src/index.ts:38-52）。
 
 ## Provides
-- 无 ctx 服务；作为 preset 行声明挂载 scope 的工具呈现模式 (native/ptc/both)
+- 工具呈现模式声明行（native/ptc，按 preset 的常驻作用域对覆盖到的每个 agent 生效，src/index.ts:59-71）
 
 ## Depends On (上游依赖)
-- `dsh-tools` [E1+E2] - 在 scope 上声明该组合的工具呈现模式
-  - 证据: `package.json:33 peerDep + src/index.ts:23 import type + src/index.ts:35 inject(['tools']) + src/index.ts:64 ctx.tools.presentAs`
+- `dsh-tools` [E1+E2] - 复用工具注册表的按作用域呈现选择 API，把该 preset 的工具形态声明下推给覆盖的 agent
+  - 证据: `src/index.ts:23 import type { ToolPresentationMode } from '@deepseek-ai/dsh-tools' + src/index.ts:64 ctx.tools.presentAs('native')`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

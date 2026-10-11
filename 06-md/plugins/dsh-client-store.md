@@ -2,7 +2,7 @@
 
 - 包名: `@deepseek-ai/dsh-client-store`
 - 源码路径: `packages/client/store`
-- 被插件引用: 46 次
+- 被插件引用: 50 次
 - 描述: 
 
 ## 被集依赖 (下游)
@@ -35,6 +35,7 @@
 - `dsh-client-ui-settings-general`
 - `dsh-client-ui-settings-models`
 - `dsh-client-ui-settings-plugin-inventory`
+- `dsh-client-ui-settings-session-log`
 - `dsh-client-ui-settings-shell`
 - `dsh-client-ui-settings-subagent`
 - `dsh-client-ui-settings-web-search`
@@ -50,7 +51,10 @@
 - `dsh-client-ui-workflow-run`
 - `dsh-client-ui-workspace`
 - `dsh-client-web`
+- `dsh-experimental-client-ui-cot-translation`
 - `dsh-experimental-client-ui-voice-input`
+- `dsh-experimental-inspector`
+- `dsh-experimental-session-inspector`
 - `dsh-session-log-export`
 
 ## 依赖机制

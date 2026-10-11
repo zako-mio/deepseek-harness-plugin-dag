@@ -1,7 +1,7 @@
 # dsh-tool-web
 
 - 包名: `@deepseek-ai/dsh-tool-web`
-- 分组: G47 Web 访问
+- 分组: G46 Web 访问
 - 拓扑层: Layer 5
 - 来源层: L1 核心集
 - 源码路径: `packages/web/tool-web`

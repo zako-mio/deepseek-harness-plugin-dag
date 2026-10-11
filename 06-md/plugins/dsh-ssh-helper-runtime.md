@@ -1,0 +1,11 @@
+# dsh-ssh-helper-runtime (外部基座 seam)
+
+- 包名: `@deepseek-ai/dsh-ssh-helper-runtime`
+- 源码路径: `packages/ssh/ssh-helper-runtime`
+- 被插件引用: 0 次
+- 描述: 
+
+## 被集依赖 (下游)
+
+## 依赖机制
+

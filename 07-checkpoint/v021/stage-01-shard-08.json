@@ -1,0 +1,404 @@
+[
+  {
+    "id": "dsh-tool-fs",
+    "name": "@deepseek-ai/dsh-tool-fs",
+    "implementation": "以 ctx.fs 文件系统接缝为唯一后端，实现模型面向的 read / read_image / write / edit 四个工具：apply 先用 schemastery 补齐并校验读窗口上限，再依次注册 read、read_image（仅当 attachments 挂载时经 ctx.inject 注册）、write、edit (src/index.ts:55-79)。read 先做一次 stat 判定缺失/类型/尺寸路由，大文件或尺寸未知走 streamText，再由 buildWindow 生成带行号的有界窗口并 emit fs/observed (src/read.ts:137-164)。write/edit 先由 FsSandboxController 解析沙箱升级策略、经 waterfall 取可选守卫意图，再调 ctx.fs.writeText / editText，失败经 remediateFsError 映射为稳定诊断 (src/write.ts:112-131, src/edit.ts:119-147)。",
+    "provides": [
+      "ctx.tools 的 read 工具（读取 UTF-8 文本文件，返回带行号的有界窗口）",
+      "ctx.tools 的 write 工具（创建或整体覆盖 UTF-8 文本文件）",
+      "ctx.tools 的 edit 工具（按字面文本替换，默认要求唯一匹配）",
+      "ctx.tools 的 read_image 工具（仅在 attachments 服务挂载时注册，返回图像内容块）",
+      "fs/observed 观察事件（记录已读版本/缺失，供 fs-observation-policy 支撑守卫式变更）",
+      "tool:read / tool:write / tool:edit 三条 systemPrompt 片段（按 scope 是否注册工具条件性输出）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "src/edit.ts:9 import defineTool + src/index.ts:23 static inject ['tools','fs','systemPrompt','workingDirectory'] + src/edit.ts:85 ctx.tools.register",
+        "purpose": "注册工具定义与参数/输出 schema，并在 execute 期取得 ToolExecution 与渲染钩子"
+      },
+      {
+        "plugin_id": "dsh-fs",
+        "mechanism": "E1+E2",
+        "evidence": "src/edit.ts:11 import type {} from '@deepseek-ai/dsh-fs' + src/edit.ts:124 ctx.fs.resolve + src/write.ts:124 ctx.fs.writeText",
+        "purpose": "全部路径解析、读取、写入与版本观察都经该接缝，本包只做模型面向层、不实现具体 provider"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E2",
+        "evidence": "src/read.ts:69-75 ctx.systemPrompt.section + package.json:41 peerDependencies",
+        "purpose": "注册工具使用指引片段，并按 scope 内工具是否注册决定文本"
+      },
+      {
+        "plugin_id": "dsh-working-directory",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:8 import type {} from '@deepseek-ai/dsh-working-directory' + src/session-cwd.ts:23 ctx.workingDirectory.ensure",
+        "purpose": "解析会话当前工作目录作为 fs 调用的 cwd"
+      },
+      {
+        "plugin_id": "dsh-sandbox",
+        "mechanism": "E1",
+        "evidence": "src/sandbox.ts:15-16 import ESCALATION_TARGETS / approveEscalation / sandboxDenialMarker 等",
+        "purpose": "复用与 bash 相同的沙箱升级词表、审批序列与拒绝标记"
+      },
+      {
+        "plugin_id": "dsh-sandbox-policy",
+        "mechanism": "E1+E2",
+        "evidence": "src/sandbox.ts:17 import type SandboxPolicyService + src/sandbox.ts:46 ctx.get('sandboxPolicy')",
+        "purpose": "解析每会话沙箱模式；受限文件系统已挂载但策略服务缺失时 fail-loud"
+      },
+      {
+        "plugin_id": "dsh-user-approval",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:11 import type {} from '@deepseek-ai/dsh-user-approval' + src/sandbox.ts:100 ctx.get('approval')",
+        "purpose": "升级到更宽沙箱模式的请求经审批服务裁决"
+      },
+      {
+        "plugin_id": "dsh-attachment",
+        "mechanism": "E1+E2",
+        "evidence": "src/read-image.ts:16-17 import AttachmentId / AttachmentStore + src/index.ts:71 ctx.inject(['attachments']) + src/read-image.ts:252 ctx.get('attachments')",
+        "purpose": "图像字节的持久化提交与部署限额校验"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1+E2",
+        "evidence": "src/read-image.ts:18 import type ContentBlock + src/read-image.ts:124 ctx.get('llm')",
+        "purpose": "解析当前路由模型是否声明 image 输入（严格能力闸门），并构造图像内容块"
+      },
+      {
+        "plugin_id": "dsh-util-code-language",
+        "mechanism": "E1",
+        "evidence": "src/read-render.ts:182 re-export readLangHintForPath as langFromPath + package.json:32 dependencies",
+        "purpose": "由文件扩展名推导持久化的语法高亮语言提示"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "package.json:40 peerDependencies @deepseek-ai/dsh-session",
+        "purpose": "peer 声明，用于工具观察事件与会话作用域类型的对齐"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-fs-search",
+    "name": "@deepseek-ai/dsh-tool-fs-search",
+    "implementation": "以 ctx.subprocess.spawn 执行 npm 内置的 @vscode/ripgrep 二进制（纯 argv 向量、无 shell 层），实现模型面向的 glob 与 grep 两个发现工具 (src/index.ts:129-160, src/search-core.ts:222-287)。apply 校验条数/字节/毫秒各项上限（graceMs 不得超 MAX_TIMER_DELAY_MS）后注册两个工具 (src/index.ts:129-160)；runRipgrep 统一前置 --no-config 阻断宿主 ripgrep 配置注入，按 exit 0/1 区分有结果与零命中，其余退出码归入 SEARCH_* 错误词表，stdout 超限报 SEARCH_RAW_OUTPUT_OVERFLOW (src/search-core.ts:239-286)。两个工具各自订阅 tools/post-execute，超过内联上限时把完整结果经 ctx.spillStore.saveText 落盘并在正文报告保存位置 (src/glob.ts:355-367, src/grep.ts:342-362)。",
+    "provides": [
+      "ctx.tools 的 glob 工具（按路径模式发现文件，含隐藏与忽略文件）",
+      "ctx.tools 的 grep 工具（ripgrep 正则搜索文件内容，按文件分组返回匹配行）",
+      "tool:glob / tool:grep 两条 systemPrompt 片段",
+      "glob/grep 结果的 search 卡片 presentationMeta（可回放的结构化搜索结果）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "src/glob.ts:14-15 import defineTool / ToolResult + src/index.ts:71 static inject ['tools','systemPrompt','subprocess','workingDirectory'] + src/glob.ts:353 ctx.tools.register",
+        "purpose": "注册两个工具定义并取得工具执行上下文与结果呈现钩子"
+      },
+      {
+        "plugin_id": "dsh-subprocess",
+        "mechanism": "E1+E2",
+        "evidence": "src/search-core.ts:28 import type SubprocessHandle / SubprocessSpawnSpec + src/search-core.ts:239 ctx.subprocess.spawn",
+        "purpose": "承载 ripgrep 的 spawn 执行、进程树终止、环境擦洗与原始输出采集"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E2",
+        "evidence": "src/glob.ts:297-303 ctx.systemPrompt.section + package.json:39 peerDependencies",
+        "purpose": "注册「用 glob/grep 工具而非 shell find/grep」的指引片段"
+      },
+      {
+        "plugin_id": "dsh-working-directory",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:29 import type {} from '@deepseek-ai/dsh-working-directory' + src/search-core.ts:236 ctx.workingDirectory.ensure",
+        "purpose": "解析搜索命令的工作目录，并作为返回路径的相对化基准"
+      },
+      {
+        "plugin_id": "dsh-spill",
+        "mechanism": "E1+E2",
+        "evidence": "src/search-core.ts:29 import type SaveTextSpill / SpillRef + src/search-core.ts:394 ctx.get('spillStore')",
+        "purpose": "把超限的完整搜索结果落盘为模型可恢复的工件（spillStore 为可选服务）"
+      },
+      {
+        "plugin_id": "dsh-output-retention",
+        "mechanism": "E1",
+        "evidence": "src/search-core.ts:26-27 import ItemRetainer / TextRetainer + src/grep.ts:17 + src/presentation.ts:34",
+        "purpose": "对匹配行与路径做内联条数/字节保留，并向卡片投影 truncated/seen 元数据"
+      },
+      {
+        "plugin_id": "dsh-timeout",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:32 import MAX_TIMER_DELAY_MS + src/index.ts:138 graceMs 上限校验",
+        "purpose": "用统一的定时器上限约束搜索进程的终止宽限期配置"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/search-core.ts:25 import HarnessError",
+        "purpose": "SearchError 以 HarnessError 为基类，携带稳定 code 供重试/权限/UI 层分流"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/direct-call.ts:5 import type JsonValue（注意 package.json 未声明该依赖）",
+        "purpose": "描述 post-execute 决策可投影的规范化值类型"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "package.json:36 peerDependencies @deepseek-ai/dsh-session",
+        "purpose": "peer 声明，用于搜索结果元数据与会话日志持久化的对齐"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-goal",
+    "name": "@deepseek-ai/dsh-goal",
+    "implementation": "实现同会话目标的领域服务：GoalService 继承 TypertRemoteService 并注册为 ctx.goals，把目标状态唯一存放在所属会话日志中，构造期订阅 agent/created 把 activation 置为 disarmed，并注册 key 为 goal 的投影 (src/index.ts:239-268)。所有变更（create/edit/pause/resume/complete/block/clear）先做 compare-and-set 校验当前 ref，再由 commit 以 agent.session.append('goal/change', change) 追加全量快照事件，并借 pendingActivation 与 append 返回的 seq 比对把进程内 activation 绑定到该次提交 (src/index.ts:589-626)。投影侧用严格 replay fold 加 zod 校验把事件折叠成可检查点状态，首个非法事件记入 failure 而不抛穿注册表 (src/index.ts:146-169)。",
+    "provides": [
+      "ctx.goals（GoalService：get / disarm / create / edit / pause / resume / complete / block / clear，含 @Remote 远程导出）",
+      "key 为 goal 的 session projection（当前目标 + seenGoalIds + failure，stateVersion 6）",
+      "goal/activation-changed 事件（进程内 activation 边沿变化通知）",
+      "goal/changed 作用域事件（经 agentEvents 按 Agent 发出）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:12-13 import agentEvents / type Agent + src/index.ts:241 static inject ['agents','sessionProjections'] + src/index.ts:625 agentEvents(this.ctx, agent).emit('goal/changed')",
+        "purpose": "按 Agent 作用域发出目标变更事件，并用 agents 注册表校验 Agent 是否为存活实例"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:14-15 import SessionSeq / type Session + src/index.ts:613 agent.session.append('goal/change', change) + src/index.ts:259 ctx.on('session/event')",
+        "purpose": "目标状态以会话事件为唯一持久化载体，并在事件落地时同步 activation"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:17-18 import type {} / type ProjectionDefinition + src/index.ts:258 ctx.sessionProjections.register(goalProjectionDefinition)",
+        "purpose": "把目标折叠注册为可检查点、可下发给客户端的会话投影"
+      },
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:16 import TypertRemoteService, Remote + src/index.ts:240 extends TypertRemoteService + src/index.ts:276 @Remote('get')",
+        "purpose": "服务基类与 @Remote 装饰器把目标操作暴露到远程边界"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/runtime.ts:3 import HarnessError + src/fold.ts:3 import type MessageSource",
+        "purpose": "GoalError 继承 HarnessError 携带稳定 code；目标轮次消息来源沿用 LLM 消息来源词汇"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "src/types.ts:13 import type Branded + src/types.ts:17 GoalId = Branded<'GoalId'>",
+        "purpose": "目标 id 为品牌化类型，避免跨边界裸字符串"
+      },
+      {
+        "plugin_id": "dsh-scope",
+        "mechanism": "E1",
+        "evidence": "package.json:55 peerDependencies @deepseek-ai/dsh-scope",
+        "purpose": "peer 声明，用于会话/Agent 作用域语义对齐"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-goal-round-driver",
+    "name": "@deepseek-ai/dsh-goal-round-driver",
+    "implementation": "实现同会话目标轮次的自动续跑驱动：apply 为每个 Agent 维护串行化的 DriverState，在 agent/status 变 idle、goal/changed、inbox 插入/认领/丢弃、session/event 等触发点收敛到一次 requestDrive，再由 drive 在真正静默时用 renderGoalRoundPrompt 生成带 goal 来源标记的用户消息并 agent.followup 入队 (src/index.ts:138-205, src/index.ts:286-346)。轮次进入模型步之前经 agent/pre-step 复核 validReservation（阶段、ref、round 三者必须与实时目标严格一致），不通过即 reject 并把被误配的下一轮消息恢复回队列 (src/index.ts:348-429)。达到 maxGoalRounds 或入队失败时调用 ctx.goals.block 记录 round-limit / queue-failed 原因 (src/index.ts:166-171, src/index.ts:196-203)。",
+    "provides": [],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-goal",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:10 import type GoalMessageSource / GoalRef / GoalView + src/index.ts:19 static inject ['agents','goals','sessions'] + src/index.ts:99 ctx.goals.get(state.agent)",
+        "purpose": "读取当前目标、写入 blocker、撤销 activation，并复用目标消息来源词汇"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:9 import type Agent / PreStepDecision + src/index.ts:215 ctx.agents.withoutInitiator + src/index.ts:246 ctx.on('agent/error')",
+        "purpose": "在 Agent 生命周期与 inbox 事件上调度轮次，并在 pre-step 处做准入裁决"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:13 import type Session / SessionEvent / UserMessage + src/index.ts:145 ctx.sessions.flush + src/index.ts:322 ctx.on('session/event')",
+        "purpose": "在持久化检查点之后再续跑，并从会话事件判定轮次是否已进入历史"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:11-12 import createUserMessage + type ContentBlock / MessageId / MessageSource + src/prompt.ts:3",
+        "purpose": "构造并渲染模型可见的目标轮次提示与用户消息"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-host-directory-picker-auto",
+    "name": "@deepseek-ai/dsh-host-directory-picker-auto",
+    "implementation": "在启动时一次性采样宿主事实，据此把目录选择接缝的一个交互（host backend 加 client surface 一对）作为真实 Loader 条目挂入内存根树 (src/index.ts:69-111)。resolveDirectoryPickerBackend 是纯函数：只要允许远程权威、绑定非 loopback、经 SSH 启动、或平台不是 darwin/win32 且缺少 Linux chooser 二进制或显示会话，就退化为 browse，其余为 native (src/resolve.ts:55-60)；probe.ts 用 accessSync(X_OK) 扫描 PATH 上的 zenity/kdialog (src/probe.ts:36-43)。挂载顺序为先 backend 后 surface，任一步失败即逆序卸载已建条目，effect 的 disposer 连同其 fiber 一并拆除 (src/index.ts:78-111)。",
+    "provides": [
+      "启动期目录选择交互的自动装配（按宿主事实挂载 native 或 browse 的 host backend 与 client surface 条目）",
+      "BACKEND_PACKAGES / SURFACE_PACKAGES 常量（供 verify-cordis-config 静态校验组合依赖）",
+      "resolveDirectoryPickerBackend / canExecute / hasLinuxChooserBinary 的再导出"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-host-webserver",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:20 import type {} from '@deepseek-ai/dsh-host-webserver' + src/resolve.ts:9 import isLoopbackHost + src/index.ts:71 ctx.webServer.host",
+        "purpose": "读取生效的绑定地址，并用 loopback 判定决定是否可能使用 native 选择器"
+      },
+      {
+        "plugin_id": "dsh-client-connection",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:19 import type {} from '@deepseek-ai/dsh-client-connection' + src/index.ts:72 ctx.connection.allowsRemoteAuthorities",
+        "purpose": "信任策略允许非 loopback 权威时，远程浏览器无法到达宿主 OS 选择器，必须走 browse"
+      },
+      {
+        "plugin_id": "cordis-plugin-loader",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:18 import type {} from '@deepseek-ai/cordis-plugin-loader' + src/index.ts:97 ctx.loader.create({ name })",
+        "purpose": "把选中的交互以真实 Loader 条目挂载，使客户端界面按普通配置行被发现"
+      },
+      {
+        "plugin_id": "dsh-host-directory-picker-native",
+        "mechanism": "E1+E3",
+        "evidence": "src/index.ts:46 BACKEND_PACKAGES.native + package.json:36 peerDependencies + src/index.ts:97 ctx.loader.create({ name })",
+        "purpose": "native 分支要挂载的宿主后端包（运行时按包名装配，非静态 import）"
+      },
+      {
+        "plugin_id": "dsh-host-directory-picker-browse",
+        "mechanism": "E1+E3",
+        "evidence": "src/index.ts:47 BACKEND_PACKAGES.browse + package.json:35 peerDependencies",
+        "purpose": "browse 分支要挂载的宿主后端包"
+      },
+      {
+        "plugin_id": "dsh-client-ui-directory-picker-native",
+        "mechanism": "E1+E3",
+        "evidence": "src/index.ts:58 SURFACE_PACKAGES.native + package.json:34 peerDependencies",
+        "purpose": "与 native 后端配对挂载的客户端界面包，保证一个选择同时换掉两面"
+      },
+      {
+        "plugin_id": "dsh-client-ui-directory-picker-browse",
+        "mechanism": "E1+E3",
+        "evidence": "src/index.ts:59 SURFACE_PACKAGES.browse + package.json:33 peerDependencies",
+        "purpose": "与 browse 后端配对挂载的客户端界面包"
+      },
+      {
+        "plugin_id": "dsh-launch-environment",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:21 import launchedThroughSsh / launchEnvironmentOf + package.json:52 dependencies",
+        "purpose": "判定本次启动是否经 SSH，转发连接无法显示宿主选择器"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-host-directory-picker-native",
+    "name": "@deepseek-ai/dsh-host-directory-picker-native",
+    "implementation": "实现目录选择接缝的 native 后端：默认导出 NativeDirectoryPicker 继承 DirectoryPicker 基类（基类以 super(ctx,'directoryPicker') 完成服务注册），返回稳定的 native 能力对象，其 pick 转发到 pickNativeDirectory (src/index.ts:22-35)。pickNativeDirectory 按平台分派：darwin 走 osascript 的 choose folder（用户取消识别为 -128/User canceled），linux 先 zenity 后 kdialog（仅在 ENOENT 时降级，两者皆缺则显式报错），win32 交给 koffi 驱动的 IFileOpenDialog 子进程 (src/native-picker.ts:48-106)。所有本机命令都经 dsh-native-command 的 runNativeCommand 执行，绝不经过 shell (src/native-picker.ts:3, 53)。",
+    "provides": [
+      "ctx.directoryPicker 的 native 能力（kind: 'native'，pick(signal) 打开宿主 OS 目录选择器）",
+      "pickNativeDirectory 及 DirectoryPickerInternals / DirectoryPickerRunner 类型的再导出"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-host-directory-picker",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:14-15 import DirectoryPicker / type DirectoryPickerCapability + package.json:35 dependencies",
+        "purpose": "继承该能力接缝的服务定义（抽象基类负责 ctx.directoryPicker 注册），本包只实现 native 能力"
+      },
+      {
+        "plugin_id": "dsh-native-command",
+        "mechanism": "E1",
+        "evidence": "src/native-picker.ts:3 import runNativeCommand / type NativeCommandRunner + package.json:36 dependencies",
+        "purpose": "以可测试的本机命令边界执行 osascript / zenity / kdialog，不引入 shell"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-host-open-in-app",
+    "name": "@deepseek-ai/dsh-host-open-in-app",
+    "implementation": "为 Web GUI 宿主提供「在外部应用中打开工作区」的三条 webServer 路由：GET /open-in-app/apps 返回探测到的应用 id、GET /open-in-app/icon/<id> 前缀路由返回 PNG 图标、POST /open-in-app/open 校验绝对目录后启动应用 (src/index.ts:193-310)。应用可用性与图标各自惰性解析并缓存一次，启动返回 missing 时只刷新该条目并重试一次 (src/index.ts:154-183, src/index.ts:295-303)。每条路由先经 connection.requestRejection 信任闸门，open 路由另做 content-type、64 KiB 请求体上限与 JSON 字段校验 (src/index.ts:184-191, src/index.ts:88-135, src/index.ts:250-283)。",
+    "provides": [
+      "webServer 上的 GET /open-in-app/apps、GET /open-in-app/icon/<id>、POST /open-in-app/open 三条路由",
+      "./shared 子路径导出的路由常量与 wire 载荷类型（与浏览器侧包共用）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-host-webserver",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:27 import type {} from '@deepseek-ai/dsh-host-webserver' + src/index.ts:193 ctx.webServer.register",
+        "purpose": "承载三条路由并取得路由 disposer"
+      },
+      {
+        "plugin_id": "dsh-subprocess",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:28 import type {} from '@deepseek-ai/dsh-subprocess' + src/resolver.ts:22 import scrubbedParentEnv + src/index.ts:145 ctx.subprocess.resolveExecutable",
+        "purpose": "解析可执行文件是否在 PATH 上，并用擦洗后的父环境启动应用"
+      },
+      {
+        "plugin_id": "dsh-native-command",
+        "mechanism": "E1",
+        "evidence": "src/icons.ts:15 import desktopApplicationIcon + src/resolver.ts:19-21 import openNativePath / runNativeCommand 等 + package.json:40 dependencies",
+        "purpose": "以平台原生命令探测目录、提取图标并启动应用"
+      },
+      {
+        "plugin_id": "dsh-launch-environment",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:29 import launchedThroughSsh / launchEnvironmentOf + package.json:39 dependencies",
+        "purpose": "SSH 启动的宿主不向浏览器提供本机应用启动能力"
+      },
+      {
+        "plugin_id": "dsh-client-connection",
+        "mechanism": "E2",
+        "evidence": "src/index.ts:47 static inject ['webServer','connection','subprocess'] + src/index.ts:85 Reflect.get(ctx, 'connection')（package.json 未声明该依赖）",
+        "purpose": "读取信任策略，对未认证/不可信请求返回 401/403"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-host-product-telemetry-otel",
+    "name": "@deepseek-ai/dsh-host-product-telemetry-otel",
+    "implementation": "把产品分析事件接到共享 OTel 服务上：默认导出 ProductTelemetry 继承 cordis Service，以 static inject ['otel'] 与 super(ctx,'productTelemetry') 注册服务 (src/index.ts:61-84)。构造期校验 endpoint 为合法 HTTP(S) URL、channel 是合法 header 值、maxExportBatchSize 不超过 maxQueueSize，再经 ctx.otel.createEventReporter 建立批量导出 reporter（resource / scope / processor 均由配置驱动） (src/index.ts:66-97)。emit(record) 只做入队、不等待网络投递；ctx.effect 注册的 disposer 在 shutdownTimeoutMillis 内 drain，超时则 abort 并告警 (src/index.ts:99-120)。",
+    "provides": [
+      "ctx.productTelemetry（ProductTelemetry 服务：emit(record) 入队一条产品分析事件）",
+      "ProductTelemetryRecord / ProductTelemetryScalar 类型与 Config（endpoint / channel / serviceName / serviceVersion 等）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-otel",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:6 import type EventLogReporter / OTelEventRecord + src/index.ts:62 static inject ['otel'] + src/index.ts:85 ctx.otel.createEventReporter",
+        "purpose": "由共享 OTel 服务创建事件日志 reporter，本包只做产品分析策略适配"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-host-webserver",
+    "name": "@deepseek-ai/dsh-host-webserver",
+    "implementation": "实现宿主 Web 服务器服务：默认导出 WebServer 继承 cordis Service 并注册为 ctx.webServer (src/index.ts:261, src/index.ts:557)。它基于 node:http 建立监听（tls 配置齐全时改用 node:https，证书与私钥在绑定前一次性读取、失败即拒绝启动），对外提供 register（精确/前缀路由）、registerUpgrade、registerFallback（唯一兜底座位）、tapIndex（原始 HTML 变换）四类注册，均返回 disposer (src/index.ts:334-386)。index 渲染先把 webserver/index-inject 事件收集到的结构化注入行渲染进 HTML，再依次应用 tapIndex 变换 (src/index.ts:528-554, src/injections.ts:96-119)。",
+    "provides": [
+      "ctx.webServer（WebServer 服务：register / registerUpgrade / registerFallback / tapIndex / applyIndexTaps / collectIndexInjections / renderIndex）",
+      "webserver/index-inject 事件（收集结构化 index 注入行表）",
+      "isLoopbackHost 等主机判定与 renderIndexInjections / IndexInjection 类型的再导出"
+    ],
+    "depends_on": [],
+    "dependents": []
+  }
+]

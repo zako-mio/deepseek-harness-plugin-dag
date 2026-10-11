@@ -1,7 +1,7 @@
 # cordis-plugin-include
 
 - 包名: `@deepseek-ai/cordis-plugin-include`
-- 分组: G46 框架 vendor
+- 分组: G45 框架 vendor
 - 拓扑层: Layer 1
 - 来源层: L3 其余
 - 源码路径: `vendor/include`
@@ -18,7 +18,7 @@
   - 证据: `package.json:33 peerDep + src/index.ts:1 import EntryGroup/EntryTree + src/index.ts:160 static inject=['loader']`
 
 ## Dependents (下游被依赖)
-- `dsh-agent-preset-registry` - 以 Loader dialect 序列化预设声明的 entry 列表供查看
-- `dsh-config-editor` - 复用 entryListSchema 与 PatchOptions 类型解析 profile patch 的 entry 列表
-- `dsh-hmr` - 识别 include 配置树并触发其增量刷新，区分配置文件与模块变更
-- `dsh-plugin-manager` - 解析/生成 profile patch 的 PatchOptions 行结构
+- `dsh-agent-preset-registry` - 以 Loader 自身的 entry-list YAML 方言导出声明，使 !!js 条件按声明原样呈现
+- `dsh-config-editor` - 解析 profile 补丁条目表并识别 include 归属
+- `dsh-hmr` - 对 include 树做局部刷新而非整体重启
+- `dsh-plugin-manager` - 读写 profile 补丁的条目与插入语义

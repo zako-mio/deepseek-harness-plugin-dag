@@ -40,4 +40,4 @@
   - 证据: `src/client/contract/slots.ts:3 import SessionId from @deepseek-ai/dsh-session/types`
 
 ## Dependents (下游被依赖)
-- `dsh-client-ui-chat` - 消费 conversation.approval.detail 槽的 owner 契约
+- `dsh-client-ui-chat` - 审批详情渲染

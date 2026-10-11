@@ -30,9 +30,9 @@ json_files = [
 ] + glob.glob(os.path.join(BASE, "07-checkpoint", "stage-01-l2-r*.json")) + glob.glob(os.path.join(BASE, "07-checkpoint", "stage-01-l3-r*.json")) + [
     os.path.join(BASE, "07-checkpoint", "stage-00-l2-inventory.json"),
     os.path.join(BASE, "07-checkpoint", "stage-00-l3-inventory.json"),
-] + glob.glob(os.path.join(BASE, "07-checkpoint", "v017", "*.json")) + \
-    glob.glob(os.path.join(BASE, "07-checkpoint", "v017", "shards", "*.json")) + \
-    glob.glob(os.path.join(BASE, "07-checkpoint", "v017", "stage-01-shard-*.json"))
+] + glob.glob(os.path.join(BASE, "07-checkpoint", "v021", "*.json")) + \
+    glob.glob(os.path.join(BASE, "07-checkpoint", "v021", "shards", "*.json")) + \
+    glob.glob(os.path.join(BASE, "07-checkpoint", "v021", "stage-01-shard-*.json"))
 for jf in json_files:
     try:
         with open(jf, "r", encoding="utf-8") as f:
@@ -150,14 +150,14 @@ ext_ids = [s["id"] for s in ext["seams"]]
 ext_missing = [sid for sid in ext_ids if not os.path.exists(os.path.join(BASE, "02-plugin-pages", f"{sid}.html"))]
 check(not core_missing, f"插件页缺失: {core_missing}")
 check(not ext_missing, f"外部 seam 页缺失: {ext_missing}")
-# 特殊模块页（全集取自 v017/special-modules.json，非硬编码子集）
-_sp_path = os.path.join(BASE, "07-checkpoint", "v017", "special-modules.json")
+# 特殊模块页（全集取自 v021/special-modules.json，非硬编码子集）
+_sp_path = os.path.join(BASE, "07-checkpoint", "v021", "special-modules.json")
 special_ids = []
 if os.path.exists(_sp_path):
     with open(_sp_path, "r", encoding="utf-8") as f:
         special_ids = [s["id"] for s in json.load(f).get("special_modules", [])]
 else:
-    check(False, "v017/special-modules.json 缺失")
+    check(False, "v021/special-modules.json 缺失")
     special_ids = ["dsh-base", "dsh-headless", "dsh-app-boot", "dsh-cmdline"]
 special_missing = [sid for sid in special_ids
                    if not os.path.exists(os.path.join(BASE, "08-special-modules", f"{sid}.html"))]

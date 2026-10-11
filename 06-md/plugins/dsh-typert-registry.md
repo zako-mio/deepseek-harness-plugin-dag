@@ -1,7 +1,7 @@
 # dsh-typert-registry
 
 - 包名: `@deepseek-ai/dsh-typert-registry`
-- 分组: G45 类型契约
+- 分组: G44 类型契约
 - 拓扑层: Layer 0
 - 来源层: L1 核心集
 - 源码路径: `packages/typert/registry`
@@ -16,5 +16,6 @@
 - 无依赖（基础插件）
 
 ## Dependents (下游被依赖)
-- `dsh-api-session-controller` - Typert 注册表类型
+- `dsh-api-gateway` - Client 面注入 Typert registry，使生成描述符可在页内解析
+- `dsh-api-session-controller` - 把本服务的 Remote 定义注册进 Typert registry
 - `dsh-typert-loader` - 向 typert 注册表写入清单

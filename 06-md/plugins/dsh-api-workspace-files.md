@@ -2,7 +2,7 @@
 
 - 包名: `@deepseek-ai/dsh-api-workspace-files`
 - 分组: G02 API 网关与控制器
-- 拓扑层: Layer 5
+- 拓扑层: Layer 4
 - 来源层: L2 web-app
 - 源码路径: `packages/api/workspace-files`
 
@@ -24,8 +24,8 @@ WorkspaceFiles 继承 TypertRemoteService 并注册 workspaceFiles 服务，注�
   - 证据: `src/index.ts:28 import + src/index.ts:209 scope.sessions.get(sessionId)`
 
 ## Dependents (下游被依赖)
-- `dsh-api-remotes` - 装配 workspaceFiles 命名空间
-- `dsh-client-ui-deliverables` - 读取工作区文件内容
-- `dsh-client-ui-sidebar-documentpreview` - 工作区文件读取的类型与 remote 调用签名
-- `dsh-client-ui-sidebar-files` - 工作区文件条目类型
+- `dsh-api-remotes` - 把该业务包的 /remote 命名空间装配进 Client
+- `dsh-client-ui-deliverables` - 访问工作区文件
+- `dsh-client-ui-sidebar-documentpreview` - 按 session+path 读取工作区文件字节与文本页
+- `dsh-client-ui-sidebar-files` - 文件树只读能力来自 workspaceFiles 远程面
 - `dsh-office-to-pdf` - 按 Session 授权读取/校验源文件元数据

@@ -27,31 +27,34 @@
 
 ## Dependents (下游被依赖)
 - `dsh-client-ui-approval` - 发布待决交互供会话 UI 呈现
-- `dsh-client-ui-chat` - 向会话 UI 提供 chat hooks 标准位
-- `dsh-client-ui-commands` - 会话 UI 声明合并
-- `dsh-client-ui-conversation` - 向会话 UI provide 会话/输入 hooks
-- `dsh-client-ui-cordis` - 接入会话 UI 集成面
-- `dsh-client-ui-goal` - 声明 Session 标准 useProjection 座位
+- `dsh-client-ui-chat` - 把 chat hooks 投影为标准会话 seat
+- `dsh-client-ui-commands` - 会话标准 seat 类型
+- `dsh-client-ui-conversation` - 提供会话标准 hooks/seat
+- `dsh-client-ui-cordis` - 声明会话 UI 面类型，使卡片能落在会话视图上下文
+- `dsh-client-ui-goal` - 会话标准 seat 类型
 - `dsh-client-ui-input-trigger` - 会话 UI 声明合并
-- `dsh-client-ui-jobs` - 会话 UI 声明合并
-- `dsh-client-ui-layout` - 引入 ui-session 的声明合并（Session 标准来源类型面）
+- `dsh-client-ui-jobs` - 会话标准 seat 类型
+- `dsh-client-ui-layout` - 会话标准 seat 类型
 - `dsh-client-ui-message-feedback` - 引入 ui-session 的 Session 标准来源类型面
-- `dsh-client-ui-model-selection` - Session 标准来源类型面
-- `dsh-client-ui-open-in-app` - Session 标准来源类型面
-- `dsh-client-ui-permission-presets` - Session 标准来源类型面
-- `dsh-client-ui-plan` - Session 绑定解析与标准来源
-- `dsh-client-ui-schedule` - Session 标准来源类型面
-- `dsh-client-ui-settings-general` - 引入会话标准 props 合并（设置外壳在会话上下文渲染）
-- `dsh-client-ui-sidebar` - 引入会话标准 props 合并
-- `dsh-client-ui-sidebar-browser` - 引入会话标准 props 合并
-- `dsh-client-ui-sidebar-documentpreview` - 引入会话标准 props 合并
-- `dsh-client-ui-sidebar-files` - 引入会话标准 props 合并
-- `dsh-client-ui-sidebar-right` - 引入会话标准 props 合并
-- `dsh-client-ui-sidebar-terminal` - 拉入会话 UI 服务的类型合并
-- `dsh-client-ui-subagent` - 拉入会话 UI 服务类型合并
-- `dsh-client-ui-tool` - 拉入会话 UI 服务类型合并
-- `dsh-client-ui-trajectory` - 向会话 UI 提供 trajectory hook
-- `dsh-client-ui-user-questions` - 发布待处理问题交互并供 Session UI 消费
-- `dsh-client-ui-workflow-run` - 引入会话状态快照与 UI 服务类型
-- `dsh-client-ui-workspace` - 拉入会话根标准 hook 类型合并
+- `dsh-client-ui-model-selection` - 会话标准 seat 类型
+- `dsh-client-ui-open-in-app` - 会话标准 seat 类型
+- `dsh-client-ui-permission-presets` - 会话标准 seat 类型
+- `dsh-client-ui-plan` - 会话标准 seat 类型
+- `dsh-client-ui-schedule` - 拉入会话根标准 props 合并，供会话头部 seat 的注入签名
+- `dsh-client-ui-settings-general` - 拉入会话根标准 props 合并，供 onboarding 协调所需的会话派生事实
+- `dsh-client-ui-sidebar` - 拉入会话根标准 props 合并，供侧栏内会话相关 seat 的类型契约
+- `dsh-client-ui-sidebar-browser` - 拉入 uiSession 的 Context 合并，标签按 sessionId 作用域渲染
+- `dsh-client-ui-sidebar-documentpreview` - 拉入 uiSession 合并，预览按会话作用域
+- `dsh-client-ui-sidebar-files` - 拉入 uiSession 合并以按会话渲染
+- `dsh-client-ui-sidebar-right` - 跟踪当前屏上会话以切换侧栏呈现
+- `dsh-client-ui-sidebar-terminal` - 拉入 uiSession 合并以按会话渲染
+- `dsh-client-ui-subagent` - 拉入 uiSession 合并以读取当前会话
+- `dsh-client-ui-tool` - 拉入 uiSession/uiConversation 合并以读取会话作用域数据
+- `dsh-client-ui-trajectory` - 把 trajectory hook 发布为会话标准 props 的一部分
+- `dsh-client-ui-user-questions` - 待答卡片发布到会话级待交互注册表
+- `dsh-client-ui-workflow-run` - 拉入 uiSession 合并以按会话渲染面板
+- `dsh-client-ui-workspace` - 拉入 uiSession 合并以驱动会话切换
+- `dsh-experimental-client-ui-claude-code-mods` - 客户端会话 UI 的声明依赖，保证组合中存在同一份实现
+- `dsh-experimental-client-ui-voice-input` - 客户端会话 UI 的声明依赖，保证组合中存在同一份实现
+- `dsh-experimental-session-inspector` - 判断当前展示的会话以决定能否把检查器结果揭示到主聊天区
 - `dsh-session-log-export` - 沿用会话视图的类型环境

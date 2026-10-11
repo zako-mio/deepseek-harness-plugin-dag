@@ -1,0 +1,292 @@
+{
+ "per_shard": 14,
+ "total_nodes": 155,
+ "reused": 93,
+ "shards": [
+  {
+   "shard": "shard-01",
+   "group": "G01+G02+G04",
+   "group_name": "ACP 协议 / API 网关与控制器 / 启动与插件管理",
+   "count": 9,
+   "ids": [
+    "dsh-acp",
+    "dsh-api-gateway",
+    "dsh-api-remotes",
+    "dsh-api-session-controller",
+    "dsh-api-terminal-controller",
+    "dsh-api-workspace-controller",
+    "dsh-config-editor",
+    "dsh-hmr",
+    "dsh-plugin-manager"
+   ],
+   "input": "07-checkpoint/v021/shards/shard-01.json",
+   "output": "07-checkpoint/v021/stage-01-shard-01.json"
+  },
+  {
+   "shard": "shard-02",
+   "group": "G05+G06",
+   "group_name": "客户端运行时 / 客户端 UI 包",
+   "count": 20,
+   "ids": [
+    "dsh-client-connection",
+    "dsh-client-file-upload",
+    "dsh-client-hmr",
+    "dsh-client-modules",
+    "dsh-client-product-analytics",
+    "dsh-client-shortcuts",
+    "dsh-client-ui-agent-preset",
+    "dsh-client-ui-chat",
+    "dsh-client-ui-commands",
+    "dsh-client-ui-conversation",
+    "dsh-client-ui-deliverables",
+    "dsh-client-ui-dockkit",
+    "dsh-client-ui-goal",
+    "dsh-client-ui-jobs",
+    "dsh-client-ui-layout",
+    "dsh-client-ui-model-selection",
+    "dsh-client-ui-open-in-app",
+    "dsh-client-ui-permission-presets",
+    "dsh-client-ui-plan",
+    "dsh-client-ui-plugin-manager"
+   ],
+   "input": "07-checkpoint/v021/shards/shard-02.json",
+   "output": "07-checkpoint/v021/stage-01-shard-02.json"
+  },
+  {
+   "shard": "shard-03",
+   "group": "G06",
+   "group_name": "客户端 UI 包",
+   "count": 14,
+   "ids": [
+    "dsh-client-ui-primitives",
+    "dsh-client-ui-renderer",
+    "dsh-client-ui-schedule",
+    "dsh-client-ui-settings-account",
+    "dsh-client-ui-settings-agent-loop",
+    "dsh-client-ui-settings-general",
+    "dsh-client-ui-settings-models",
+    "dsh-client-ui-settings-plugin-inventory",
+    "dsh-client-ui-settings-session-log",
+    "dsh-client-ui-settings-shell",
+    "dsh-client-ui-settings-subagent",
+    "dsh-client-ui-settings-web-search",
+    "dsh-client-ui-shortcuts",
+    "dsh-client-ui-sidebar"
+   ],
+   "input": "07-checkpoint/v021/shards/shard-03.json",
+   "output": "07-checkpoint/v021/stage-01-shard-03.json"
+  },
+  {
+   "shard": "shard-04",
+   "group": "G06",
+   "group_name": "客户端 UI 包",
+   "count": 13,
+   "ids": [
+    "dsh-client-ui-sidebar-browser",
+    "dsh-client-ui-sidebar-documentpreview",
+    "dsh-client-ui-sidebar-files",
+    "dsh-client-ui-sidebar-right",
+    "dsh-client-ui-sidebar-terminal",
+    "dsh-client-ui-skill",
+    "dsh-client-ui-subagent",
+    "dsh-client-ui-theme",
+    "dsh-client-ui-tool",
+    "dsh-client-ui-trajectory",
+    "dsh-client-ui-user-questions",
+    "dsh-client-ui-workflow-run",
+    "dsh-client-ui-workspace"
+   ],
+   "input": "07-checkpoint/v021/shards/shard-04.json",
+   "output": "07-checkpoint/v021/stage-01-shard-04.json"
+  },
+  {
+   "shard": "shard-05",
+   "group": "G08+G09",
+   "group_name": "上下文注入 / 核心运行时",
+   "count": 9,
+   "ids": [
+    "dsh-agent-instructions",
+    "dsh-file-reference-local",
+    "dsh-time-context",
+    "dsh-agent",
+    "dsh-agent-loop",
+    "dsh-agent-tool-presentation",
+    "dsh-session",
+    "dsh-system-prompt",
+    "dsh-tools"
+   ],
+   "input": "07-checkpoint/v021/shards/shard-05.json",
+   "output": "07-checkpoint/v021/stage-01-shard-05.json"
+  },
+  {
+   "shard": "shard-06",
+   "group": "G10+G11+G13",
+   "group_name": "凭据与授权 / 交付物 / 实验特性",
+   "count": 19,
+   "ids": [
+    "dsh-authorization",
+    "dsh-credentials-local",
+    "dsh-deepseek-account-platform",
+    "dsh-tool-present",
+    "dsh-workspace-changes",
+    "dsh-experimental-auto-review",
+    "dsh-experimental-browser-use-chrome-devtools-mcp",
+    "dsh-experimental-browser-use-playwright-mcp",
+    "dsh-experimental-claude-code-mods",
+    "dsh-experimental-client-ui-claude-code-mods",
+    "dsh-experimental-client-ui-cot-translation",
+    "dsh-experimental-client-ui-voice-input",
+    "dsh-experimental-inspector",
+    "dsh-experimental-ptc-runtime-python",
+    "dsh-experimental-session-inspector",
+    "dsh-experimental-speech-to-text-sensevoice",
+    "dsh-experimental-tool-agent-team",
+    "dsh-experimental-tool-worktree",
+    "dsh-experimental-webworker-runtime"
+   ],
+   "input": "07-checkpoint/v021/shards/shard-06.json",
+   "output": "07-checkpoint/v021/stage-01-shard-06.json"
+  },
+  {
+   "shard": "shard-07",
+   "group": "G13+G14",
+   "group_name": "实验特性 / 宿主扩展",
+   "count": 8,
+   "ids": [
+    "dsh-hooks-claude-code",
+    "dsh-hooks-codex",
+    "dsh-session-title-all-prompts-llm",
+    "dsh-tool-terminal",
+    "dsh-client-ui-cordis",
+    "dsh-cordis-client-runner",
+    "dsh-cordis-host-runner",
+    "dsh-tool-cordis"
+   ],
+   "input": "07-checkpoint/v021/shards/shard-07.json",
+   "output": "07-checkpoint/v021/stage-01-shard-07.json"
+  },
+  {
+   "shard": "shard-08",
+   "group": "G16+G17+G19",
+   "group_name": "文件系统 / 目标与计划 / 宿主服务",
+   "count": 9,
+   "ids": [
+    "dsh-tool-fs",
+    "dsh-tool-fs-search",
+    "dsh-goal",
+    "dsh-goal-round-driver",
+    "dsh-host-directory-picker-auto",
+    "dsh-host-directory-picker-native",
+    "dsh-host-open-in-app",
+    "dsh-host-product-telemetry-otel",
+    "dsh-host-webserver"
+   ],
+   "input": "07-checkpoint/v021/shards/shard-08.json",
+   "output": "07-checkpoint/v021/stage-01-shard-08.json"
+  },
+  {
+   "shard": "shard-09",
+   "group": "G20+G22",
+   "group_name": "交互命令 / LLM 适配",
+   "count": 11,
+   "ids": [
+    "dsh-commands",
+    "dsh-permission-presets",
+    "dsh-tool-ask-user",
+    "dsh-user-approval",
+    "dsh-user-questions",
+    "dsh-deepseek-llm-api-extensions",
+    "dsh-llm",
+    "dsh-llm-deepseek-api-key",
+    "dsh-llm-pi-ai",
+    "dsh-llm-retry",
+    "dsh-plugin-package-inventory-deepseek"
+   ],
+   "input": "07-checkpoint/v021/shards/shard-09.json",
+   "output": "07-checkpoint/v021/stage-01-shard-09.json"
+  },
+  {
+   "shard": "shard-10",
+   "group": "G23+G25+G26+G27+G28+G29",
+   "group_name": "LSP 集成 / 规划模式 / Agent 预设 / 代码执行运行时 / 沙箱 / 定时调度",
+   "count": 8,
+   "ids": [
+    "dsh-tool-lsp",
+    "dsh-plan-mode",
+    "dsh-agent-preset-registry",
+    "dsh-ptc-runtime-node",
+    "dsh-sandbox-local",
+    "dsh-sandbox-policy",
+    "dsh-schedule",
+    "dsh-tool-schedule"
+   ],
+   "input": "07-checkpoint/v021/shards/shard-10.json",
+   "output": "07-checkpoint/v021/stage-01-shard-10.json"
+  },
+  {
+   "shard": "shard-11",
+   "group": "G30+G31",
+   "group_name": "SDK 与协议 / 会话核心",
+   "count": 10,
+   "ids": [
+    "dsh-sdk-jsonrpc-server",
+    "dsh-session-log-deepseek",
+    "dsh-session-persistence-jsonl",
+    "dsh-session-projection",
+    "dsh-session-projection-cache",
+    "dsh-session-telemetry-otel",
+    "dsh-session-title",
+    "dsh-session-title-first-prompt-llm",
+    "dsh-tool-working-directory",
+    "dsh-working-directory"
+   ],
+   "input": "07-checkpoint/v021/shards/shard-11.json",
+   "output": "07-checkpoint/v021/stage-01-shard-11.json"
+  },
+  {
+   "shard": "shard-12",
+   "group": "G34+G35+G38+G39",
+   "group_name": "Shell 执行 / 技能 / 存储 / 子代理",
+   "count": 16,
+   "ids": [
+    "dsh-tool-bash",
+    "dsh-tool-bash-persistent",
+    "dsh-tool-pwsh",
+    "dsh-tool-pwsh-persistent",
+    "dsh-skill-filesystem",
+    "dsh-tool-skill",
+    "dsh-storage-domain",
+    "dsh-subagent",
+    "dsh-subagent-acp",
+    "dsh-subagent-claude-code",
+    "dsh-subagent-codex",
+    "dsh-subagent-dsh-sdk",
+    "dsh-subagent-fork-in-process",
+    "dsh-subagent-spawn-in-process",
+    "dsh-tool-subagent",
+    "dsh-tool-subagent-control"
+   ],
+   "input": "07-checkpoint/v021/shards/shard-12.json",
+   "output": "07-checkpoint/v021/stage-01-shard-12.json"
+  },
+  {
+   "shard": "shard-13",
+   "group": "G40+G41+G42+G43+G45+G46+G47+G48",
+   "group_name": "子进程 / 遥测与可观测性 / 终端 / 待办 / 框架 vendor / Web 访问 / 工作流 / 工作区",
+   "count": 9,
+   "ids": [
+    "dsh-subprocess-local",
+    "dsh-otel",
+    "dsh-terminal-bash",
+    "dsh-tool-todo",
+    "cordis-plugin-loader",
+    "dsh-web-search-deepseek",
+    "dsh-tool-workflow",
+    "dsh-workflow-ptc",
+    "dsh-workspace"
+   ],
+   "input": "07-checkpoint/v021/shards/shard-13.json",
+   "output": "07-checkpoint/v021/stage-01-shard-13.json"
+  }
+ ]
+}

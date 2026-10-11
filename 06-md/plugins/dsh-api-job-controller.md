@@ -2,7 +2,7 @@
 
 - 包名: `@deepseek-ai/dsh-api-job-controller`
 - 分组: G02 API 网关与控制器
-- 拓扑层: Layer 4
+- 拓扑层: Layer 3
 - 来源层: L2 web-app
 - 源码路径: `packages/api/job-controller`
 
@@ -20,5 +20,5 @@ JobController 继承 TypertRemoteService，以 namespace 'job' 注册并注入 j
   - 证据: `src/client/model.ts:12 import type SessionId`
 
 ## Dependents (下游被依赖)
-- `dsh-api-remotes` - 装配 job 命名空间
-- `dsh-client-ui-jobs` - 作业注册表、观察流与 kill 的客户端服务
+- `dsh-api-remotes` - 把该业务包的 /remote 命名空间装配进 Client
+- `dsh-client-ui-jobs` - 任务控制器服务类型

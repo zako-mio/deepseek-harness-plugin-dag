@@ -32,8 +32,8 @@
   - 证据: `src/client/controller.ts:15 + src/types.ts:15`
 
 ## Dependents (下游被依赖)
-- `dsh-client-ui-chat` - 技能引用经触发管线打开
-- `dsh-client-ui-commands` - 把 '/' 命令面注册成触发源
-- `dsh-client-ui-permission-presets` - 命令/座位回调的会话上下文类型
+- `dsh-client-ui-chat` - 打开 skill 引用
+- `dsh-client-ui-commands` - 与输入触发器的会话上下文类型对接
+- `dsh-client-ui-permission-presets` - 会话输入上下文类型
 - `dsh-client-ui-reference` - 注册 '@' 触发源并消费其 Source/Crumb 契约
-- `dsh-client-ui-skill` - 注册斜杠菜单的 skill 候选源
+- `dsh-client-ui-skill` - 斜杠触发源的注册契约由 input-trigger 定义

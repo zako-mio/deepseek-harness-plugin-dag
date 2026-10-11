@@ -1,7 +1,7 @@
 # dsh-session-checkpoint-policy
 
 - 包名: `@deepseek-ai/dsh-session-checkpoint-policy`
-- 分组: G33 会话核心
+- 分组: G31 会话核心
 - 拓扑层: Layer 5
 - 来源层: L1 核心集
 - 源码路径: `packages/session/session-checkpoint-policy`

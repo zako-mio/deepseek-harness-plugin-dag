@@ -1,7 +1,7 @@
 # dsh-tool-jobs
 
 - 包名: `@deepseek-ai/dsh-tool-jobs`
-- 分组: G22 作业调度
+- 分组: G21 作业调度
 - 拓扑层: Layer 5
 - 来源层: L1 核心集
 - 源码路径: `packages/jobs/tool-jobs`
@@ -22,4 +22,5 @@
   - 证据: `src/index.ts:16 import defineTool + src/index.ts:31 inject tools + src/index.ts:310 ctx.tools.register`
 
 ## Dependents (下游被依赖)
-- 无下游（叶子/被消费端）
+- `dsh-tool-bash` - 模型侧收集/停止后台作业的工具由 tool-jobs 提供，缺它则后台能力不可用
+- `dsh-tool-pwsh` - 模型侧作业收集与停止工具由 tool-jobs 提供

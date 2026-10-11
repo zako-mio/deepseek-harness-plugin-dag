@@ -1,25 +1,29 @@
 # dsh-llm-pi-ai
 
 - 包名: `@deepseek-ai/dsh-llm-pi-ai`
-- 分组: G23 LLM 适配
-- 拓扑层: Layer 3
+- 分组: G22 LLM 适配
+- 拓扑层: Layer 5
 - 来源层: L1 核心集
 - 源码路径: `packages/llm/llm-pi-ai`
 
 ## 实现逻辑
-以 @earendil-works/pi-ai 为后端实现通用多 provider LLM 适配器：PiAiAdapter 每次操作捕获一个不可变 snapshot（profiles 与其 Models 集合），保证一次调用的 provider/模型/凭据在 await 期间冻结 (src/adapter.ts:232-241, 330-348)。config.ts 按 provider 路由解析 profile、物化模型目录与注册时捕获的 retryPolicy (src/config.ts:410-509)，context.ts 把 harness 消息历史（含持久图像解析与 offload 占位）转成 pi-ai 的 Context (src/context.ts:262-338)。index.ts 以设置驱动注册/原子替换适配器路由与可配置目录，并注册按命名空间的模型发现 (src/index.ts:285-316, 275-278)；auth.ts 与 login.ts 把 harness 的 credentials/authorization seam 桥接到 pi-ai 的凭据存储与登录流 (src/auth.ts:141-231, src/login.ts:120-160)。
+基于 @earendil-works/pi-ai 的通用 LLM 适配器：apply() 把 providers 配置解析为按路由的 profile（端点、协议、模型目录、重试策略），把已安装目录路由与自定义路由一并登记为可配置 provider 目录，并把非空路由集注册为同一个 PiAiAdapter 实例，路由集或重试策略变化时原子 re-register (src/index.ts:149-308, src/index.ts:285-308)。PiAiAdapter 每次解析产出不可变快照（profiles + Models 集合），一次操作在首个 await 之前捕获整份快照，使设置变更只影响下一次调用而不改变在途请求 (src/adapter.ts:230-256, src/adapter.ts:80-90)。请求转换由 context.ts 完成（文本历史同步转换、图片附件异步解析，超出图片字节预算时以 IMAGE_OFFLOAD_REQUIRED 明确拒绝），流式事件经 stream.ts 映射为 StreamChunk 并归一化用量与结束原因 (src/context.ts:293-320, src/stream.ts:24-141, src/stream.ts:142-175)。认证侧经 credentials 与 authorization seam 解析引用并注册登录/刷新流程，凭据存储跨快照稳定 (src/auth.ts:141-215, src/login.ts:131)。
 
 ## Provides
-- pi-ai 多 provider LLM 适配器 (向 ctx.llm 注册一组 provider 路由，实现 LlmAdapter 并声明各路由 retry policy)
-- pi-ai 凭据/登录桥接 (把 credentials 记录与 authorization 流程映射为 pi-ai 的 CredentialStore/AuthContext 与登录事件)
+- ctx.llm 上的 pi-ai 后端 provider 路由集合（展示名、重试策略、模型目录）
+- ctx.llm 可配置 provider 目录与模型发现（registerModelDiscovery）
+- authorization 登录流程（pi-ai 提供方登录与凭据刷新记录）
+- PiAiAdapter 与 pi-ai 配置类型出口（Config / Options / PiAiProviderProfile 等）
 
 ## Depends On (上游依赖)
-- `dsh-authorization` [E1+E2] - 把 pi-ai 的登录会话翻译成 harness 中立的通知/提问流程
-  - 证据: `src/login.ts:12 import type AuthorizationMethod + src/login.ts:138 ctx.authorization.registerFlow`
-- `dsh-llm` [E1+E2] - 实现并注册 llm seam 适配器，复用其错误类型、图像投影与目录 API
-  - 证据: `src/adapter.ts:41 import LlmAdapter/attributionHeaders + src/index.ts:94 inject llm + src/index.ts:302 ctx.llm.registerAdapter`
-- `dsh-settings` [编译依赖] - 激活 settings 服务声明，使插件可按设置命名空间配置 provider 路由
-  - 证据: `src/index.ts:57 import type {} from '@deepseek-ai/dsh-settings'`
+- `cordis-plugin-loader` [E1+E2] - 配置热更新事件由 loader 发出，据此重建路由与目录
+  - 证据: `src/index.ts:59 import type {} from '@deepseek-ai/cordis-plugin-loader' + src/index.ts:310 ctx.on('loader/volatile-update')`
+- `dsh-authorization` [E1+E2] - 为 pi-ai 提供方注册交互式登录流程
+  - 证据: `src/login.ts:12 import type { AuthorizationMethod } + src/index.ts:234 ctx.inject(['authorization'])`
+- `dsh-llm` [E1+E2] - 实现 LlmAdapter 并注册进 LLM seam 才能服务请求
+  - 证据: `src/index.ts:63-64 import { assertUsableApiKey, LlmError } / type { AdapterRegistrationHandle } + src/index.ts:302 ctx.llm.registerAdapter`
+- `dsh-settings` [E1+E2] - 把 provider profile 暴露为 llm-pi-ai 设置段供界面编辑
+  - 证据: `src/index.ts:57 import type {} from '@deepseek-ai/dsh-settings' + src/index.ts:150 ctx.inject(['settings'])`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

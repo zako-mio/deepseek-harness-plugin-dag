@@ -7,26 +7,25 @@
 - 源码路径: `packages/acp/acp`
 
 ## 实现逻辑
-以 Cordis 函数插件把 ACP（Agent Client Protocol）服务端挂在 stdio JSON-RPC 上：apply() 先捕获注入的 sessionPersistence，构造 AcpSession 映射，并在 SDK 的 agent app 上注册 initialize/newSession/resumeSession/listSessions/closeSession/setSessionConfigOption/prompt/cancel 处理器 (src/index.ts:97-391)。每个会话由 AcpSession 组合一个未发布的 Agent（ctx.agents.create/resume，安装模型选择并挂载 ACP MCP 服务器）(src/session.ts:126-169)，再把已提交的 session 事件（assistant/message、tool/call、tool/result）投影为有序 ACP update 通知 (src/session.ts:345-389, src/updates.ts:16-85)。协议侧另有内容准入（文本/图片严格 base64 校验、拒绝 audio/resource 块）与模型/推理配置选项读写 (src/content.ts:123-204, src/model-control.ts:92-134)。权限请求走 approval/request waterfall，只提供一次性 allow/reject 选项，不推断持久授权 (src/index.ts:155-173)。
+以 Cordis 函数插件挂载一个 automation-only 的 Agent Client Protocol 服务端：apply 先捕获注入的 agents/llm/sessionPersistence/sessions(src/index.ts:62,100)，再用 @agentclientprotocol/sdk 的 ndJsonStream 把 process.stdin/stdout 接成 JSON-RPC 通道(src/index.ts:378-395)，并把 session/new|resume|list|close|setConfigOption|prompt|cancel 映射为 AcpSession 生命周期(src/index.ts:200-374)。AcpSession 通过 ctx.agents.create/resume 组合或恢复 Agent 并装载 ACP 声明的 MCP server(src/session.ts:129-172, src/mcp.ts:26-33)，把已提交的 session 事件翻译成标准 ACP update(src/updates.ts:16-102)，并把 approval/request 转成一次性的 requestPermission 请求(src/index.ts:159-177)。
 
 ## Provides
-- acp（自动化 ACP 服务端：JSON-RPC stdio 上的 initialize/newSession/resumeSession/listSessions/setSessionConfigOption/closeSession/prompt/cancel 方法族，供 dsh-subagent-acp 等程序化客户端驱动）
-- 被代理 Agent 的会话生命周期，以及 model 与 reasoning_effort 标准配置选项（configOptions）
-- approval/request 一次性权限决策通道（allow-once / reject-once，不产生持久授权）
+- ACP 协议服务端能力(JSON-RPC over stdio 的 automation-only Agent Client Protocol 桥，src/index.ts:97-441)
+- 标准 ACP 方法集 session/new|list|resume|close|setConfigOption|prompt|cancel(src/index.ts:382-394)
 
 ## Depends On (上游依赖)
-- `dsh-agent` [E1+E2] - 组合并驱动被代理 Agent，安装模型选择引用
-  - 证据: `src/session.ts:13 import + src/session.ts:128 ctx.agents.create`
-- `dsh-llm` [E1+E2] - 构造用户消息、错误链与模型目录查询
-  - 证据: `src/session.ts:14 import + src/index.ts:20 errorChain`
-- `dsh-mcp-client` [E1+E2] - 把 ACP 声明的 MCP 服务器挂成 Agent 作用域 MCP 客户端
-  - 证据: `src/mcp.ts:8 import + src/mcp.ts:32 agentCtx.plugin(McpClient, config)`
-- `dsh-session` [E1+E2] - 会话身份、头与已提交事件的投影来源
-  - 证据: `src/session.ts:15 import + src/index.ts:229 ctx.sessions.flush`
-- `dsh-token-meter` [运行时依赖] - 向客户端上报上下文占用（usage_update）
-  - 证据: `src/updates.ts:6 import + src/updates.ts:95 ctx.get('tokenMeter')`
-- `dsh-user-approval` [运行时依赖] - 声明合并权限 waterfall 并提供一次性决策
-  - 证据: `src/index.ts:52 import + src/index.ts:155 ctx.on('approval/request')`
+- `dsh-agent` [E1+E2] - 创建/恢复被 ACP 驱动的 Agent，并订阅 agent/* 事件维护会话记录
+  - 证据: `package.json:36 peerDep + src/session.ts:13 import + src/index.ts:62 inject 'agents' + src/session.ts:131 ctx.agents.create`
+- `dsh-llm` [E1+E2] - 构造模型选择控制并探测当前路由的图像输入能力
+  - 证据: `package.json:38 peerDep + src/content.ts:8 import + src/index.ts:62 inject 'llm' + src/session.ts:130 ctx.llm`
+- `dsh-mcp-client` [E1+E2] - 把 ACP newSession/resumeSession 声明的 MCP server 挂载到 Agent 作用域
+  - 证据: `package.json:39 peerDep + src/mcp.ts:8 import * as McpClient + src/mcp.ts:32 agentCtx.plugin(McpClient, config)`
+- `dsh-session` [E1+E2] - 以 Session 身份承载事件流并在 session/new 后落盘会话
+  - 证据: `package.json:40 peerDep + src/session.ts:15 import + src/index.ts:233 ctx.sessions.flush`
+- `dsh-token-meter` [E1+E2] - 在有用量与容量事实时发出标准 usage_update
+  - 证据: `package.json:42 peerDep(optional) + src/updates.ts:6 import type {} + src/updates.ts:95 ctx.get('tokenMeter')`
+- `dsh-user-approval` [E1+E2] - 把权限请求转成 ACP requestPermission 并只回一次性决定
+  - 证据: `package.json:43 peerDep + src/index.ts:52 import type {} + src/index.ts:159 ctx.on('approval/request')`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

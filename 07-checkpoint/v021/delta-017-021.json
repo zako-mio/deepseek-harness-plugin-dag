@@ -1,0 +1,2339 @@
+{
+ "meta": {
+  "from_version": "0.1.7-rc.2",
+  "to_version": "0.2.1-alpha.2",
+  "keyed_by": "package id (name minus @deepseek-ai/)",
+  "old_root": "/home/zako-mio/opencode/archive/Mission-file/2026-10/1011-dsh-plugin-dag-021alpha2/05-source/dsh-v0.1.7-rc.2/deepseek-harness-dsh-v0.1.7-rc.2",
+  "new_root": "/home/zako-mio/opencode/archive/Mission-file/2026-10/1011-dsh-plugin-dag-021alpha2/05-source/dsh-v0.2.1-alpha.2/deepseek-harness-dsh-v0.2.1-alpha.2"
+ },
+ "counts": {
+  "old_total": 321,
+  "new_total": 340,
+  "added": 21,
+  "removed": 2,
+  "common": 319,
+  "src_changed": 180,
+  "tests_changed": 17,
+  "version_only": 122,
+  "identical": 0,
+  "path_moved": 10
+ },
+ "added": [
+  "dsh-client-product-analytics",
+  "dsh-client-ui-settings-session-log",
+  "dsh-experimental-badge-skill-bundle",
+  "dsh-experimental-claude-code-mods",
+  "dsh-experimental-client-ui-claude-code-mods",
+  "dsh-experimental-client-ui-cot-translation",
+  "dsh-experimental-cot-translation-bundle",
+  "dsh-experimental-inspector-profile",
+  "dsh-experimental-ralph-bundle",
+  "dsh-experimental-session-inspector",
+  "dsh-experimental-session-search",
+  "dsh-experimental-session-titles-bundle",
+  "dsh-experimental-terminal-bundle",
+  "dsh-experimental-tool-worktree",
+  "dsh-experimental-translator",
+  "dsh-experimental-worktree",
+  "dsh-otel",
+  "dsh-ssh-helper-runtime",
+  "dsh-tool-schedule",
+  "dsh-tool-working-directory",
+  "dsh-working-directory"
+ ],
+ "removed": [
+  "dsh-invariants",
+  "dsh-subagent-in-process-driver"
+ ],
+ "category": {
+  "cordis": "version_only",
+  "cordis-plugin-group": "version_only",
+  "cordis-plugin-hmr": "version_only",
+  "cordis-plugin-include": "version_only",
+  "cordis-plugin-loader": "src_changed",
+  "cordis-plugin-logger-console": "version_only",
+  "cordis-plugin-timer": "version_only",
+  "cosmokit": "version_only",
+  "dsh-acp": "src_changed",
+  "dsh-acp-app": "version_only",
+  "dsh-agent": "src_changed",
+  "dsh-agent-default-model": "version_only",
+  "dsh-agent-instructions": "src_changed",
+  "dsh-agent-loop": "src_changed",
+  "dsh-agent-loop-testkit": "src_changed",
+  "dsh-agent-preset": "tests_changed",
+  "dsh-agent-preset-registry": "src_changed",
+  "dsh-agent-tool-presentation": "src_changed",
+  "dsh-anonymous-user-id": "version_only",
+  "dsh-api-account-controller": "version_only",
+  "dsh-api-gateway": "src_changed",
+  "dsh-api-job-controller": "version_only",
+  "dsh-api-remotes": "src_changed",
+  "dsh-api-session-controller": "src_changed",
+  "dsh-api-settings-controller": "version_only",
+  "dsh-api-terminal-controller": "src_changed",
+  "dsh-api-workspace-controller": "src_changed",
+  "dsh-api-workspace-files": "tests_changed",
+  "dsh-app-boot": "src_changed",
+  "dsh-atomic-write": "version_only",
+  "dsh-attachment": "version_only",
+  "dsh-attachment-local": "version_only",
+  "dsh-authorization": "src_changed",
+  "dsh-base": "version_only",
+  "dsh-bash-local": "version_only",
+  "dsh-bash-sandbox": "version_only",
+  "dsh-brand": "version_only",
+  "dsh-browser-use": "version_only",
+  "dsh-chunked-list": "version_only",
+  "dsh-client-connection": "src_changed",
+  "dsh-client-file-upload": "src_changed",
+  "dsh-client-hmr": "src_changed",
+  "dsh-client-locale": "version_only",
+  "dsh-client-modules": "src_changed",
+  "dsh-client-resources": "version_only",
+  "dsh-client-shortcuts": "src_changed",
+  "dsh-client-store": "version_only",
+  "dsh-client-test-runtime": "src_changed",
+  "dsh-client-ui-agent-preset": "src_changed",
+  "dsh-client-ui-approval": "version_only",
+  "dsh-client-ui-attachment": "tests_changed",
+  "dsh-client-ui-brand-official": "version_only",
+  "dsh-client-ui-chat": "src_changed",
+  "dsh-client-ui-commands": "src_changed",
+  "dsh-client-ui-conversation": "src_changed",
+  "dsh-client-ui-cordis": "src_changed",
+  "dsh-client-ui-deliverables": "src_changed",
+  "dsh-client-ui-directory-picker-browse": "version_only",
+  "dsh-client-ui-directory-picker-native": "version_only",
+  "dsh-client-ui-dockkit": "src_changed",
+  "dsh-client-ui-goal": "src_changed",
+  "dsh-client-ui-input-trigger": "version_only",
+  "dsh-client-ui-jobs": "src_changed",
+  "dsh-client-ui-layout": "src_changed",
+  "dsh-client-ui-message-feedback": "version_only",
+  "dsh-client-ui-model-selection": "src_changed",
+  "dsh-client-ui-open-in-app": "src_changed",
+  "dsh-client-ui-permission-presets": "src_changed",
+  "dsh-client-ui-plan": "src_changed",
+  "dsh-client-ui-plugin-manager": "src_changed",
+  "dsh-client-ui-primitives": "src_changed",
+  "dsh-client-ui-reference": "version_only",
+  "dsh-client-ui-renderer": "src_changed",
+  "dsh-client-ui-schedule": "src_changed",
+  "dsh-client-ui-session": "tests_changed",
+  "dsh-client-ui-settings": "version_only",
+  "dsh-client-ui-settings-account": "src_changed",
+  "dsh-client-ui-settings-agent-loop": "src_changed",
+  "dsh-client-ui-settings-general": "src_changed",
+  "dsh-client-ui-settings-models": "src_changed",
+  "dsh-client-ui-settings-plugin-inventory": "src_changed",
+  "dsh-client-ui-settings-plugins": "version_only",
+  "dsh-client-ui-settings-shell": "src_changed",
+  "dsh-client-ui-settings-subagent": "src_changed",
+  "dsh-client-ui-settings-web-search": "src_changed",
+  "dsh-client-ui-shortcuts": "src_changed",
+  "dsh-client-ui-sidebar": "src_changed",
+  "dsh-client-ui-sidebar-browser": "src_changed",
+  "dsh-client-ui-sidebar-documentpreview": "src_changed",
+  "dsh-client-ui-sidebar-files": "src_changed",
+  "dsh-client-ui-sidebar-right": "src_changed",
+  "dsh-client-ui-sidebar-terminal": "src_changed",
+  "dsh-client-ui-skill": "src_changed",
+  "dsh-client-ui-slots": "version_only",
+  "dsh-client-ui-subagent": "src_changed",
+  "dsh-client-ui-theme": "src_changed",
+  "dsh-client-ui-tool": "src_changed",
+  "dsh-client-ui-trajectory": "src_changed",
+  "dsh-client-ui-user-questions": "src_changed",
+  "dsh-client-ui-workflow-run": "src_changed",
+  "dsh-client-ui-workspace": "src_changed",
+  "dsh-client-web": "version_only",
+  "dsh-cmdline": "version_only",
+  "dsh-command-compact": "version_only",
+  "dsh-command-feedback": "version_only",
+  "dsh-command-goal": "version_only",
+  "dsh-commands": "src_changed",
+  "dsh-compaction": "src_changed",
+  "dsh-compaction-basic": "tests_changed",
+  "dsh-compaction-image-offload": "version_only",
+  "dsh-compaction-tool-result-pruner": "tests_changed",
+  "dsh-computer-use": "version_only",
+  "dsh-config-editor": "src_changed",
+  "dsh-cordis-client-runner": "src_changed",
+  "dsh-cordis-host-runner": "src_changed",
+  "dsh-credentials": "src_changed",
+  "dsh-credentials-local": "src_changed",
+  "dsh-deepseek-account": "src_changed",
+  "dsh-deepseek-account-platform": "src_changed",
+  "dsh-deepseek-llm-api-extensions": "src_changed",
+  "dsh-deque": "version_only",
+  "dsh-experimental-agent-team": "src_changed",
+  "dsh-experimental-agent-team-profile": "version_only",
+  "dsh-experimental-api-speech-to-text": "version_only",
+  "dsh-experimental-auto-review": "src_changed",
+  "dsh-experimental-browser-use-chrome-devtools-mcp": "src_changed",
+  "dsh-experimental-browser-use-playwright-mcp": "src_changed",
+  "dsh-experimental-browser-use-runtime": "src_changed",
+  "dsh-experimental-browser-use-stagehand-native": "version_only",
+  "dsh-experimental-client-ui-agent-team": "version_only",
+  "dsh-experimental-client-ui-voice-input": "src_changed",
+  "dsh-experimental-computer-use-cua-driver-mcp": "version_only",
+  "dsh-experimental-computer-use-cua-driver-native": "version_only",
+  "dsh-experimental-inspector": "src_changed",
+  "dsh-experimental-ptc-runtime-python": "src_changed",
+  "dsh-experimental-speech-to-text": "version_only",
+  "dsh-experimental-speech-to-text-sensevoice": "src_changed",
+  "dsh-experimental-tool-agent-team": "src_changed",
+  "dsh-experimental-voice-input-bundle": "version_only",
+  "dsh-experimental-webworker-packer": "tests_changed",
+  "dsh-experimental-webworker-runtime": "src_changed",
+  "dsh-file-reference": "version_only",
+  "dsh-file-reference-local": "src_changed",
+  "dsh-fs": "src_changed",
+  "dsh-fs-local": "version_only",
+  "dsh-fs-observation-policy": "version_only",
+  "dsh-fs-sandbox": "version_only",
+  "dsh-fs-ssh": "version_only",
+  "dsh-goal": "src_changed",
+  "dsh-goal-round-driver": "src_changed",
+  "dsh-headless": "src_changed",
+  "dsh-hmr": "src_changed",
+  "dsh-home-paths": "src_changed",
+  "dsh-hook-protocol": "src_changed",
+  "dsh-hooks-claude-code": "src_changed",
+  "dsh-hooks-codex": "src_changed",
+  "dsh-host-directory-picker": "version_only",
+  "dsh-host-directory-picker-auto": "src_changed",
+  "dsh-host-directory-picker-browse": "version_only",
+  "dsh-host-directory-picker-native": "src_changed",
+  "dsh-host-frontend-static": "version_only",
+  "dsh-host-open-in-app": "src_changed",
+  "dsh-host-plugin-inventory": "version_only",
+  "dsh-host-product-telemetry-otel": "src_changed",
+  "dsh-host-webserver": "src_changed",
+  "dsh-http-proxy": "version_only",
+  "dsh-jobs": "src_changed",
+  "dsh-jobs-local": "tests_changed",
+  "dsh-launch-environment": "version_only",
+  "dsh-lazy-require": "version_only",
+  "dsh-llm": "src_changed",
+  "dsh-llm-deepseek": "src_changed",
+  "dsh-llm-deepseek-account": "version_only",
+  "dsh-llm-deepseek-api-key": "src_changed",
+  "dsh-llm-mock-server": "src_changed",
+  "dsh-llm-pi-ai": "src_changed",
+  "dsh-llm-replay": "src_changed",
+  "dsh-llm-retry": "src_changed",
+  "dsh-loader-smoke": "version_only",
+  "dsh-lsp": "version_only",
+  "dsh-lsp-stdio": "version_only",
+  "dsh-mcp-client": "version_only",
+  "dsh-mcp-resources": "tests_changed",
+  "dsh-message-feedback": "version_only",
+  "dsh-native-command": "src_changed",
+  "dsh-office-to-pdf": "version_only",
+  "dsh-output-retention": "version_only",
+  "dsh-package-manifest": "src_changed",
+  "dsh-permission-presets": "src_changed",
+  "dsh-persona": "version_only",
+  "dsh-plan-mode": "src_changed",
+  "dsh-plugin-manager": "src_changed",
+  "dsh-plugin-package-inventory-deepseek": "src_changed",
+  "dsh-ptc-runtime": "version_only",
+  "dsh-ptc-runtime-node": "src_changed",
+  "dsh-pwsh-local": "version_only",
+  "dsh-pwsh-sandbox": "version_only",
+  "dsh-remote-mock": "version_only",
+  "dsh-repeat-tool-reminder": "version_only",
+  "dsh-sandbox": "version_only",
+  "dsh-sandbox-local": "src_changed",
+  "dsh-sandbox-policy": "src_changed",
+  "dsh-sandbox-ssh": "version_only",
+  "dsh-sandbox-windows-acl": "src_changed",
+  "dsh-schedule": "src_changed",
+  "dsh-scope": "src_changed",
+  "dsh-sdk-app": "version_only",
+  "dsh-sdk-client": "src_changed",
+  "dsh-sdk-jsonrpc-server": "src_changed",
+  "dsh-sdk-minimal": "tests_changed",
+  "dsh-sdk-protocol": "src_changed",
+  "dsh-session": "src_changed",
+  "dsh-session-checkpoint-policy": "version_only",
+  "dsh-session-format": "src_changed",
+  "dsh-session-format-catalog": "version_only",
+  "dsh-session-format-v0-to-v1": "version_only",
+  "dsh-session-format-v1-to-v2": "version_only",
+  "dsh-session-format-v2-to-v3": "version_only",
+  "dsh-session-format-v3-to-v4": "src_changed",
+  "dsh-session-log-deepseek": "src_changed",
+  "dsh-session-log-export": "version_only",
+  "dsh-session-persistence": "src_changed",
+  "dsh-session-persistence-jsonl": "src_changed",
+  "dsh-session-projection": "src_changed",
+  "dsh-session-projection-cache": "src_changed",
+  "dsh-session-query": "src_changed",
+  "dsh-session-query-sqlite": "version_only",
+  "dsh-session-reference": "tests_changed",
+  "dsh-session-snapshot": "src_changed",
+  "dsh-session-stats": "version_only",
+  "dsh-session-telemetry": "src_changed",
+  "dsh-session-telemetry-otel": "src_changed",
+  "dsh-session-title": "src_changed",
+  "dsh-session-title-all-prompts-llm": "src_changed",
+  "dsh-session-title-first-prompt-llm": "src_changed",
+  "dsh-session-title-llm": "src_changed",
+  "dsh-session-turn-outline": "version_only",
+  "dsh-settings": "tests_changed",
+  "dsh-shell": "version_only",
+  "dsh-shell-env": "version_only",
+  "dsh-skill": "version_only",
+  "dsh-skill-badge": "version_only",
+  "dsh-skill-filesystem": "src_changed",
+  "dsh-skill-office": "tests_changed",
+  "dsh-spill": "version_only",
+  "dsh-spill-local": "version_only",
+  "dsh-spill-policy": "tests_changed",
+  "dsh-ssh": "src_changed",
+  "dsh-storage": "version_only",
+  "dsh-storage-domain": "src_changed",
+  "dsh-storage-json": "version_only",
+  "dsh-storage-sqlite": "version_only",
+  "dsh-subagent": "src_changed",
+  "dsh-subagent-acp": "src_changed",
+  "dsh-subagent-claude-code": "src_changed",
+  "dsh-subagent-codex": "src_changed",
+  "dsh-subagent-dsh-sdk": "src_changed",
+  "dsh-subagent-fork-in-process": "src_changed",
+  "dsh-subagent-spawn-in-process": "src_changed",
+  "dsh-subprocess": "version_only",
+  "dsh-subprocess-local": "src_changed",
+  "dsh-subprocess-ssh": "version_only",
+  "dsh-system-prompt": "src_changed",
+  "dsh-terminal": "version_only",
+  "dsh-terminal-bash": "src_changed",
+  "dsh-time-context": "src_changed",
+  "dsh-timeout": "src_changed",
+  "dsh-tmux-context": "version_only",
+  "dsh-token-meter": "version_only",
+  "dsh-tool-ask-user": "src_changed",
+  "dsh-tool-bash": "src_changed",
+  "dsh-tool-bash-persistent": "src_changed",
+  "dsh-tool-call-timeout-policy": "version_only",
+  "dsh-tool-cordis": "src_changed",
+  "dsh-tool-fs": "src_changed",
+  "dsh-tool-fs-search": "src_changed",
+  "dsh-tool-goal": "version_only",
+  "dsh-tool-jobs": "tests_changed",
+  "dsh-tool-lsp": "src_changed",
+  "dsh-tool-present": "src_changed",
+  "dsh-tool-pwsh": "src_changed",
+  "dsh-tool-pwsh-persistent": "src_changed",
+  "dsh-tool-ralph": "tests_changed",
+  "dsh-tool-session-query": "version_only",
+  "dsh-tool-skill": "src_changed",
+  "dsh-tool-str-replace-editor": "version_only",
+  "dsh-tool-subagent": "src_changed",
+  "dsh-tool-subagent-control": "src_changed",
+  "dsh-tool-terminal": "src_changed",
+  "dsh-tool-todo": "src_changed",
+  "dsh-tool-web": "version_only",
+  "dsh-tool-workflow": "src_changed",
+  "dsh-tool-workspace-dependencies": "version_only",
+  "dsh-tools": "src_changed",
+  "dsh-typert-generator": "src_changed",
+  "dsh-typert-loader": "tests_changed",
+  "dsh-typert-protocol": "version_only",
+  "dsh-typert-registry": "version_only",
+  "dsh-user-approval": "src_changed",
+  "dsh-user-questions": "src_changed",
+  "dsh-util-code-language": "version_only",
+  "dsh-util-crypto": "version_only",
+  "dsh-util-time": "version_only",
+  "dsh-util-values": "src_changed",
+  "dsh-util-workspace-path": "version_only",
+  "dsh-web": "version_only",
+  "dsh-web-app": "src_changed",
+  "dsh-web-fetch-http": "version_only",
+  "dsh-web-search-deepseek": "src_changed",
+  "dsh-web-search-exa": "version_only",
+  "dsh-web-search-perplexity": "version_only",
+  "dsh-webhook": "src_changed",
+  "dsh-webhook-github": "version_only",
+  "dsh-win32-process": "version_only",
+  "dsh-workflow": "src_changed",
+  "dsh-workflow-ptc": "src_changed",
+  "dsh-workspace": "src_changed",
+  "dsh-workspace-changes": "src_changed",
+  "schemastery": "version_only"
+ },
+ "detail": {
+  "cordis": {
+   "path_old": "vendor/cordis",
+   "path_new": "vendor/cordis",
+   "version_old": "4.0.4",
+   "version_new": "4.0.5-alpha.1"
+  },
+  "cordis-plugin-group": {
+   "path_old": "vendor/group",
+   "path_new": "vendor/group",
+   "version_old": "1.0.4",
+   "version_new": "1.0.5-alpha.1"
+  },
+  "cordis-plugin-hmr": {
+   "path_old": "vendor/hmr",
+   "path_new": "vendor/hmr",
+   "version_old": "1.0.19",
+   "version_new": "1.0.20-alpha.1"
+  },
+  "cordis-plugin-include": {
+   "path_old": "vendor/include",
+   "path_new": "vendor/include",
+   "version_old": "1.0.9",
+   "version_new": "1.0.10-alpha.1"
+  },
+  "cordis-plugin-loader": {
+   "path_old": "vendor/loader",
+   "path_new": "vendor/loader",
+   "version_old": "1.0.5",
+   "version_new": "1.0.6-alpha.1"
+  },
+  "cordis-plugin-logger-console": {
+   "path_old": "vendor/logger-console",
+   "path_new": "vendor/logger-console",
+   "version_old": "1.0.4",
+   "version_new": "1.0.5-alpha.1"
+  },
+  "cordis-plugin-timer": {
+   "path_old": "vendor/timer",
+   "path_new": "vendor/timer",
+   "version_old": "1.1.6",
+   "version_new": "1.1.7-alpha.1"
+  },
+  "cosmokit": {
+   "path_old": "vendor/cosmokit",
+   "path_new": "vendor/cosmokit",
+   "version_old": "1.8.5",
+   "version_new": "1.8.6-alpha.1"
+  },
+  "dsh-acp": {
+   "path_old": "packages/acp/acp",
+   "path_new": "packages/acp/acp",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-acp-app": {
+   "path_old": "packages/bundle/acp-app",
+   "path_new": "packages/bundle/acp-app",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-agent": {
+   "path_old": "packages/core/agent",
+   "path_new": "packages/core/agent",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-agent-default-model": {
+   "path_old": "packages/core/agent-default-model",
+   "path_new": "packages/core/agent-default-model",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-agent-instructions": {
+   "path_old": "packages/context/agent-instructions",
+   "path_new": "packages/context/agent-instructions",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-agent-loop": {
+   "path_old": "packages/core/agent-loop",
+   "path_new": "packages/core/agent-loop",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-agent-loop-testkit": {
+   "path_old": "packages/test-support/agent-loop-testkit",
+   "path_new": "packages/test-support/agent-loop-testkit",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-agent-preset": {
+   "path_old": "packages/preset/agent-preset",
+   "path_new": "packages/preset/agent-preset",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-agent-preset-registry": {
+   "path_old": "packages/preset/agent-preset-registry",
+   "path_new": "packages/preset/agent-preset-registry",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-agent-tool-presentation": {
+   "path_old": "packages/core/agent-tool-presentation",
+   "path_new": "packages/core/agent-tool-presentation",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-anonymous-user-id": {
+   "path_old": "packages/identity/anonymous-user-id",
+   "path_new": "packages/identity/anonymous-user-id",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-api-account-controller": {
+   "path_old": "packages/api/account-controller",
+   "path_new": "packages/api/account-controller",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-api-gateway": {
+   "path_old": "packages/api/gateway",
+   "path_new": "packages/api/gateway",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-api-job-controller": {
+   "path_old": "packages/api/job-controller",
+   "path_new": "packages/api/job-controller",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-api-remotes": {
+   "path_old": "packages/api/remotes",
+   "path_new": "packages/api/remotes",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-api-session-controller": {
+   "path_old": "packages/api/session-controller",
+   "path_new": "packages/api/session-controller",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-api-settings-controller": {
+   "path_old": "packages/api/settings-controller",
+   "path_new": "packages/api/settings-controller",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-api-terminal-controller": {
+   "path_old": "packages/api/terminal-controller",
+   "path_new": "packages/api/terminal-controller",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-api-workspace-controller": {
+   "path_old": "packages/api/workspace-controller",
+   "path_new": "packages/api/workspace-controller",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-api-workspace-files": {
+   "path_old": "packages/api/workspace-files",
+   "path_new": "packages/api/workspace-files",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-app-boot": {
+   "path_old": "packages/boot/app-boot",
+   "path_new": "packages/boot/app-boot",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-atomic-write": {
+   "path_old": "packages/util/atomic-write",
+   "path_new": "packages/util/atomic-write",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-attachment": {
+   "path_old": "packages/attachment/attachment",
+   "path_new": "packages/attachment/attachment",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-attachment-local": {
+   "path_old": "packages/attachment/attachment-local",
+   "path_new": "packages/attachment/attachment-local",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-authorization": {
+   "path_old": "packages/credentials/authorization",
+   "path_new": "packages/credentials/authorization",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-base": {
+   "path_old": "packages/bundle/base",
+   "path_new": "packages/bundle/base",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-bash-local": {
+   "path_old": "packages/shell/bash-local",
+   "path_new": "packages/shell/bash-local",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-bash-sandbox": {
+   "path_old": "packages/shell/bash-sandbox",
+   "path_new": "packages/shell/bash-sandbox",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-brand": {
+   "path_old": "packages/util/brand",
+   "path_new": "packages/util/brand",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-browser-use": {
+   "path_old": "packages/browser-use/browser-use",
+   "path_new": "packages/browser-use/browser-use",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-chunked-list": {
+   "path_old": "packages/util/chunked-list",
+   "path_new": "packages/util/chunked-list",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-connection": {
+   "path_old": "packages/client/connection",
+   "path_new": "packages/client/connection",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-file-upload": {
+   "path_old": "packages/client/file-upload",
+   "path_new": "packages/client/file-upload",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-hmr": {
+   "path_old": "packages/client/hmr",
+   "path_new": "packages/client/hmr",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-locale": {
+   "path_old": "packages/client/locale",
+   "path_new": "packages/client/locale",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-modules": {
+   "path_old": "packages/client/modules",
+   "path_new": "packages/client/modules",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-resources": {
+   "path_old": "packages/client/resources",
+   "path_new": "packages/client/resources",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-shortcuts": {
+   "path_old": "packages/client/shortcuts",
+   "path_new": "packages/client/shortcuts",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-store": {
+   "path_old": "packages/client/store",
+   "path_new": "packages/client/store",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-test-runtime": {
+   "path_old": "packages/test-support/client-runtime",
+   "path_new": "packages/test-support/client-runtime",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-agent-preset": {
+   "path_old": "packages/client/ui-agent-preset",
+   "path_new": "packages/client/ui-agent-preset",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-approval": {
+   "path_old": "packages/client/ui-approval",
+   "path_new": "packages/client/ui-approval",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-attachment": {
+   "path_old": "packages/client/ui-attachment",
+   "path_new": "packages/client/ui-attachment",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-brand-official": {
+   "path_old": "packages/client/ui-brand-official",
+   "path_new": "packages/client/ui-brand-official",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-chat": {
+   "path_old": "packages/client/ui-chat",
+   "path_new": "packages/client/ui-chat",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-commands": {
+   "path_old": "packages/client/ui-commands",
+   "path_new": "packages/client/ui-commands",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-conversation": {
+   "path_old": "packages/client/ui-conversation",
+   "path_new": "packages/client/ui-conversation",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-cordis": {
+   "path_old": "packages/extensions/ui-cordis",
+   "path_new": "packages/extensions/ui-cordis",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-deliverables": {
+   "path_old": "packages/client/ui-deliverables",
+   "path_new": "packages/client/ui-deliverables",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-directory-picker-browse": {
+   "path_old": "packages/client/ui-directory-picker-browse",
+   "path_new": "packages/client/ui-directory-picker-browse",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-directory-picker-native": {
+   "path_old": "packages/client/ui-directory-picker-native",
+   "path_new": "packages/client/ui-directory-picker-native",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-dockkit": {
+   "path_old": "packages/client/ui-dockkit",
+   "path_new": "packages/client/ui-dockkit",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-goal": {
+   "path_old": "packages/client/ui-goal",
+   "path_new": "packages/client/ui-goal",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-input-trigger": {
+   "path_old": "packages/client/ui-input-trigger",
+   "path_new": "packages/client/ui-input-trigger",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-jobs": {
+   "path_old": "packages/client/ui-jobs",
+   "path_new": "packages/client/ui-jobs",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-layout": {
+   "path_old": "packages/client/ui-layout",
+   "path_new": "packages/client/ui-layout",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-message-feedback": {
+   "path_old": "packages/client/ui-message-feedback",
+   "path_new": "packages/client/ui-message-feedback",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-model-selection": {
+   "path_old": "packages/client/ui-model-selection",
+   "path_new": "packages/client/ui-model-selection",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-open-in-app": {
+   "path_old": "packages/client/ui-open-in-app",
+   "path_new": "packages/client/ui-open-in-app",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-permission-presets": {
+   "path_old": "packages/client/ui-permission-presets",
+   "path_new": "packages/client/ui-permission-presets",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-plan": {
+   "path_old": "packages/client/ui-plan",
+   "path_new": "packages/client/ui-plan",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-plugin-manager": {
+   "path_old": "packages/client/ui-plugin-manager",
+   "path_new": "packages/client/ui-plugin-manager",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-primitives": {
+   "path_old": "packages/client/ui-primitives",
+   "path_new": "packages/client/ui-primitives",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-reference": {
+   "path_old": "packages/client/ui-reference",
+   "path_new": "packages/client/ui-reference",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-renderer": {
+   "path_old": "packages/client/ui-renderer",
+   "path_new": "packages/client/ui-renderer",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-schedule": {
+   "path_old": "packages/client/ui-schedule",
+   "path_new": "packages/client/ui-schedule",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-session": {
+   "path_old": "packages/client/ui-session",
+   "path_new": "packages/client/ui-session",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-settings": {
+   "path_old": "packages/client/ui-settings",
+   "path_new": "packages/client/ui-settings",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-settings-account": {
+   "path_old": "packages/client/ui-settings-account",
+   "path_new": "packages/client/ui-settings-account",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-settings-agent-loop": {
+   "path_old": "packages/client/ui-settings-agent-loop",
+   "path_new": "packages/client/ui-settings-agent-loop",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-settings-general": {
+   "path_old": "packages/client/ui-settings-general",
+   "path_new": "packages/client/ui-settings-general",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-settings-models": {
+   "path_old": "packages/client/ui-settings-models",
+   "path_new": "packages/client/ui-settings-models",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-settings-plugin-inventory": {
+   "path_old": "packages/client/ui-settings-plugin-inventory",
+   "path_new": "packages/client/ui-settings-plugin-inventory",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-settings-plugins": {
+   "path_old": "packages/client/ui-settings-plugins",
+   "path_new": "packages/client/ui-settings-plugins",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-settings-shell": {
+   "path_old": "packages/client/ui-settings-shell",
+   "path_new": "packages/client/ui-settings-shell",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-settings-subagent": {
+   "path_old": "packages/client/ui-settings-subagent",
+   "path_new": "packages/client/ui-settings-subagent",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-settings-web-search": {
+   "path_old": "packages/client/ui-settings-web-search",
+   "path_new": "packages/client/ui-settings-web-search",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-shortcuts": {
+   "path_old": "packages/client/ui-shortcuts",
+   "path_new": "packages/client/ui-shortcuts",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-sidebar": {
+   "path_old": "packages/client/ui-sidebar",
+   "path_new": "packages/client/ui-sidebar",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-sidebar-browser": {
+   "path_old": "packages/client/ui-sidebar-browser",
+   "path_new": "packages/client/ui-sidebar-browser",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-sidebar-documentpreview": {
+   "path_old": "packages/client/ui-sidebar-documentpreview",
+   "path_new": "packages/client/ui-sidebar-documentpreview",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-sidebar-files": {
+   "path_old": "packages/client/ui-sidebar-files",
+   "path_new": "packages/client/ui-sidebar-files",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-sidebar-right": {
+   "path_old": "packages/client/ui-sidebar-right",
+   "path_new": "packages/client/ui-sidebar-right",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-sidebar-terminal": {
+   "path_old": "packages/client/ui-sidebar-terminal",
+   "path_new": "packages/client/ui-sidebar-terminal",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-skill": {
+   "path_old": "packages/client/ui-skill",
+   "path_new": "packages/client/ui-skill",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-slots": {
+   "path_old": "packages/client/ui-slots",
+   "path_new": "packages/client/ui-slots",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-subagent": {
+   "path_old": "packages/client/ui-subagent",
+   "path_new": "packages/client/ui-subagent",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-theme": {
+   "path_old": "packages/client/ui-theme",
+   "path_new": "packages/client/ui-theme",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-tool": {
+   "path_old": "packages/client/ui-tool",
+   "path_new": "packages/client/ui-tool",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-trajectory": {
+   "path_old": "packages/client/ui-trajectory",
+   "path_new": "packages/client/ui-trajectory",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-user-questions": {
+   "path_old": "packages/client/ui-user-questions",
+   "path_new": "packages/client/ui-user-questions",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-workflow-run": {
+   "path_old": "packages/client/ui-workflow-run",
+   "path_new": "packages/client/ui-workflow-run",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-ui-workspace": {
+   "path_old": "packages/client/ui-workspace",
+   "path_new": "packages/client/ui-workspace",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-client-web": {
+   "path_old": "packages/client/web",
+   "path_new": "packages/client/web",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-cmdline": {
+   "path_old": "packages/boot/cmdline",
+   "path_new": "packages/boot/cmdline",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-command-compact": {
+   "path_old": "packages/compaction/command-compact",
+   "path_new": "packages/compaction/command-compact",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-command-feedback": {
+   "path_old": "packages/feedback/command-feedback",
+   "path_new": "packages/feedback/command-feedback",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-command-goal": {
+   "path_old": "packages/goal/command-goal",
+   "path_new": "packages/goal/command-goal",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-commands": {
+   "path_old": "packages/interaction/commands",
+   "path_new": "packages/interaction/commands",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-compaction": {
+   "path_old": "packages/compaction/compaction",
+   "path_new": "packages/compaction/compaction",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-compaction-basic": {
+   "path_old": "packages/compaction/compaction-basic",
+   "path_new": "packages/compaction/compaction-basic",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-compaction-image-offload": {
+   "path_old": "packages/compaction/compaction-image-offload",
+   "path_new": "packages/compaction/compaction-image-offload",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-compaction-tool-result-pruner": {
+   "path_old": "packages/compaction/compaction-tool-result-pruner",
+   "path_new": "packages/compaction/compaction-tool-result-pruner",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-computer-use": {
+   "path_old": "packages/computer-use/computer-use",
+   "path_new": "packages/computer-use/computer-use",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-config-editor": {
+   "path_old": "packages/boot/config-editor",
+   "path_new": "packages/boot/config-editor",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-cordis-client-runner": {
+   "path_old": "packages/extensions/cordis-client-runner",
+   "path_new": "packages/extensions/cordis-client-runner",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-cordis-host-runner": {
+   "path_old": "packages/extensions/cordis-host-runner",
+   "path_new": "packages/extensions/cordis-host-runner",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-credentials": {
+   "path_old": "packages/credentials/credentials",
+   "path_new": "packages/credentials/credentials",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-credentials-local": {
+   "path_old": "packages/credentials/credentials-local",
+   "path_new": "packages/credentials/credentials-local",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-deepseek-account": {
+   "path_old": "packages/credentials/deepseek-account",
+   "path_new": "packages/credentials/deepseek-account",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-deepseek-account-platform": {
+   "path_old": "packages/credentials/deepseek-account-platform",
+   "path_new": "packages/credentials/deepseek-account-platform",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-deepseek-llm-api-extensions": {
+   "path_old": "packages/llm/deepseek-llm-api-extensions",
+   "path_new": "packages/llm/deepseek-llm-api-extensions",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-deque": {
+   "path_old": "packages/util/deque",
+   "path_new": "packages/util/deque",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-experimental-agent-team": {
+   "path_old": "packages/experimental/agent-team",
+   "path_new": "packages/experimental/agent-team",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-experimental-agent-team-profile": {
+   "path_old": "packages/experimental/agent-team-profile",
+   "path_new": "packages/experimental/agent-team-profile",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-experimental-api-speech-to-text": {
+   "path_old": "packages/experimental/api-speech-to-text",
+   "path_new": "packages/experimental/api-speech-to-text",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-experimental-auto-review": {
+   "path_old": "packages/experimental/auto-review",
+   "path_new": "packages/experimental/auto-review",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-experimental-browser-use-chrome-devtools-mcp": {
+   "path_old": "packages/experimental/browser-use-chrome-devtools-mcp",
+   "path_new": "packages/experimental/browser-use-chrome-devtools-mcp",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-experimental-browser-use-playwright-mcp": {
+   "path_old": "packages/experimental/browser-use-playwright-mcp",
+   "path_new": "packages/experimental/browser-use-playwright-mcp",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-experimental-browser-use-runtime": {
+   "path_old": "packages/experimental/browser-use-runtime",
+   "path_new": "packages/experimental/browser-use-runtime",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-experimental-browser-use-stagehand-native": {
+   "path_old": "packages/experimental/browser-use-stagehand-native",
+   "path_new": "packages/experimental/browser-use-stagehand-native",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-experimental-client-ui-agent-team": {
+   "path_old": "packages/experimental/client-ui-agent-team",
+   "path_new": "packages/experimental/client-ui-agent-team",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-experimental-client-ui-voice-input": {
+   "path_old": "packages/experimental/client-ui-voice-input",
+   "path_new": "packages/experimental/client-ui-voice-input",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-experimental-computer-use-cua-driver-mcp": {
+   "path_old": "packages/experimental/computer-use-cua-driver-mcp",
+   "path_new": "packages/experimental/computer-use-cua-driver-mcp",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-experimental-computer-use-cua-driver-native": {
+   "path_old": "packages/experimental/computer-use-cua-driver-native",
+   "path_new": "packages/experimental/computer-use-cua-driver-native",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-experimental-inspector": {
+   "path_old": "packages/experimental/inspector",
+   "path_new": "packages/experimental/inspector",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-experimental-ptc-runtime-python": {
+   "path_old": "packages/experimental/ptc-runtime-python",
+   "path_new": "packages/experimental/ptc-runtime-python",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-experimental-speech-to-text": {
+   "path_old": "packages/experimental/speech-to-text",
+   "path_new": "packages/experimental/speech-to-text",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-experimental-speech-to-text-sensevoice": {
+   "path_old": "packages/experimental/speech-to-text-sensevoice",
+   "path_new": "packages/experimental/speech-to-text-sensevoice",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-experimental-tool-agent-team": {
+   "path_old": "packages/experimental/tool-agent-team",
+   "path_new": "packages/experimental/tool-agent-team",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-experimental-voice-input-bundle": {
+   "path_old": "packages/experimental/voice-input-bundle",
+   "path_new": "packages/experimental/voice-input-bundle",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-experimental-webworker-packer": {
+   "path_old": "packages/experimental/webworker-packer",
+   "path_new": "packages/experimental/webworker-packer",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-experimental-webworker-runtime": {
+   "path_old": "packages/experimental/webworker-runtime",
+   "path_new": "packages/experimental/webworker-runtime",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-file-reference": {
+   "path_old": "packages/context/file-reference",
+   "path_new": "packages/context/file-reference",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-file-reference-local": {
+   "path_old": "packages/context/file-reference-local",
+   "path_new": "packages/context/file-reference-local",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-fs": {
+   "path_old": "packages/fs/fs",
+   "path_new": "packages/fs/fs",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-fs-local": {
+   "path_old": "packages/fs/fs-local",
+   "path_new": "packages/fs/fs-local",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-fs-observation-policy": {
+   "path_old": "packages/fs/fs-observation-policy",
+   "path_new": "packages/fs/fs-observation-policy",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-fs-sandbox": {
+   "path_old": "packages/fs/fs-sandbox",
+   "path_new": "packages/fs/fs-sandbox",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-fs-ssh": {
+   "path_old": "packages/ssh/fs-ssh",
+   "path_new": "packages/ssh/fs-ssh",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-goal": {
+   "path_old": "packages/goal/goal",
+   "path_new": "packages/goal/goal",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-goal-round-driver": {
+   "path_old": "packages/goal/goal-round-driver",
+   "path_new": "packages/goal/goal-round-driver",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-headless": {
+   "path_old": "packages/bundle/headless",
+   "path_new": "packages/bundle/headless",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-hmr": {
+   "path_old": "packages/boot/hmr",
+   "path_new": "packages/boot/hmr",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-home-paths": {
+   "path_old": "packages/util/home-paths",
+   "path_new": "packages/util/home-paths",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-hook-protocol": {
+   "path_old": "packages/hooks/hook-protocol",
+   "path_new": "packages/experimental/hook-protocol",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-hooks-claude-code": {
+   "path_old": "packages/hooks/hooks-claude-code",
+   "path_new": "packages/experimental/hooks-claude-code",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-hooks-codex": {
+   "path_old": "packages/hooks/hooks-codex",
+   "path_new": "packages/experimental/hooks-codex",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-host-directory-picker": {
+   "path_old": "packages/host/directory-picker",
+   "path_new": "packages/host/directory-picker",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-host-directory-picker-auto": {
+   "path_old": "packages/host/directory-picker-auto",
+   "path_new": "packages/host/directory-picker-auto",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-host-directory-picker-browse": {
+   "path_old": "packages/host/directory-picker-browse",
+   "path_new": "packages/host/directory-picker-browse",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-host-directory-picker-native": {
+   "path_old": "packages/host/directory-picker-native",
+   "path_new": "packages/host/directory-picker-native",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-host-frontend-static": {
+   "path_old": "packages/host/frontend-static",
+   "path_new": "packages/host/frontend-static",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-host-open-in-app": {
+   "path_old": "packages/host/open-in-app",
+   "path_new": "packages/host/open-in-app",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-host-plugin-inventory": {
+   "path_old": "packages/host/plugin-inventory",
+   "path_new": "packages/host/plugin-inventory",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-host-product-telemetry-otel": {
+   "path_old": "packages/host/product-telemetry-otel",
+   "path_new": "packages/host/product-telemetry-otel",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-host-webserver": {
+   "path_old": "packages/host/webserver",
+   "path_new": "packages/host/webserver",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-http-proxy": {
+   "path_old": "packages/util/http-proxy",
+   "path_new": "packages/util/http-proxy",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-jobs": {
+   "path_old": "packages/jobs/jobs",
+   "path_new": "packages/jobs/jobs",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-jobs-local": {
+   "path_old": "packages/jobs/jobs-local",
+   "path_new": "packages/jobs/jobs-local",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-launch-environment": {
+   "path_old": "packages/util/launch-environment",
+   "path_new": "packages/util/launch-environment",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-lazy-require": {
+   "path_old": "packages/util/lazy-require",
+   "path_new": "packages/util/lazy-require",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-llm": {
+   "path_old": "packages/llm/llm",
+   "path_new": "packages/llm/llm",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-llm-deepseek": {
+   "path_old": "packages/llm/llm-deepseek",
+   "path_new": "packages/llm/llm-deepseek",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-llm-deepseek-account": {
+   "path_old": "packages/llm/llm-deepseek-account",
+   "path_new": "packages/llm/llm-deepseek-account",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-llm-deepseek-api-key": {
+   "path_old": "packages/llm/llm-deepseek-api-key",
+   "path_new": "packages/llm/llm-deepseek-api-key",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-llm-mock-server": {
+   "path_old": "packages/test-support/llm-mock-server",
+   "path_new": "packages/test-support/llm-mock-server",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-llm-pi-ai": {
+   "path_old": "packages/llm/llm-pi-ai",
+   "path_new": "packages/llm/llm-pi-ai",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-llm-replay": {
+   "path_old": "packages/test-support/llm-replay",
+   "path_new": "packages/test-support/llm-replay",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-llm-retry": {
+   "path_old": "packages/llm/llm-retry",
+   "path_new": "packages/llm/llm-retry",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-loader-smoke": {
+   "path_old": "packages/test-support/loader-smoke",
+   "path_new": "packages/test-support/loader-smoke",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-lsp": {
+   "path_old": "packages/lsp/lsp",
+   "path_new": "packages/lsp/lsp",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-lsp-stdio": {
+   "path_old": "packages/lsp/lsp-stdio",
+   "path_new": "packages/lsp/lsp-stdio",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-mcp-client": {
+   "path_old": "packages/mcp/mcp-client",
+   "path_new": "packages/mcp/mcp-client",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-mcp-resources": {
+   "path_old": "packages/mcp/mcp-resources",
+   "path_new": "packages/mcp/mcp-resources",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-message-feedback": {
+   "path_old": "packages/feedback/message-feedback",
+   "path_new": "packages/feedback/message-feedback",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-native-command": {
+   "path_old": "packages/util/native-command",
+   "path_new": "packages/util/native-command",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-office-to-pdf": {
+   "path_old": "packages/document/office-to-pdf",
+   "path_new": "packages/document/office-to-pdf",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-output-retention": {
+   "path_old": "packages/util/output-retention",
+   "path_new": "packages/util/output-retention",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-package-manifest": {
+   "path_old": "packages/util/package-manifest",
+   "path_new": "packages/util/package-manifest",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-permission-presets": {
+   "path_old": "packages/interaction/permission-presets",
+   "path_new": "packages/interaction/permission-presets",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-persona": {
+   "path_old": "packages/preset/persona",
+   "path_new": "packages/preset/persona",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-plan-mode": {
+   "path_old": "packages/plan/plan-mode",
+   "path_new": "packages/plan/plan-mode",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-plugin-manager": {
+   "path_old": "packages/boot/plugin-manager",
+   "path_new": "packages/boot/plugin-manager",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-plugin-package-inventory-deepseek": {
+   "path_old": "packages/llm/plugin-package-inventory-deepseek",
+   "path_new": "packages/llm/plugin-package-inventory-deepseek",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-ptc-runtime": {
+   "path_old": "packages/ptc-runtime/ptc-runtime",
+   "path_new": "packages/ptc-runtime/ptc-runtime",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-ptc-runtime-node": {
+   "path_old": "packages/ptc-runtime/ptc-runtime-node",
+   "path_new": "packages/ptc-runtime/ptc-runtime-node",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-pwsh-local": {
+   "path_old": "packages/shell/pwsh-local",
+   "path_new": "packages/shell/pwsh-local",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-pwsh-sandbox": {
+   "path_old": "packages/shell/pwsh-sandbox",
+   "path_new": "packages/shell/pwsh-sandbox",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-remote-mock": {
+   "path_old": "packages/test-support/remote-mock",
+   "path_new": "packages/test-support/remote-mock",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-repeat-tool-reminder": {
+   "path_old": "packages/guard/repeat-tool-reminder",
+   "path_new": "packages/guard/repeat-tool-reminder",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-sandbox": {
+   "path_old": "packages/sandbox/sandbox",
+   "path_new": "packages/sandbox/sandbox",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-sandbox-local": {
+   "path_old": "packages/sandbox/sandbox-local",
+   "path_new": "packages/sandbox/sandbox-local",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-sandbox-policy": {
+   "path_old": "packages/sandbox/sandbox-policy",
+   "path_new": "packages/sandbox/sandbox-policy",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-sandbox-ssh": {
+   "path_old": "packages/ssh/sandbox-ssh",
+   "path_new": "packages/ssh/sandbox-ssh",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-sandbox-windows-acl": {
+   "path_old": "packages/sandbox/sandbox-windows-acl",
+   "path_new": "packages/sandbox/sandbox-windows-acl",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-schedule": {
+   "path_old": "packages/schedule/schedule",
+   "path_new": "packages/schedule/schedule",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-scope": {
+   "path_old": "packages/core/scope",
+   "path_new": "packages/core/scope",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-sdk-app": {
+   "path_old": "packages/bundle/sdk-app",
+   "path_new": "packages/bundle/sdk-app",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-sdk-client": {
+   "path_old": "packages/sdk/client",
+   "path_new": "packages/sdk/client",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-sdk-jsonrpc-server": {
+   "path_old": "packages/sdk/server",
+   "path_new": "packages/sdk/server",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-sdk-minimal": {
+   "path_old": "packages/bundle/sdk-minimal",
+   "path_new": "packages/bundle/sdk-minimal",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-sdk-protocol": {
+   "path_old": "packages/sdk/protocol",
+   "path_new": "packages/sdk/protocol",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session": {
+   "path_old": "packages/core/session",
+   "path_new": "packages/core/session",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-checkpoint-policy": {
+   "path_old": "packages/session/session-checkpoint-policy",
+   "path_new": "packages/session/session-checkpoint-policy",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-format": {
+   "path_old": "packages/session/session-format",
+   "path_new": "packages/session/session-format",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-format-catalog": {
+   "path_old": "packages/session/session-format-catalog",
+   "path_new": "packages/session/session-format-catalog",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-format-v0-to-v1": {
+   "path_old": "packages/session/session-format-v0-to-v1",
+   "path_new": "packages/session/session-format-v0-to-v1",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-format-v1-to-v2": {
+   "path_old": "packages/session/session-format-v1-to-v2",
+   "path_new": "packages/session/session-format-v1-to-v2",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-format-v2-to-v3": {
+   "path_old": "packages/session/session-format-v2-to-v3",
+   "path_new": "packages/session/session-format-v2-to-v3",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-format-v3-to-v4": {
+   "path_old": "packages/session/session-format-v3-to-v4",
+   "path_new": "packages/session/session-format-v3-to-v4",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-log-deepseek": {
+   "path_old": "packages/session/session-log-deepseek",
+   "path_new": "packages/session/session-log-deepseek",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-log-export": {
+   "path_old": "packages/session-query/session-log-export",
+   "path_new": "packages/session-query/session-log-export",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-persistence": {
+   "path_old": "packages/session/session-persistence",
+   "path_new": "packages/session/session-persistence",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-persistence-jsonl": {
+   "path_old": "packages/session/session-persistence-jsonl",
+   "path_new": "packages/session/session-persistence-jsonl",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-projection": {
+   "path_old": "packages/session/session-projection",
+   "path_new": "packages/session/session-projection",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-projection-cache": {
+   "path_old": "packages/session/session-projection-cache",
+   "path_new": "packages/session/session-projection-cache",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-query": {
+   "path_old": "packages/session-query/session-query",
+   "path_new": "packages/session-query/session-query",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-query-sqlite": {
+   "path_old": "packages/session-query/session-query-sqlite",
+   "path_new": "packages/session-query/session-query-sqlite",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-reference": {
+   "path_old": "packages/context/session-reference",
+   "path_new": "packages/context/session-reference",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-snapshot": {
+   "path_old": "packages/test-support/session-snapshot",
+   "path_new": "packages/test-support/session-snapshot",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-stats": {
+   "path_old": "packages/session/session-stats",
+   "path_new": "packages/session/session-stats",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-telemetry": {
+   "path_old": "packages/session/session-telemetry",
+   "path_new": "packages/session/session-telemetry",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-telemetry-otel": {
+   "path_old": "packages/session/session-telemetry-otel",
+   "path_new": "packages/session/session-telemetry-otel",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-title": {
+   "path_old": "packages/session/session-title",
+   "path_new": "packages/session/session-title",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-title-all-prompts-llm": {
+   "path_old": "packages/session/session-title-all-prompts-llm",
+   "path_new": "packages/experimental/session-title-all-prompts-llm",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-title-first-prompt-llm": {
+   "path_old": "packages/session/session-title-first-prompt-llm",
+   "path_new": "packages/session/session-title-first-prompt-llm",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-title-llm": {
+   "path_old": "packages/session/session-title-llm",
+   "path_new": "packages/session/session-title-llm",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-session-turn-outline": {
+   "path_old": "packages/session/session-turn-outline",
+   "path_new": "packages/session/session-turn-outline",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-settings": {
+   "path_old": "packages/settings/settings",
+   "path_new": "packages/settings/settings",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-shell": {
+   "path_old": "packages/shell/shell",
+   "path_new": "packages/shell/shell",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-shell-env": {
+   "path_old": "packages/shell/shell-env",
+   "path_new": "packages/shell/shell-env",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-skill": {
+   "path_old": "packages/skill/skill",
+   "path_new": "packages/skill/skill",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-skill-badge": {
+   "path_old": "packages/skill/skill-badge",
+   "path_new": "packages/experimental/skill-badge",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-skill-filesystem": {
+   "path_old": "packages/skill/skill-filesystem",
+   "path_new": "packages/skill/skill-filesystem",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-skill-office": {
+   "path_old": "packages/skill/skill-office",
+   "path_new": "packages/skill/skill-office",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-spill": {
+   "path_old": "packages/spill/spill",
+   "path_new": "packages/spill/spill",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-spill-local": {
+   "path_old": "packages/spill/spill-local",
+   "path_new": "packages/spill/spill-local",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-spill-policy": {
+   "path_old": "packages/spill/spill-policy",
+   "path_new": "packages/spill/spill-policy",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-ssh": {
+   "path_old": "packages/ssh/ssh",
+   "path_new": "packages/ssh/ssh",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-storage": {
+   "path_old": "packages/storage/storage",
+   "path_new": "packages/storage/storage",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-storage-domain": {
+   "path_old": "packages/storage/storage-domain",
+   "path_new": "packages/storage/storage-domain",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-storage-json": {
+   "path_old": "packages/storage/storage-json",
+   "path_new": "packages/storage/storage-json",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-storage-sqlite": {
+   "path_old": "packages/storage/storage-sqlite",
+   "path_new": "packages/storage/storage-sqlite",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-subagent": {
+   "path_old": "packages/subagent/subagent",
+   "path_new": "packages/subagent/subagent",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-subagent-acp": {
+   "path_old": "packages/subagent/subagent-acp",
+   "path_new": "packages/subagent/subagent-acp",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-subagent-claude-code": {
+   "path_old": "packages/subagent/subagent-claude-code",
+   "path_new": "packages/subagent/subagent-claude-code",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-subagent-codex": {
+   "path_old": "packages/subagent/subagent-codex",
+   "path_new": "packages/subagent/subagent-codex",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-subagent-dsh-sdk": {
+   "path_old": "packages/subagent/subagent-dsh-sdk",
+   "path_new": "packages/subagent/subagent-dsh-sdk",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-subagent-fork-in-process": {
+   "path_old": "packages/subagent/subagent-fork-in-process",
+   "path_new": "packages/subagent/subagent-fork-in-process",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-subagent-spawn-in-process": {
+   "path_old": "packages/subagent/subagent-spawn-in-process",
+   "path_new": "packages/subagent/subagent-spawn-in-process",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-subprocess": {
+   "path_old": "packages/subprocess/subprocess",
+   "path_new": "packages/subprocess/subprocess",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-subprocess-local": {
+   "path_old": "packages/subprocess/subprocess-local",
+   "path_new": "packages/subprocess/subprocess-local",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-subprocess-ssh": {
+   "path_old": "packages/ssh/subprocess-ssh",
+   "path_new": "packages/ssh/subprocess-ssh",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-system-prompt": {
+   "path_old": "packages/core/system-prompt",
+   "path_new": "packages/core/system-prompt",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-terminal": {
+   "path_old": "packages/terminal/terminal",
+   "path_new": "packages/terminal/terminal",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-terminal-bash": {
+   "path_old": "packages/terminal/terminal-bash",
+   "path_new": "packages/terminal/terminal-bash",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-time-context": {
+   "path_old": "packages/context/time-context",
+   "path_new": "packages/context/time-context",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-timeout": {
+   "path_old": "packages/util/timeout",
+   "path_new": "packages/util/timeout",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tmux-context": {
+   "path_old": "packages/context/tmux-context",
+   "path_new": "packages/context/tmux-context",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-token-meter": {
+   "path_old": "packages/llm/token-meter",
+   "path_new": "packages/llm/token-meter",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-ask-user": {
+   "path_old": "packages/interaction/tool-ask-user",
+   "path_new": "packages/interaction/tool-ask-user",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-bash": {
+   "path_old": "packages/shell/tool-bash",
+   "path_new": "packages/shell/tool-bash",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-bash-persistent": {
+   "path_old": "packages/shell/tool-bash-persistent",
+   "path_new": "packages/shell/tool-bash-persistent",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-call-timeout-policy": {
+   "path_old": "packages/guard/timeout-policy",
+   "path_new": "packages/guard/timeout-policy",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-cordis": {
+   "path_old": "packages/extensions/tool-cordis",
+   "path_new": "packages/extensions/tool-cordis",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-fs": {
+   "path_old": "packages/fs/tool-fs",
+   "path_new": "packages/fs/tool-fs",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-fs-search": {
+   "path_old": "packages/fs/tool-fs-search",
+   "path_new": "packages/fs/tool-fs-search",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-goal": {
+   "path_old": "packages/goal/tool-goal",
+   "path_new": "packages/goal/tool-goal",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-jobs": {
+   "path_old": "packages/jobs/tool-jobs",
+   "path_new": "packages/jobs/tool-jobs",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-lsp": {
+   "path_old": "packages/lsp/tool-lsp",
+   "path_new": "packages/lsp/tool-lsp",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-present": {
+   "path_old": "packages/deliverables/tool-present",
+   "path_new": "packages/deliverables/tool-present",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-pwsh": {
+   "path_old": "packages/shell/tool-pwsh",
+   "path_new": "packages/shell/tool-pwsh",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-pwsh-persistent": {
+   "path_old": "packages/shell/tool-pwsh-persistent",
+   "path_new": "packages/shell/tool-pwsh-persistent",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-ralph": {
+   "path_old": "packages/workflow/tool-ralph",
+   "path_new": "packages/experimental/tool-ralph",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-session-query": {
+   "path_old": "packages/session-query/tool-session-query",
+   "path_new": "packages/experimental/tool-session-query",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-skill": {
+   "path_old": "packages/skill/tool-skill",
+   "path_new": "packages/skill/tool-skill",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-str-replace-editor": {
+   "path_old": "packages/fs/tool-str-replace-editor",
+   "path_new": "packages/fs/tool-str-replace-editor",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-subagent": {
+   "path_old": "packages/subagent/tool-subagent",
+   "path_new": "packages/subagent/tool-subagent",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-subagent-control": {
+   "path_old": "packages/subagent/tool-subagent-control",
+   "path_new": "packages/subagent/tool-subagent-control",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-terminal": {
+   "path_old": "packages/terminal/tool-terminal",
+   "path_new": "packages/experimental/tool-terminal",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-todo": {
+   "path_old": "packages/todo/tool-todo",
+   "path_new": "packages/todo/tool-todo",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-web": {
+   "path_old": "packages/web/tool-web",
+   "path_new": "packages/web/tool-web",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-workflow": {
+   "path_old": "packages/workflow/tool-workflow",
+   "path_new": "packages/workflow/tool-workflow",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tool-workspace-dependencies": {
+   "path_old": "packages/skill/tool-workspace-dependencies",
+   "path_new": "packages/skill/tool-workspace-dependencies",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-tools": {
+   "path_old": "packages/core/tools",
+   "path_new": "packages/core/tools",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-typert-generator": {
+   "path_old": "packages/typert/generator",
+   "path_new": "packages/typert/generator",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-typert-loader": {
+   "path_old": "packages/typert/loader",
+   "path_new": "packages/typert/loader",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-typert-protocol": {
+   "path_old": "packages/typert/protocol",
+   "path_new": "packages/typert/protocol",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-typert-registry": {
+   "path_old": "packages/typert/registry",
+   "path_new": "packages/typert/registry",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-user-approval": {
+   "path_old": "packages/interaction/user-approval",
+   "path_new": "packages/interaction/user-approval",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-user-questions": {
+   "path_old": "packages/interaction/user-questions",
+   "path_new": "packages/interaction/user-questions",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-util-code-language": {
+   "path_old": "packages/util/code-language",
+   "path_new": "packages/util/code-language",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-util-crypto": {
+   "path_old": "packages/util/crypto",
+   "path_new": "packages/util/crypto",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-util-time": {
+   "path_old": "packages/util/time",
+   "path_new": "packages/util/time",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-util-values": {
+   "path_old": "packages/util/values",
+   "path_new": "packages/util/values",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-util-workspace-path": {
+   "path_old": "packages/util/workspace-path",
+   "path_new": "packages/util/workspace-path",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-web": {
+   "path_old": "packages/web/web",
+   "path_new": "packages/web/web",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-web-app": {
+   "path_old": "packages/bundle/web-app",
+   "path_new": "packages/bundle/web-app",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-web-fetch-http": {
+   "path_old": "packages/web/web-fetch-http",
+   "path_new": "packages/web/web-fetch-http",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-web-search-deepseek": {
+   "path_old": "packages/web/web-search-deepseek",
+   "path_new": "packages/web/web-search-deepseek",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-web-search-exa": {
+   "path_old": "packages/web/web-search-exa",
+   "path_new": "packages/web/web-search-exa",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-web-search-perplexity": {
+   "path_old": "packages/web/web-search-perplexity",
+   "path_new": "packages/web/web-search-perplexity",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-webhook": {
+   "path_old": "packages/webhook/webhook",
+   "path_new": "packages/experimental/webhook",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-webhook-github": {
+   "path_old": "packages/webhook/webhook-github",
+   "path_new": "packages/experimental/webhook-github",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-win32-process": {
+   "path_old": "packages/subprocess/win32-process",
+   "path_new": "packages/subprocess/win32-process",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-workflow": {
+   "path_old": "packages/workflow/workflow",
+   "path_new": "packages/workflow/workflow",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-workflow-ptc": {
+   "path_old": "packages/workflow/workflow-ptc",
+   "path_new": "packages/workflow/workflow-ptc",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-workspace": {
+   "path_old": "packages/workspace/workspace",
+   "path_new": "packages/workspace/workspace",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "dsh-workspace-changes": {
+   "path_old": "packages/deliverables/workspace-changes",
+   "path_new": "packages/deliverables/workspace-changes",
+   "version_old": "0.1.7-rc.2",
+   "version_new": "0.2.1-alpha.2"
+  },
+  "schemastery": {
+   "path_old": "vendor/schemastery",
+   "path_new": "vendor/schemastery",
+   "version_old": "3.18.4",
+   "version_new": "3.18.5-alpha.1"
+  }
+ },
+ "path_moved": {
+  "dsh-hook-protocol": {
+   "from": "packages/hooks/hook-protocol",
+   "to": "packages/experimental/hook-protocol"
+  },
+  "dsh-hooks-claude-code": {
+   "from": "packages/hooks/hooks-claude-code",
+   "to": "packages/experimental/hooks-claude-code"
+  },
+  "dsh-hooks-codex": {
+   "from": "packages/hooks/hooks-codex",
+   "to": "packages/experimental/hooks-codex"
+  },
+  "dsh-session-title-all-prompts-llm": {
+   "from": "packages/session/session-title-all-prompts-llm",
+   "to": "packages/experimental/session-title-all-prompts-llm"
+  },
+  "dsh-skill-badge": {
+   "from": "packages/skill/skill-badge",
+   "to": "packages/experimental/skill-badge"
+  },
+  "dsh-tool-ralph": {
+   "from": "packages/workflow/tool-ralph",
+   "to": "packages/experimental/tool-ralph"
+  },
+  "dsh-tool-session-query": {
+   "from": "packages/session-query/tool-session-query",
+   "to": "packages/experimental/tool-session-query"
+  },
+  "dsh-tool-terminal": {
+   "from": "packages/terminal/tool-terminal",
+   "to": "packages/experimental/tool-terminal"
+  },
+  "dsh-webhook": {
+   "from": "packages/webhook/webhook",
+   "to": "packages/experimental/webhook"
+  },
+  "dsh-webhook-github": {
+   "from": "packages/webhook/webhook-github",
+   "to": "packages/experimental/webhook-github"
+  }
+ },
+ "added_by_domain": {
+  "client": 2,
+  "experimental": 14,
+  "telemetry": 1,
+  "ssh": 1,
+  "schedule": 1,
+  "session": 2
+ },
+ "removed_by_domain": {
+  "runtime-diagnostics": 1,
+  "subagent": 1
+ }
+}

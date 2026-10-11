@@ -16,4 +16,4 @@
 - 无依赖（基础插件）
 
 ## Dependents (下游被依赖)
-- `dsh-experimental-client-ui-voice-input` - 挂载并调用 speech Remote 命名空间
+- `dsh-experimental-client-ui-voice-input` - 转写、配置与准备流程经该 Remote 命名空间进入 Host

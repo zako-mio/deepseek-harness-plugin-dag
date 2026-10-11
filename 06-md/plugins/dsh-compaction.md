@@ -2,10 +2,11 @@
 
 - 包名: `@deepseek-ai/dsh-compaction`
 - 源码路径: `packages/compaction/compaction`
-- 被插件引用: 8 次
+- 被插件引用: 9 次
 - 描述: 
 
 ## 被集依赖 (下游)
+- `dsh-client-product-analytics`
 - `dsh-client-ui-chat`
 - `dsh-client-ui-trajectory`
 - `dsh-command-compact`

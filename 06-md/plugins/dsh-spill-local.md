@@ -1,7 +1,7 @@
 # dsh-spill-local
 
 - 包名: `@deepseek-ai/dsh-spill-local`
-- 分组: G38 溢出存储
+- 分组: G36 溢出存储
 - 拓扑层: Layer 0
 - 来源层: L1 核心集
 - 源码路径: `packages/spill/spill-local`

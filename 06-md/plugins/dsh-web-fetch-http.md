@@ -1,8 +1,8 @@
 # dsh-web-fetch-http
 
 - 包名: `@deepseek-ai/dsh-web-fetch-http`
-- 分组: G47 Web 访问
-- 拓扑层: Layer 3
+- 分组: G46 Web 访问
+- 拓扑层: Layer 2
 - 来源层: L1 核心集
 - 源码路径: `packages/web/web-fetch-http`
 

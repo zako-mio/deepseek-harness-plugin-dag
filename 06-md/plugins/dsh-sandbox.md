@@ -2,11 +2,12 @@
 
 - 包名: `@deepseek-ai/dsh-sandbox`
 - 源码路径: `packages/sandbox/sandbox`
-- 被插件引用: 18 次
+- 被插件引用: 19 次
 - 描述: 
 
 ## 被集依赖 (下游)
 - `dsh-bash-sandbox`
+- `dsh-experimental-ptc-runtime-python`
 - `dsh-fs-sandbox`
 - `dsh-fs-ssh`
 - `dsh-permission-presets`

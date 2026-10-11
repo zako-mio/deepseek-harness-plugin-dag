@@ -1,7 +1,7 @@
 # dsh-webhook (外部基座 seam)
 
 - 包名: `@deepseek-ai/dsh-webhook`
-- 源码路径: `packages/webhook/webhook`
+- 源码路径: `packages/experimental/webhook`
 - 被插件引用: 1 次
 - 描述: 
 

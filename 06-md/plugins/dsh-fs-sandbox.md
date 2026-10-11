@@ -2,7 +2,7 @@
 
 - 包名: `@deepseek-ai/dsh-fs-sandbox`
 - 分组: G16 文件系统
-- 拓扑层: Layer 5
+- 拓扑层: Layer 4
 - 来源层: L1 核心集
 - 源码路径: `packages/fs/fs-sandbox`
 

@@ -1,7 +1,7 @@
 # dsh-pwsh-local
 
 - 包名: `@deepseek-ai/dsh-pwsh-local`
-- 分组: G36 Shell 执行
+- 分组: G34 Shell 执行
 - 拓扑层: Layer 0
 - 来源层: L3 其余
 - 源码路径: `packages/shell/pwsh-local`
@@ -17,4 +17,4 @@
 
 ## Dependents (下游被依赖)
 - `dsh-pwsh-sandbox` - 复用本地 pwsh 的 argv、执行生命周期与输出机制
-- `dsh-terminal-bash` - pwsh 方言的可执行路径解析与 UTF-8 前置
+- `dsh-terminal-bash` - pwsh 方言下解析 shell 可执行路径，并在启动时写入 UTF-8 编码前导

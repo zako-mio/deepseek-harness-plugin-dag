@@ -21,4 +21,4 @@
   - 证据: `src/client/flow.ts:9 DirectoryFlowOwnerProps + src/client/index.ts:24 ctx.uiWorkspace.pickDirectory`
 
 ## Dependents (下游被依赖)
-- `dsh-host-directory-picker-auto` - native 交互的客户端界面条目
+- `dsh-host-directory-picker-auto` - 与 native 后端配对挂载的客户端界面包，保证一个选择同时换掉两面

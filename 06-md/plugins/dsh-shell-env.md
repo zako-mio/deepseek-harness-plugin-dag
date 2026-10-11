@@ -1,7 +1,7 @@
 # dsh-shell-env
 
 - 包名: `@deepseek-ai/dsh-shell-env`
-- 分组: G36 Shell 执行
+- 分组: G34 Shell 执行
 - 拓扑层: Layer 0
 - 来源层: L1 核心集
 - 源码路径: `packages/shell/shell-env`
@@ -17,5 +17,5 @@
   - 证据: `src/index.ts:16 import type { ToolExecution }; package.json:34 peerDep`
 
 ## Dependents (下游被依赖)
-- `dsh-tool-bash` - 为每次执行收集受信任 DSH_* 环境变量
-- `dsh-tool-pwsh` - 为每次执行收集受信任 DSH_* 环境变量
+- `dsh-tool-bash` - 把托管 DSH_* 环境变量注入每次执行
+- `dsh-tool-pwsh` - 注入托管 $env:DSH_* 变量

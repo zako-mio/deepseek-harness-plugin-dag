@@ -1,8 +1,8 @@
 # dsh-skill-office
 
 - 包名: `@deepseek-ai/dsh-skill-office`
-- 分组: G37 技能
-- 拓扑层: Layer 3
+- 分组: G35 技能
+- 拓扑层: Layer 1
 - 来源层: L3 其余
 - 源码路径: `packages/skill/skill-office`
 

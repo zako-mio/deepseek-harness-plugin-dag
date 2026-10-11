@@ -2,7 +2,7 @@
 
 - 包名: `@deepseek-ai/dsh-util-crypto`
 - 源码路径: `packages/util/crypto`
-- 被插件引用: 12 次
+- 被插件引用: 14 次
 - 描述: 
 
 ## 被集依赖 (下游)
@@ -10,11 +10,13 @@
 - `dsh-api-session-controller`
 - `dsh-api-terminal-controller`
 - `dsh-client-file-upload`
+- `dsh-client-shortcuts`
 - `dsh-client-ui-conversation`
 - `dsh-client-ui-plan`
 - `dsh-client-ui-plugin-manager`
 - `dsh-client-ui-sidebar-right`
 - `dsh-commands`
+- `dsh-experimental-claude-code-mods`
 - `dsh-experimental-inspector`
 - `dsh-experimental-webworker-runtime`
 - `dsh-llm`

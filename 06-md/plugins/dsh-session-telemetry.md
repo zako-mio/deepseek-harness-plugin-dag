@@ -9,4 +9,4 @@
 - `dsh-session-telemetry-otel`
 
 ## 依赖机制
-编译依赖
+编译依赖、运行时依赖

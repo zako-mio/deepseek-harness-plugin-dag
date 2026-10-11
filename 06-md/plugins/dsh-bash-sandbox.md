@@ -1,8 +1,8 @@
 # dsh-bash-sandbox
 
 - 包名: `@deepseek-ai/dsh-bash-sandbox`
-- 分组: G36 Shell 执行
-- 拓扑层: Layer 5
+- 分组: G34 Shell 执行
+- 拓扑层: Layer 4
 - 来源层: L1 核心集
 - 源码路径: `packages/shell/bash-sandbox`
 

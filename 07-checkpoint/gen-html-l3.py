@@ -4,7 +4,7 @@
 S4 L3 HTML 生成脚本 (复用 gen-html-l2.py 模板)
 
 数据源: 01-dag-data/webapp-dag.json (239 节点 / 50 组) + external-seams.json (73 seam)
-       + 07-checkpoint/v017/special-modules.json (8 特殊模块)
+       + 07-checkpoint/v021/special-modules.json (8 特殊模块)
 
 产物 (按 --only 分阶段):
   02-plugin-pages/{id}.html    每插件一页 + 外部 seam 参考页   (--only plugin-pages)
@@ -43,7 +43,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE = os.path.dirname(SCRIPT_DIR)
 DAG = os.path.join(BASE, "01-dag-data", "webapp-dag.json")
 EXT = os.path.join(BASE, "01-dag-data", "external-seams.json")
-SPECIAL = os.path.join(CHK := os.path.join(BASE, "07-checkpoint"), "v017", "special-modules.json")
+SPECIAL = os.path.join(CHK := os.path.join(BASE, "07-checkpoint"), "v021", "special-modules.json")
 PAGES = os.path.join(BASE, "02-plugin-pages")
 GROUPS = os.path.join(BASE, "03-groups")
 SPECIAL_OUT = os.path.join(BASE, "08-special-modules")
@@ -462,20 +462,20 @@ PALETTE = ["#4f8cff", "#7b61ff", "#2fb98a", "#e8933b", "#e05563", "#3b9fe0", "#9
 
 # 固定二级功能簇表 (主 Agent 裁定, 禁改): (fid, 名称, 区, 组列表)
 GROUP_CLUSTERS = [
-    ("F1", "运行时基座", "L1", ["G04", "G09", "G45", "G42", "G22"]),
-    ("F2", "会话与上下文", "L1", ["G33", "G34", "G07", "G17", "G44", "G15", "G21"]),
-    ("F3", "智能与协议", "L1", ["G23", "G25", "G26"]),
-    ("F4", "工具与执行面", "L1", ["G36", "G37", "G41", "G47", "G18", "G30", "G38", "G16", "G40", "G10", "G28"]),
-    ("F5", "宿主与工作区", "L1", ["G03", "G35", "G49"]),
+    ("F1", "运行时基座", "L1", ["G04", "G09", "G27", "G41", "G44"]),
+    ("F2", "会话与上下文", "L1", ["G07", "G15", "G17", "G21", "G31", "G33", "G43"]),
+    ("F3", "智能与协议", "L1", ["G18", "G20", "G22", "G25", "G35"]),
+    ("F4", "工具与执行面", "L1", ["G10", "G16", "G34", "G46", "G47"]),
+    ("F5", "宿主与工作区", "L1", ["G03", "G28", "G36", "G38", "G39", "G40"]),
     ("F6", "客户端 UI", "L2", ["G06"]),
-    ("F7", "客户端运行时与宿主接入", "L2", ["G05", "G02", "G08", "G11", "G12", "G14", "G20", "G31", "G50"]),
-    ("F8", "协议与远程", "L3", ["G01", "G24", "G32", "G39", "G43"]),
-    ("F9", "实验与扩展", "L3", ["G13", "G19", "G27", "G29", "G46", "G48"]),
+    ("F7", "客户端运行时与宿主接入", "L2", ["G02", "G05", "G08", "G12", "G14", "G19", "G29", "G32", "G48"]),
+    ("F8", "协议与远程基座", "L3", ["G01", "G24", "G30", "G37", "G42", "G45"]),
+    ("F9", "实验与扩展", "L3", ["G11", "G13", "G23", "G26"]),
 ]
 
 REGION_NAME = {"L1": "L1 核心集", "L2": "L2 web-app", "L3": "L3 其余可挂载"}
 REGION_COLOR = {"L1": "#4f8cff", "L2": "#9a7bf0", "L3": "#2fb98a"}
-# 区描述: 90 / 82 / 67 由节点自身 source_layer 派生, 不硬编码
+# 区描述: 91 / 84 / 73 由节点自身 source_layer 派生, 不硬编码
 REGION_DESC = {
     "L1": "bundle/base 装配的核心插件",
     "L2": "bundle/web-app 装配、含客户端 UI 的插件",
@@ -564,11 +564,11 @@ def _assert_cluster_coverage(group_ids):
     dup = sorted({g for g in flat if flat.count(g) > 1})
     missing = sorted(set(group_ids) - set(flat))
     extra = sorted(set(flat) - set(group_ids))
-    ok = (len(flat) == len(group_ids) == 50 and not dup and not missing and not extra)
-    print(f"[ASSERT] 功能簇表展开须恰好覆盖 50 组: 展开 {len(flat)} / 实际 {len(group_ids)}"
+    ok = (len(flat) == len(group_ids) and not dup and not missing and not extra)
+    print(f"[ASSERT] 功能簇表展开须恰好覆盖全部组: 展开 {len(flat)} / 实际 {len(group_ids)}"
           f" / 重复 {dup} / 遗漏 {missing} / 越界 {extra} -> {'PASS' if ok else 'FAIL'}")
     if not ok:
-        raise SystemExit("[FAIL] 9 簇展开未恰好覆盖 50 组 (无遗漏/无重复)")
+        raise SystemExit(f"[FAIL] 9 簇展开未恰好覆盖 {len(group_ids)} 组 (重复 {dup} / 遗漏 {missing} / 越界 {extra})")
 
 
 def _group_stats():
@@ -669,7 +669,7 @@ def gen_groups_index():
     out_nav = '<a href="../index.html">DAG 总览</a> / <span>分组索引</span>'
     o.append(f'<div class="crumb">{out_nav}</div>')
     o.append('<h1>分组索引 · 按区 + 功能簇重排</h1>')
-    o.append('<div class="sub">50 组按装配来源（L1/L2/L3）划分为 3 区、9 个功能簇；'
+    o.append('<div class="sub">48 组按装配来源（L1/L2/L3）划分为 3 区、9 个功能簇；'
              '组内多数 source_layer 决定归区（并列按 L1&gt;L2&gt;L3）。点击任意组卡片进入组页。</div>')
     o.append('</header>')
     o.append('<main>')

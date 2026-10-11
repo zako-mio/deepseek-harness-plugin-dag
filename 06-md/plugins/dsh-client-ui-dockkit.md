@@ -7,24 +7,20 @@
 - 源码路径: `packages/client/ui-dockkit`
 
 ## 实现逻辑
-零 cordis 的停靠布局库：引擎层是纯 TS——applyOp/replay 与 Sequencer 记录可逆布局操作，DockController 每个方法都是 planner 调用加记录加一次通知，getSnapshot 的引用只在布局变化时改变 (src/engine/controller.ts:1-14, 54-80; src/index.ts:26-59)。组件层渲染布局快照并只回报每次手势的 settled intent，tab 的 kind 是不透明字符串，宿主概念（DockLabels/TabRenderer）全部由嵌入方注入 (src/index.ts:1-18, 62-70)。包内不注册任何槽位、没有 apply，只被其他客户端包以引擎/组件 API 消费。
+零 cordis 的停靠布局套件（静态库，非插件）：engine 层是纯 TypeScript 的拆分树模型与可逆操作（applyOp/replay、Sequencer、DockController）以及约束、几何与意图规划函数（src/index.ts:26-59）；组件层只渲染布局快照并上报每次手势的最终意图，使嵌入方的序列保持单一真相源（src/index.ts:1-18、src/index.ts:64-70）。包内不含宿主概念，渲染字符串经 DockLabels、标签体经 TabRenderer 注入，标签 kind 由调用方解释（src/index.ts:13-16）。
 
 ## Provides
-- 引擎 API：applyOp/replay、Sequencer/record/stepBack/stepForward/canStepBack/canStepForward、tree 查询 (getNode/getPane/findTabPane 等)
-- 约束与几何：canSplit/clampSizes/DOCK_ZONES/MAX_DOCK_PANES、containsPoint/dividerSizes/floatRectAt/SPLIT_MINIMUMS
-- 意图规划纯函数：planAddTab/planDropTab/planSplitPane/planResizeSplit/planFloatTab/planOpenContent 等
-- DockController (每停靠面的状态化嵌入，subscribe+getSnapshot 可观察快照) 与 createIdMinter/createInitialState
-- React 组件 DockSurface/DockLayout/FloatLayer 及外向契约 DockIntents/DockLabels/TabRenderer/TabMenuExtras
-- 类型 LayoutState/LayoutOp/DockZone/PaneId/SplitId/TabId/LayoutNode 等
+- DockSurface/FloatLayer 等停靠布局 React 组件 (src/index.ts:65-70)
+- 纯 TS 布局引擎导出（applyOp/replay、Sequencer、DockController、planner 函数）(src/index.ts:26-59)
 
 ## Depends On (上游依赖)
-- `dsh-client-ui-primitives` [编译依赖] - 菜单/面板等基础组件
-  - 证据: `src/components/FloatLayer.tsx:19 + src/components/TabMenu.tsx:17-21 + src/components/TabPanel.tsx:26`
+- `dsh-client-ui-primitives` [编译依赖] - 复用菜单、图标与工具提示等基础控件
+  - 证据: `src/components/TabPanel.tsx:26 import + src/components/TabMenu.tsx:17 import`
 
 ## Dependents (下游被依赖)
-- `dsh-client-ui-deliverables` - review tab 的 TabId 类型
-- `dsh-client-ui-sidebar-browser` - 复用 dock 标签/布局原语
-- `dsh-client-ui-sidebar-documentpreview` - 标签生命周期与 dock 原语
-- `dsh-client-ui-sidebar-files` - 标签/dock 原语
-- `dsh-client-ui-sidebar-right` - dock 布局/标签 id 与纯规划器
+- `dsh-client-ui-deliverables` - 复用停靠布局控件渲染比较视图
+- `dsh-client-ui-sidebar-browser` - 标签身份与停靠面板 id 使用 dockkit 的 TabId 类型
+- `dsh-client-ui-sidebar-documentpreview` - 标签生命周期与 TabId 身份来自 dockkit
+- `dsh-client-ui-sidebar-files` - 标签身份与停靠面板 id
+- `dsh-client-ui-sidebar-right` - 标签停靠、拆分面板与历史记录由 dockkit 纯规划函数计算
 - `dsh-client-web` - 种子静态模块表内联 dockkit 布局库

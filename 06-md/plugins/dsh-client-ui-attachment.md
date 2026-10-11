@@ -2,7 +2,7 @@
 
 - 包名: `@deepseek-ai/dsh-client-ui-attachment`
 - 分组: G06 客户端 UI 包
-- 拓扑层: Layer 17
+- 拓扑层: Layer 16
 - 来源层: L2 web-app
 - 源码路径: `packages/client/ui-attachment`
 

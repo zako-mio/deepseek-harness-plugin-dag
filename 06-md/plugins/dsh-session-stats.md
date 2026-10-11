@@ -1,8 +1,8 @@
 # dsh-session-stats
 
 - 包名: `@deepseek-ai/dsh-session-stats`
-- 分组: G33 会话核心
-- 拓扑层: Layer 4
+- 分组: G31 会话核心
+- 拓扑层: Layer 3
 - 来源层: L2 web-app
 - 源码路径: `packages/session/session-stats`
 
@@ -19,4 +19,4 @@
   - 证据: `src/projection.ts:28 import + src/index.ts:20 static inject + src/index.ts:28 ctx.sessionProjections.register`
 
 ## Dependents (下游被依赖)
-- `dsh-client-ui-chat` - 统计胶囊数据源
+- `dsh-client-ui-chat` - 读取会话统计投影

@@ -1,0 +1,440 @@
+[
+  {
+    "id": "dsh-hooks-claude-code",
+    "name": "@deepseek-ai/dsh-hooks-claude-code",
+    "implementation": "以「配置解析 + 事件桥接」实现：load 时读 configPath 的 JSON，用 parseClaudeCodeConfig 把 Claude Code 的 event→matcher-group 格式解析成共享 MatcherGroup（只跑 command 钩子，非 command 记入 skipped 并 warn），并对 ${CLAUDE_PLUGIN_ROOT}/${CLAUDE_PROJECT_DIR} 做替换 (src/config.ts:78-122, src/index.ts:109-122)。随后在 agent/created、agent/pre-step、tools/pre-execute、tools/post-execute、agent/turn-stopping、subagent/start、subagent/end 七个扩展点注册监听，用 runPoint 以 CC 方言 payload 跑钩子并把结果折叠成各扩展点的决策 (src/index.ts:143-193, src/index.ts:209-303)。钩子进程经 ctx.shell 执行、工作目录经 ctx.workingDirectory 解析，钩子调用/结果对经 appendHookInvoked/appendHookResult 落进会话日志 (src/index.ts:152-158, src/index.ts:163-189)。",
+    "provides": [],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-hook-protocol",
+        "mechanism": "E1",
+        "evidence": "package.json:34 peerDep + src/config.ts:9 import matcherDiagnostic + src/index.ts:28-39 import runHook/selectHookGroups/appendHookInvoked 等",
+        "purpose": "复用共享的钩子执行与解析：MatcherGroup 选择、runHook 执行、输出合并与 hook/invoked、hook/result 会话事件写入都由该协议包提供，本包只负责 CC 方言的 payload 与决策映射"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:33 peerDep + src/index.ts:15 import Agent/PreStepDecision/TurnBoundaryProjection + src/index.ts:209/225/276 监听 agent/created、agent/pre-step、agent/turn-stopping",
+        "purpose": "订阅 Agent 生命周期与 pre-step/turn-stopping 拦截点，并用 Agent 身份注入上下文、读取会话与 steer 续跑"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:38 peerDep + src/index.ts:27 import PreToolDecision/PostToolDecision/ToolExecution + src/index.ts:244/253 监听 tools/pre-execute、tools/post-execute",
+        "purpose": "在工具执行前后拦截点把钩子结果映射成 deny/ask/block 决策与 additionalContexts"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:40 peerDep + src/index.ts:16 type import + src/index.ts:48 inject 'sessionProjections' + src/index.ts:320 ctx.sessionProjections.stateOf",
+        "purpose": "从 turnBoundary 投影读取 lastTurn，给 hook/invoked 与 hook/result 事件填 turn 号"
+      },
+      {
+        "plugin_id": "dsh-working-directory",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:41 peerDep + src/index.ts:11 type import + src/index.ts:48 inject 'workingDirectory' + src/index.ts:153-154 ctx.workingDirectory.get/ensure",
+        "purpose": "解析会话工作目录，作为钩子进程的 cwd 与默认 CLAUDE_PROJECT_DIR"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "package.json:35 peerDep + src/index.ts:17 import createUserMessage + src/index.ts:25 import ContentBlock/MessageSource",
+        "purpose": "构造携带 hooks-claude-code 来源标记的用户消息，把钩子 additionalContext 注入模型上下文"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "package.json:36 peerDep + src/index.ts:26 import UserMessage",
+        "purpose": "为注入的上下文消息与 appendHook* 调用提供会话侧类型"
+      },
+      {
+        "plugin_id": "dsh-subagent",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:37 peerDep + src/index.ts:42 import SubagentRunId + src/index.ts:287/297 监听 subagent/start、subagent/end",
+        "purpose": "在子 Agent 起止边沿触发 SubagentStart/SubagentStop 钩子，并按 runId 保留子 Agent 以取得其工作目录"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-hooks-codex",
+    "name": "@deepseek-ai/dsh-hooks-codex",
+    "implementation": "以「配置解析 + 五扩展点桥接」实现：用 parseCodexConfig 解析 Codex 的 {hooks:…} 包装或裸事件表，只跑同步 command 钩子（非 command 与 async:true 记入 skipped 并 warn），支持 timeout/timeoutSec 双别名且不做命令替换 (src/config.ts:43-85)。apply 后在 agent/created、agent/pre-step、tools/pre-execute、tools/post-execute、agent/turn-stopping 五个点注册监听，runPoint 以 Codex 方言（snake_case、每事件带 model、turn 事件带 turn_id、stdin 不带尾换行）跑钩子并折叠决策 (src/index.ts:119-173, src/index.ts:188-273)。SessionStart/UserPromptSubmit 额外在无结构化上下文时把干净 stdout 当作 additionalContext (src/index.ts:155-159, src/index.ts:190, src/index.ts:209-211)。",
+    "provides": [],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-hook-protocol",
+        "mechanism": "E1",
+        "evidence": "package.json:34 peerDep + src/config.ts:8 import matcherDiagnostic + src/index.ts:31-42 import runHook/selectHookGroups/appendHookInvoked 等",
+        "purpose": "复用共享的钩子执行、matcher 选择、输出合并与 hook 会话事件写入，本包只实现 Codex 方言的 payload 与决策映射"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:33 peerDep + src/index.ts:18 import Agent/PreStepDecision + src/index.ts:188/202/263 监听 agent/created、agent/pre-step、agent/turn-stopping",
+        "purpose": "订阅 Agent 生命周期与 pre-step/turn-stopping 拦截点，注入上下文并在 Stop 钩子阻塞时 steer 续跑"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:37 peerDep + src/index.ts:30 import PostToolDecision/PreToolDecision/ToolExecution + src/index.ts:228/237 监听 tools/pre-execute、tools/post-execute",
+        "purpose": "把 Codex 钩子的 deny 映射为工具前置 deny 与后置 block/feedback，并附加 additionalContexts"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:39 peerDep + src/index.ts:19 type import + src/index.ts:47 inject 'sessionProjections' + src/index.ts:285 ctx.sessionProjections.stateOf",
+        "purpose": "从 turnBoundary 投影取 lastTurn，为 turn_id 字段与 hook 事件填当前轮次"
+      },
+      {
+        "plugin_id": "dsh-working-directory",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:40 peerDep + src/index.ts:14 type import + src/index.ts:47 inject 'workingDirectory' + src/index.ts:133 ctx.workingDirectory.ensure",
+        "purpose": "解析会话工作目录作为钩子进程 cwd 与 payload 的 cwd 字段"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "package.json:35 peerDep + src/index.ts:20 import createUserMessage + src/index.ts:28 import ContentBlock/MessageSource",
+        "purpose": "构造带 hooks-codex 来源标记的用户消息，承载钩子产出的 additionalContext"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "package.json:36 peerDep + src/index.ts:29 import UserMessage",
+        "purpose": "为注入消息与钩子事件写入提供会话侧类型"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-session-title-all-prompts-llm",
+    "name": "@deepseek-ai/dsh-session-title-all-prompts-llm",
+    "implementation": "以「sessionTitle provider 注册」实现：Config 在共享 SessionTitleLlmConfig 之上追加 targetWords/targetCjkCharacters 两个必填长度目标，resolveConfig 对二者做正整数校验并复用 resolveSessionTitleLlmConfig 校验共享执行控制 (src/index.ts:28-72)。apply 用 SessionTitleProviderId(name) 生成 id，向 ctx.sessionTitle 注册 automatic:'all-prompts' 的提供者，generate 把全部人类消息（及 provider 来源的 currentTitle 锚点）框成 JSON 交给 executeSessionTitleLlm，并按目标语言与是否锚定生成系统指令 (src/index.ts:154-176, src/index.ts:81-103)。模型输出经 titleFromOutput 取首个非空行、剥离整行星号强调，并拒绝 tool-call/max-tokens 结束态后由 normalizeSessionTitle 规范化 (src/index.ts:116-146)。",
+    "provides": [
+      "ctx.sessionTitle (注册 id 为 session-title-all-prompts-llm、automatic:'all-prompts' 的会话标题提供者：以全部人类消息经 LLM 生成/更新标题)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-session-title",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:28 peerDep + src/index.ts:8-12 import normalizeSessionTitle/SessionTitleProviderId + src/index.ts:157 ctx.sessionTitle.register",
+        "purpose": "向会话标题服务注册一个自动标题提供者，并复用其 id 构造与标题规范化"
+      },
+      {
+        "plugin_id": "dsh-session-title-llm",
+        "mechanism": "E1",
+        "evidence": "package.json:29 peerDep + src/index.ts:13-20 import executeSessionTitleLlm/resolveSessionTitleLlmConfig/SessionTitleLlmConfigFields",
+        "purpose": "复用共享的标题 LLM 执行模块（请求构造、模型调用、响应解析）与配置字段，避免各 provider 重复实现"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:26 peerDep + src/index.ts:6 import LlmResolvedModelInfo/ReasoningEffortId + src/index.ts:24 inject 'llm'",
+        "purpose": "声明 llm 服务依赖，并按路由支持的最低 reasoning effort 为标题调用选择推理档"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:27 peerDep + src/index.ts:24 inject 'sessions'",
+        "purpose": "声明 sessions 服务依赖，标题生成需在会话上下文中执行"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "package.json:33 dependencies + src/index.ts:7 import assertNever",
+        "purpose": "对封闭的 SessionTitleLlmFinish 联合做穷尽性收口"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-terminal",
+    "name": "@deepseek-ai/dsh-tool-terminal",
+    "implementation": "以「六个模型可见工具 + 通用后台作业适配」实现：apply 注册 terminal_open/send/read/signal/close/list 六个 defineTool，全部经 requireAgent 从执行的 Agent 取 owner、经 ctx.terminals 做 owner 隔离的持久终端操作，并用 finalizeContent 按 maxResultBytes 统一截断 (src/index.ts:149-158, src/index.ts:165-407)。terminal_send 支持 run_in_background：经 ctx.get('jobs') 以 kind 'pty-send' 启动作业，把后台读取经 sendSource 适配成 registry 拉取源，保持字节游标单调 (src/index.ts:255-283, src/background.ts:22-30)。渲染层用 dsh-output-retention 的 TextRetainer 保证 UTF-8 边界，并追加截断、分页、等待原因与会话状态标记 (src/render.ts:56-98, src/render.ts:120-158)。",
+    "provides": [
+      "ctx.tools (注册 terminal_open/terminal_send/terminal_read/terminal_signal/terminal_close/terminal_list 六个模型可见持久终端工具)",
+      "ctx.systemPrompt (注册 tool:pty 章节，说明何时使用持久终端与推断空闲的语义)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-terminal",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:35 peerDep + src/index.ts:13-14 import TerminalSessionId/TerminalSendOperation + src/index.ts:30 inject 'terminals' + src/index.ts:189 ctx.terminals.spawn",
+        "purpose": "声明并调用 terminals 服务完成 spawn/startSend/read/signal/kill/list 全部 owner 隔离的 PTY 操作"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:39 peerDep + src/index.ts:16-17 import defineTool/ToolDefinition + src/index.ts:30 inject 'tools' + src/index.ts:165 ctx.tools.register",
+        "purpose": "声明 tools 服务并注册六个工具定义（含参数 schema、输出 schema、渲染与呈现回调）"
+      },
+      {
+        "plugin_id": "dsh-jobs",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:38 peerDep + src/background.ts:8 import JobOutputSource + src/index.ts:15 type import + src/index.ts:257 ctx.get('jobs')",
+        "purpose": "可选地用通用作业注册表承载后台终端发送：注册 kind 'pty-send' 作业、提供拉取式输出源与取消语义"
+      },
+      {
+        "plugin_id": "dsh-working-directory",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:41 peerDep + src/index.ts:7 type import + src/index.ts:30 inject 'workingDirectory' + src/index.ts:188 ctx.workingDirectory.ensure",
+        "purpose": "解析会话当前目录，作为终端会话初始 cwd 与相对 cwd 的解析基准"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E2",
+        "evidence": "package.json:37 peerDep + src/index.ts:30 inject 'systemPrompt' + src/index.ts:159-162 ctx.systemPrompt.section/getSectionOrder",
+        "purpose": "向系统提示注册 tool:pty 使用指导章节，约束模型何时使用持久终端"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "package.json:33 peerDep + src/index.ts:11 import Agent + src/index.ts:120-123 requireAgent",
+        "purpose": "从工具执行上下文取得发起 Agent 作为终端会话的 owner 身份"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "package.json:34 peerDep + src/index.ts:12 import ContentBlock",
+        "purpose": "构造模型可见的文本内容块作为工具结果"
+      },
+      {
+        "plugin_id": "dsh-output-retention",
+        "mechanism": "E1",
+        "evidence": "package.json:36 peerDep + src/render.ts:3 import TextRetainer",
+        "purpose": "用保留下游的 TextRetainer 在字节上限内做 UTF-8 安全的头部/尾部截断"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-client-ui-cordis",
+    "name": "@deepseek-ai/dsh-client-ui-cordis",
+    "implementation": "以「客户端 UI 面 + 远程端口」实现：Host 半边是空 apply，仅让该包出现在 host cordis.yml/Loader 中，浏览器半边经 package.json 的 dsh.client 声明发布 (src/index.ts:8-9)。客户端 apply 注册中英文字典，构造 CordisDynamicPort（stop/remove/inventory 经 ctx.remote.dynamicCordisRunner 调 Host），再用 createCordisInventory 维护帧级定义清单，并订阅 remote 的 cordis/dynamic-package、cordis/dynamic-retract、cordis/request-run、cordis/request-run-resolved 与 connection/reset 以重读或复位 (src/client/index.ts:42-84, src/client/index.ts:45-62)。随后向 ctx.slots 注入 sidebar.footer.action 的 cordis-panel 面板，以及 tool.call.toolview 的 cordis_define/cordis_run/cordis_stop/cordis_undefine 四种卡片，把批准/运行/停止/移除动作接到 ctx.dynamicCordisRunner 与端口 (src/client/index.ts:86-147)。",
+    "provides": [
+      "ctx.slots (注册 sidebar.footer.action 的 cordis-panel 面板，以及 tool.call.toolview 下 cordis_define/cordis_run/cordis_stop/cordis_undefine 四个键控卡片)",
+      "ctx.locale (注册 ui-cordis 命名空间的中英文字典)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-cordis-client-runner",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/CordisPanel.tsx:12 import .../client + src/client/status.ts:3 import DynamicCordisLivePackage + src/client/index.ts:37-39 inject 'dynamicCordisRunner' + src/client/index.ts:66 ctx.dynamicCordisRunner",
+        "purpose": "读取浏览器侧动态包的加载状态与活动运行，并把面板上的批准/运行/停止动作委托给运行面"
+      },
+      {
+        "plugin_id": "dsh-api-remotes",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/CordisPanel.tsx:13 import .../client + src/client/events.ts:4 type import + src/client/index.ts:47/53/58 ctx.remote.dynamicCordisRunner",
+        "purpose": "经 Remote 组装体调用 Host 侧 stop/remove/inventory，并订阅转发过来的 cordis/* 事件"
+      },
+      {
+        "plugin_id": "dsh-client-ui-slots",
+        "mechanism": "E1",
+        "evidence": "src/client/CordisPanel.tsx:10 import + src/client/inventory.ts:20 import HostObservable + src/client/index.ts:86/117/124 ctx.slots.inject/register",
+        "purpose": "提供 slot 注入与注册原语以及可观察值类型，承载面板与四种工具卡片"
+      },
+      {
+        "plugin_id": "dsh-client-ui-tool",
+        "mechanism": "E1",
+        "evidence": "src/client/CordisDefineRow.tsx:8 import .../client + src/client/CordisRunRow.tsx:8 + src/client/index.ts:5 type import",
+        "purpose": "复用工具卡片行组件契约与 toolview 注入协议，渲染 cordis_* 工具调用"
+      },
+      {
+        "plugin_id": "dsh-client-ui-sidebar",
+        "mechanism": "E1",
+        "evidence": "src/client/CordisPanel.tsx:11 import .../client + src/client/index.ts:7 type import + src/client/index.ts:86 注册 sidebar.footer.action",
+        "purpose": "把 Cordis 面板挂到侧边栏底部动作位"
+      },
+      {
+        "plugin_id": "dsh-client-locale",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/index.ts:6 type import + src/client/index.ts:43 ctx.locale.register",
+        "purpose": "注册 ui-cordis 命名空间的中英文字典，供面板与卡片取文案"
+      },
+      {
+        "plugin_id": "dsh-client-ui-primitives",
+        "mechanism": "E1",
+        "evidence": "src/client/CordisPreparingRow.tsx:3 import + package.json:57 devDep",
+        "purpose": "复用客户端基础 UI 原语渲染准备中卡片"
+      },
+      {
+        "plugin_id": "dsh-client-ui-renderer",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:9 type import + package.json:59 devDep",
+        "purpose": "声明渲染面类型，保证本包插件的客户端渲染接缝类型完整"
+      },
+      {
+        "plugin_id": "dsh-client-ui-session",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:10 type import + package.json:60 devDep",
+        "purpose": "声明会话 UI 面类型，使卡片能落在会话视图上下文"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:4 import SessionId + package.json:56 devDep",
+        "purpose": "为卡片注入函数提供 SessionId 类型，按会话维度保存运行卡片状态"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-cordis-client-runner",
+    "name": "@deepseek-ai/dsh-cordis-client-runner",
+    "implementation": "以「浏览器侧动态包引擎」实现：Host 半边是空 apply，浏览器半边经 exports 的 ./client 子路径与 package.json 的 dshClient 声明发布 (src/index.ts:8-9)。客户端 apply 先 provideClientTimer 补齐浏览器版 timer Service，再建 ClientCordisInspectRegistry、注册 clientInspectProviders，并通过 ctx.remote 同步 manifest 与回传查询结果 (src/client/index.ts:188-204)。随后建 DynamicCordisPackageRunner（闭包求值→guard 门面→模块表→loader 条目，见 src/client/runtime.ts:1-28、src/client/evaluator.ts:1-45、src/client/guard.ts:1-50）与 CordisRunOrchestrator，把合并后的运行面以 ctx.provide('dynamicCordisRunner', face) 暴露，并订阅 cordis/request-run、cordis/request-run-resolved、cordis/dynamic-retract、cordis/inspect-query 与 cordis/inspect-query-resolved 五个转发事件 (src/client/index.ts:206-308)。",
+    "provides": [
+      "ctx.dynamicCordisRunner (浏览器侧运行编排与页面本地加载状态：活动运行、失败、批准/拒绝、用户发起运行、订阅与快照)",
+      "ctx.timer (浏览器端 ClientTimerService，保持与 Host TimerService 相同的 timeout/interval/throttle/debounce 公共 API)",
+      "ctx.cordisInspect (浏览器侧 Inspect Provider 注册表、manifest 发布与 Host 查询应答)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-api-remotes",
+        "mechanism": "E1+E2",
+        "evidence": "src/client/index.ts:17 import .../client + src/client/index.ts:182 inject 'remote'/'remote.dynamicCordisRunner' + src/client/index.ts:192 ctx.remote.dynamicCordisRunner.syncInspectManifest",
+        "purpose": "经 Remote 命名空间与 Host 侧做双向调用：同步 inspect manifest、解析查询、运行 Host 半、取客户端源码、结算用户运行与上报渲染/门面失败"
+      },
+      {
+        "plugin_id": "dsh-client-ui-renderer",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:19 import SlotRegistry + src/client/runtime.ts:24 import .../client + package.json:51 devDep",
+        "purpose": "取得 SlotRegistry 类型与渲染面接缝，使动态包注册的 slot 条目挂到调用方 fiber 上"
+      },
+      {
+        "plugin_id": "dsh-client-modules",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:18 import ClientModuleSystem + src/client/runtime.ts:23 import .../client + src/client/index.ts:209 ctx.get('modules')",
+        "purpose": "把动态包求值后的工厂座入浏览器模块表，使 loader 条目能像静态插件一样加载"
+      },
+      {
+        "plugin_id": "dsh-client-ui-theme",
+        "mechanism": "E1",
+        "evidence": "src/client/guard.ts:19 import ThemeRuntime + src/client/providers.ts:6 type import + package.json:52 devDep",
+        "purpose": "在浏览器门面中把主题覆写来源钉到包 id，并向 Client Inspect 暴露主题能力"
+      },
+      {
+        "plugin_id": "cordis-plugin-loader",
+        "mechanism": "E1",
+        "evidence": "src/client/runtime.ts:18 import Loader + package.json:48 devDep + src/client/index.ts:182 inject 'loader'",
+        "purpose": "复用 Loader 机制为动态包创建/移除条目，从而获得 inject 门控、fiber 效应清理与状态投影"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/client/index.ts:20 import JsonValue + src/client/inspect-registry.ts:8 + src/client/providers.ts:4 + package.json:56 devDep",
+        "purpose": "以无损 JSON 值类型约束跨页查询的输入输出与 wire 载荷"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-cordis-host-runner",
+    "name": "@deepseek-ai/dsh-cordis-host-runner",
+    "implementation": "以「动态包注册表 + Host 半沙箱生命周期」实现：DynamicCordisRunnerService（TypertRemoteService，inject ['tools']）用 DynamicCordisRegistry 保存不可变 package 定义、owner session 与待决审批 (src/index.ts:141-162, src/registry.ts:141-275)。define 校验 name/purpose 与至少一个代码半边并做 define 期语法预检；runHostHalf/getClientCode/resolveRequestRun/settleUserRun 等 @Remote 方法驱动 Host/Client 两半激活，需用户批准的 Client 半经 ctx.emit('cordis/request-run') 广播，Host 半启动时 emit 'cordis/dynamic-package'、撤回时 emit 'cordis/dynamic-retract' (src/index.ts:169-178, src/index.ts:295-318, src/index.ts:342-392, src/index.ts:876-881)。Host 代码在 node:vm 沙箱中求值（tagged console、harness 注册助手、编码原语，以及 fs/web/bash/timer 的重定向陷阱），经 guardedPlugin 包成子 fiber 启动，启动失败即 dispose (src/sandbox.ts:101-117, src/sandbox.ts:226-236, src/lifecycle.ts:22-45)；CordisInspectRegistryService 提供 ctx.cordisInspect 与跨页查询路由 (src/inspect-registry.ts:47-120)。",
+    "provides": [
+      "ctx.dynamicCordisRunner (Host 侧动态 Cordis 包服务：不可变 package 注册表、Plugin 生命周期、审批与 Host/Client 调用路由)",
+      "ctx.cordisInspect (Host 侧 Inspect Provider 注册表、Client manifest 镜像与跨页只读查询路由)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:58 peerDep + src/guard.ts:19-20 import defineTool/assertSupportedJsonSchema + src/inspect-registry.ts:8-9 + src/index.ts:142 static inject = ['tools']",
+        "purpose": "把沙箱返回的工具定义规范化后注册进真实 Tool 注册表，并在 Inspect 侧校验 JSON Schema 与按 Agent 读取工具 schema"
+      },
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1",
+        "evidence": "package.json:59 peerDep + src/index.ts:18 import TypertRemoteService/Remote",
+        "purpose": "以 Typert Remote 服务基类与 @Remote 装饰器把 Host 方法暴露给浏览器半边"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "package.json:53 peerDep + src/index.ts:10 import Agent + src/inspect-registry.ts:5",
+        "purpose": "以发起 Agent 的 Session 作为插件归属与权限边界，并向运行失败上报目标 Agent"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "package.json:55 peerDep + src/index.ts:11 import createUserMessage + src/guard.ts:21 import ContentBlock",
+        "purpose": "构造带 cordis-host-runner 来源标记的用户消息向模型汇报运行结果，并校验动态工具的渲染内容块"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "package.json:57 peerDep + src/types.ts:7 import SessionId + src/registry.ts:7",
+        "purpose": "以 SessionId 标识插件归属会话，贯穿注册表、库存行与待决审批"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "package.json:54 peerDep + src/types.ts:6 import Branded",
+        "purpose": "把 Plugin/Package/Run/审批等跨边界不透明 id 做 branded 类型，避免裸 string 混用"
+      },
+      {
+        "plugin_id": "dsh-scope",
+        "mechanism": "E1",
+        "evidence": "package.json:56 peerDep + src/guard.ts:18 import scopeOf",
+        "purpose": "在注册边界恢复动态工具的 scope，使工具可见范围与原 Agent 作用域一致"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "package.json:47 dependencies + src/index.ts:19 import JsonValue + src/inspect-registry.ts:7 snapshotJsonValue",
+        "purpose": "以无损 JSON 值约束 Inspect 查询的输入输出，并在跨页返回前做 JSON 快照"
+      },
+      {
+        "plugin_id": "dsh-api-gateway",
+        "mechanism": "E1",
+        "evidence": "package.json:65 devDep + src/inspect-registry.ts:6 type import（声明 Gateway 的 Client 能力，供跨页查询失败快速返回）",
+        "purpose": "声明 Gateway 接缝类型，使无存活 Client 时 Inspect 查询能快速失败而非等待超时"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-cordis",
+    "name": "@deepseek-ai/dsh-tool-cordis",
+    "implementation": "以「只读巡检工具 + Host Provider 注册」实现：apply 注册 cordis_inspect_list 与 cordis_inspect_query 两个 defineTool，前者返回 ctx.cordisInspect.list() 的 Provider 目录，后者按 platform/provider/method/input 调 ctx.cordisInspect.query 并把结果包成 {platform, provider, method, data}，两者都要求 Agent 会话 (src/index.ts:21-73)。另有 ./host 入口 cordis-inspect-providers，在 Host 组合中一次性注册 Service/Event/Config/Tool 四个 Provider，其中 Tool Provider 用 ctx.tools.schemas(agent) 返回该 Agent 可见工具，Config Provider 从运行中的 Loader 树投影原生 Schemastery Config (src/host.ts:16-19, src/providers.ts:39-82, src/config.ts:28-38)。",
+    "provides": [
+      "ctx.tools (注册 cordis_inspect_list 与 cordis_inspect_query 两个只读运行时巡检工具)",
+      "ctx.cordisInspect (host 入口注册 Service/Event/Config/Tool 四个 Host Inspect Provider)"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-cordis-host-runner",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:39 peerDep + src/providers.ts:4 import HostCordisInspectProviderRegistration + src/host.ts:7 inject 'cordisInspect' + src/host.ts:18 ctx.cordisInspect.register",
+        "purpose": "向 Host Inspect 注册表登记四个 Provider，并让工具侧通过 ctx.cordisInspect 列出与执行只读查询"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "package.json:40 peerDep + src/index.ts:5-6 import defineTool/ToolExecution + src/index.ts:10 inject 'tools' + src/index.ts:22/41 ctx.tools.register",
+        "purpose": "注册两个巡检工具定义，并在 Tool Provider 中按 Agent 读取可见工具 schema"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "package.json:37 peerDep + src/index.ts:3 import Agent + src/index.ts:12-15 requireAgent",
+        "purpose": "从工具执行上下文取得 Agent，巡检结果按该 Agent 的作用域收敛"
+      },
+      {
+        "plugin_id": "cordis-plugin-loader",
+        "mechanism": "E1",
+        "evidence": "package.json:36 peerDep + src/config.ts:4 import Entry",
+        "purpose": "以 Loader 条目类型遍历运行中的插件树，投影每个条目的 Config 状态"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:4 import JsonValue + src/providers.ts:5 + src/config.ts:7 + package.json:51 devDep(schemastery 同级，util-values 见 devDep 列表)",
+        "purpose": "以无损 JSON 值类型约束巡检工具的输入输出与 Provider 查询结果"
+      }
+    ],
+    "dependents": []
+  }
+]

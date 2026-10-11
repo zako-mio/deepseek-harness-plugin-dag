@@ -1,7 +1,7 @@
 # dsh-settings
 
 - 包名: `@deepseek-ai/dsh-settings`
-- 分组: G35 设置
+- 分组: G33 设置
 - 拓扑层: Layer 4
 - 来源层: L1 核心集
 - 源码路径: `packages/settings/settings`
@@ -18,16 +18,18 @@
 
 ## Dependents (下游被依赖)
 - `dsh-agent-default-model` - 关闭 settings 自动模式并使默认模型从 settings 读取
-- `dsh-agent-preset-registry` - 关闭 settings 自动持久化以自管 selectedDefault
-- `dsh-api-remotes` - 设置事件类型声明
-- `dsh-api-session-controller` - 设置域参与模型/凭证表面
+- `dsh-agent-preset-registry` - 把 preset 定义排除在自动设置持久化之外
+- `dsh-api-remotes` - 导出设置命名空间视图词汇
+- `dsh-api-session-controller` - 读取模型目录相关设置声明
 - `dsh-api-settings-controller` - 设置 seam：describe/update/replace/mutate/prepareDocument
 - `dsh-client-locale` - 声明 locale 命名空间的 settings 配置面（auto:false）
-- `dsh-client-ui-chat` - 宿主侧投影 Chat 偏好为设置表单字段
-- `dsh-client-ui-conversation` - 宿主侧投影 busyEnter 为设置字段
+- `dsh-client-product-analytics` - 关闭该服务的自动设置文档
+- `dsh-client-ui-chat` - 关闭该服务的自动设置文档
+- `dsh-client-ui-conversation` - 关闭该服务的自动设置文档
 - `dsh-client-ui-settings` - 设置命名空间与 wire 类型
-- `dsh-client-ui-settings-account` - Host 侧设置命名空间类型/接口
-- `dsh-client-ui-settings-general` - Host 侧把欢迎版本配置挂到 settings 服务
-- `dsh-client-ui-theme` - Host 侧设置作用域配置（关闭自动保存）
-- `dsh-llm-pi-ai` - 激活 settings 服务声明，使插件可按设置命名空间配置 provider 路由
-- `dsh-permission-presets` - 为 defaultPreset 提供用户设置默认值
+- `dsh-client-ui-settings-account` - 把本插件的 Config 以 auto:false 显式登记进 settings 服务，交由浏览器半经配置表单读取
+- `dsh-client-ui-settings-general` - Host 半把欢迎提示版本这一偏好登记进 settings 服务，供浏览器半经配置表单读取
+- `dsh-client-ui-theme` - Host 侧把主题偏好登记为不可自动生成设置的字段
+- `dsh-experimental-client-ui-cot-translation` - 翻译偏好是设置文档的一部分，并声明部署值为权威
+- `dsh-llm-pi-ai` - 把 provider profile 暴露为 llm-pi-ai 设置段供界面编辑
+- `dsh-permission-presets` - 把 defaultPreset 作为用户设置项写入 settings 命名空间

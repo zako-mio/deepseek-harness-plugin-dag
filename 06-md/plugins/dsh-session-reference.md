@@ -2,7 +2,7 @@
 
 - 包名: `@deepseek-ai/dsh-session-reference`
 - 分组: G08 上下文注入
-- 拓扑层: Layer 5
+- 拓扑层: Layer 4
 - 来源层: L2 web-app
 - 源码路径: `packages/context/session-reference`
 
@@ -31,5 +31,5 @@
   - 证据: `src/index.ts:21 type-only import + src/index.ts:127 ctx.on('system-prompt/assemble', {prepend:true})`
 
 ## Dependents (下游被依赖)
-- `dsh-api-remotes` - 装配会话引用命名空间
+- `dsh-api-remotes` - 把该业务包的 /remote 命名空间装配进 Client
 - `dsh-client-ui-reference` - 会话引用候选类型

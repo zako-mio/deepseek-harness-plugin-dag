@@ -2,26 +2,29 @@
 
 - 包名: `@deepseek-ai/dsh-api-terminal-controller`
 - 分组: G02 API 网关与控制器
-- 拓扑层: Layer 5
+- 拓扑层: Layer 4
 - 来源层: L2 web-app
 - 源码路径: `packages/api/terminal-controller`
 
 ## 实现逻辑
-TerminalController 继承 TypertRemoteService，以 namespace 'terminal' 注册并注入 subprocess/sandboxPolicy/typert，构造时登记进程清理 effect (src/index.ts:75-109)。它按 Session 身份维护 OwnedSession（terminals/pending/allocations），create 幂等地经 subprocess.spawnTerminal 分配用户 shell 并用 BrowserTerminal 包装 (src/index.ts:157-188, 339-375)。BrowserTerminal 用 headless xterm + SerializeAddon 维护有界屏幕，follow 先送 snapshot 再推有序 output/state，write/resize 由唯一 controller attachment 校验后串行执行 (src/terminal.ts:77-130, 167-180)。其余 @Remote 方法提供 environment/shells/list/retain/rename/close，并施加尺寸、输入字节、终端数量等配置上限 (src/index.ts:117-284)。
+实现 Session 拥有的交互式终端：TerminalController 继承 TypertRemoteService 并以 namespace 'terminal' 注册 ctx.terminalController(src/index.ts:76-103)，按 Session 维护终端/待分配/清理映射并在销毁时聚合清理(src/index.ts:61-73,104-109,287-314)。Remote 方法 environment/shells/list/create/follow/write/resize/rename/close/retain 提供分配、附着、输入、尺寸、重命名与关闭(src/index.ts:118-285)，底层用 subprocess.spawnTerminal 起 PTY(src/index.ts:342-378)。终端自身用 @xterm/headless 做屏幕恢复、TerminalRetention 做窗口持有与空闲回收(src/terminal.ts:1-15, src/retention.ts:1-14)。
 
 ## Provides
-- ctx.remote.terminal（terminal 命名空间：environment/shells/list/create/retain/follow/write/resize/rename/close，Session 级用户终端）
+- ctx.terminalController(Session 拥有的交互式终端与 ctx.remote.terminal 命名空间所有者，src/index.ts:19-24,76-103)
+- ctx.remote.terminal 远程方法集 environment/shells/list/create/follow/write/resize/rename/close/retain(src/index.ts:118-285)
 
 ## Depends On (上游依赖)
-- `dsh-agent` [编译依赖] - Remote 方法以 Agent 作为 Session 所有者参数
-  - 证据: `src/index.ts:4 import type Agent`
-- `dsh-api-gateway` [编译依赖] - 客户端 Remote 载体
-  - 证据: `src/client/index.ts:5 import + src/client/model.ts:5 import`
-- `dsh-sandbox-policy` [运行时依赖] - 取工作目录与沙箱工作区根
-  - 证据: `src/index.ts:6 import type {} + src/index.ts:335 agent.ctx.get('sandboxPolicy')`
-- `dsh-session` [编译依赖] - 会话身份类型
-  - 证据: `src/index.ts:5 import type SessionId + src/client/bindings.ts:2 import`
+- `dsh-agent` [编译依赖] - 以 Agent 作为 Session 所有者参数与执行环境选择器
+  - 证据: `package.json:71 devDependencies + src/index.ts:4 import type { Agent }(仅类型)`
+- `dsh-api-gateway` [E1+E2] - Client 面经 Gateway 的 ctx.remote 暴露终端命名空间
+  - 证据: `package.json:43,46 dsh.client.inject/external + src/client/index.ts:5 import '@deepseek-ai/dsh-api-gateway/client' + src/client/index.ts:235 inject ['remote','remote.terminal']`
+- `dsh-sandbox-policy` [E1+E2] - 按 Session 沙箱策略选择执行提供者
+  - 证据: `src/index.ts:6 import type {} + src/index.ts:77 inject 'sandboxPolicy' + src/index.ts:335 agent.ctx.get('sandboxPolicy')`
+- `dsh-session` [编译依赖] - 以 SessionId 作为终端所有者键
+  - 证据: `package.json:79 devDependencies + src/index.ts:5 import type { SessionId } + src/client/bindings.ts:2 import`
+- `dsh-working-directory` [E1+E2] - 解析终端进程的当前目录
+  - 证据: `package.json:84 devDependencies + src/index.ts:7 import type {} + src/index.ts:77 inject 'workingDirectory' + src/index.ts:344 workingDirectory.ensure`
 
 ## Dependents (下游被依赖)
-- `dsh-api-remotes` - 装配 terminal 命名空间
-- `dsh-client-ui-sidebar-terminal` - 通过 ctx.webTerminals 服务管理 Web 终端视图、shell 启动与关闭
+- `dsh-api-remotes` - 把该业务包的 /remote 命名空间装配进 Client
+- `dsh-client-ui-sidebar-terminal` - 终端视图、启动 shell、关闭与保留窗口全部经 webTerminals 服务

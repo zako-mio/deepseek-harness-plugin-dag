@@ -7,19 +7,18 @@
 - 源码路径: `packages/boot/config-editor`
 
 ## 实现逻辑
-`ConfigEditor extends Service` 提供对当前 profile patch 文件的持久化配置编辑能力 (src/index.ts:26-31)。`entries()` 筛出由 `include` 父树拥有且 id 唯一的可寻址行 (src/index.ts:39-44)，`configuration()` 用 `loadProfileDirectory`+`composeEntries` 同时给出继承层值与显式覆盖值 (src/index.ts:49-68)。`edit()` 在文件锁下校验目标行仍在册、经 `waterfall('internal/config')`+`resolveConfig` 预演新配置、用 yaml AST 精确改写对应行，写盘后调用 `reconcileProfilePatches` 触发 Loader 重载，失败则回滚文件与 patch (src/index.ts:75-142)。
+以 Cordis Service 形式提供 ctx.configEditor(src/index.ts:14-19,26-31)，静态注入 loader/profileContext(src/index.ts:27)。entries() 只挑出 include 树中 id 唯一的条目(src/index.ts:39-44)，configuration() 用 loadProfileDirectory/composeEntries 分离继承值与显式覆盖值(src/index.ts:49-80)。edit() 在 profile package.json 文件锁下重读补丁、经 internal/config waterfall 与 resolveConfig 校验后原子改写 YAML 补丁并 reconcile，失败则回滚(src/index.ts:87-150)；存在 hmr 时整个编辑经 hmr.runExclusive 串行化(src/index.ts:152-153)。
 
 ## Provides
-- ctx.configEditor (对活动 profile 插件配置的持久化编辑服务：entries/configuration/edit)
-- 基于 YAML AST 的配置行改写与写盘回滚 (保留 __jsExpr 等自定义标签)
+- ctx.configEditor(profile 配置持久化编辑服务：entries/configuration/edit，src/index.ts:14-31)
 
 ## Depends On (上游依赖)
-- `cordis-plugin-include` [编译依赖] - 复用 entryListSchema 与 PatchOptions 类型解析 profile patch 的 entry 列表
-  - 证据: `src/index.ts:6`
-- `cordis-plugin-loader` [E1+E2] - 读取 loader.entries() 定位可编辑行，并在写盘后走正常 Loader 重载路径
-  - 证据: `src/index.ts:8 + src/index.ts:27 static inject 'loader'`
-- `dsh-hmr` [运行时依赖] - 配置写入与 HMR 模块/配置重载串行化，避免编辑过程与热重载竞态
-  - 证据: `src/index.ts:9 (type merge) + src/index.ts:140-141 ctx.get('hmr').runExclusive`
+- `cordis-plugin-include` [编译依赖] - 解析 profile 补丁条目表并识别 include 归属
+  - 证据: `package.json:33 peerDep + src/index.ts:6 import entryListSchema/PatchOptions`
+- `cordis-plugin-loader` [E1+E2] - 枚举并校验可编辑的 Loader 条目
+  - 证据: `package.json:31 peerDep + src/index.ts:8 import type Entry + src/index.ts:27 inject 'loader' + src/index.ts:40 this.ownerContext.loader.entries()`
+- `dsh-hmr` [E1+E2] - 把配置写入与热重载串行化，避免并发替换
+  - 证据: `package.json:32 peerDep(optional) + src/index.ts:9 import type {} + src/index.ts:152-153 this.ownerContext.get('hmr')/hmr.runExclusive`
 
 ## Dependents (下游被依赖)
 - `dsh-agent-default-model` - 将默认模型选择持久化写入 profile

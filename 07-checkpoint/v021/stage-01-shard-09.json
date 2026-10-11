@@ -1,0 +1,549 @@
+[
+  {
+    "id": "dsh-commands",
+    "name": "@deepseek-ai/dsh-commands",
+    "implementation": "以 ScopedLayers + NamedEntries 实现插件自有的人类命令注册表：全局注册与按 Agent 作用域影子覆盖，register() 返回精确的 effect 释放器，定义在写入前被校验并规范化为不可变描述符 + 处理器 (src/index.ts:263-292, src/index.ts:179-225, src/index.ts:470-472)。execute() 解析斜杠命令行，先追加 command/run、再跑处理器、最后追加 command/done，形成按 commandId 配对的可回放生命周期 (src/index.ts:360-431, src/index.ts:457-467)。附件准入在处理器之前完成：图片经 admitEncodedImages 入库、文件凭据经 receipt resolver 解析并按提交顺序还原为 LLM 内容块 (src/index.ts:389-420, src/index.ts:493-531)。注册表变更通过非否决的 commands/change 事件广播，监听器异常被逐个隔离 (src/index.ts:475-489)。",
+    "provides": [
+      "ctx.commands (CommandRuntime：命令注册/列举/查找/执行与作用域影子)",
+      "Session 事件 command/run 与 command/done（配对 commandId 的可回放生命周期）",
+      "Cordis 事件 commands/change（注册表变更广播，非否决）",
+      "解析入口 parseCommand 与命令身份 brand（CommandDefinitionId / CommandId）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "src/brand.ts:12 import type { Branded } + package.json:53 peerDep",
+        "purpose": "命令定义身份与执行配对 id 复用 brand 基元，避免裸 string"
+      },
+      {
+        "plugin_id": "dsh-util-crypto",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:7 import { randomUUID } + package.json:61 dependencies",
+        "purpose": "生成实例 token，使恢复的会话日志中命令 id 不会重复"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:8 import type { Agent } + package.json:51 peerDep",
+        "purpose": "Agent 既是命令作用域键也是命令的接收者"
+      },
+      {
+        "plugin_id": "dsh-attachment",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:9 import { AttachmentError, admitEncodedImages } + src/index.ts:394 ctx.get('attachments')",
+        "purpose": "命令附件准入需要附件存储与编码图片入库能力"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:11 import type { FileBlock, ImageBlock } + package.json:54 peerDep",
+        "purpose": "准入后的附件以 LLM 内容块类型交给命令处理器"
+      },
+      {
+        "plugin_id": "dsh-scope",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:12-13 import { NamedEntries, ScopedLayers } + src/index.ts:471 layers.merge",
+        "purpose": "实现全局层与按 Agent 作用域层的注册/合并视图"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:14-15 import { SessionSeq } + src/index.ts:466 session.append",
+        "purpose": "命令生命周期事件必须写入会话日志"
+      },
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:16 import { TypertRemoteService, Remote } + src/index.ts:314,360 @Remote",
+        "purpose": "把 list/execute 暴露为远端可调用的服务方法"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-permission-presets",
+    "name": "@deepseek-ai/dsh-permission-presets",
+    "implementation": "把沙箱模式与审批策略两个独立旋钮打包成产品级「权限预设」：PermissionPresetService 以 schemastery 校验预设表与默认预设，并要求组合在带 sandboxMode 的 shell 执行器之上（否则构造即报错）(src/index.ts:180-232)。写入路径是 /permission 命令与 set()：先追加 permission/preset 事件记录用户意图，再经 setSandboxMode / setApprovalPolicy 只写发生变化的旋钮 (src/index.ts:255-276, src/index.ts:398-418)。读取路径注册 permissions 会话投影把 preset/sandbox/approval 折叠为当前值，并通过 catalog Remote 暴露进程级目录 (src/index.ts:237-244, src/index.ts:292-299)。另有 registerAuto 为 Auto 评审集成发布仅当前会话可用的固定预设与同步准入钩子 (src/index.ts:307-317)。",
+    "provides": [
+      "ctx.permissionPresets (PermissionPresetService：预设表、目录、当前值、写入路径)",
+      "Session 投影 permissions（当前生效预设值 currentValue）",
+      "Session 事件 permission/preset（仅日志的用户意图）",
+      "Cordis 事件 permission-presets/catalog-changed（目录失效通知）",
+      "/permission 人类命令（切换预设的唯一写入路径）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-settings",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:14 import type {} from '@deepseek-ai/dsh-settings' + src/index.ts:210 ctx.inject(['settings'])",
+        "purpose": "把 defaultPreset 作为用户设置项写入 settings 命名空间"
+      },
+      {
+        "plugin_id": "dsh-commands",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:19 import { CommandDefinitionId } + src/index.ts:255-256 ctx.inject(['commands']) 后 register",
+        "purpose": "注册 /permission 命令，作为 Web 客户端使用的唯一写入入口"
+      },
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:22 import { Remote, TypertRemoteService } + src/index.ts:292 @Remote('catalog')",
+        "purpose": "把可切换预设目录暴露给客户端"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:23 import type { Session, SessionEvent } + src/index.ts:416 session.append('permission/preset')",
+        "purpose": "预设选择作为可回放的用户意图写入会话日志"
+      },
+      {
+        "plugin_id": "dsh-sandbox",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:24 import type { SandboxMode } + package.json:53 peerDep",
+        "purpose": "预设 bundle 的沙箱模式取值来自沙箱 seam 的词汇"
+      },
+      {
+        "plugin_id": "dsh-sandbox-policy",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:25 import { SANDBOX_MODES, setSandboxMode } + src/index.ts:410 setSandboxMode(session, ...)",
+        "purpose": "用规范 setter 写入沙箱模式旋钮"
+      },
+      {
+        "plugin_id": "dsh-shell",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:28 import type {} from '@deepseek-ai/dsh-shell' + src/index.ts:219 ctx.shell.sandboxMode",
+        "purpose": "预设打包沙箱模式，因此必须能读取并确认 shell 执行器会限制"
+      },
+      {
+        "plugin_id": "dsh-user-approval",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:29-30 import { APPROVAL_POLICIES, setApprovalPolicy } + src/index.ts:350 ctx.approval.config.policy",
+        "purpose": "审批策略是预设 bundle 的另一半旋钮，并经 approval 服务切换"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:32 import type {} from '@deepseek-ai/dsh-session-projection' + src/index.ts:237 ctx.sessionProjections.register",
+        "purpose": "注册 permissions 投影，供客户端读取当前生效值"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-tool-ask-user",
+    "name": "@deepseek-ai/dsh-tool-ask-user",
+    "implementation": "以 defineTool 向 ctx.tools 注册模型可见的 ask_user_question 工具，声明 questions/options/multi_select 参数与 answers 输出 schema，render 直接把结果 JSON 化 (src/index.ts:38-97)。execute 把模型参数映射为 ctx.userQuestions.ask 请求，透传 exec.agent 与 exec.signal，并把答案裁剪为 {id,selected,custom} (src/index.ts:98-117)。Config.mode 选择第二种形态：timed 分支交给 registerTimedAskUser，额外声明 timeout 参数（-1 表示必须等待），调用 askTimed 并在前景窗口关闭时返回 pending 结果而非答案 (src/timed.ts:103-206)。",
+    "provides": [
+      "tools 注册：ask_user_question 工具（legacy 阻塞形态与 timed 前景等待形态）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:10 import { defineTool } + src/index.ts:38 ctx.tools.register；src/timed.ts:6,106",
+        "purpose": "工具必须注册进工具注册表才能被模型调用"
+      },
+      {
+        "plugin_id": "dsh-user-questions",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:13 import '@deepseek-ai/dsh-user-questions' + src/index.ts:99 ctx.userQuestions.ask；src/timed.ts:197 askTimed",
+        "purpose": "人机问答能力由 userQuestions seam 提供，工具只是其 Consumer"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "package.json:30 peerDep（src/index.ts:107 exec.agent 的 Agent 类型来源）",
+        "purpose": "把调用 agent 作为问答请求的归属与作用域"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-user-approval",
+    "name": "@deepseek-ai/dsh-user-approval",
+    "implementation": "审批能力 seam 的 Service Definition：ApprovalService 注入 systemPrompt，把当前有效策略作为运行时上下文段落追加在保留历史之后，使切换策略不重写稳定缓存前缀 (src/index.ts:150-175)。request() 要求处于已打开 turn 内（否则审计事件会成为重载时被丢弃的崩溃尾部），先追加 approval/asked、再跑 approval/request waterfall、最后追加 approval/decided，构成成对审计 (src/index.ts:215-234, src/index.ts:84-92)。策略 never 在 dispatch 之前就返回 rejected（不依赖监听器顺序），缺失、抛错或返回非词汇值的 answerer 一律归一为 fail-closed 的 unavailable，取消经信号竞速立即结算 (src/index.ts:267-307)。",
+    "provides": [
+      "ctx.approval (ApprovalService：一次性审批决定、会话策略读写、审计)",
+      "Cordis 事件 approval/request（Agent 作用域 waterfall，由 answerer 认领）",
+      "Session 事件 approval/asked 与 approval/decided（成对审计）、approval/policy（策略覆盖）",
+      "systemPrompt 上下文段 approval:policy（向模型陈述当前策略）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:10 import type { Agent } + src/types.ts:10 + src/index.ts:188 agent.inject",
+        "purpose": "审批请求以 Agent 为路由键与审计归属，切换通知注入该 agent"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:11-12 import { createUserMessage, ContextFormed } + src/types.ts:11 dsh-llm/brand",
+        "purpose": "策略切换以用户消息注入会话，并复用 LLM 的 ToolCallId brand"
+      },
+      {
+        "plugin_id": "dsh-scope",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:19 import { scopeTarget } + src/index.ts:281-282 ctx.waterfall(scopeTarget(req.agent, req.agent), 'approval/request', ...)",
+        "purpose": "审批 waterfall 按 Agent 作用域过滤分发，UI answerer 只回答自己拥有的 agent"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:20-21 import { SessionSeq } + src/index.ts:225,232 session.append 审计对",
+        "purpose": "审计事件必须落在可回放的会话日志中"
+      },
+      {
+        "plugin_id": "dsh-system-prompt",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:22 import type {} from '@deepseek-ai/dsh-system-prompt' + src/index.ts:162-165 ctx.inject(['systemPrompt']).context()",
+        "purpose": "把有效策略作为运行时上下文告知模型"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "src/types.ts:8 import type { Branded } + package.json:36 peerDep",
+        "purpose": "审批请求 id 使用 brand 基元，避免裸 string 跨边界"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-user-questions",
+    "name": "@deepseek-ai/dsh-user-questions",
+    "implementation": "用户问答 seam：UserQuestionService 经 Agent 作用域的 user-questions/request waterfall 寻找 answerer，校验问题非空、presentation intent 的 approve 标签与 detail 合法，并把「调用方必须是存活 runtime root」作为人机交互前提（被委派的子 agent 直接拒绝并给出结构化错误码）(src/index.ts:287-339, src/index.ts:131-144)。askTimed 建立 TimedQuestionWait 前景等待，客户端认领期间由 Host 计时，超时映射为 pending 结果，取消则还原为 ASK_ABORTED (src/index.ts:234-269, src/timed-wait.ts:33-82)。迟到的回答经 agent.steer 以 user-question-reply 来源的用户消息回流，同一问题只允许一条排队回复，队列随 inbox 认领/丢弃与 turn 结束清理 (src/index.ts:164-206, src/index.ts:95-129)。projection.ts 把工具调用、结果与迟到答复折叠为 active/settled 三态视图供所有客户端读取 (src/projection.ts:235-331)。",
+    "provides": [
+      "ctx.userQuestions (UserQuestionService：提问、定时前景等待、迟到回答回流)",
+      "Cordis 事件 user-questions/request（Agent 作用域 waterfall）",
+      "Session 投影 userQuestions（active/continued 与 settled 视图）",
+      "消息来源 user-question-reply（迟到答复的持久归属）",
+      "TIMED_WAIT_PARAMETER / isTimedAskUserQuestionSchema（timed 工具与投影共用的判定）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:11,16 import type { Agent } + src/index.ts:132 ctx.get('agents') 校验存活 root",
+        "purpose": "以 Agent 注册表判定调用方是否为可交互的存活 runtime root"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:12 import { createUserMessage, HarnessError } + src/projection.ts:8 import { ToolCallId }",
+        "purpose": "构造回流用户消息并使用 LLM 的 brand 与内容块类型"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:13 import type { Session } + src/projection.ts:3 SessionLogOffset",
+        "purpose": "投影状态以会话日志偏移为继承边界"
+      },
+      {
+        "plugin_id": "dsh-scope",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:14 import { scopeTarget } + src/types.ts:3 import type { Scoped }",
+        "purpose": "问答 waterfall 按 Agent 作用域过滤分发"
+      },
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:15 import { Remote, TypertRemoteService } + src/index.ts:164,215 @Remote / @Remote({mode:'stream'})",
+        "purpose": "answer 与 attachWait 流式接口暴露给客户端"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:17 import type {} + src/index.ts:86-87 ctx.inject(['sessionProjections']) 后 register",
+        "purpose": "注册 userQuestions 投影并读取 active 问题"
+      },
+      {
+        "plugin_id": "dsh-tools",
+        "mechanism": "E1",
+        "evidence": "src/projection.ts:7 import type {} from '@deepseek-ai/dsh-tools/types'",
+        "purpose": "投影读取 tool/call、tool/result 事件需要工具事件类型声明合并"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-deepseek-llm-api-extensions",
+    "name": "@deepseek-ai/dsh-deepseek-llm-api-extensions",
+    "implementation": "官方 DeepSeek 请求顶层扩展字段的注册表：register(field, provider) 以 effect 作用域保证一个字段只有一个所有者，字段名必须非空且已 trim (src/index.ts:81-101)。prepare() 并发调用各 provider 的 prepare，把返回值结构化克隆后递归冻结并合并为字段集；单个字段准备失败或不可克隆时从本次请求中省略，且每个字段只告警一次 (src/index.ts:111-141)。accept() 在 HTTP 2xx 后用 Promise.allSettled 统一结算各 provider 的接受回调，单错直接抛、多错抛 AggregateError；重复调用复用同一结算 promise (src/index.ts:41-48, src/index.ts:136-140)。整体准备以 abortable 与请求信号竞速，只有取消会拒绝 (src/index.ts:51-63, src/index.ts:112-125)。",
+    "provides": [
+      "ctx.deepseekLlmApiExtensions (DeepSeekLlmApiExtensionRegistry：顶层请求字段注册与准备/接受事务)",
+      "类型出口 DeepSeekLlmApiExtensionMap 与 provider 契约（供插件声明合并自有字段）"
+    ],
+    "depends_on": [],
+    "dependents": []
+  },
+  {
+    "id": "dsh-llm",
+    "name": "@deepseek-ai/dsh-llm",
+    "implementation": "提供者中立的 LLM seam：LlmRuntime 维护 provider→adapter 注册表与可配置 provider 目录，registerAdapter / registerConfigurableProviders 以 effect 作用域注册并支持全量校验后原子 replace（冲突时不改变现状）(src/index.ts:389-536)。stream() 经 llm/stream waterfall 进入 adapterStream，完成适配器选择、模型元数据校验、调用配置默认化、文件/图片投影与工具更新投影，并把适配器失败收敛为终结 finish 块（reason 为 aborted 或 error）(src/index.ts:1041-1157, src/index.ts:1160-1169)。prepareCall 把一次调用的配置、重试策略与适配器代际绑定为一次性 handle，使 HMR 或设置变更不会混用两代能力 (src/index.ts:933-991)。另定义 LlmAdapter 抽象基类、消息/内容块词汇、重试策略 schema 解析与 BlockAssembler 等公共构件 (src/index.ts:208-291, src/retry-policy.ts:100-195)。",
+    "provides": [
+      "ctx.llm (LlmRuntime：适配器注册、模型目录与发现、流式调用与 prepareCall)",
+      "Cordis 事件 llm/stream（waterfall 拦截每次流式调用）与 llm/adapters-updated（拓扑变更通知）",
+      "LlmAdapter 抽象基类与 StreamChunk/GenerateOptions/ContentBlock 等提供者词汇",
+      "重试策略模型 RetryPolicySchema / resolveRetryPolicy（供各 provider 配置内嵌）",
+      "消息与内容块工具（createUserMessage、freezeMessage、projectFilesToText、BlockAssembler 等）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "src/brand.ts:13 import type { Branded } + package.json:66 dependencies",
+        "purpose": "MessageId / ToolCallId / ProviderRequestId 等跨边界 id 使用 brand 基元"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:11 import { deepFreeze } + src/assembler.ts:10 + package.json:67 dependencies",
+        "purpose": "请求、配置与模型元数据的深冻结"
+      },
+      {
+        "plugin_id": "dsh-typert-protocol",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:10 import { Remote, RemoteError, TypertRemoteService } + src/index.ts:470,542,630 @Remote",
+        "purpose": "把 provider 目录与模型发现暴露为远端方法"
+      },
+      {
+        "plugin_id": "dsh-util-crypto",
+        "mechanism": "E1",
+        "evidence": "src/message.ts:3 import ... '@deepseek-ai/dsh-util-crypto' + package.json:62 dependencies",
+        "purpose": "消息与调用标识的生成"
+      },
+      {
+        "plugin_id": "dsh-timeout",
+        "mechanism": "E1",
+        "evidence": "src/retry-policy.ts:11 import { MAX_TIMER_DELAY_MS } + package.json:65 dependencies",
+        "purpose": "重试退避延迟的上界受 harness 定时器上限约束"
+      },
+      {
+        "plugin_id": "dsh-attachment",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:42 import type { FileAttachmentRef } + src/index.ts:1023 ctx.get('attachments')",
+        "purpose": "把持久文件引用解析为当前执行世界可读路径，供文件句柄文本投影"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-llm-deepseek-api-key",
+    "name": "@deepseek-ai/dsh-llm-deepseek-api-key",
+    "implementation": "为官方 DeepSeek 路由提供 API-key 认证与凭据门控的模型发现：apply() 先解析一次配置（含端点与 DEEPSEEK_API_KEY 凭据引用）使错误在加载期暴露，再向 ctx.llm 声明可配置 provider (src/index.ts:17-38)。resolveApiKey 优先经 credentials seam 解析引用，无 seam 时退回启动环境，缺失即以 MISSING_CREDENTIAL 明确报错并指明修复位置（不回显密钥）(src/index.ts:20-35)。随后 registerDeepSeekProvider 注册 'deepseek-official'：认证头为 x-api-key，模型发现先做凭据门控、无凭据时返回空目录而非抛错 (src/index.ts:39-51)。配置解析把端点事实与凭据引用固定在同一代，避免两代配置混用 (src/config.ts:37-38)。",
+    "provides": [
+      "ctx.llm 的 deepseek-official provider 路由（API-key 认证头 + 凭据门控的模型发现）",
+      "Config / plainOptions / resolveAdapterOptions 配置出口"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:3 import { assertUsableApiKey, LlmError } + src/index.ts:13 inject ['llm'] + src/index.ts:36 ctx.llm.registerConfigurableProviders",
+        "purpose": "适配器必须注册进 LLM seam 才能被路由与发现"
+      },
+      {
+        "plugin_id": "dsh-llm-deepseek",
+        "mechanism": "E1",
+        "evidence": "src/config.ts:6-7 import { deepSeekConfigFields, resolveAdapterOptions } + src/index.ts:6 registerDeepSeekProvider",
+        "purpose": "复用官方 DeepSeek 协议配置字段与 provider 注册实现"
+      },
+      {
+        "plugin_id": "dsh-launch-environment",
+        "mechanism": "E1",
+        "evidence": "src/config.ts:5 + src/index.ts:5 import { launchEnvironmentOf } + src/index.ts:18,27",
+        "purpose": "没有凭据 seam 时以启动环境作为凭据来源"
+      },
+      {
+        "plugin_id": "dsh-credentials",
+        "mechanism": "E1+E2",
+        "evidence": "src/config.ts:4 import { credentialRef } + src/index.ts:22 ctx.get('credentials')",
+        "purpose": "把 apiKeyEnv 作为凭据引用经凭据服务按请求解析"
+      },
+      {
+        "plugin_id": "cordis-plugin-loader",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:4 import type {} from '@deepseek-ai/cordis-plugin-loader' + package.json:35 可选 peerDep",
+        "purpose": "读取 loader 注入的 fiber 条目 id 作为 settings 命名空间"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-llm-pi-ai",
+    "name": "@deepseek-ai/dsh-llm-pi-ai",
+    "implementation": "基于 @earendil-works/pi-ai 的通用 LLM 适配器：apply() 把 providers 配置解析为按路由的 profile（端点、协议、模型目录、重试策略），把已安装目录路由与自定义路由一并登记为可配置 provider 目录，并把非空路由集注册为同一个 PiAiAdapter 实例，路由集或重试策略变化时原子 re-register (src/index.ts:149-308, src/index.ts:285-308)。PiAiAdapter 每次解析产出不可变快照（profiles + Models 集合），一次操作在首个 await 之前捕获整份快照，使设置变更只影响下一次调用而不改变在途请求 (src/adapter.ts:230-256, src/adapter.ts:80-90)。请求转换由 context.ts 完成（文本历史同步转换、图片附件异步解析，超出图片字节预算时以 IMAGE_OFFLOAD_REQUIRED 明确拒绝），流式事件经 stream.ts 映射为 StreamChunk 并归一化用量与结束原因 (src/context.ts:293-320, src/stream.ts:24-141, src/stream.ts:142-175)。认证侧经 credentials 与 authorization seam 解析引用并注册登录/刷新流程，凭据存储跨快照稳定 (src/auth.ts:141-215, src/login.ts:131)。",
+    "provides": [
+      "ctx.llm 上的 pi-ai 后端 provider 路由集合（展示名、重试策略、模型目录）",
+      "ctx.llm 可配置 provider 目录与模型发现（registerModelDiscovery）",
+      "authorization 登录流程（pi-ai 提供方登录与凭据刷新记录）",
+      "PiAiAdapter 与 pi-ai 配置类型出口（Config / Options / PiAiProviderProfile 等）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:63-64 import { assertUsableApiKey, LlmError } / type { AdapterRegistrationHandle } + src/index.ts:302 ctx.llm.registerAdapter",
+        "purpose": "实现 LlmAdapter 并注册进 LLM seam 才能服务请求"
+      },
+      {
+        "plugin_id": "dsh-launch-environment",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:62 import { launchEnvironmentOf } + src/index.ts:198 无凭据 seam 时的回退读取",
+        "purpose": "没有凭据服务时从启动环境取凭据"
+      },
+      {
+        "plugin_id": "dsh-util-values",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:66 import { deepEqualJson } + src/index.ts:243,287 事实比较",
+        "purpose": "以结构化相等判断路由集与目录是否变化，决定是否重新注册"
+      },
+      {
+        "plugin_id": "dsh-timeout",
+        "mechanism": "E1",
+        "evidence": "src/adapter.ts:60 import { idleWatchdog, timeoutOf } + src/config.ts:21 MAX_TIMER_DELAY_MS",
+        "purpose": "流空闲看门狗与重试延迟上界共用 harness 超时约定"
+      },
+      {
+        "plugin_id": "dsh-attachment",
+        "mechanism": "E1+E2",
+        "evidence": "src/adapter.ts:59 import type { AttachmentStore } + src/index.ts:216 ctx.get('attachments')",
+        "purpose": "把持久图片附件解析为请求内图片与尺寸预算"
+      },
+      {
+        "plugin_id": "dsh-credentials",
+        "mechanism": "E1+E2",
+        "evidence": "src/auth.ts:19, src/config.ts:19-20, src/login.ts:13 import + src/index.ts:194 ctx.get('credentials')",
+        "purpose": "解析 apiKeyEnv 引用并持久化登录写入的凭据记录"
+      },
+      {
+        "plugin_id": "dsh-authorization",
+        "mechanism": "E1+E2",
+        "evidence": "src/login.ts:12 import type { AuthorizationMethod } + src/index.ts:234 ctx.inject(['authorization'])",
+        "purpose": "为 pi-ai 提供方注册交互式登录流程"
+      },
+      {
+        "plugin_id": "dsh-fs",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:65 import type {} from '@deepseek-ai/dsh-fs' + src/index.ts:219 ctx.get('fs')?.processPathFromHostPath",
+        "purpose": "把附件宿主路径映射为模型工具可见的执行世界路径"
+      },
+      {
+        "plugin_id": "dsh-settings",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:57 import type {} from '@deepseek-ai/dsh-settings' + src/index.ts:150 ctx.inject(['settings'])",
+        "purpose": "把 provider profile 暴露为 llm-pi-ai 设置段供界面编辑"
+      },
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "src/context.ts:7 与 src/stream.ts:11 import { brandString } + package.json:41 dependencies",
+        "purpose": "把 SessionId / ToolCallId 等字符串 brand 为跨边界 id"
+      },
+      {
+        "plugin_id": "cordis-plugin-loader",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:59 import type {} from '@deepseek-ai/cordis-plugin-loader' + src/index.ts:310 ctx.on('loader/volatile-update')",
+        "purpose": "配置热更新事件由 loader 发出，据此重建路由与目录"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-llm-retry",
+    "name": "@deepseek-ai/dsh-llm-retry",
+    "implementation": "在 agent/request-error 扩展点上执行 provider 自带的重试策略：按 provider + policyKey 从 llmRetry 会话投影读取已重试次数与 retryId，据此决定是否继续退避，normal 模式超过 maxRetries 即交回下游 (src/index.ts:194-241, src/index.ts:125-138)。每次重试先追加 llm/retry 事件（含模式、延迟与失败事实）使其在等待前即可持久化，可取消延迟成功后再追加 llm/retry-started 并返回 retry 决定 (src/index.ts:149-192, src/index.ts:83-96)。延迟取 provider 给出的 retryAfter（超过 maxDelayMs 时按模式回退本地退避），否则用本地指数退避加对称抖动 (src/index.ts:59-64, src/index.ts:226-238)。插件处置时中止 lifetime 并等待所有在途恢复结束，防止已捕获的旧回调进入下游策略 (src/index.ts:254-258, src/index.ts:243-252)。",
+    "provides": [
+      "agent/request-error waterfall 监听器（provider 路由重试策略执行器）",
+      "Session 投影 llmRetry（按 provider + 策略的当前重试状态）",
+      "Session 事件 llm/retry 与 llm/retry-started（可回放的重试时序）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "src/brand.ts:1 import type { Branded } + package.json:34 peerDep",
+        "purpose": "重试链身份 RetryId 使用 brand 基元"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:12 import type { Agent, RequestErrorAction } + src/index.ts:22 inject ['agents'] + src/index.ts:243 ctx.on('agent/request-error')",
+        "purpose": "重试策略挂在 agent 循环的请求错误恢复扩展点上"
+      },
+      {
+        "plugin_id": "dsh-llm",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:13 import type { LlmFailure, ResolvedRetryPolicy } + src/types.ts:1 dsh-llm/types",
+        "purpose": "失败事实与解析后的重试策略类型由 LLM seam 定义"
+      },
+      {
+        "plugin_id": "dsh-session-projection",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:14 import type {} + src/index.ts:125 ctx.sessionProjections.register + src/index.ts:220 stateOf",
+        "purpose": "重试计数必须由会话日志投影恢复，重启后不重置"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "package.json:37 peerDep + src/types.ts:6 declare module '@deepseek-ai/dsh-session/types'（llm/retry 事件声明）",
+        "purpose": "重试事件注册进会话事件映射并写入 agent.session"
+      },
+      {
+        "plugin_id": "dsh-timeout",
+        "mechanism": "E1",
+        "evidence": "package.json:38 peerDep（重试延迟上界与 harness 定时器上限同源）",
+        "purpose": "重试延迟量级遵循 harness 定时器上界约定"
+      }
+    ],
+    "dependents": []
+  },
+  {
+    "id": "dsh-plugin-package-inventory-deepseek",
+    "name": "@deepseek-ai/dsh-plugin-package-inventory-deepseek",
+    "implementation": "为官方 DeepSeek 请求贡献 dsh_plugin_packages 字段：apply() 在启用时把该字段的 provider 注册进 ctx.deepseekLlmApiExtensions，prepare 时现场收集活跃插件包 (src/index.ts:199-213)。collectActivePluginPackages 从 loader 条目树取处于 ACTIVE 且非 group、非 disabled 的条目，并在给出 sessionId 时并入该 agent 的 preset 组合模块 (src/index.ts:137-146, src/index.ts:154-192)。PackageIdentityResolver 以裸包名经 pluginPackages 或 require 解析路径、否则向上寻找最近的 package.json，读取 name/version 并按进程缓存，无法解析的条目只告警一次且不进入清单 (src/index.ts:55-133, src/index.ts:176-188)。最终按 name/version 做确定性文本排序并去重，得到与宿主 ICU/locale 无关的线上值 (src/index.ts:148-151, src/index.ts:174-191)。",
+    "provides": [
+      "DeepSeek 请求扩展字段 dsh_plugin_packages（当前活跃插件包清单，version: 1）"
+    ],
+    "depends_on": [
+      {
+        "plugin_id": "dsh-brand",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:14 import { brandString } + package.json:35 dependencies",
+        "purpose": "把请求携带的 sessionId 字符串 brand 为 SessionId"
+      },
+      {
+        "plugin_id": "cordis-plugin-loader",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:15 import type { EntryTree } + src/index.ts:29 inject ['loader'] + src/index.ts:161 ctx.loader",
+        "purpose": "活跃插件包身份只能从 loader 条目树与 fiber 状态取得"
+      },
+      {
+        "plugin_id": "dsh-agent",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:16 import type {} from '@deepseek-ai/dsh-agent' + src/index.ts:164 ctx.agents.get(...)",
+        "purpose": "按请求 session 定位所属 agent，进而读取其 preset 组合"
+      },
+      {
+        "plugin_id": "dsh-deepseek-llm-api-extensions",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:17 import type {} + src/index.ts:205 ctx.deepseekLlmApiExtensions.register('dsh_plugin_packages')",
+        "purpose": "字段必须注册进扩展注册表才会并入官方 DeepSeek 请求"
+      },
+      {
+        "plugin_id": "dsh-session",
+        "mechanism": "E1",
+        "evidence": "src/index.ts:18 import type { SessionId } + package.json:44 peerDep",
+        "purpose": "请求携带的 sessionId 类型由会话 seam 定义"
+      },
+      {
+        "plugin_id": "dsh-agent-preset-registry",
+        "mechanism": "E1+E2",
+        "evidence": "src/index.ts:19 import type {} + src/index.ts:162 ctx.get('agentPresets')",
+        "purpose": "可选地把请求 agent 的 preset 组合模块并入插件包清单"
+      }
+    ],
+    "dependents": []
+  }
+]

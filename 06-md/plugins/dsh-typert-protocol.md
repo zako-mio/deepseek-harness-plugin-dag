@@ -2,7 +2,7 @@
 
 - 包名: `@deepseek-ai/dsh-typert-protocol`
 - 源码路径: `packages/typert/protocol`
-- 被插件引用: 39 次
+- 被插件引用: 44 次
 - 描述: 
 
 ## 被集依赖 (下游)
@@ -19,6 +19,7 @@
 - `dsh-api-workspace-files`
 - `dsh-client-connection`
 - `dsh-client-file-upload`
+- `dsh-client-product-analytics`
 - `dsh-client-resources`
 - `dsh-client-ui-approval`
 - `dsh-client-ui-deliverables`
@@ -31,6 +32,9 @@
 - `dsh-commands`
 - `dsh-cordis-host-runner`
 - `dsh-experimental-api-speech-to-text`
+- `dsh-experimental-claude-code-mods`
+- `dsh-experimental-client-ui-claude-code-mods`
+- `dsh-experimental-client-ui-cot-translation`
 - `dsh-experimental-client-ui-voice-input`
 - `dsh-goal`
 - `dsh-host-plugin-inventory`
@@ -44,6 +48,7 @@
 - `dsh-session-reference`
 - `dsh-subagent`
 - `dsh-typert-registry`
+- `dsh-user-questions`
 - `dsh-workspace`
 
 ## 依赖机制

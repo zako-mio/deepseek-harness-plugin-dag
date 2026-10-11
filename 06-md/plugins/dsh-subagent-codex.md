@@ -1,24 +1,26 @@
 # dsh-subagent-codex
 
 - 包名: `@deepseek-ai/dsh-subagent-codex`
-- 分组: G41 子代理
+- 分组: G39 子代理
 - 拓扑层: Layer 7
 - 来源层: L3 其余
 - 源码路径: `packages/subagent/subagent-codex`
 
 ## 实现逻辑
-以 CodexProvider 注册 provider codex，声明零启动能力并只从 parent 读取 workspace cwd (src/index.ts:63-109)。start() 经 ctx.subprocess.spawn 启动包内 codex app-server --stdio，wire.ts 用共享 JsonRpcLineTransport 完成 initialize、创建 ephemeral thread 并驱动 turn (src/run.ts:225-301, src/wire.ts:192-374)。无人值守审批按 permissionMode 选择 cancel/decline，仅最终答案计入结果，失败按 stage/category 映射为固定诊断，dispose 关闭 wire 并终止进程 (src/wire.ts:571-630, src/run.ts:380-438)。
+按 profile 命名的 Codex 一次性子代理 provider：apply 解析配置、校验 disposeGraceMs 上限后把 `CodexProvider` 注册到 `ctx.subagents`（默认名 `codex`）(src/index.ts:107-130)。provider 同样声明无 start 能力且不继承父会话上下文，start 校验 cwd 后组装 CodexRunSpec 交给 `startCodexRun`，spawn 走 `ctx.subprocess.spawn` (src/index.ts:63-99)。run.ts 以 `codexAppServerArgv()` 启动官方包内 wrapper 的 `app-server --stdio`，把请求文本转成 Codex 输入并按 stop reason 归一失败诊断 (src/run.ts:135-167、src/run.ts:225)；协议帧由 wire.ts 的 `CodexAppServerWire` 基于 sdk-protocol 的行传输实现，且只有在临时 thread 建立后才对外发布运行 (src/wire.ts:192、src/wire.ts:13)。
 
 ## Provides
-- ctx.subagents 注册的 provider `codex` (Codex app-server 进程外子代理)
+- ctx.subagents 上的 `codex` provider（一次性 Codex 子代理后端，app-server --stdio 协议驱动）
 
 ## Depends On (上游依赖)
-- `dsh-llm` [编译依赖] - 使用内容块类型
-  - 证据: `src/run.ts:15 (import type ContentBlock)`
-- `dsh-session` [编译依赖] - 品牌化 run id
-  - 证据: `src/run.ts:16 (import type SessionId)`
-- `dsh-subagent` [E1+E2] - 复用 seam 契约与共享辅助并注册 provider
-  - 证据: `src/index.ts:12-19 (import NO_START_CAPABILITIES, resolveChildCwd, 类型) + src/index.ts:31 (inject ['subagents','subprocess']) + src/index.ts:135 (ctx.subagents.registerProvider)`
+- `dsh-llm` [编译依赖] - 内容块与消息类型用于构造/解析协议载荷
+  - 证据: `src/run.ts:15 import from '@deepseek-ai/dsh-llm' + src/wire.ts:11 import`
+- `dsh-session` [编译依赖] - 子代理运行身份使用 SessionId
+  - 证据: `src/run.ts:16 import type SessionId from '@deepseek-ai/dsh-session'`
+- `dsh-subagent` [E1+E2] - provider 契约、能力常量与注册入口
+  - 证据: `src/index.ts:12-19 import NO_START_CAPABILITIES/assertUsableCwd + src/index.ts:31 inject ['subagents'] + src/index.ts:125 registerProvider`
+- `dsh-tool-subagent` [组合依赖] - 必须与委托工具同装配，模型侧才能启动该后端
+  - 证据: `cordis.patch.yml:4-5 与 tool-subagent-codex 同补丁装配；package.json:52 dependencies`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

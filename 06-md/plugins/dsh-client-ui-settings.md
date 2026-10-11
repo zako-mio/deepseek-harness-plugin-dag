@@ -23,21 +23,23 @@
 
 ## Dependents (下游被依赖)
 - `dsh-client-locale` - 经 configForms 读取持久语言偏好并把 Language 行注册进设置区
-- `dsh-client-ui-agent-preset` - 向设置壳注册 agent-presets 段
-- `dsh-client-ui-chat` - 注册 Chat 三项 General 设置行
-- `dsh-client-ui-conversation` - 读取 Enter 行为等运行时设置
-- `dsh-client-ui-deliverables` - 开发者工具开关控制 diff 展示
-- `dsh-client-ui-permission-presets` - 设置行使用 ui-settings 的 configForms/describe 面
-- `dsh-client-ui-plugin-manager` - 插件配置页复用 ui-settings 的 configForms
-- `dsh-client-ui-settings-account` - 读/写 onboarding 等设置命名空间
-- `dsh-client-ui-settings-agent-loop` - 经 configForms 服务取得 agent-loop 命名空间的设置表单 scope
-- `dsh-client-ui-settings-general` - 设置槽声明与 configForms 镜像由 ui-settings 提供
-- `dsh-client-ui-settings-models` - 设置槽声明、settingsSchema/configForms 镜像由 ui-settings 提供
-- `dsh-client-ui-settings-plugin-inventory` - 复用 Plugins 设置段的 tab 槽声明
+- `dsh-client-ui-agent-preset` - 占用 settings.section 声明
+- `dsh-client-ui-chat` - 注册三条通用设置行
+- `dsh-client-ui-conversation` - 注册提交行为设置行
+- `dsh-client-ui-deliverables` - 设置槽位类型
+- `dsh-client-ui-permission-presets` - 注册 General 设置行
+- `dsh-client-ui-plugin-manager` - 配置表单投影类型
+- `dsh-client-ui-settings-account` - 经共享配置表单读写引导进度与 developerTools 偏好
+- `dsh-client-ui-settings-agent-loop` - 读取 agent-loop 命名空间的共享配置表单并做暂存/保存
+- `dsh-client-ui-settings-general` - Developer Tools 行与本地文档动作经共享配置表单镜像读写
+- `dsh-client-ui-settings-models` - 页面经共享配置表单镜像读取命名空间与 revision，并在其推送下刷新
+- `dsh-client-ui-settings-plugin-inventory` - 拉入 settings.plugins.tab 槽声明的类型合并（本包不注入 configForms）
 - `dsh-client-ui-settings-plugins` - 复用设置外壳的 section 槽声明
-- `dsh-client-ui-settings-shell` - 经 configForms 取得 shell 命名空间的表单 scope
-- `dsh-client-ui-settings-subagent` - 经 configForms 取得两个命名空间的表单 scope
-- `dsh-client-ui-settings-web-search` - 经 configForms 取得命名空间的表单 scope
-- `dsh-client-ui-shortcuts` - 引入设置域槽声明，General 段的 item 槽由其外壳渲染
-- `dsh-client-ui-sidebar-documentpreview` - html 预览经设置服务注册其配置表单
-- `dsh-client-ui-theme` - 读取/持久化主题偏好并注册 settings.general.item 槽
+- `dsh-client-ui-settings-session-log` - 上传开关的读写经共享配置表单，并以 whileServed 判定命名空间是否被服务
+- `dsh-client-ui-settings-shell` - 读 bash/pwsh 两个命名空间的共享配置表单，并以 whileServed 选择生效的那一个
+- `dsh-client-ui-settings-subagent` - 两个命名空间的共享配置表单读写与 whileServed 判定都经该服务
+- `dsh-client-ui-settings-web-search` - 搜索命名空间的共享配置表单读写与 whileServed 判定都经该服务
+- `dsh-client-ui-shortcuts` - 拉入 settings.general.item 槽声明的类型合并（本包不注入 configForms）
+- `dsh-client-ui-sidebar-documentpreview` - HTML 预览的交互开关读 settings 提供的 configForms
+- `dsh-client-ui-theme` - 偏好经 settings 配置表单持久化，设置行也注册进其 item 槽
+- `dsh-experimental-client-ui-cot-translation` - 设置页面的槽位与类型声明来自 settings UI 包

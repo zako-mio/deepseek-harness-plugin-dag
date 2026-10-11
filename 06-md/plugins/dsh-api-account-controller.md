@@ -2,7 +2,7 @@
 
 - 包名: `@deepseek-ai/dsh-api-account-controller`
 - 分组: G02 API 网关与控制器
-- 拓扑层: Layer 5
+- 拓扑层: Layer 4
 - 来源层: L2 web-app
 - 源码路径: `packages/api/account-controller`
 
@@ -17,4 +17,4 @@ AccountController 继承 TypertRemoteService，构造时以 namespace 'account' 
   - 证据: `src/index.ts:5 import type {} + src/index.ts:82 ctx.agents.list()`
 
 ## Dependents (下游被依赖)
-- `dsh-api-remotes` - 装配 account 命名空间
+- `dsh-api-remotes` - 把该业务包的 /remote 命名空间装配进 Client

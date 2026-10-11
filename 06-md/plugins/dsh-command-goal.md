@@ -2,7 +2,7 @@
 
 - 包名: `@deepseek-ai/dsh-command-goal`
 - 分组: G17 目标与计划
-- 拓扑层: Layer 6
+- 拓扑层: Layer 5
 - 来源层: L1 核心集
 - 源码路径: `packages/goal/command-goal`
 

@@ -1,7 +1,7 @@
 # dsh-tool-workspace-dependencies
 
 - 包名: `@deepseek-ai/dsh-tool-workspace-dependencies`
-- 分组: G37 技能
+- 分组: G35 技能
 - 拓扑层: Layer 5
 - 来源层: L3 其余
 - 源码路径: `packages/skill/tool-workspace-dependencies`

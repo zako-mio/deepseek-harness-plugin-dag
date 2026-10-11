@@ -2,13 +2,14 @@
 
 - 包名: `@deepseek-ai/dsh-subprocess`
 - 源码路径: `packages/subprocess/subprocess`
-- 被插件引用: 19 次
+- 被插件引用: 20 次
 - 描述: 
 
 ## 被集依赖 (下游)
 - `dsh-api-terminal-controller`
 - `dsh-bash-local`
 - `dsh-experimental-browser-use-stagehand-native`
+- `dsh-experimental-claude-code-mods`
 - `dsh-experimental-speech-to-text-sensevoice`
 - `dsh-host-open-in-app`
 - `dsh-lsp-stdio`

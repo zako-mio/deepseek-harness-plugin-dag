@@ -30,4 +30,4 @@ Web 壳库入口导出 `AppWebEntry`、静态模块表与 index 注入应用器 
   - 证据: `src/apply-injections.ts:7`
 
 ## Dependents (下游被依赖)
-- `dsh-experimental-webworker-runtime` - 复用 Client web 侧的 index injection 定义
+- `dsh-experimental-webworker-runtime` - boot 注入表（__ModuleLoader__、__DSH_BOOT__、主题引导）的执行器由 client-web 提供

@@ -2,15 +2,12 @@
 
 - 包名: `@deepseek-ai/dsh-shell`
 - 源码路径: `packages/shell/shell`
-- 被插件引用: 12 次
+- 被插件引用: 9 次
 - 描述: 
 
 ## 被集依赖 (下游)
 - `dsh-bash-local`
 - `dsh-bash-sandbox`
-- `dsh-hook-protocol`
-- `dsh-hooks-claude-code`
-- `dsh-hooks-codex`
 - `dsh-permission-presets`
 - `dsh-pwsh-local`
 - `dsh-pwsh-sandbox`

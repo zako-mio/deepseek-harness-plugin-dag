@@ -19,7 +19,7 @@ Host 半为空实现，资源模型全在浏览器半 (src/index.ts:1-4)。浏�
 
 ## Dependents (下游被依赖)
 - `dsh-api-workspace-files` - 客户端 file 资源 provider 注册
-- `dsh-client-ui-plan` - 注册计划资源 provider
-- `dsh-client-ui-sidebar-documentpreview` - 借用资源模型登记/固定被预览的文件资源
-- `dsh-client-ui-sidebar-right` - 把 tab 资源登记/固定到资源模型
-- `dsh-client-ui-subagent` - 注册 subagentchat 资源提供者
+- `dsh-client-ui-plan` - 注册 plan 资源提供者
+- `dsh-client-ui-sidebar-documentpreview` - 预览把依赖文件注册为资源并按引用计数回收
+- `dsh-client-ui-sidebar-right` - 资源型标签打开时对资源加引用钉住
+- `dsh-client-ui-subagent` - subagentchat 作为资源类型接入资源模型

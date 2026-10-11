@@ -1,24 +1,28 @@
 # dsh-tool-pwsh-persistent
 
 - 包名: `@deepseek-ai/dsh-tool-pwsh-persistent`
-- 分组: G36 Shell 执行
+- 分组: G34 Shell 执行
 - 拓扑层: Layer 6
 - 来源层: L3 其余
 - 源码路径: `packages/shell/tool-pwsh-persistent`
 
 ## 实现逻辑
-向模型注册基于 PTY 的持久 pwsh 工具，与 tool-bash-persistent 逐调用对称：按 owner(Agent) 维护持久 PowerShell 会话，用 nonce 标记包裹命令（quoteForPwsh 转义反引号、引号、`$`、换行与 ESC）后发送并轮询 (src/index.ts:81-99, 308-402)。persistentShells() 负责按 owner 的会话创建/复用/重置与 fiber 处置清理；executeCommand 处理超时、abort、会话退出与 stdin_read 的提前返回 (src/index.ts:245-306, 331-401)。输出按上限截断并渲染退出码/重置/超时提示 (src/index.ts:57-243)。
+持久 `pwsh` 工具，与 `dsh-tool-bash-persistent` 共用会话注册表、轮询与 reset 契约（文件头明示为刻意镜像）(src/index.ts:1-2)。命令经 `quoteForPwsh` 做反引号转义后包进 `Write-Output`/`Invoke-Expression` wrapper，以 `$LASTEXITCODE`/`$?` 归一退出码，并保持 wrapper 在单一物理行以免 PSReadLine 回显破坏提取 (src/index.ts:82-100)。轮询 scrollback 时用真实标记锚定并剥离回显的 wrapper 源码，仅非零退出才追加 `[exit code: N]` 标记 (src/index.ts:106-129、src/index.ts:187-196)；超时/中止/会话退出同样 reset 并提示下次全新开始 (src/index.ts:216-245、src/index.ts:363-381)。
 
 ## Provides
-- 模型工具 pwsh (基于 owner 级 PTY 持久会话的持久 PowerShell，状态跨调用保持)
+- ctx.tools 上的 `pwsh` 工具定义（owner 隔离的持久 PowerShell PTY 会话）
 
 ## Depends On (上游依赖)
-- `dsh-agent` [编译依赖] - 以 Agent 为 owner 隔离持久 shell 并读取其会话 cwd
-  - 证据: `src/index.ts:11 import type { Agent }; package.json:29 peerDep`
-- `dsh-terminal` [E1+E2] - 经 owner 级 PTY 服务创建/发送/读取/终止持久 shell 会话
-  - 证据: `src/index.ts:13 import type { TerminalSessionId }; src/index.ts:453 inject ['terminals']; src/index.ts:279 ctx.terminals.spawn`
-- `dsh-tools` [E1+E2] - 注册持久 pwsh 工具定义
-  - 证据: `src/index.ts:15 import defineTool; src/index.ts:453 inject ['tools']; src/index.ts:425 ctx.tools.register`
+- `dsh-agent` [编译依赖] - 以 Agent 作为会话所有者
+  - 证据: `package.json:29 peerDependencies '@deepseek-ai/dsh-agent' + src/index.ts:12 type Agent`
+- `dsh-terminal` [E1+E2] - 持久会话的 spawn/发送/读取/kill 由终端 seam 提供
+  - 证据: `src/index.ts:14 type TerminalSessionId + src/index.ts:281 ctx.terminals.spawn + src/index.ts:347 ctx.terminals.startSend`
+- `dsh-terminal-bash` [组合依赖] - Windows 侧持久会话依赖该 PTY 后端注册
+  - 证据: `src/index.ts:471 backendType 默认 'shell'；packages/bundle/sdk-minimal/cordis.patch.yml:68-73 terminal-pwsh 后端由 dsh-terminal-bash 以 shellDialect: pwsh 提供`
+- `dsh-tools` [E1+E2] - 工具必须注册进工具注册表
+  - 证据: `src/index.ts:16 import defineTool + src/index.ts:455 inject 'tools' + src/index.ts:427 ctx.tools.register`
+- `dsh-working-directory` [运行时依赖] - 会话初始 cwd 取自 owner 工作区
+  - 证据: `src/index.ts:8 type import + src/index.ts:280 ctx.workingDirectory.ensure(owner, combinedSignal)`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

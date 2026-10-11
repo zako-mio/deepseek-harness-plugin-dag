@@ -7,27 +7,23 @@
 - 源码路径: `packages/client/ui-shortcuts`
 
 ## 实现逻辑
-浏览器半注册 `shortcuts` 字典后，先用 `ctx.shortcuts.registerFixed` 批量注册固定命令（src/client/index.ts:37-39），再把快捷键参考行注册进 Settings 的 `settings.general.item`（id='shortcuts' order 20，src/client/index.ts:42-45），并把参考浮层注册进 `shell.overlay`（src/client/index.ts:46-71）。同时注册 `shortcuts.open` 命令（primary+/）在 settings 与 shortcuts 两种模态间切换开合（src/client/index.ts:47-65）。一个 store 句柄在 apply 内创建并同时交给设置行与浮层两处注册（src/client/index.ts:31-33）。
+快捷键参考与本地偏好编辑插件。apply 注册 shortcuts 字典、创建唯一的 root 级 store 实例，并把 fixedCommands 里的菜单保留键逐条经 ctx.shortcuts.registerFixed 注册（每个命令一个 effect 便于回收）(src/client/index.ts:29-39, src/client/fixed.ts:10-16)。注册 shortcuts.open 命令（六个平台默认 primary+/，regions 覆盖 page/editable/terminal，在 settings/shortcuts 模态内可解析并负责关闭顶层弹窗），并在同一 fiber 内注册 shell.overlay 的参考面板，返回一个同时回收命令与槽的 disposer (src/client/index.ts:46-71)。同一 store 另把 ShortcutsRow 注册进 settings.general.item（order 16）(src/client/index.ts:42-45)。store 只持有 open/query/focusRequest 三个跨入口共享的交互状态 (src/client/store.ts:11-19)。
 
 ## Provides
-- shortcuts locale 命名空间字典
-- settings.general.item 条目 id='shortcuts' (order 20)：General 设置中的快捷键参考入口行
-- shell.overlay 条目 id='shortcuts'：快捷键参考浮层
-- shortcuts.open 命令（primary+/）以及经 shortcuts.registerFixed 注册的固定命令集
 
 ## Depends On (上游依赖)
-- `dsh-client-locale` [E1+E2] - 注册并绑定本包文案
-  - 证据: `src/client/index.ts:5 type-only import + src/client/index.ts:29 ctx.locale.register, src/client/index.ts:30 ctx.locale.bind('shortcuts')`
-- `dsh-client-shortcuts` [E1+E2] - 注册命令/固定命令并读写快捷键目录与配置
-  - 证据: `src/client/Editor.tsx:6 import (client) + src/client/index.ts:34 ctx.shortcuts.edit, src/client/index.ts:38 ctx.shortcuts.registerFixed`
-- `dsh-client-ui-layout` [编译依赖] - 引入 layout 的 Context/SlotMap 合并
-  - 证据: `src/client/index.ts:7 type-only import`
-- `dsh-client-ui-primitives` [编译依赖] - 复用编辑器/菜单原语并关闭顶层模态
-  - 证据: `src/client/Editor.tsx:4 import + src/client/index.ts:4 import closeTopModal`
-- `dsh-client-ui-renderer` [编译依赖] - 引入 ctx.slots 合并
-  - 证据: `src/client/index.ts:6 type-only import`
-- `dsh-client-ui-settings` [E1+E2] - 引入设置域槽声明，General 段的 item 槽由其外壳渲染
-  - 证据: `src/client/index.ts:8 type-only import + src/client/index.ts:42 向 settings.general.item 注册`
+- `dsh-client-locale` [E1+E2] - 注册 shortcuts 字典并按命名空间绑定翻译（命令标签与面板文案）
+  - 证据: `src/client/index.ts:5 import type {} from '@deepseek-ai/dsh-client-locale/client' + src/client/index.ts:29-30 ctx.locale.register('shortcuts', { zh, en }) / ctx.locale.bind('shortcuts')`
+- `dsh-client-shortcuts` [E1+E2] - 命令注册、录制、编辑与目录/配置快照全部经 shortcuts 服务，其协议与客户端类型由该包持有
+  - 证据: `src/client/Editor.tsx:5-6 import ShortcutBinding/ShortcutCatalogEntry + src/client/index.ts:34-38 ctx.shortcuts.edit/recording/describeBinding/registerFixed + src/client/index.ts:47 ctx.shortcuts.register({ id: 'shortcuts.open' ... })`
+- `dsh-client-ui-layout` [编译依赖] - 参考面板注册进 layout 声明的 shell.overlay 槽（槽位声明依赖）
+  - 证据: `src/client/index.ts:7 import type {} from '@deepseek-ai/dsh-client-ui-layout/client'`
+- `dsh-client-ui-primitives` [编译依赖] - 参考面板、录制编辑器与快捷键键位显示复用共享原语
+  - 证据: `src/client/Editor.tsx:4 import ShortcutKeys/focusWithoutRing/observeComposition + src/client/index.ts:4 import closeTopModal + package.json:53 devDependencies`
+- `dsh-client-ui-renderer` [编译依赖] - 拉入 SlotRegistry 服务合并，使槽注册在此编译单元可用
+  - 证据: `src/client/index.ts:6 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'`
+- `dsh-client-ui-settings` [编译依赖] - 拉入 settings.general.item 槽声明的类型合并（本包不注入 configForms）
+  - 证据: `src/client/index.ts:8 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

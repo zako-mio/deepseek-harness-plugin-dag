@@ -1,8 +1,8 @@
 # dsh-llm-deepseek-account
 
 - 包名: `@deepseek-ai/dsh-llm-deepseek-account`
-- 分组: G23 LLM 适配
-- 拓扑层: Layer 2
+- 分组: G22 LLM 适配
+- 拓扑层: Layer 1
 - 来源层: L1 核心集
 - 源码路径: `packages/llm/llm-deepseek-account`
 

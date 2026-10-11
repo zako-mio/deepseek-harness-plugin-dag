@@ -1,10 +1,10 @@
 # dsh-webhook-github
 
 - 包名: `@deepseek-ai/dsh-webhook-github`
-- 分组: G48 Webhook
-- 拓扑层: Layer 3
+- 分组: G13 实验特性
+- 拓扑层: Layer 2
 - 来源层: L3 其余
-- 源码路径: `packages/webhook/webhook-github`
+- 源码路径: `packages/experimental/webhook-github`
 
 ## 实现逻辑
 函数插件在 ctx.webServer 上注册一条 exact 路由 (src/index.ts:47-61)。handler 校验 POST 与 JSON Content-Type，读取受限 body 及 x-hub-signature-256/x-github-delivery/x-github-event 头，用 ctx.credentials 解析密钥并经 Octokit Webhooks 校验签名 (src/handler.ts:82-105)。校验通过后构造 VerifiedWebhookDelivery<'github'> 交给 ctx.webhookRuntime.dispatch 做 fire-and-forget 分发 (src/handler.ts:107-119)，并在 types.ts 里向 WebhookEventMap 合并 'github' 事件 (src/types.ts:16-20)。

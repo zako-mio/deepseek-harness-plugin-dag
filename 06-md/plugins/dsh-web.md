@@ -1,8 +1,8 @@
 # dsh-web
 
 - 包名: `@deepseek-ai/dsh-web`
-- 分组: G47 Web 访问
-- 拓扑层: Layer 2
+- 分组: G46 Web 访问
+- 拓扑层: Layer 1
 - 来源层: L1 核心集
 - 源码路径: `packages/web/web`
 
@@ -20,6 +20,6 @@ WebRuntime 服务 (src/index.ts:74-164) 作为 ctx.web 能力 seam：持有 sear
 ## Dependents (下游被依赖)
 - `dsh-tool-web` - 调用 ctx.web 执行实际抓取/搜索，且 base bundle 中装配在 web 行之后
 - `dsh-web-fetch-http` - 实现并注册 WebFetchProvider 到 web seam，base bundle 中装配在 web 行之后
-- `dsh-web-search-deepseek` - 实现并注册 WebSearchProvider 到 web seam，base bundle 中装配在 web 行之后
+- `dsh-web-search-deepseek` - 实现 WebSearchProvider 契约、复用 WebError 错误词汇，并注册进搜索 provider 注册表
 - `dsh-web-search-exa` - 实现并注册 WebSearchProvider 到 web seam
 - `dsh-web-search-perplexity` - 实现并注册 WebSearchProvider 到 web seam

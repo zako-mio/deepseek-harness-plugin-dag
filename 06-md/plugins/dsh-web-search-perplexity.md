@@ -1,8 +1,8 @@
 # dsh-web-search-perplexity
 
 - 包名: `@deepseek-ai/dsh-web-search-perplexity`
-- 分组: G47 Web 访问
-- 拓扑层: Layer 3
+- 分组: G46 Web 访问
+- 拓扑层: Layer 2
 - 来源层: L3 其余
 - 源码路径: `packages/web/web-search-perplexity`
 

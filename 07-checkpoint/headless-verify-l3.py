@@ -4,7 +4,7 @@
 S6 headless 验证 L3 交互图（04-interactive/index.html）。
 
 既有能力（保留）：
-  1. 组级视图 --dump 断言：zcount == len(groups)+1（50+1=51），zmode == 组级
+  1. 组级视图 --dump 断言：zcount == len(groups)+1（48+1=49），zmode == 组级
   2. 组下钻动态选取（最大组 + 中等规模组）断言：zcount > 0 且 != 组级节点数（防假绿），
      zmode 以该组 id 开头
   3. 三张截图：组级 / 最大组下钻 / 中组下钻（各 > 10KB）
@@ -25,9 +25,11 @@ S6 headless 验证 L3 交互图（04-interactive/index.html）。
   8. #graph 不被侧栏遮挡（graph.right == side.left）；返回组级视图按钮
   9. ?drill=Gxx / #Gxx 深链 + hashchange 生效
 
-依赖：playwright（executable_path=/snap/bin/chromium，snap 私有 /tmp 不读宿主 /tmp）。
+依赖：playwright + 可用 Chromium。浏览器路径自动探测：优先 playwright 自带
+chrome-for-testing（不受 snap 能力限制），回退 /snap/bin/chromium。
+（本机 snap chromium 因缺 cap_dac_override 无法在容器内启动，故必须支持回退。）
 """
-import os, re, sys, json
+import os, re, sys, json, glob
 sys.stdout.reconfigure(encoding="utf-8")
 from playwright.sync_api import sync_playwright
 
@@ -38,7 +40,21 @@ OUT = os.path.join(BASE, "07-checkpoint", "screenshots")
 PROD = os.path.join(BASE, "07-checkpoint", "prototype", "shots")
 os.makedirs(OUT, exist_ok=True)
 os.makedirs(PROD, exist_ok=True)
-CHROME = "/snap/bin/chromium"
+
+
+def _find_chrome():
+    """探测可用 Chromium：playwright 自带 > 系统 chromium > snap chromium。"""
+    cands = sorted(glob.glob(os.path.expanduser(
+        "~/.cache/ms-playwright/chromium-*/chrome-linux64/chrome")), reverse=True)
+    cands += ["/usr/bin/chromium", "/usr/bin/chromium-browser", "/snap/bin/chromium"]
+    for c in cands:
+        if os.path.isfile(c) and os.access(c, os.X_OK):
+            return c
+    return "/snap/bin/chromium"
+
+
+CHROME = _find_chrome()
+print(f"[INFO] 使用浏览器: {CHROME}")
 BASE_URL = "file:///" + HTML.replace(os.sep, "/")
 
 with open(HTML, "r", encoding="utf-8") as f:
@@ -132,20 +148,47 @@ with sync_playwright() as p:
     check(preset_ok, "组级节点位置非有限数值（preset 失效）")
     check(not re.search(r"name\s*:\s*['\"]dagre['\"]", content), "存在 dagre 布局（组级须 preset）")
 
-    # hover 差异化分类（G06）
+    # hover 差异化分类（G06）—— 用 DATA.groupEdges 独立复算，不钉死黄金值。
+    # 渲染器语义：up/down 为「排他类」（橙 only = 依赖 − 双向；绿 only = 被依赖 − 双向）。
+    _ge = [e["data"] for e in data["groupEdges"]]
+    _all_grp = {"grp-" + g for g in data["groups"]} | {"grp-EXT"}
+
+    def _hl_expected(gid):
+        G = "grp-" + gid
+        up = {e["target"] for e in _ge if e["source"] == G}
+        down = {e["source"] for e in _ge if e["target"] == G}
+        both = up & down
+        return up - both, down - both, both
+
     hl = page.evaluate(HOVER_JS, "G06")
-    print(f"[1] hover G06 分类: 橙only={hl['up']} 绿only={hl['down']} 双向={hl['both']} dim={hl['dim']}")
-    check(hl["up"] == 22 and hl["down"] == 3 and hl["both"] == 3 and hl["dim"] == 22,
-          f"hover G06 分类不符: {hl}")
-    check(hl["bothIds"] == ["grp-G02", "grp-G05", "grp-G20"],
-          f"双向节点不符: {hl['bothIds']}")
+    exp_up, exp_down, exp_both = _hl_expected("G06")
+    print(f"[1] hover G06 分类: 橙only={hl['up']} 绿only={hl['down']} 双向={hl['both']} dim={hl['dim']}"
+          f" | 独立复算: 橙only={len(exp_up)} 绿only={len(exp_down)} 双向={len(exp_both)}")
+    check(hl["self"] == 1, f"hover 自身集合应为 1，实为 {hl['self']}")
+    check(hl["up"] == len(exp_up), f"橙only 数不符: 渲染 {hl['up']} vs 复算 {len(exp_up)}")
+    check(hl["down"] == len(exp_down), f"绿only 数不符: 渲染 {hl['down']} vs 复算 {len(exp_down)}")
+    check(hl["both"] == len(exp_both), f"双向数不符: 渲染 {hl['both']} vs 复算 {len(exp_both)}")
+    check(sorted(hl["bothIds"]) == sorted(exp_both),
+          f"双向节点不符: {sorted(hl['bothIds'])} vs {sorted(exp_both)}")
+    # 划分完备性：self + 橙only + 绿only + 双向 + dim == 全部 grp- 节点（48 组 + EXT）
+    _tot = hl["self"] + hl["up"] + hl["down"] + hl["both"] + hl["dim"]
+    check(_tot == len(_all_grp), f"高亮划分不完备: {_tot} != {len(_all_grp)}")
+    # 三色语义须被实际用到（防退化到「全 dim」这种恒真态）
+    check(hl["up"] > 0 and hl["down"] > 0 and hl["both"] > 0 and hl["dim"] > 0,
+          f"存在空类，三色语义未生效: {hl}")
 
     # 图例三色语义 / disabled / seam / 侧栏遮挡
     for color, legend in [("#e8933b", "橙 = 上游"), ("#2fb98a", "绿 = 下游"), ("#4f8cff", "蓝 = 自身")]:
         check(f'background:{color}"></span>{legend}' in content, f"图例缺 {color}/{legend}")
     check('node[kind="disabled"]' in content, "样式缺 node[kind=disabled]")
     check('line-style' in content and 'dashed' in content, "样式缺 seam 虚线")
-    check(len(data.get("disabledIds", [])) == 19, f"disabledIds 数 {len(data.get('disabledIds', []))} != 19")
+    # disabledIds 须与 disabled-rows.json 去重后的节点集一致（不钉死数量：
+    # 18 条装配行可映射到 16 个唯一节点，同一节点可被多 bundle 行 disabled）
+    _dr = json.load(open(os.path.join(SCRIPT_DIR, "v021", "disabled-rows.json"), encoding="utf-8"))
+    _expect_disabled = {r["node"] for r in _dr["disabled_base_rows"] if r.get("in_nodes")}
+    _got_disabled = set(data.get("disabledIds", []))
+    check(_got_disabled == _expect_disabled,
+          f"disabledIds 与 disabled-rows.json 不符: 差集 {sorted(_got_disabled ^ _expect_disabled)}")
     layout_ok = page.evaluate("() => { const g=document.getElementById('graph').getBoundingClientRect();"
                               " const s=document.getElementById('side').getBoundingClientRect();"
                               " return {gr: Math.round(g.right), sl: Math.round(s.left)}; }")
@@ -236,6 +279,6 @@ if failures:
     for f in failures:
         print(f"  [FAIL] {f}")
     sys.exit(1)
-print("\n[OK] headless 断言全通过（组级 51 节点 + 全量下钻几何 + 既有能力回归）")
+print("\n[OK] headless 断言全通过（组级 49 节点 + 全量下钻几何 + 既有能力回归）")
 print(f"[OK] 截图输出: {OUT}")
 print(f"[OK] 生产默认态截图: {PROD}/prod-drill-G06.png, prod-drill-EXT.png")

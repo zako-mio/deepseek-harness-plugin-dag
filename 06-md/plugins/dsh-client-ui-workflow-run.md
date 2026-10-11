@@ -7,34 +7,31 @@
 - 源码路径: `packages/client/ui-workflow-run`
 
 ## 实现逻辑
-注册 durable workflow-run 会话节点：apply 用 ctx.uiConversation.events.register 挂载 workflowRunDefinition（src/client/index.ts:27），并向 'conversation.chat.node' 注册 key='workflow-run' 的 WorkflowRunPanel，注入 openSession 用于打开成员子会话（src/client/index.ts:29-36）。workflow-definition.ts 从工具 workflow agent start/end 事件折叠出 phase/member 状态并产出 keyed Chat 数据（src/client/workflow-definition.ts:41-60）。
+把持久化的 workflow 运行渲染为会话节点：client/index.ts:27 向 ctx.uiConversation.events 注册 workflowRunDefinition（workflow-definition.ts 内按 dsh-workflow 与 dsh-tool-workflow 的事件类型做 match/update 投影），:29-36 把 WorkflowRunPanel 注册为键控 conversation.chat.node（key 'workflow-run'），并在 inject 中提供 openSession 回调（走 ctx.uiWorkspace.openSession）。字典经 ctx.locale.register(NS, { zh, en }) 注册（:28）。
 
 ## Provides
-- ConversationNodeDefinition 'workflow-run'（注册进 uiConversation.events）
-- slot conversation.chat.node key='workflow-run' 的 WorkflowRunPanel 渲染
-- ChatNodeDataMap 'workflow-run' 数据契约
+- conversation.chat.node 的 'workflow-run' 渲染器
+- workflowRunDefinition（workflow 运行事件的会话节点定义）
 
 ## Depends On (上游依赖)
-- `dsh-api-session-controller` [编译依赖] - 读取会话列表状态与导航目标类型
-  - 证据: `src/client/WorkflowRunPanel.tsx:10 SessionListState/SessionTarget`
-- `dsh-client-locale` [E1+E2] - 注册 workflowRun 字典
-  - 证据: `src/client/index.ts:5 + src/client/index.ts:28 ctx.locale.register`
-- `dsh-client-ui-chat` [编译依赖] - 引入 keyed Chat 节点渲染契约
-  - 证据: `src/client/index.ts:6 + src/client/workflow-definition.ts:4`
-- `dsh-client-ui-conversation` [E1+E2] - 注册会话节点定义并读取 ConversationNodeContext
-  - 证据: `src/client/index.ts:7 import + src/client/index.ts:27 ctx.uiConversation.events.register`
-- `dsh-client-ui-primitives` [编译依赖] - 复用折叠行与状态点原语
-  - 证据: `src/client/WorkflowRunPanel.tsx:9 DisclosureRow/StateDot`
-- `dsh-client-ui-renderer` [编译依赖] - 拉入槽/渲染服务类型合并
-  - 证据: `src/client/index.ts:8 import type`
-- `dsh-client-ui-session` [编译依赖] - 引入会话状态快照与 UI 服务类型
-  - 证据: `src/client/WorkflowRunPanel.tsx:13 + src/client/index.ts:9`
-- `dsh-client-ui-workspace` [E1+E2] - 从工作流面板导航到成员会话
-  - 证据: `src/client/index.ts:10 import type + src/client/index.ts:34 ctx.uiWorkspace.openSession`
-- `dsh-session` [编译依赖] - 成员子会话标识类型
-  - 证据: `src/client/workflow-definition.ts:5 SessionId`
-- `dsh-tool-workflow` [编译依赖] - 解析工具侧工作流成员事件数据
-  - 证据: `src/client/workflow-definition.ts:8 ToolWorkflowAgentStartData/EndData`
+- `dsh-api-session-controller` [E1+E2] - 会话目标与绑定类型由会话控制器定义
+  - 证据: `src/client/WorkflowRunPanel.tsx:10 import type { SessionTarget } from '@deepseek-ai/dsh-api-session-controller/client'; src/client/index.ts:4 import type {} from ...`
+- `dsh-client-locale` [E1+E2] - 运行状态与面板文案本地化
+  - 证据: `src/client/index.ts:5 import type {} from '@deepseek-ai/dsh-client-locale/client'; src/client/index.ts:28 ctx.locale.register(NS, { zh, en })`
+- `dsh-client-ui-chat` [编译依赖] - 节点定义返回 chat 侧会话视图节点类型
+  - 证据: `src/client/index.ts:6 import type {} from '@deepseek-ai/dsh-client-ui-chat/client'; src/client/workflow-definition.ts:4 import type { ChatConversationViewNode }`
+- `dsh-client-ui-conversation` [E1+E2] - 节点定义注册表与 conversation.chat.node 槽由 ui-conversation 提供
+  - 证据: `src/client/index.ts:7 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'; src/client/index.ts:27 ctx.uiConversation.events.register(workflowRunDefinition)`
+- `dsh-client-ui-renderer` [E1+E2] - ctx.slots 服务由 renderer 提供
+  - 证据: `src/client/index.ts:8 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'`
+- `dsh-client-ui-session` [编译依赖] - 拉入 uiSession 合并以按会话渲染面板
+  - 证据: `src/client/WorkflowRunPanel.tsx:13 import type {} from '@deepseek-ai/dsh-client-ui-session/client'`
+- `dsh-client-ui-workspace` [E1+E2] - 面板中打开成员会话走工作区导航服务
+  - 证据: `src/client/index.ts:10 import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'; src/client/index.ts:34 ctx.uiWorkspace.openSession(target)`
+- `dsh-session` [编译依赖] - 会话标识类型
+  - 证据: `src/client/workflow-definition.ts:5 import type { SessionId } from '@deepseek-ai/dsh-session/types'`
+- `dsh-tool-workflow` [编译依赖] - 读取工具侧 workflow 代理起止事件数据
+  - 证据: `src/client/workflow-definition.ts:8 import type { ToolWorkflowAgentEndData, ToolWorkflowAgentStartData } from '@deepseek-ai/dsh-tool-workflow/types'`
 
 ## Dependents (下游被依赖)
 - 无下游（叶子/被消费端）

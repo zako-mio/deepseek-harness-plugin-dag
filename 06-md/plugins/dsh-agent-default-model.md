@@ -24,4 +24,4 @@
   - 证据: `src/index.ts:6 import type + src/index.ts:60 ctx.inject(['settings'])`
 
 ## Dependents (下游被依赖)
-- `dsh-api-session-controller` - 读取/保存部署默认模型
+- `dsh-api-session-controller` - 读写默认模型选择

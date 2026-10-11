@@ -1,10 +1,10 @@
 # dsh-tool-ralph
 
 - 包名: `@deepseek-ai/dsh-tool-ralph`
-- 分组: G49 工作流
-- 拓扑层: Layer 8
-- 来源层: L1 核心集
-- 源码路径: `packages/workflow/tool-ralph`
+- 分组: G13 实验特性
+- 拓扑层: Layer 7
+- 来源层: L3 其余
+- 源码路径: `packages/experimental/tool-ralph`
 
 ## 实现逻辑
 注册模型可见的 ralph 工具与专用 systemPrompt 章节 (src/index.ts:402-477)。execute 先校验调用方 agent，并要求子代理 provider 是「新鲜且支持结构化输出」的 (src/index.ts:218-230)，随后用固定的 RALPH_SCRIPT 通过 ctx.workflowEngine.start 启动工作流 (src/index.ts:445-453)。脚本每轮开一个无父上下文的新子代理，只传不可变目标与受 maxHandoffChars 限制的结构化 handoff，宿主侧再防御性解码每轮报告与终态 (src/index.ts:88-175, 244-331)。

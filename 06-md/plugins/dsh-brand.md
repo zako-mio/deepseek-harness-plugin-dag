@@ -2,7 +2,7 @@
 
 - 包名: `@deepseek-ai/dsh-brand`
 - 源码路径: `packages/util/brand`
-- 被插件引用: 47 次
+- 被插件引用: 48 次
 - 描述: 
 
 ## 被集依赖 (下游)
@@ -20,6 +20,7 @@
 - `dsh-client-ui-layout`
 - `dsh-client-ui-sidebar-browser`
 - `dsh-client-ui-sidebar-right`
+- `dsh-client-ui-user-questions`
 - `dsh-commands`
 - `dsh-cordis-host-runner`
 - `dsh-experimental-inspector`
